@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pump Pal
+
+Pump Pal is a Next.js app with a Firebase-backed login experience that supports phone number verification and Google sign-in.
 
 ## Getting Started
 
-First, run the development server:
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the login page.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Firebase Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a Firebase project and enable **Phone** and **Google** providers in **Authentication → Sign-in method**. Then add the following environment variables (for example in a `.env.local` file):
 
-## Learn More
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
 
-To learn more about Next.js, take a look at the following resources:
+> Phone sign-in requires a reCAPTCHA domain whitelist in your Firebase console. Add your local and production domains there.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Testing and Linting
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+npm run test
+```
 
-## Deploy on Vercel
+## Build
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run build
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## OWASP Top 10 Checklist
+
+Use this checklist when shipping to production:
+
+- ✅ **A01: Broken Access Control** — enforce authenticated access to protected routes.
+- ✅ **A02: Cryptographic Failures** — rely on Firebase for token handling and HTTPS-only deployment.
+- ✅ **A03: Injection** — validate and sanitize any user input stored or logged.
+- ✅ **A04: Insecure Design** — ensure MFA or rate-limiting is configured in Firebase where needed.
+- ✅ **A05: Security Misconfiguration** — review Firebase rules and environment variables before deploy.
+- ✅ **A06: Vulnerable Components** — keep dependencies updated and review advisories.
+- ✅ **A07: Identification and Authentication Failures** — enable Firebase Auth providers and protect sessions.
+- ✅ **A08: Software and Data Integrity** — use CI to validate builds and signed deployments.
+- ✅ **A09: Security Logging and Monitoring** — add logging for auth events in production.
+- ✅ **A10: Server-Side Request Forgery** — avoid server-side fetches to untrusted URLs.
