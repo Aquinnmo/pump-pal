@@ -7,7 +7,7 @@ import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { addDoc, arrayUnion, collection, doc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -51,7 +51,7 @@ export default function AddWorkoutModal() {
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Fetch user's split + custom workout names to build the name dropdown
+  // Fetch user's split + names used in past workouts to build the name dropdown
   useEffect(() => {
     if (!user) return;
     const loadNameOptions = async () => {
@@ -60,10 +60,20 @@ export default function AddWorkoutModal() {
         const data = userSnap.data();
         const splitType = data?.workoutSplit?.type;
         const splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
-        const customNames: string[] = Array.isArray(data?.customWorkoutNames) ? data.customWorkoutNames : [];
-        // Merge: split names first, then any custom names not already in the list
+
+        // Collect unique names actually used in saved workouts
+        const workoutsSnap = await getDocs(
+          query(collection(db, 'users', user.uid, 'workouts'), orderBy('date', 'desc'))
+        );
+        const usedNames = new Set<string>();
+        workoutsSnap.docs.forEach((d) => {
+          const name = d.data().name;
+          if (name) usedNames.add(name);
+        });
+
+        // Merge: split names first, then any used names not already in the split list
         const merged = [...splitNames];
-        customNames.forEach((n) => { if (!merged.includes(n)) merged.push(n); });
+        usedNames.forEach((n) => { if (!merged.includes(n)) merged.push(n); });
         setWorkoutNameOptions(merged);
       } catch {
         // silently fail — user can still type a name
@@ -206,13 +216,6 @@ export default function AddWorkoutModal() {
         });
 
       const finalDate = isToday ? new Date() : workoutDate;
-
-      // If a custom name was entered, persist it to the user doc so it appears in future dropdowns
-      if (isCustomWorkoutName && finalName && !workoutNameOptions.includes(finalName)) {
-        await updateDoc(doc(db, 'users', user.uid), {
-          customWorkoutNames: arrayUnion(finalName),
-        });
-      }
 
       if (id) {
         await updateDoc(doc(db, 'users', user.uid, 'workouts', id), {
