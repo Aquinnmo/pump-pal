@@ -1,6 +1,6 @@
+import FirebaseRecaptchaVerifierModal, { FirebaseRecaptchaVerifierModalRef } from '@/components/firebase-recaptcha-modal';
 import app, { auth } from '@/config/firebase';
 import { Ionicons } from '@expo/vector-icons';
-import { FirebaseRecaptchaVerifierModal } from 'expo-firebase-recaptcha';
 import { getLocales } from 'expo-localization';
 import { router } from 'expo-router';
 import { ConfirmationResult, signInWithPhoneNumber } from 'firebase/auth';
@@ -70,7 +70,7 @@ function getCallingCode(): string {
 }
 
 export default function PhoneAuthScreen() {
-  const recaptchaVerifier = useRef<FirebaseRecaptchaVerifierModal>(null);
+  const recaptchaVerifier = useRef<FirebaseRecaptchaVerifierModalRef>(null);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [callingCode] = useState(getCallingCode);
