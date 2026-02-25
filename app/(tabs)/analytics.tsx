@@ -48,14 +48,16 @@ export default function AnalyticsScreen() {
     }, [fetchWorkouts])
   );
 
-  const { favoriteExercise, maxWeights, chartData, allExercises, heaviestLift } = useMemo(() => {
+  const { favoriteExercise, maxWeights, chartData, allExercises, heaviestLift, bodyweightExercises, durationExercises } = useMemo(() => {
     if (workouts.length === 0) {
-      return { favoriteExercise: null, maxWeights: {}, chartData: null, allExercises: [], heaviestLift: null };
+      return { favoriteExercise: null as string | null, maxWeights: {} as Record<string, number>, chartData: null, allExercises: [] as string[], heaviestLift: null as { exercise: string; weight: number } | null, bodyweightExercises: new Set<string>(), durationExercises: new Set<string>() };
     }
 
     const counts: Record<string, number> = {};
     const maxW: Record<string, number> = {};
     const exerciseHistory: Record<string, { date: string; score: number }[]> = {};
+    const bodyweightExercises = new Set<string>();
+    const durationExercises = new Set<string>();
     let heaviestLift: { exercise: string; weight: number } | null = null;
 
     workouts.forEach((w) => {
@@ -69,17 +71,28 @@ export default function AnalyticsScreen() {
         // Count for favorite
         counts[name] = (counts[name] || 0) + 1;
 
+        // Track bodyweight / duration status
+        if (ex.bodyweight) bodyweightExercises.add(name);
+        if (ex.exerciseType === 'Sets of Duration') durationExercises.add(name);
+
         // Max weight
         maxW[name] = Math.max(maxW[name] || 0, ex.weight);
 
         // Heaviest single lift overall
-        if (!ex.bodyweight && ex.weight > 0 && (!heaviestLift || ex.weight > heaviestLift.weight)) {
+        if (!ex.bodyweight && ex.exerciseType !== 'Sets of Duration' && ex.weight > 0 && (!heaviestLift || ex.weight > heaviestLift.weight)) {
           heaviestLift = { exercise: name, weight: ex.weight };
         }
 
-        // Strength-o-meter score (using Epley 1RM formula as a safe strength metric)
-        // Formula: weight * (1 + reps / 30)
-        const score = ex.weight * (1 + ex.reps / 30);
+        // Strength-o-meter score:
+        // - Duration: max set duration in seconds (minutes * 60 + seconds)
+        // - Bodyweight: max reps in a set
+        // - Weighted: Epley 1RM formula: weight * (1 + reps / 30)
+        const score =
+          ex.exerciseType === 'Sets of Duration'
+            ? (ex.durationMinutes ?? 0) * 60 + (ex.durationSeconds ?? 0)
+            : ex.bodyweight
+            ? ex.reps
+            : ex.weight * (1 + ex.reps / 30);
 
         if (!exerciseHistory[name]) {
           exerciseHistory[name] = [];
@@ -128,6 +141,8 @@ export default function AnalyticsScreen() {
       chartData: cData,
       allExercises: allEx,
       heaviestLift,
+      bodyweightExercises,
+      durationExercises,
     };
   }, [workouts, selectedExercise]);
 
@@ -174,7 +189,13 @@ export default function AnalyticsScreen() {
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Strength-O-Meter</Text>
-            <Text style={styles.cardSubtitle}>Estimated 1RM over time</Text>
+            <Text style={styles.cardSubtitle}>
+              {selectedExercise && durationExercises.has(selectedExercise)
+                ? 'Max set duration (seconds) over time'
+                : selectedExercise && bodyweightExercises.has(selectedExercise)
+                ? 'Max reps per session over time'
+                : 'Estimated 1RM over time'}
+            </Text>
 
             {allExercises.length > 0 && (
               <Dropdown
