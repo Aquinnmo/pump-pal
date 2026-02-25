@@ -363,6 +363,19 @@ export default function AddWorkoutModal() {
           value={notes}
           onChangeText={setNotes}
         />
+
+        <TouchableOpacity
+          style={[styles.bigSaveButton, (saving || loading) && styles.bigSaveButtonDisabled]}
+          onPress={handleSave}
+          disabled={saving || loading}
+          activeOpacity={0.8}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.bigSaveButtonText}>{id ? 'Save Changes' : 'Save Workout'}</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
       )}
     </KeyboardAvoidingView>
@@ -589,5 +602,22 @@ const styles = StyleSheet.create({
     color: '#e54242',
     fontWeight: '600',
     fontSize: 14,
+  },
+  bigSaveButton: {
+    backgroundColor: '#e54242',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  bigSaveButtonDisabled: {
+    opacity: 0.5,
+  },
+  bigSaveButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });

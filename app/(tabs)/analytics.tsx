@@ -49,14 +49,15 @@ export default function AnalyticsScreen() {
     }, [fetchWorkouts])
   );
 
-  const { favoriteExercise, maxWeights, chartData, allExercises } = useMemo(() => {
+  const { favoriteExercise, maxWeights, chartData, allExercises, heaviestLift } = useMemo(() => {
     if (workouts.length === 0) {
-      return { favoriteExercise: null, maxWeights: {}, chartData: null, allExercises: [] };
+      return { favoriteExercise: null, maxWeights: {}, chartData: null, allExercises: [], heaviestLift: null };
     }
 
     const counts: Record<string, number> = {};
     const maxW: Record<string, number> = {};
     const exerciseHistory: Record<string, { date: string; score: number }[]> = {};
+    let heaviestLift: { exercise: string; weight: number } | null = null;
 
     workouts.forEach((w) => {
       const dateObj = w.date instanceof Date ? w.date : new Date((w.date as any).seconds * 1000);
@@ -71,6 +72,11 @@ export default function AnalyticsScreen() {
 
         // Max weight
         maxW[name] = Math.max(maxW[name] || 0, ex.weight);
+
+        // Heaviest single lift overall
+        if (!ex.bodyweight && ex.weight > 0 && (!heaviestLift || ex.weight > heaviestLift.weight)) {
+          heaviestLift = { exercise: name, weight: ex.weight };
+        }
 
         // Strength-o-meter score (using Epley 1RM formula as a safe strength metric)
         // Formula: weight * (1 + reps / 30)
@@ -122,6 +128,7 @@ export default function AnalyticsScreen() {
       maxWeights: maxW,
       chartData: cData,
       allExercises: allEx,
+      heaviestLift,
     };
   }, [workouts, selectedExercise]);
 
@@ -158,23 +165,26 @@ export default function AnalyticsScreen() {
             <Text style={styles.cardValue}>{favoriteExercise || 'N/A'}</Text>
           </View>
 
+          {heaviestLift && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Heaviest Lift</Text>
+              <Text style={styles.cardSubtitle}>{heaviestLift.exercise}</Text>
+              <Text style={styles.cardValue}>{heaviestLift.weight} lbs</Text>
+            </View>
+          )}
+
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Strength-O-Meter</Text>
             <Text style={styles.cardSubtitle}>Estimated 1RM over time</Text>
 
             {allExercises.length > 0 && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-                {allExercises.map((ex) => (
-                  <TouchableOpacity
-                    key={ex}
-                    style={[styles.chip, selectedExercise === ex && styles.chipActive]}
-                    onPress={() => setSelectedExercise(ex)}>
-                    <Text style={[styles.chipText, selectedExercise === ex && styles.chipTextActive]}>
-                      {ex}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
+              <Dropdown
+                options={allExercises}
+                value={selectedExercise}
+                onSelect={setSelectedExercise}
+                placeholder="Select an exercise"
+                style={styles.dropdownRow}
+              />
             )}
 
             {chartData && chartData.labels.length > 0 ? (
