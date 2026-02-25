@@ -25,28 +25,73 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
     return { overTrained: [], underTrained: [] };
   }
 
-  // Tally how many sessions each exercise appears in
-  const exerciseSessions: Record<string, number> = {};
+  // Aggregate detailed stats per exercise across all sessions
+  interface ExerciseStats {
+    sessions: number;
+    totalSets: number;
+    totalReps: number;
+    weights: Set<number>;        // for weighted exercises
+    maxDurationSecs: number;     // for duration exercises
+    bodyweight: boolean;
+    isDuration: boolean;
+  }
+
+  const statsMap: Record<string, ExerciseStats> = {};
+
   recent.forEach((w) => {
-    const seen = new Set<string>();
+    const seenThisWorkout = new Set<string>();
     w.exercises.forEach((ex) => {
       const name = ex.name.trim();
       if (!name) return;
-      if (!seen.has(name)) {
-        exerciseSessions[name] = (exerciseSessions[name] || 0) + 1;
-        seen.add(name);
+
+      if (!statsMap[name]) {
+        statsMap[name] = {
+          sessions: 0,
+          totalSets: 0,
+          totalReps: 0,
+          weights: new Set(),
+          maxDurationSecs: 0,
+          bodyweight: !!ex.bodyweight,
+          isDuration: ex.exerciseType === 'Sets of Duration',
+        };
+      }
+
+      const s = statsMap[name];
+      if (!seenThisWorkout.has(name)) {
+        s.sessions += 1;
+        seenThisWorkout.add(name);
+      }
+
+      s.totalSets += ex.sets ?? 1;
+
+      if (ex.exerciseType === 'Sets of Duration') {
+        const secs = (ex.durationMinutes ?? 0) * 60 + (ex.durationSeconds ?? 0);
+        s.maxDurationSecs = Math.max(s.maxDurationSecs, secs * (ex.sets ?? 1));
+      } else {
+        s.totalReps += (ex.reps ?? 0) * (ex.sets ?? 1);
+        if (!ex.bodyweight && ex.weight > 0) s.weights.add(ex.weight);
       }
     });
   });
 
-  const exerciseList = Object.entries(exerciseSessions)
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, count]) => `${name} (${count} session${count > 1 ? 's' : ''})`)
-    .join(', ');
+  const exerciseList = Object.entries(statsMap)
+    .sort((a, b) => b[1].sessions - a[1].sessions)
+    .map(([name, s]) => {
+      if (s.isDuration) {
+        return `${name}: ${s.sessions} session${s.sessions > 1 ? 's' : ''}, ${s.totalSets} sets, max ~${s.maxDurationSecs}s total duration`;
+      }
+      if (s.bodyweight) {
+        return `${name}: ${s.sessions} session${s.sessions > 1 ? 's' : ''}, ${s.totalSets} sets, ${s.totalReps} total reps`;
+      }
+      const weightList = [...s.weights].sort((a, b) => a - b).join('/');
+      return `${name}: ${s.sessions} session${s.sessions > 1 ? 's' : ''}, ${s.totalSets} sets, ${s.totalReps} total reps${weightList ? ` @ ${weightList} lbs` : ''}`;
+    })
+    .join('\n');
 
   const prompt = `You are a fitness coach analyzing a user's workout data from the past 30 days.
 
-Exercises performed (name and number of sessions): ${exerciseList}
+Exercises performed (one per line — sessions, sets, total reps, and weights used):
+${exerciseList}
 
 Based on this data:
 1. Identify up to 3 muscle groups that are OVER-TRAINED (worked very frequently, at risk of overuse or insufficient recovery).
