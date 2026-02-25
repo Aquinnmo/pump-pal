@@ -23,6 +23,8 @@ export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
   const [selectedMaxExercise, setSelectedMaxExercise] = useState<string | null>(null);
+  const [selectedMaxRepsExercise, setSelectedMaxRepsExercise] = useState<string | null>(null);
+  const [selectedLongestDurationExercise, setSelectedLongestDurationExercise] = useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) return;
@@ -48,13 +50,15 @@ export default function AnalyticsScreen() {
     }, [fetchWorkouts])
   );
 
-  const { favoriteExercise, maxWeights, chartData, allExercises, heaviestLift, bodyweightExercises, durationExercises } = useMemo(() => {
+  const { favoriteExercise, maxWeights, maxReps, maxDuration, chartData, allExercises, weightedExercises, bodyweightExerciseList, durationExerciseList, heaviestLift, bodyweightExercises, durationExercises } = useMemo(() => {
     if (workouts.length === 0) {
-      return { favoriteExercise: null as string | null, maxWeights: {} as Record<string, number>, chartData: null, allExercises: [] as string[], heaviestLift: null as { exercise: string; weight: number } | null, bodyweightExercises: new Set<string>(), durationExercises: new Set<string>() };
+      return { favoriteExercise: null as string | null, maxWeights: {} as Record<string, number>, maxReps: {} as Record<string, number>, maxDuration: {} as Record<string, number>, chartData: null, allExercises: [] as string[], weightedExercises: [] as string[], bodyweightExerciseList: [] as string[], durationExerciseList: [] as string[], heaviestLift: null as { exercise: string; weight: number } | null, bodyweightExercises: new Set<string>(), durationExercises: new Set<string>() };
     }
 
     const counts: Record<string, number> = {};
     const maxW: Record<string, number> = {};
+    const maxR: Record<string, number> = {};
+    const maxD: Record<string, number> = {};
     const exerciseHistory: Record<string, { date: string; score: number }[]> = {};
     const bodyweightExercises = new Set<string>();
     const durationExercises = new Set<string>();
@@ -77,6 +81,17 @@ export default function AnalyticsScreen() {
 
         // Max weight
         maxW[name] = Math.max(maxW[name] || 0, ex.weight);
+
+        // Max reps (for bodyweight exercises)
+        if (ex.bodyweight) {
+          maxR[name] = Math.max(maxR[name] || 0, ex.reps);
+        }
+
+        // Max duration in seconds (for duration exercises)
+        if (ex.exerciseType === 'Sets of Duration') {
+          const totalSecs = (ex.durationMinutes ?? 0) * 60 + (ex.durationSeconds ?? 0);
+          maxD[name] = Math.max(maxD[name] || 0, totalSecs);
+        }
 
         // Heaviest single lift overall
         if (!ex.bodyweight && ex.exerciseType !== 'Sets of Duration' && ex.weight > 0 && (!heaviestLift || ex.weight > heaviestLift.weight)) {
@@ -118,6 +133,9 @@ export default function AnalyticsScreen() {
     }
 
     const allEx = Object.keys(counts).sort();
+    const weightedEx = allEx.filter((name) => !bodyweightExercises.has(name) && !durationExercises.has(name));
+    const bodyweightExList = allEx.filter((name) => bodyweightExercises.has(name));
+    const durationExList = allEx.filter((name) => durationExercises.has(name));
 
     let cData = null;
     const targetEx = selectedExercise || fav;
@@ -138,8 +156,13 @@ export default function AnalyticsScreen() {
     return {
       favoriteExercise: fav,
       maxWeights: maxW,
+      maxReps: maxR,
+      maxDuration: maxD,
       chartData: cData,
       allExercises: allEx,
+      weightedExercises: weightedEx,
+      bodyweightExerciseList: bodyweightExList,
+      durationExerciseList: durationExList,
       heaviestLift,
       bodyweightExercises,
       durationExercises,
@@ -154,7 +177,13 @@ export default function AnalyticsScreen() {
     if (!selectedMaxExercise && favoriteExercise) {
       setSelectedMaxExercise(favoriteExercise);
     }
-  }, [favoriteExercise, selectedExercise, selectedMaxExercise]);
+    if (!selectedMaxRepsExercise && bodyweightExerciseList.length > 0) {
+      setSelectedMaxRepsExercise(bodyweightExerciseList[0]);
+    }
+    if (!selectedLongestDurationExercise && durationExerciseList.length > 0) {
+      setSelectedLongestDurationExercise(durationExerciseList[0]);
+    }
+  }, [favoriteExercise, selectedExercise, selectedMaxExercise, selectedMaxRepsExercise, selectedLongestDurationExercise, bodyweightExerciseList, durationExerciseList]);
 
   if (loading) {
     return (
@@ -241,7 +270,7 @@ export default function AnalyticsScreen() {
             <Text style={styles.cardSubtitle}>Highest weight lifted</Text>
 
             <Dropdown
-              options={allExercises}
+              options={weightedExercises}
               value={selectedMaxExercise}
               onSelect={setSelectedMaxExercise}
               placeholder="Select an exercise"
@@ -251,9 +280,57 @@ export default function AnalyticsScreen() {
             {selectedMaxExercise && maxWeights[selectedMaxExercise] !== undefined ? (
               <Text style={styles.cardValue}>{maxWeights[selectedMaxExercise]} lbs</Text>
             ) : (
-              <Text style={styles.emptyText}>No data for this exercise.</Text>
+              <Text style={styles.emptyText}>
+                {weightedExercises.length === 0 ? 'No weighted exercises logged yet.' : 'No data for this exercise.'}
+              </Text>
             )}
           </View>
+
+          {bodyweightExerciseList.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Max Reps</Text>
+              <Text style={styles.cardSubtitle}>Highest reps in a single set</Text>
+
+              <Dropdown
+                options={bodyweightExerciseList}
+                value={selectedMaxRepsExercise}
+                onSelect={setSelectedMaxRepsExercise}
+                placeholder="Select an exercise"
+                style={styles.dropdownRow}
+              />
+
+              {selectedMaxRepsExercise && maxReps[selectedMaxRepsExercise] !== undefined ? (
+                <Text style={styles.cardValue}>{maxReps[selectedMaxRepsExercise]} reps</Text>
+              ) : (
+                <Text style={styles.emptyText}>No data for this exercise.</Text>
+              )}
+            </View>
+          )}
+
+          {durationExerciseList.length > 0 && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Longest Duration</Text>
+              <Text style={styles.cardSubtitle}>Longest single set ever recorded</Text>
+
+              <Dropdown
+                options={durationExerciseList}
+                value={selectedLongestDurationExercise}
+                onSelect={setSelectedLongestDurationExercise}
+                placeholder="Select an exercise"
+                style={styles.dropdownRow}
+              />
+
+              {selectedLongestDurationExercise && maxDuration[selectedLongestDurationExercise] !== undefined ? (
+                <Text style={styles.cardValue}>
+                  {maxDuration[selectedLongestDurationExercise] >= 60
+                    ? `${Math.floor(maxDuration[selectedLongestDurationExercise] / 60)}m ${maxDuration[selectedLongestDurationExercise] % 60}s`
+                    : `${maxDuration[selectedLongestDurationExercise]}s`}
+                </Text>
+              ) : (
+                <Text style={styles.emptyText}>No data for this exercise.</Text>
+              )}
+            </View>
+          )}
         </>
       )}
     </ScrollView>
