@@ -69,6 +69,10 @@ export default function WorkoutsScreen() {
     ]);
   };
 
+  const handleEdit = (workout: Workout) => {
+    router.push({ pathname: '/modal', params: { id: workout.id } });
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -97,7 +101,7 @@ export default function WorkoutsScreen() {
           data={workouts}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <WorkoutCard workout={item} onDelete={handleDelete} />
+            <WorkoutCard workout={item} onDelete={handleDelete} onEdit={handleEdit} />
           )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

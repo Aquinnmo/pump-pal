@@ -1,10 +1,9 @@
-import { Exercise } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { addDoc, collection, doc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -21,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddWorkoutModal() {
   const { user } = useAuth();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
   const [notes, setNotes] = useState('');
@@ -31,6 +31,39 @@ export default function AddWorkoutModal() {
     weight: string;
   }[]>([{ name: '', sets: 3, reps: 10, weight: '0' }]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(!!id);
+
+  useEffect(() => {
+    if (!id || !user) return;
+
+    const fetchWorkout = async () => {
+      try {
+        const docRef = doc(db, 'users', user.uid, 'workouts', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setWorkoutName(data.name || '');
+          setNotes(data.notes || '');
+          if (data.exercises && data.exercises.length > 0) {
+            setExercises(
+              data.exercises.map((ex: any) => ({
+                name: ex.name || '',
+                sets: ex.sets || 0,
+                reps: ex.reps || 0,
+                weight: String(ex.weight || 0),
+              }))
+            );
+          }
+        }
+      } catch (err) {
+        Alert.alert('Error', 'Could not load workout details.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorkout();
+  }, [id, user]);
 
   const addExercise = () =>
     setExercises((prev) => [...prev, { name: '', sets: 3, reps: 10, weight: '0' }]);
@@ -79,12 +112,20 @@ export default function AddWorkoutModal() {
           weight: Number(ex.weight) || 0,
         }));
 
-      await addDoc(collection(db, 'users', user.uid, 'workouts'), {
-        name: workoutName.trim(),
-        date: Timestamp.now(),
-        exercises: filteredExercises,
-        notes: notes.trim(),
-      });
+      if (id) {
+        await updateDoc(doc(db, 'users', user.uid, 'workouts', id), {
+          name: workoutName.trim(),
+          exercises: filteredExercises,
+          notes: notes.trim(),
+        });
+      } else {
+        await addDoc(collection(db, 'users', user.uid, 'workouts'), {
+          name: workoutName.trim(),
+          date: Timestamp.now(),
+          exercises: filteredExercises,
+          notes: notes.trim(),
+        });
+      }
       router.back();
     } catch (err: any) {
       Alert.alert('Error', 'Could not save workout. ' + err.message);
@@ -101,8 +142,8 @@ export default function AddWorkoutModal() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Log Workout</Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving}>
+        <Text style={styles.headerTitle}>{id ? 'Edit Workout' : 'Log Workout'}</Text>
+        <TouchableOpacity onPress={handleSave} disabled={saving || loading}>
           {saving ? (
             <ActivityIndicator color="#e54242" />
           ) : (
@@ -111,14 +152,19 @@ export default function AddWorkoutModal() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <TextInput
-          style={styles.input}
-          placeholder="Workout name (e.g. Push Day)"
-          placeholderTextColor="#555"
-          value={workoutName}
-          onChangeText={setWorkoutName}
-        />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator color="#e54242" size="large" />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+          <TextInput
+            style={styles.input}
+            placeholder="Workout name (e.g. Push Day)"
+            placeholderTextColor="#555"
+            value={workoutName}
+            onChangeText={setWorkoutName}
+          />
 
         <Text style={styles.sectionLabel}>Exercises</Text>
 
@@ -200,6 +246,7 @@ export default function AddWorkoutModal() {
           onChangeText={setNotes}
         />
       </ScrollView>
+      )}
     </KeyboardAvoidingView>
   );
 }
@@ -208,6 +255,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f0f0f',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
