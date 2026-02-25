@@ -16,6 +16,7 @@ import {
     ActivityIndicator,
     Alert,
     FlatList,
+    Platform,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -52,6 +53,17 @@ export default function WorkoutsScreen() {
   );
 
   const handleDelete = async (id: string) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to delete this workout?')) {
+        try {
+          await deleteDoc(doc(db, 'users', user!.uid, 'workouts', id));
+          setWorkouts((prev) => prev.filter((w) => w.id !== id));
+        } catch {
+          window.alert('Could not delete workout.');
+        }
+      }
+      return;
+    }
     Alert.alert('Delete Workout', 'Are you sure you want to delete this workout?', [
       { text: 'Cancel', style: 'cancel' },
       {

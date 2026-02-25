@@ -1,5 +1,6 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -7,7 +8,6 @@ import { addDoc, collection, doc, getDoc, Timestamp, updateDoc } from 'firebase/
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -74,7 +74,7 @@ export default function AddWorkoutModal() {
           }
         }
       } catch (err) {
-        Alert.alert('Error', 'Could not load workout details.');
+        showAlert('Error', 'Could not load workout details.');
       } finally {
         setLoading(false);
       }
@@ -123,7 +123,7 @@ export default function AddWorkoutModal() {
 
   const handleSave = async () => {
     if (!workoutName.trim()) {
-      Alert.alert('Error', 'Please enter a workout name.');
+      showAlert('Error', 'Please enter a workout name.');
       return;
     }
     if (!user) return;
@@ -159,7 +159,7 @@ export default function AddWorkoutModal() {
       }
       router.back();
     } catch (err: any) {
-      Alert.alert('Error', 'Could not save workout. ' + err.message);
+      showAlert('Error', 'Could not save workout. ' + err.message);
     } finally {
       setSaving(false);
     }

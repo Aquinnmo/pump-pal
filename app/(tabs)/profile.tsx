@@ -3,6 +3,7 @@ import { Toast } from '@/components/ui/toast';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
+import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -82,7 +83,7 @@ export default function ProfileScreen() {
     const trimmedCustom = customSplit.trim();
 
     if (selectedSplit === 'Other' && !trimmedCustom) {
-      Alert.alert('Missing split', 'Please describe your split in the text box.');
+      showAlert('Missing split', 'Please describe your split in the text box.');
       return;
     }
 

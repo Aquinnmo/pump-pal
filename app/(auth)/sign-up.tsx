@@ -1,9 +1,9 @@
 import { useAuth } from '@/context/auth-context';
+import { showAlert } from '@/utils/alert';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -22,11 +22,11 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      showAlert('Error', 'Please fill in all fields.');
       return;
     }
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters.');
+      showAlert('Error', 'Password must be at least 6 characters.');
       return;
     }
     setLoading(true);
@@ -34,7 +34,7 @@ export default function SignUpScreen() {
       await signUp(email.trim(), password, name.trim());
       router.replace('/set-split');
     } catch (err: any) {
-      Alert.alert('Sign Up Failed', err.message ?? 'Something went wrong.');
+      showAlert('Sign Up Failed', err.message ?? 'Something went wrong.');
     } finally {
       setLoading(false);
     }
