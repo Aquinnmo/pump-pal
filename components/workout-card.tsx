@@ -54,7 +54,7 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
             <View key={i} style={styles.exerciseRow}>
               <Text style={styles.exerciseName}>{ex.name}</Text>
               <Text style={styles.exerciseDetail}>
-                {ex.sets} × {ex.reps} {ex.weight > 0 ? `@ ${ex.weight} lbs` : ''}
+                {ex.sets} × {ex.reps} {ex.weight > 0 ? `@ ${ex.weight} lbs` : '@ Bodyweight'}
               </Text>
             </View>
           ))}

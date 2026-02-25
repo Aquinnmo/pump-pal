@@ -24,22 +24,25 @@ export default function AddWorkoutModal() {
   const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
   const [notes, setNotes] = useState('');
-  const [exercises, setExercises] = useState<Exercise[]>([
-    { name: '', sets: 3, reps: 10, weight: 0 },
-  ]);
+  const [exercises, setExercises] = useState<{
+    name: string;
+    sets: number;
+    reps: number;
+    weight: string;
+  }[]>([{ name: '', sets: 3, reps: 10, weight: '0' }]);
   const [saving, setSaving] = useState(false);
 
   const addExercise = () =>
-    setExercises((prev) => [...prev, { name: '', sets: 3, reps: 10, weight: 0 }]);
+    setExercises((prev) => [...prev, { name: '', sets: 3, reps: 10, weight: '0' }]);
 
   const removeExercise = (i: number) =>
     setExercises((prev) => prev.filter((_, idx) => idx !== i));
 
-  const updateExercise = (i: number, field: keyof Exercise, value: string) =>
+  const updateExercise = (i: number, field: string, value: string) =>
     setExercises((prev) =>
       prev.map((ex, idx) =>
         idx === i
-          ? { ...ex, [field]: field === 'name' ? value : Number(value) || 0 }
+          ? { ...ex, [field]: field === 'name' || field === 'weight' ? value : Number(value) || 0 }
           : ex
       )
     );
@@ -69,10 +72,17 @@ export default function AddWorkoutModal() {
 
     setSaving(true);
     try {
+      const filteredExercises = exercises
+        .filter((ex) => ex.name.trim() !== '')
+        .map((ex) => ({
+          ...ex,
+          weight: Number(ex.weight) || 0,
+        }));
+
       await addDoc(collection(db, 'users', user.uid, 'workouts'), {
         name: workoutName.trim(),
         date: Timestamp.now(),
-        exercises: exercises.filter((ex) => ex.name.trim() !== ''),
+        exercises: filteredExercises,
         notes: notes.trim(),
       });
       router.back();
@@ -158,9 +168,16 @@ export default function AddWorkoutModal() {
                 <Text style={styles.numLabel}>Weight (lbs)</Text>
                 <View style={styles.weightInputContainer}>
                   <TextInput
-                    style={[styles.numInput, styles.weightInput]}
+                    style={[
+                      styles.numInput,
+                      styles.weightInput,
+                      (ex.weight === '0' || ex.weight === '') && { color: '#888', fontSize: 12 },
+                    ]}
                     keyboardType="decimal-pad"
-                    value={String(ex.weight)}
+                    placeholder="Bodyweight"
+                    placeholderTextColor="#888"
+                    caretHidden={ex.weight === '0' || ex.weight === ''}
+                    value={ex.weight === '0' ? '' : ex.weight}
                     onChangeText={(v) => updateExercise(i, 'weight', v)}
                   />
                 </View>
