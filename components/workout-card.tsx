@@ -3,10 +3,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export interface Exercise {
   name: string;
+  exerciseType?: 'Sets of Reps' | 'Sets of Duration';
   sets: number;
   reps: number;
   weight: number;
   bodyweight?: boolean;
+  durationMinutes?: number;
+  durationSeconds?: number;
 }
 
 export interface Workout {
@@ -64,7 +67,9 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
             <View key={i} style={styles.exerciseRow}>
               <Text style={styles.exerciseName}>{ex.name}</Text>
               <Text style={styles.exerciseDetail}>
-                {ex.sets} × {ex.reps} {!ex.bodyweight && `@ ${ex.weight} lbs`}
+                {ex.exerciseType === 'Sets of Duration'
+                  ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
+                  : `${ex.sets} × ${ex.reps}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
               </Text>
             </View>
           ))}
