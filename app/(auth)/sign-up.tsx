@@ -32,7 +32,7 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       await signUp(email.trim(), password, name.trim());
-      router.replace('/(tabs)');
+      router.replace('/set-split');
     } catch (err: any) {
       Alert.alert('Sign Up Failed', err.message ?? 'Something went wrong.');
     } finally {

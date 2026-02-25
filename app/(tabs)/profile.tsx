@@ -1,10 +1,52 @@
+import { db } from '@/config/firebase';
+import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 export default function ProfileScreen() {
   const { user, logOut } = useAuth();
+  const [selectedSplit, setSelectedSplit] = useState<SplitOption>('Push / Pull / Legs');
+  const [customSplit, setCustomSplit] = useState('');
+  const [loadingSplit, setLoadingSplit] = useState(true);
+  const [savingSplit, setSavingSplit] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const loadSplit = async () => {
+      setLoadingSplit(true);
+      try {
+        const snapshot = await getDoc(doc(db, 'users', user.uid));
+        const split = snapshot.data()?.workoutSplit;
+
+        if (isSplitOption(split?.type)) {
+          setSelectedSplit(split.type);
+        }
+
+        if (typeof split?.custom === 'string') {
+          setCustomSplit(split.custom);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingSplit(false);
+      }
+    };
+
+    loadSplit();
+  }, [user]);
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -18,6 +60,57 @@ export default function ProfileScreen() {
         },
       },
     ]);
+  };
+
+  const handleSelectSplit = () => {
+    Alert.alert(
+      'Select Your Split',
+      undefined,
+      [
+        ...SPLIT_OPTIONS.map((option) => ({
+          text: option,
+          onPress: () => {
+            setSelectedSplit(option);
+            if (option !== 'Other') {
+              setCustomSplit('');
+            }
+          },
+        })),
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
+  const handleSaveSplit = async () => {
+    if (!user) return;
+
+    const trimmedCustom = customSplit.trim();
+
+    if (selectedSplit === 'Other' && !trimmedCustom) {
+      Alert.alert('Missing split', 'Please describe your split in the text box.');
+      return;
+    }
+
+    setSavingSplit(true);
+    try {
+      await setDoc(
+        doc(db, 'users', user.uid),
+        {
+          workoutSplit: {
+            type: selectedSplit,
+            custom: selectedSplit === 'Other' ? trimmedCustom : null,
+            updatedAt: serverTimestamp(),
+          },
+        },
+        { merge: true }
+      );
+      Alert.alert('Saved', 'Your workout split has been updated.');
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Could not save your split. Please try again.');
+    } finally {
+      setSavingSplit(false);
+    }
   };
 
   const initial = user?.displayName?.[0]?.toUpperCase() ?? '?';
@@ -39,6 +132,39 @@ export default function ProfileScreen() {
           <Ionicons name="barbell-outline" size={20} color="#e54242" style={styles.rowIcon} />
           <Text style={styles.rowLabel}>My Workouts</Text>
           <Ionicons name="chevron-forward" size={18} color="#555" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}> 
+        <View style={styles.splitHeader}>
+          <Text style={styles.splitTitle}>Workout Split</Text>
+          {loadingSplit ? <ActivityIndicator size="small" color="#e54242" /> : null}
+        </View>
+
+        <TouchableOpacity style={styles.dropdownRow} onPress={handleSelectSplit}>
+          <Text style={styles.dropdownText}>{selectedSplit}</Text>
+          <Ionicons name="chevron-down" size={18} color="#888" />
+        </TouchableOpacity>
+
+        {selectedSplit === 'Other' && (
+          <TextInput
+            style={styles.customInput}
+            placeholder="Describe your split"
+            placeholderTextColor="#777"
+            value={customSplit}
+            onChangeText={setCustomSplit}
+          />
+        )}
+
+        <TouchableOpacity
+          style={[styles.saveButton, savingSplit && styles.saveButtonDisabled]}
+          onPress={handleSaveSplit}
+          disabled={savingSplit || loadingSplit}>
+          {savingSplit ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Split</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -112,6 +238,65 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#fff',
+  },
+  splitHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
+  splitTitle: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  dropdownRow: {
+    marginTop: 10,
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2e2e2e',
+    backgroundColor: '#151515',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dropdownText: {
+    color: '#ddd',
+    fontSize: 14,
+  },
+  customInput: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2e2e2e',
+    backgroundColor: '#151515',
+    color: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+  },
+  saveButton: {
+    marginHorizontal: 16,
+    marginBottom: 14,
+    borderRadius: 10,
+    backgroundColor: '#e54242',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 11,
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
   },
   signOutButton: {
     flexDirection: 'row',

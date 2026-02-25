@@ -61,7 +61,7 @@ export default function WorkoutsScreen() {
           try {
             await deleteDoc(doc(db, 'users', user!.uid, 'workouts', id));
             setWorkouts((prev) => prev.filter((w) => w.id !== id));
-          } catch (err) {
+          } catch {
             Alert.alert('Error', 'Could not delete workout.');
           }
         },

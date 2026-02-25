@@ -17,9 +17,11 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddWorkoutModal() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
   const [notes, setNotes] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([
@@ -69,7 +71,7 @@ export default function AddWorkoutModal() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
@@ -171,7 +173,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#1e1e1e',
