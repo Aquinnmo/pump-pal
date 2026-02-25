@@ -1,11 +1,13 @@
 import { Dropdown } from '@/components/ui/dropdown';
 import { db } from '@/config/firebase';
+import { isSplitOption } from '@/constants/split-options';
+import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { addDoc, collection, doc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -25,6 +27,9 @@ export default function AddWorkoutModal() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
+  const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
+  const [customWorkoutName, setCustomWorkoutName] = useState('');
+  const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
   const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
@@ -45,6 +50,27 @@ export default function AddWorkoutModal() {
   const [isToday, setIsToday] = useState(true);
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Fetch user's split + custom workout names to build the name dropdown
+  useEffect(() => {
+    if (!user) return;
+    const loadNameOptions = async () => {
+      try {
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const data = userSnap.data();
+        const splitType = data?.workoutSplit?.type;
+        const splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
+        const customNames: string[] = Array.isArray(data?.customWorkoutNames) ? data.customWorkoutNames : [];
+        // Merge: split names first, then any custom names not already in the list
+        const merged = [...splitNames];
+        customNames.forEach((n) => { if (!merged.includes(n)) merged.push(n); });
+        setWorkoutNameOptions(merged);
+      } catch {
+        // silently fail — user can still type a name
+      }
+    };
+    loadNameOptions();
+  }, [user]);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -94,6 +120,22 @@ export default function AddWorkoutModal() {
     fetchWorkout();
   }, [id, user]);
 
+  // When editing a workout, once both the workout name and name options are available,
+  // determine whether the loaded name is a known option or a custom one.
+  // We use a ref to ensure resolution only happens once per edit session.
+  const editNameResolved = React.useRef(false);
+  useEffect(() => {
+    if (!id || editNameResolved.current || !workoutName || workoutNameOptions.length === 0) return;
+    editNameResolved.current = true;
+    if (!workoutNameOptions.includes(workoutName)) {
+      setIsCustomWorkoutName(true);
+      setCustomWorkoutName(workoutName);
+      setWorkoutName('Other');
+    } else {
+      setIsCustomWorkoutName(false);
+    }
+  }, [id, workoutName, workoutNameOptions]);
+
   const addExercise = () =>
     setExercises((prev) => [...prev, { name: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
 
@@ -135,8 +177,9 @@ export default function AddWorkoutModal() {
   };
 
   const handleSave = async () => {
-    if (!workoutName.trim()) {
-      showAlert('Error', 'Please enter a workout name.');
+    const finalName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
+    if (!finalName) {
+      showAlert('Error', 'Please select or enter a workout name.');
       return;
     }
     if (!user) return;
@@ -164,16 +207,23 @@ export default function AddWorkoutModal() {
 
       const finalDate = isToday ? new Date() : workoutDate;
 
+      // If a custom name was entered, persist it to the user doc so it appears in future dropdowns
+      if (isCustomWorkoutName && finalName && !workoutNameOptions.includes(finalName)) {
+        await updateDoc(doc(db, 'users', user.uid), {
+          customWorkoutNames: arrayUnion(finalName),
+        });
+      }
+
       if (id) {
         await updateDoc(doc(db, 'users', user.uid, 'workouts', id), {
-          name: workoutName.trim(),
+          name: finalName,
           date: Timestamp.fromDate(finalDate),
           exercises: filteredExercises,
           notes: notes.trim(),
         });
       } else {
         await addDoc(collection(db, 'users', user.uid, 'workouts'), {
-          name: workoutName.trim(),
+          name: finalName,
           date: Timestamp.fromDate(finalDate),
           exercises: filteredExercises,
           notes: notes.trim(),
@@ -211,13 +261,46 @@ export default function AddWorkoutModal() {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-          <TextInput
-            style={styles.input}
-            placeholder="Workout name (e.g. Push Day)"
-            placeholderTextColor="#555"
-            value={workoutName}
-            onChangeText={setWorkoutName}
-          />
+          {workoutNameOptions.length > 0 ? (
+            <>
+              <Dropdown
+                options={[...workoutNameOptions, 'Other']}
+                value={isCustomWorkoutName ? 'Other' : (workoutName || null)}
+                onSelect={(v) => {
+                  if (v === 'Other') {
+                    setIsCustomWorkoutName(true);
+                    setWorkoutName('Other');
+                  } else {
+                    setIsCustomWorkoutName(false);
+                    setWorkoutName(v);
+                    setCustomWorkoutName('');
+                  }
+                }}
+                placeholder="Select workout name"
+                style={styles.nameDropdown}
+              />
+              {isCustomWorkoutName && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter workout name"
+                  placeholderTextColor="#555"
+                  value={customWorkoutName}
+                  onChangeText={setCustomWorkoutName}
+                />
+              )}
+            </>
+          ) : (
+            <TextInput
+              style={styles.input}
+              placeholder="Workout name (e.g. Push Day)"
+              placeholderTextColor="#555"
+              value={isCustomWorkoutName ? customWorkoutName : workoutName}
+              onChangeText={(v) => {
+                setIsCustomWorkoutName(true);
+                setCustomWorkoutName(v);
+              }}
+            />
+          )}
 
           <View style={styles.dateSection}>
             <TouchableOpacity 
@@ -725,5 +808,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  nameDropdown: {
+    marginBottom: 12,
   },
 });
