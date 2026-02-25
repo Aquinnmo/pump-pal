@@ -47,6 +47,10 @@ export default function HomeScreen() {
     return 'Good evening';
   };
 
+  const handleEdit = (workout: Workout) => {
+    router.push({ pathname: '/modal', params: { id: workout.id } });
+  };
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -79,7 +83,7 @@ export default function HomeScreen() {
         <FlatList
           data={recentWorkouts}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <WorkoutCard workout={item} />}
+          renderItem={({ item }) => <WorkoutCard workout={item} onEdit={handleEdit} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         />

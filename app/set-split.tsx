@@ -1,7 +1,7 @@
+import { Dropdown } from '@/components/ui/dropdown';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
@@ -20,25 +20,6 @@ export default function SetSplitScreen() {
   const [selectedSplit, setSelectedSplit] = useState<SplitOption>('Push / Pull / Legs');
   const [customSplit, setCustomSplit] = useState('');
   const [saving, setSaving] = useState(false);
-
-  const handleSelectSplit = () => {
-    Alert.alert(
-      'Select Your Split',
-      undefined,
-      [
-        ...SPLIT_OPTIONS.map((option) => ({
-          text: option,
-          onPress: () => {
-            setSelectedSplit(option);
-            if (option !== 'Other') {
-              setCustomSplit('');
-            }
-          },
-        })),
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
 
   const handleContinue = async () => {
     if (!user) return;
@@ -78,10 +59,15 @@ export default function SetSplitScreen() {
         <Text style={styles.title}>Set Your Split</Text>
         <Text style={styles.subtitle}>Choose your typical workout split to personalize PumpPal.</Text>
 
-        <TouchableOpacity style={styles.dropdownRow} onPress={handleSelectSplit}>
-          <Text style={styles.dropdownText}>{selectedSplit}</Text>
-          <Ionicons name="chevron-down" size={18} color="#888" />
-        </TouchableOpacity>
+        <Dropdown
+          options={SPLIT_OPTIONS}
+          value={selectedSplit}
+          onSelect={(val) => {
+            setSelectedSplit(val as SplitOption);
+            if (val !== 'Other') setCustomSplit('');
+          }}
+          placeholder="Select Your Split"
+        />
 
         {selectedSplit === 'Other' && (
           <TextInput
@@ -127,21 +113,6 @@ const styles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
     marginBottom: 10,
-  },
-  dropdownRow: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    backgroundColor: '#151515',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dropdownText: {
-    color: '#ddd',
-    fontSize: 15,
   },
   customInput: {
     borderRadius: 12,

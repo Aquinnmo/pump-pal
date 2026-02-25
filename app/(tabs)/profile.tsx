@@ -1,3 +1,5 @@
+import { Dropdown } from '@/components/ui/dropdown';
+import { Toast } from '@/components/ui/toast';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
@@ -21,6 +23,11 @@ export default function ProfileScreen() {
   const [customSplit, setCustomSplit] = useState('');
   const [loadingSplit, setLoadingSplit] = useState(true);
   const [savingSplit, setSavingSplit] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -62,25 +69,6 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleSelectSplit = () => {
-    Alert.alert(
-      'Select Your Split',
-      undefined,
-      [
-        ...SPLIT_OPTIONS.map((option) => ({
-          text: option,
-          onPress: () => {
-            setSelectedSplit(option);
-            if (option !== 'Other') {
-              setCustomSplit('');
-            }
-          },
-        })),
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
-
   const handleSaveSplit = async () => {
     if (!user) return;
 
@@ -104,10 +92,10 @@ export default function ProfileScreen() {
         },
         { merge: true }
       );
-      Alert.alert('Saved', 'Your workout split has been updated.');
+      setToast({ visible: true, message: 'Workout split updated', type: 'success' });
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Could not save your split. Please try again.');
+      setToast({ visible: true, message: 'Could not save split', type: 'error' });
     } finally {
       setSavingSplit(false);
     }
@@ -117,6 +105,13 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
+
       <Text style={styles.title}>Profile</Text>
 
       <View style={styles.avatarContainer}>
@@ -141,10 +136,16 @@ export default function ProfileScreen() {
           {loadingSplit ? <ActivityIndicator size="small" color="#e54242" /> : null}
         </View>
 
-        <TouchableOpacity style={styles.dropdownRow} onPress={handleSelectSplit}>
-          <Text style={styles.dropdownText}>{selectedSplit}</Text>
-          <Ionicons name="chevron-down" size={18} color="#888" />
-        </TouchableOpacity>
+        <Dropdown
+          options={SPLIT_OPTIONS}
+          value={selectedSplit}
+          onSelect={(val) => {
+            setSelectedSplit(val as SplitOption);
+            if (val !== 'Other') setCustomSplit('');
+          }}
+          placeholder="Select Your Split"
+          style={styles.dropdownRow}
+        />
 
         {selectedSplit === 'Other' && (
           <TextInput
@@ -255,19 +256,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 16,
     marginBottom: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    backgroundColor: '#151515',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dropdownText: {
-    color: '#ddd',
-    fontSize: 14,
   },
   customInput: {
     marginHorizontal: 16,

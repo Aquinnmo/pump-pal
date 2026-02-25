@@ -6,6 +6,7 @@ export interface Exercise {
   sets: number;
   reps: number;
   weight: number;
+  bodyweight?: boolean;
 }
 
 export interface Workout {
@@ -19,6 +20,7 @@ export interface Workout {
 interface WorkoutCardProps {
   workout: Workout;
   onDelete?: (id: string) => void;
+  onEdit?: (workout: Workout) => void;
 }
 
 function getDate(date: Workout['date']): Date {
@@ -26,7 +28,7 @@ function getDate(date: Workout['date']): Date {
   return new Date(date.seconds * 1000);
 }
 
-export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
+export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   const date = getDate(workout.date);
   const dateStr = date.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -41,11 +43,19 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
           <Text style={styles.name}>{workout.name}</Text>
           <Text style={styles.date}>{dateStr}</Text>
         </View>
-        {onDelete && (
-          <TouchableOpacity onPress={() => onDelete(workout.id)} hitSlop={8}>
-            <Ionicons name="trash-outline" size={18} color="#666" />
-          </TouchableOpacity>
-        )}
+        <View style={styles.headerRight}>
+          {onEdit && (
+            <TouchableOpacity onPress={() => onEdit(workout)} hitSlop={8} style={styles.editButton}>
+              <Text style={styles.editText}>Edit</Text>
+              <Ionicons name="pencil-outline" size={16} color="#666" />
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity onPress={() => onDelete(workout.id)} hitSlop={8} style={styles.actionButton}>
+              <Ionicons name="trash-outline" size={22} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {workout.exercises.length > 0 && (
@@ -54,7 +64,7 @@ export function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
             <View key={i} style={styles.exerciseRow}>
               <Text style={styles.exerciseName}>{ex.name}</Text>
               <Text style={styles.exerciseDetail}>
-                {ex.sets} × {ex.reps} {ex.weight > 0 ? `@ ${ex.weight} lbs` : ''}
+                {ex.sets} × {ex.reps} {!ex.bodyweight && `@ ${ex.weight} lbs`}
               </Text>
             </View>
           ))}
@@ -83,6 +93,25 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  actionButton: {
+    padding: 6,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 6,
+  },
+  editText: {
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '600',
   },
   name: {
     fontSize: 17,
