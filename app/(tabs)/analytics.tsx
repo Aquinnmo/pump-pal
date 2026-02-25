@@ -1,3 +1,4 @@
+import { Dropdown } from '@/components/ui/dropdown';
 import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
@@ -22,6 +23,7 @@ export default function AnalyticsScreen() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+  const [selectedMaxExercise, setSelectedMaxExercise] = useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) return;
@@ -128,7 +130,10 @@ export default function AnalyticsScreen() {
     if (!selectedExercise && favoriteExercise) {
       setSelectedExercise(favoriteExercise);
     }
-  }, [favoriteExercise, selectedExercise]);
+    if (!selectedMaxExercise && favoriteExercise) {
+      setSelectedMaxExercise(favoriteExercise);
+    }
+  }, [favoriteExercise, selectedExercise, selectedMaxExercise]);
 
   if (loading) {
     return (
@@ -202,15 +207,22 @@ export default function AnalyticsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Max Weights</Text>
-            {Object.entries(maxWeights)
-              .sort((a, b) => b[1] - a[1])
-              .map(([name, weight]) => (
-                <View key={name} style={styles.maxWeightRow}>
-                  <Text style={styles.maxWeightName}>{name}</Text>
-                  <Text style={styles.maxWeightValue}>{weight} lbs</Text>
-                </View>
-              ))}
+            <Text style={styles.cardTitle}>Max Weight</Text>
+            <Text style={styles.cardSubtitle}>Highest weight lifted</Text>
+
+            <Dropdown
+              options={allExercises}
+              value={selectedMaxExercise}
+              onSelect={setSelectedMaxExercise}
+              placeholder="Select an exercise"
+              style={styles.dropdownRow}
+            />
+
+            {selectedMaxExercise && maxWeights[selectedMaxExercise] !== undefined ? (
+              <Text style={styles.cardValue}>{maxWeights[selectedMaxExercise]} lbs</Text>
+            ) : (
+              <Text style={styles.emptyText}>No data for this exercise.</Text>
+            )}
           </View>
         </>
       )}
@@ -299,20 +311,7 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     borderRadius: 16,
   },
-  maxWeightRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
-  },
-  maxWeightName: {
-    color: '#ccc',
-    fontSize: 15,
-  },
-  maxWeightValue: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
+  dropdownRow: {
+    marginBottom: 12,
   },
 });

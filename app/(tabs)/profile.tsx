@@ -1,3 +1,4 @@
+import { Dropdown } from '@/components/ui/dropdown';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
@@ -62,25 +63,6 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleSelectSplit = () => {
-    Alert.alert(
-      'Select Your Split',
-      undefined,
-      [
-        ...SPLIT_OPTIONS.map((option) => ({
-          text: option,
-          onPress: () => {
-            setSelectedSplit(option);
-            if (option !== 'Other') {
-              setCustomSplit('');
-            }
-          },
-        })),
-        { text: 'Cancel', style: 'cancel' },
-      ]
-    );
-  };
-
   const handleSaveSplit = async () => {
     if (!user) return;
 
@@ -141,10 +123,16 @@ export default function ProfileScreen() {
           {loadingSplit ? <ActivityIndicator size="small" color="#e54242" /> : null}
         </View>
 
-        <TouchableOpacity style={styles.dropdownRow} onPress={handleSelectSplit}>
-          <Text style={styles.dropdownText}>{selectedSplit}</Text>
-          <Ionicons name="chevron-down" size={18} color="#888" />
-        </TouchableOpacity>
+        <Dropdown
+          options={SPLIT_OPTIONS}
+          value={selectedSplit}
+          onSelect={(val) => {
+            setSelectedSplit(val as SplitOption);
+            if (val !== 'Other') setCustomSplit('');
+          }}
+          placeholder="Select Your Split"
+          style={styles.dropdownRow}
+        />
 
         {selectedSplit === 'Other' && (
           <TextInput
@@ -255,19 +243,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginHorizontal: 16,
     marginBottom: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    backgroundColor: '#151515',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  dropdownText: {
-    color: '#ddd',
-    fontSize: 14,
   },
   customInput: {
     marginHorizontal: 16,
