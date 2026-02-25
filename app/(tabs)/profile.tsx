@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Platform,
     StyleSheet,
     Text,
     TextInput,
@@ -56,6 +57,12 @@ export default function ProfileScreen() {
   }, [user]);
 
   const handleSignOut = () => {
+    if (Platform.OS === 'web') {
+      if (window.confirm('Are you sure you want to sign out?')) {
+        logOut().then(() => router.replace('/(auth)/sign-in'));
+      }
+      return;
+    }
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
       {
