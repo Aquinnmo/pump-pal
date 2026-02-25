@@ -5,46 +5,68 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import {
     collection,
+    deleteDoc,
+    doc,
     getDocs,
-    limit,
     orderBy,
     query,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
-export default function HomeScreen() {
+export default function WorkoutsScreen() {
   const { user } = useAuth();
-  const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const fetchWorkouts = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, 'users', user.uid, 'workouts'),
+        orderBy('date', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      setWorkouts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!user) return;
-      (async () => {
-        setLoading(true);
-        try {
-          const q = query(
-            collection(db, 'users', user.uid, 'workouts'),
-            orderBy('date', 'desc'),
-            limit(3)
-          );
-          const snapshot = await getDocs(q);
-          setRecentWorkouts(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout)));
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLoading(false);
-        }
-      })();
-    }, [user])
+      fetchWorkouts();
+    }, [fetchWorkouts])
   );
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+  const handleDelete = async (id: string) => {
+    Alert.alert('Delete Workout', 'Are you sure you want to delete this workout?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteDoc(doc(db, 'users', user!.uid, 'workouts', id));
+            setWorkouts((prev) => prev.filter((w) => w.id !== id));
+          } catch (err) {
+            Alert.alert('Error', 'Could not delete workout.');
+          }
+        },
+      },
+    ]);
   };
 
   if (loading) {
@@ -57,29 +79,26 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting()},</Text>
-          <Text style={styles.name}>{user?.displayName ?? 'Athlete'} 💪</Text>
-        </View>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Workouts</Text>
         <TouchableOpacity style={styles.addButton} onPress={() => router.push('/modal')}>
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Recent Workouts</Text>
-
-      {recentWorkouts.length === 0 ? (
+      {workouts.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="barbell-outline" size={56} color="#2a2a2a" />
+          <Ionicons name="barbell-outline" size={64} color="#333" />
           <Text style={styles.emptyTitle}>No workouts yet</Text>
-          <Text style={styles.emptySubtitle}>Tap + to log your first session</Text>
+          <Text style={styles.emptySubtitle}>Tap + to log your first workout</Text>
         </View>
       ) : (
         <FlatList
-          data={recentWorkouts}
+          data={workouts}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <WorkoutCard workout={item} />}
+          renderItem={({ item }) => (
+            <WorkoutCard workout={item} onDelete={handleDelete} />
+          )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         />
@@ -101,34 +120,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#0f0f0f',
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  greeting: {
-    fontSize: 15,
-    color: '#888',
-  },
-  name: {
-    fontSize: 24,
+  title: {
+    fontSize: 28,
     fontWeight: '800',
     color: '#fff',
   },
   addButton: {
     backgroundColor: '#e54242',
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 14,
   },
   list: {
     paddingBottom: 20,
@@ -140,7 +149,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     color: '#444',
   },
