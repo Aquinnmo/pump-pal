@@ -1,24 +1,27 @@
 import { Dropdown } from '@/components/ui/dropdown';
+import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
+import { suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -47,9 +50,25 @@ export default function AddWorkoutModal() {
   }[]>([{ name: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUsesLeft, setAiUsesLeft] = useState(3);
+  const [splitType, setSplitType] = useState<string>('');
+  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
   const [isToday, setIsToday] = useState(true);
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Load today's AI suggestion usage count
+  useEffect(() => {
+    if (!user) return;
+    const key = `ai_suggest_uses_${user.uid}`;
+    AsyncStorage.getItem(key).then((raw) => {
+      if (!raw) return;
+      const cached: { date: string; count: number } = JSON.parse(raw);
+      const today = new Date().toISOString().slice(0, 10);
+      if (cached.date === today) setAiUsesLeft(3 - cached.count);
+    });
+  }, [user]);
 
   // Fetch user's split + names used in past workouts to build the name dropdown
   useEffect(() => {
@@ -66,10 +85,14 @@ export default function AddWorkoutModal() {
           query(collection(db, 'users', user.uid, 'workouts'), orderBy('date', 'desc'))
         );
         const usedNames = new Set<string>();
+        const historyData: Workout[] = [];
         workoutsSnap.docs.forEach((d) => {
-          const name = d.data().name;
-          if (name) usedNames.add(name);
+          const data = d.data();
+          if (data.name) usedNames.add(data.name);
+          historyData.push({ id: d.id, ...data } as Workout);
         });
+        setWorkoutHistory(historyData);
+        setSplitType(splitType ?? '');
 
         // Merge: split names first, then any used names not already in the split list
         const merged = [...splitNames];
@@ -184,6 +207,43 @@ export default function AddWorkoutModal() {
         idx === i ? { ...ex, [field]: Math.max(0, ex[field] - 1) } : ex
       )
     );
+  };
+
+  const handleAISuggest = async () => {
+    if (!user || aiUsesLeft <= 0) return;
+    const finalName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
+    setAiLoading(true);
+    try {
+      const suggested = await suggestWorkoutCompletion(
+        finalName,
+        splitType,
+        exercises,
+        workoutHistory
+      );
+
+      // Increment usage count
+      const key = `ai_suggest_uses_${user.uid}`;
+      const today = new Date().toISOString().slice(0, 10);
+      const raw = await AsyncStorage.getItem(key);
+      let newCount = 1;
+      if (raw) {
+        const cached: { date: string; count: number } = JSON.parse(raw);
+        newCount = cached.date === today ? cached.count + 1 : 1;
+      }
+      await AsyncStorage.setItem(key, JSON.stringify({ date: today, count: newCount }));
+      setAiUsesLeft(3 - newCount);
+
+      if (suggested.length === 0) {
+        showAlert('AI Suggestions', 'Your workout already looks well balanced!');
+        return;
+      }
+      setExercises((prev) => [...prev, ...suggested]);
+    } catch (e) {
+      console.error('AI workout suggestion failed:', e);
+      showAlert('Error', 'Could not get AI suggestions. Please try again.');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -547,6 +607,24 @@ export default function AddWorkoutModal() {
         />
 
         <TouchableOpacity
+          style={[styles.aiSuggestButton, (aiLoading || loading || aiUsesLeft <= 0) && styles.aiSuggestButtonDisabled]}
+          onPress={handleAISuggest}
+          disabled={aiLoading || loading || aiUsesLeft <= 0}
+          activeOpacity={0.8}
+        >
+          {aiLoading ? (
+            <ActivityIndicator color="#4ea8de" />
+          ) : (
+            <>
+              <Ionicons name="sparkles" size={16} color={aiUsesLeft <= 0 ? '#444' : '#4ea8de'} />
+              <Text style={[styles.aiSuggestButtonText, aiUsesLeft <= 0 && styles.aiSuggestButtonTextDisabled]}>
+                {aiUsesLeft > 0 ? `Balance Workout with AI (${aiUsesLeft} left)` : 'No AI uses left today'}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={[styles.bigSaveButton, (saving || loading) && styles.bigSaveButtonDisabled]}
           onPress={handleSave}
           disabled={saving || loading}
@@ -811,6 +889,32 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  aiSuggestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0d1e2e',
+    borderRadius: 14,
+    paddingVertical: 16,
+    marginTop: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#1a3a56',
+  },
+  aiSuggestButtonDisabled: {
+    backgroundColor: '#141414',
+    borderColor: '#2a2a2a',
+  },
+  aiSuggestButtonText: {
+    color: '#4ea8de',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  aiSuggestButtonTextDisabled: {
+    color: '#444',
   },
   nameDropdown: {
     marginBottom: 12,

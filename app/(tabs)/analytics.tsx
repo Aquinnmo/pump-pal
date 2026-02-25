@@ -1,3 +1,4 @@
+import { MuscleInsightCards } from '@/components/muscle-insight-cards';
 import { Dropdown } from '@/components/ui/dropdown';
 import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
@@ -203,6 +204,8 @@ export default function AnalyticsScreen() {
         </View>
       ) : (
         <>
+          <MuscleInsightCards workouts={workouts} />
+
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Favorite Exercise</Text>
             <Text style={styles.cardValue}>{favoriteExercise || 'N/A'}</Text>
