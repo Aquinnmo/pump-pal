@@ -6,13 +6,13 @@ import { useFocusEffect } from 'expo-router';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
@@ -72,7 +72,7 @@ export default function AnalyticsScreen() {
         // Max weight
         maxW[name] = Math.max(maxW[name] || 0, ex.weight);
 
-        // Streng-o-meter score (using Epley 1RM formula as a safe strength metric)
+        // Strength-o-meter score (using Epley 1RM formula as a safe strength metric)
         // Formula: weight * (1 + reps / 30)
         const score = ex.weight * (1 + ex.reps / 30);
 
@@ -159,7 +159,7 @@ export default function AnalyticsScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Streng-o-meter</Text>
+            <Text style={styles.cardTitle}>Strength-O-Meter</Text>
             <Text style={styles.cardSubtitle}>Estimated 1RM over time</Text>
 
             {allExercises.length > 0 && (

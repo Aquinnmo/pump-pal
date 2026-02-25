@@ -6,6 +6,7 @@ export interface Exercise {
   sets: number;
   reps: number;
   weight: number;
+  bodyweight?: boolean;
 }
 
 export interface Workout {
@@ -63,7 +64,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
             <View key={i} style={styles.exerciseRow}>
               <Text style={styles.exerciseName}>{ex.name}</Text>
               <Text style={styles.exerciseDetail}>
-                {ex.sets} × {ex.reps} {ex.weight > 0 ? `@ ${ex.weight} lbs` : '@ Bodyweight'}
+                {ex.sets} × {ex.reps} {!ex.bodyweight && `@ ${ex.weight} lbs`}
               </Text>
             </View>
           ))}
