@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/auth-context';
-import { showAlert } from '@/utils/alert';
+import { getFriendlyAuthError } from '@/utils/firebase-errors';
+import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -19,14 +20,16 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignUp = async () => {
+    setError(null);
     if (!name.trim() || !email.trim() || !password.trim()) {
-      showAlert('Error', 'Please fill in all fields.');
+      setError('Please fill in all fields.');
       return;
     }
     if (password.length < 6) {
-      showAlert('Error', 'Password must be at least 6 characters.');
+      setError('Password must be at least 6 characters.');
       return;
     }
     setLoading(true);
@@ -34,7 +37,7 @@ export default function SignUpScreen() {
       await signUp(email.trim(), password, name.trim());
       router.replace('/set-split');
     } catch (err: any) {
-      showAlert('Sign Up Failed', err.message ?? 'Something went wrong.');
+      setError(getFriendlyAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -47,6 +50,13 @@ export default function SignUpScreen() {
       <View style={styles.inner}>
         <Text style={styles.logo}>PumpPal</Text>
         <Text style={styles.subtitle}>Create your account</Text>
+
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={16} color="#f87171" style={{ marginRight: 8 }} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         <TextInput
           style={styles.input}
@@ -152,5 +162,21 @@ const styles = StyleSheet.create({
   linkBold: {
     color: '#e54242',
     fontWeight: '600',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a1515',
+    borderWidth: 1,
+    borderColor: '#5a2020',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#f87171',
+    fontSize: 13,
+    flex: 1,
   },
 });

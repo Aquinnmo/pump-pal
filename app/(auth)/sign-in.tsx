@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/auth-context';
-import { showAlert } from '@/utils/alert';
+import { getFriendlyAuthError } from '@/utils/firebase-errors';
+import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -18,10 +19,12 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
+    setError(null);
     if (!email.trim() || !password.trim()) {
-      showAlert('Error', 'Please fill in all fields.');
+      setError('Please fill in all fields.');
       return;
     }
     setLoading(true);
@@ -29,7 +32,7 @@ export default function SignInScreen() {
       await signIn(email.trim(), password);
       router.replace('/(tabs)');
     } catch (err: any) {
-      showAlert('Sign In Failed', err.message ?? 'Something went wrong.');
+      setError(getFriendlyAuthError(err));
     } finally {
       setLoading(false);
     }
@@ -42,6 +45,13 @@ export default function SignInScreen() {
       <View style={styles.inner}>
         <Text style={styles.logo}>PumpPal</Text>
         <Text style={styles.subtitle}>Your workout companion</Text>
+
+        {error && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={16} color="#f87171" style={{ marginRight: 8 }} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
         <TextInput
           style={styles.input}
@@ -139,5 +149,21 @@ const styles = StyleSheet.create({
   linkBold: {
     color: '#e54242',
     fontWeight: '600',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2a1515',
+    borderWidth: 1,
+    borderColor: '#5a2020',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: '#f87171',
+    fontSize: 13,
+    flex: 1,
   },
 });
