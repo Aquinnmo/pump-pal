@@ -4,18 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { addDoc, collection, doc, getDoc, Timestamp, updateDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -212,7 +212,25 @@ export default function AddWorkoutModal() {
             {!isToday && (
               <View style={styles.datePickerContainer}>
                 <Text style={styles.dateLabel}>Workout Date:</Text>
-                {Platform.OS === 'ios' ? (
+                {Platform.OS === 'web' ? (
+                  React.createElement('input', {
+                    type: 'date',
+                    value: workoutDate.toISOString().split('T')[0],
+                    onChange: (e: any) => {
+                      if (e.target.value) setWorkoutDate(new Date(e.target.value + 'T12:00:00'));
+                    },
+                    style: {
+                      background: '#2a2a2a',
+                      color: '#fff',
+                      border: '1px solid #3a3a3a',
+                      borderRadius: 6,
+                      padding: '6px 12px',
+                      fontSize: '15px',
+                      cursor: 'pointer',
+                      colorScheme: 'dark',
+                    },
+                  })
+                ) : Platform.OS === 'ios' ? (
                   <DateTimePicker
                     value={workoutDate}
                     mode="date"
