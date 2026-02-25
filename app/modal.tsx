@@ -1,3 +1,4 @@
+import { Dropdown } from '@/components/ui/dropdown';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
@@ -25,13 +26,20 @@ export default function AddWorkoutModal() {
   const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
   const [notes, setNotes] = useState('');
+
+  const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
+  type ExerciseType = typeof EXERCISE_TYPES[number];
+
   const [exercises, setExercises] = useState<{
     name: string;
+    exerciseType: ExerciseType;
     sets: number;
     reps: number;
+    durationMinutes: number;
+    durationSeconds: number;
     weight: string;
     bodyweight: boolean;
-  }[]>([{ name: '', sets: 3, reps: 10, weight: '', bodyweight: false }]);
+  }[]>([{ name: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
   const [isToday, setIsToday] = useState(true);
@@ -65,8 +73,11 @@ export default function AddWorkoutModal() {
             setExercises(
               data.exercises.map((ex: any) => ({
                 name: ex.name || '',
+                exerciseType: ex.exerciseType || 'Sets of Reps',
                 sets: ex.sets || 0,
                 reps: ex.reps || 0,
+                durationMinutes: ex.durationMinutes || 0,
+                durationSeconds: ex.durationSeconds || 0,
                 weight: ex.bodyweight ? '' : String(ex.weight || ''),
                 bodyweight: ex.bodyweight || false,
               }))
@@ -84,7 +95,7 @@ export default function AddWorkoutModal() {
   }, [id, user]);
 
   const addExercise = () =>
-    setExercises((prev) => [...prev, { name: '', sets: 3, reps: 10, weight: '', bodyweight: false }]);
+    setExercises((prev) => [...prev, { name: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -100,20 +111,22 @@ export default function AddWorkoutModal() {
     setExercises((prev) =>
       prev.map((ex, idx) =>
         idx === i
-          ? { ...ex, [field]: field === 'name' || field === 'weight' ? value : Number(value) || 0 }
+          ? { ...ex, [field]: ['name', 'weight', 'exerciseType'].includes(field) ? value : Number(value) || 0 }
           : ex
       )
     );
 
-  const increment = (i: number, field: 'sets' | 'reps') => {
+  const increment = (i: number, field: 'sets' | 'reps' | 'durationMinutes' | 'durationSeconds') => {
     setExercises((prev) =>
-      prev.map((ex, idx) =>
-        idx === i ? { ...ex, [field]: ex[field] + 1 } : ex
-      )
+      prev.map((ex, idx) => {
+        if (idx !== i) return ex;
+        const maxVal = field === 'durationSeconds' ? 59 : Infinity;
+        return { ...ex, [field]: Math.min(maxVal, ex[field] + 1) };
+      })
     );
   };
 
-  const decrement = (i: number, field: 'sets' | 'reps') => {
+  const decrement = (i: number, field: 'sets' | 'reps' | 'durationMinutes' | 'durationSeconds') => {
     setExercises((prev) =>
       prev.map((ex, idx) =>
         idx === i ? { ...ex, [field]: Math.max(0, ex[field] - 1) } : ex
@@ -132,13 +145,22 @@ export default function AddWorkoutModal() {
     try {
       const filteredExercises = exercises
         .filter((ex) => ex.name.trim() !== '')
-        .map((ex) => ({
-          name: ex.name,
-          sets: ex.sets,
-          reps: ex.reps,
-          bodyweight: ex.bodyweight,
-          weight: ex.bodyweight ? 0 : Number(ex.weight) || 0,
-        }));
+        .map((ex) => {
+          const base = {
+            name: ex.name,
+            exerciseType: ex.exerciseType,
+            sets: ex.sets,
+          };
+          if (ex.exerciseType === 'Sets of Duration') {
+            return { ...base, durationMinutes: ex.durationMinutes, durationSeconds: ex.durationSeconds };
+          }
+          return {
+            ...base,
+            reps: ex.reps,
+            bodyweight: ex.bodyweight,
+            weight: ex.bodyweight ? 0 : Number(ex.weight) || 0,
+          };
+        });
 
       const finalDate = isToday ? new Date() : workoutDate;
 
@@ -286,10 +308,21 @@ export default function AddWorkoutModal() {
               value={ex.name}
               onChangeText={(v) => updateExercise(i, 'name', v)}
             />
+
+            <Text style={styles.exerciseTypeLabel}>Type of Exercise</Text>
+            <Dropdown
+              options={EXERCISE_TYPES}
+              value={ex.exerciseType}
+              onSelect={(v) => updateExercise(i, 'exerciseType', v)}
+              placeholder="Type of exercise"
+              style={styles.exerciseTypeDropdown}
+            />
+
             <View style={styles.row}>
+              {/* Sets — shared by both types */}
               <View style={styles.numField}>
                 <Text style={styles.numLabel}>Sets</Text>
-                {ex.bodyweight ? (
+                {ex.exerciseType === 'Sets of Duration' || ex.bodyweight ? (
                   <View style={styles.incrementerContainerHorizontal}>
                     <TouchableOpacity onPress={() => decrement(i, 'sets')} hitSlop={10}>
                       <Ionicons name="remove-circle" size={28} color="#e54242" />
@@ -311,60 +344,105 @@ export default function AddWorkoutModal() {
                   </View>
                 )}
               </View>
-              <View style={styles.numField}>
-                <Text style={styles.numLabel}>Reps</Text>
-                {ex.bodyweight ? (
-                  <View style={styles.incrementerContainerHorizontal}>
-                    <TouchableOpacity onPress={() => decrement(i, 'reps')} hitSlop={10}>
-                      <Ionicons name="remove-circle" size={28} color="#e54242" />
-                    </TouchableOpacity>
-                    <Text style={styles.incrementerValue}>{ex.reps}</Text>
-                    <TouchableOpacity onPress={() => increment(i, 'reps')} hitSlop={10}>
-                      <Ionicons name="add-circle" size={28} color="#e54242" />
-                    </TouchableOpacity>
-                  </View>
-                ) : (
-                  <View style={styles.incrementerContainer}>
-                    <TouchableOpacity onPress={() => increment(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
-                      <Ionicons name="add-circle" size={28} color="#e54242" />
-                    </TouchableOpacity>
-                    <Text style={styles.incrementerValue}>{ex.reps}</Text>
-                    <TouchableOpacity onPress={() => decrement(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
-                      <Ionicons name="remove-circle" size={28} color="#e54242" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-              {!ex.bodyweight && (
-                <View style={styles.numField}>
-                  <Text style={styles.numLabel}>Weight (lbs)</Text>
-                  <View style={styles.weightInputContainer}>
+
+              {ex.exerciseType === 'Sets of Duration' ? (
+                <>
+                  {/* Minutes */}
+                  <View style={styles.numField}>
+                    <Text style={styles.numLabel}>Minutes</Text>
                     <TextInput
-                      style={[styles.numInput, styles.weightInput]}
-                      keyboardType="decimal-pad"
-                      value={ex.weight}
-                      onChangeText={(v) => updateExercise(i, 'weight', v)}
+                      style={styles.numInput}
+                      keyboardType="number-pad"
+                      value={String(ex.durationMinutes)}
+                      onChangeText={(v) => updateExercise(i, 'durationMinutes', v)}
                       onBlur={() => {
-                        if (ex.weight === '' || ex.weight === '.') {
-                          updateExercise(i, 'weight', '0');
+                        if (ex.durationMinutes === 0 || isNaN(ex.durationMinutes)) {
+                          updateExercise(i, 'durationMinutes', '0');
                         }
                       }}
                     />
                   </View>
-                </View>
+                  {/* Seconds */}
+                  <View style={styles.numField}>
+                    <Text style={styles.numLabel}>Seconds</Text>
+                    <TextInput
+                      style={styles.numInput}
+                      keyboardType="number-pad"
+                      value={String(ex.durationSeconds)}
+                      onChangeText={(v) => {
+                        const n = Number(v) || 0;
+                        updateExercise(i, 'durationSeconds', String(Math.min(59, n)));
+                      }}
+                      onBlur={() => {
+                        if (ex.durationSeconds === 0 || isNaN(ex.durationSeconds)) {
+                          updateExercise(i, 'durationSeconds', '0');
+                        }
+                      }}
+                    />
+                  </View>
+                </>
+              ) : (
+                <>
+                  {/* Reps */}
+                  <View style={styles.numField}>
+                    <Text style={styles.numLabel}>Reps</Text>
+                    {ex.bodyweight ? (
+                      <View style={styles.incrementerContainerHorizontal}>
+                        <TouchableOpacity onPress={() => decrement(i, 'reps')} hitSlop={10}>
+                          <Ionicons name="remove-circle" size={28} color="#e54242" />
+                        </TouchableOpacity>
+                        <Text style={styles.incrementerValue}>{ex.reps}</Text>
+                        <TouchableOpacity onPress={() => increment(i, 'reps')} hitSlop={10}>
+                          <Ionicons name="add-circle" size={28} color="#e54242" />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <View style={styles.incrementerContainer}>
+                        <TouchableOpacity onPress={() => increment(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
+                          <Ionicons name="add-circle" size={28} color="#e54242" />
+                        </TouchableOpacity>
+                        <Text style={styles.incrementerValue}>{ex.reps}</Text>
+                        <TouchableOpacity onPress={() => decrement(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
+                          <Ionicons name="remove-circle" size={28} color="#e54242" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                  {/* Weight */}
+                  {!ex.bodyweight && (
+                    <View style={styles.numField}>
+                      <Text style={styles.numLabel}>Weight (lbs)</Text>
+                      <View style={styles.weightInputContainer}>
+                        <TextInput
+                          style={[styles.numInput, styles.weightInput]}
+                          keyboardType="decimal-pad"
+                          value={ex.weight}
+                          onChangeText={(v) => updateExercise(i, 'weight', v)}
+                          onBlur={() => {
+                            if (ex.weight === '' || ex.weight === '.') {
+                              updateExercise(i, 'weight', '0');
+                            }
+                          }}
+                        />
+                      </View>
+                    </View>
+                  )}
+                </>
               )}
             </View>
 
-            <TouchableOpacity
-              style={styles.bodyweightRow}
-              onPress={() => toggleBodyweight(i)}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-                {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-              </View>
-              <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-            </TouchableOpacity>
+            {ex.exerciseType === 'Sets of Reps' && (
+              <TouchableOpacity
+                style={styles.bodyweightRow}
+                onPress={() => toggleBodyweight(i)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
+                  {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+                </View>
+                <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ))}
 
@@ -488,6 +566,16 @@ const styles = StyleSheet.create({
   dateLabel: {
     color: '#fff',
     fontSize: 15,
+  },
+  exerciseTypeLabel: {
+    fontSize: 11,
+    color: '#666',
+    marginBottom: 5,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  exerciseTypeDropdown: {
+    marginBottom: 12,
   },
   bodyweightRow: {
     flexDirection: 'row',
