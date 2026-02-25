@@ -1,4 +1,5 @@
 import { Dropdown } from '@/components/ui/dropdown';
+import { Toast } from '@/components/ui/toast';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
@@ -22,6 +23,11 @@ export default function ProfileScreen() {
   const [customSplit, setCustomSplit] = useState('');
   const [loadingSplit, setLoadingSplit] = useState(true);
   const [savingSplit, setSavingSplit] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
+    visible: false,
+    message: '',
+    type: 'success',
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -86,10 +92,10 @@ export default function ProfileScreen() {
         },
         { merge: true }
       );
-      Alert.alert('Saved', 'Your workout split has been updated.');
+      setToast({ visible: true, message: 'Workout split updated', type: 'success' });
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Could not save your split. Please try again.');
+      setToast({ visible: true, message: 'Could not save split', type: 'error' });
     } finally {
       setSavingSplit(false);
     }
@@ -99,6 +105,13 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
+
       <Text style={styles.title}>Profile</Text>
 
       <View style={styles.avatarContainer}>

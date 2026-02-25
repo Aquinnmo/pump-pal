@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  Modal,
-  ScrollView,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
-  ViewStyle,
+    Modal,
+    ScrollView,
+    StyleProp,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+    ViewStyle,
 } from 'react-native';
 
 interface DropdownProps {
