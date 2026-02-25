@@ -44,6 +44,22 @@ export default function AddWorkoutModal() {
       )
     );
 
+  const increment = (i: number, field: 'sets' | 'reps') => {
+    setExercises((prev) =>
+      prev.map((ex, idx) =>
+        idx === i ? { ...ex, [field]: ex[field] + 1 } : ex
+      )
+    );
+  };
+
+  const decrement = (i: number, field: 'sets' | 'reps') => {
+    setExercises((prev) =>
+      prev.map((ex, idx) =>
+        idx === i ? { ...ex, [field]: Math.max(0, ex[field] - 1) } : ex
+      )
+    );
+  };
+
   const handleSave = async () => {
     if (!workoutName.trim()) {
       Alert.alert('Error', 'Please enter a workout name.');
@@ -116,30 +132,38 @@ export default function AddWorkoutModal() {
             <View style={styles.row}>
               <View style={styles.numField}>
                 <Text style={styles.numLabel}>Sets</Text>
-                <TextInput
-                  style={styles.numInput}
-                  keyboardType="numeric"
-                  value={String(ex.sets)}
-                  onChangeText={(v) => updateExercise(i, 'sets', v)}
-                />
+                <View style={styles.incrementerContainer}>
+                  <TouchableOpacity onPress={() => increment(i, 'sets')} style={styles.incrementerButton} hitSlop={10}>
+                    <Ionicons name="add-circle" size={28} color="#e54242" />
+                  </TouchableOpacity>
+                  <Text style={styles.incrementerValue}>{ex.sets}</Text>
+                  <TouchableOpacity onPress={() => decrement(i, 'sets')} style={styles.incrementerButton} hitSlop={10}>
+                    <Ionicons name="remove-circle" size={28} color="#e54242" />
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={styles.numField}>
                 <Text style={styles.numLabel}>Reps</Text>
-                <TextInput
-                  style={styles.numInput}
-                  keyboardType="numeric"
-                  value={String(ex.reps)}
-                  onChangeText={(v) => updateExercise(i, 'reps', v)}
-                />
+                <View style={styles.incrementerContainer}>
+                  <TouchableOpacity onPress={() => increment(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
+                    <Ionicons name="add-circle" size={28} color="#e54242" />
+                  </TouchableOpacity>
+                  <Text style={styles.incrementerValue}>{ex.reps}</Text>
+                  <TouchableOpacity onPress={() => decrement(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
+                    <Ionicons name="remove-circle" size={28} color="#e54242" />
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={styles.numField}>
                 <Text style={styles.numLabel}>Weight (lbs)</Text>
-                <TextInput
-                  style={styles.numInput}
-                  keyboardType="numeric"
-                  value={String(ex.weight)}
-                  onChangeText={(v) => updateExercise(i, 'weight', v)}
-                />
+                <View style={styles.weightInputContainer}>
+                  <TextInput
+                    style={[styles.numInput, styles.weightInput]}
+                    keyboardType="decimal-pad"
+                    value={String(ex.weight)}
+                    onChangeText={(v) => updateExercise(i, 'weight', v)}
+                  />
+                </View>
               </View>
             </View>
           </View>
@@ -258,6 +282,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#fff',
     textAlign: 'center',
+  },
+  weightInputContainer: {
+    flex: 1,
+  },
+  weightInput: {
+    flex: 1,
+    justifyContent: 'center',
+    height: '100%',
+    paddingVertical: 0,
+  },
+  incrementerContainer: {
+    backgroundColor: '#1c1c1c',
+    borderWidth: 1,
+    borderColor: '#2e2e2e',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  incrementerButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  incrementerValue: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: '700',
+    paddingVertical: 4,
   },
   addExButton: {
     flexDirection: 'row',
