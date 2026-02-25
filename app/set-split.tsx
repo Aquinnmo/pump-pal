@@ -2,12 +2,12 @@ import { Dropdown } from '@/components/ui/dropdown';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
+import { showAlert } from '@/utils/alert';
 import { router } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     StyleSheet,
     Text,
     TextInput,
@@ -26,7 +26,7 @@ export default function SetSplitScreen() {
 
     const trimmedCustom = customSplit.trim();
     if (selectedSplit === 'Other' && !trimmedCustom) {
-      Alert.alert('Missing split', 'Please describe your split to continue.');
+      showAlert('Missing split', 'Please describe your split to continue.');
       return;
     }
 
@@ -47,7 +47,7 @@ export default function SetSplitScreen() {
       router.replace('/(tabs)');
     } catch (err) {
       console.error(err);
-      Alert.alert('Error', 'Could not save your split. Please try again.');
+      showAlert('Error', 'Could not save your split. Please try again.');
     } finally {
       setSaving(false);
     }

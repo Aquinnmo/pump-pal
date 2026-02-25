@@ -1,9 +1,9 @@
 import { useAuth } from '@/context/auth-context';
+import { showAlert } from '@/utils/alert';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
@@ -21,7 +21,7 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      showAlert('Error', 'Please fill in all fields.');
       return;
     }
     setLoading(true);
@@ -29,7 +29,7 @@ export default function SignInScreen() {
       await signIn(email.trim(), password);
       router.replace('/(tabs)');
     } catch (err: any) {
-      Alert.alert('Sign In Failed', err.message ?? 'Something went wrong.');
+      showAlert('Sign In Failed', err.message ?? 'Something went wrong.');
     } finally {
       setLoading(false);
     }
