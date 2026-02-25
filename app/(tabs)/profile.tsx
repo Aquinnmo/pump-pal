@@ -10,8 +10,7 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
-    Platform,
+    Modal,
     StyleSheet,
     Text,
     TextInput,
@@ -25,7 +24,8 @@ export default function ProfileScreen() {
   const [customSplit, setCustomSplit] = useState('');
   const [loadingSplit, setLoadingSplit] = useState(true);
   const [savingSplit, setSavingSplit] = useState(false);
-  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({  
     visible: false,
     message: '',
     type: 'success',
@@ -57,24 +57,12 @@ export default function ProfileScreen() {
     loadSplit();
   }, [user]);
 
-  const handleSignOut = () => {
-    if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to sign out?')) {
-        logOut().then(() => router.replace('/(auth)/sign-in'));
-      }
-      return;
-    }
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: async () => {
-          await logOut();
-          router.replace('/(auth)/sign-in');
-        },
-      },
-    ]);
+  const handleSignOut = () => setShowSignOutModal(true);
+
+  const confirmSignOut = async () => {
+    setShowSignOutModal(false);
+    await logOut();
+    router.replace('/(auth)/sign-in');
   };
 
   const handleSaveSplit = async () => {
@@ -113,6 +101,29 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
+      <Modal visible={showSignOutModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Sign Out</Text>
+            <Text style={styles.modalMessage}>Are you sure you want to sign out?</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowSignOutModal(false)}
+                activeOpacity={0.8}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={confirmSignOut}
+                activeOpacity={0.8}>
+                <Text style={styles.modalConfirmText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Toast
         visible={toast.visible}
         message={toast.message}
@@ -308,5 +319,60 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#e54242',
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  modalCard: {
+    backgroundColor: '#1c1c1c',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    padding: 24,
+    width: '100%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 15,
+    color: '#888',
+    marginBottom: 24,
+    lineHeight: 21,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#e54242',
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
