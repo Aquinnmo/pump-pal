@@ -11,7 +11,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
@@ -294,28 +293,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#e54242',
     marginTop: 8,
-  },
-  chipScroll: {
-    marginBottom: 16,
-    flexDirection: 'row',
-  },
-  chip: {
-    backgroundColor: '#2a2a2a',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-  },
-  chipActive: {
-    backgroundColor: '#e54242',
-  },
-  chipText: {
-    color: '#ccc',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  chipTextActive: {
-    color: '#fff',
   },
   chart: {
     marginVertical: 8,
