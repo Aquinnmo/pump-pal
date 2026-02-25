@@ -9,13 +9,14 @@ import { router } from 'expo-router';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Modal,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Linking,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function ProfileScreen() {
@@ -192,6 +193,17 @@ export default function ProfileScreen() {
         <Ionicons name="log-out-outline" size={20} color="#e54242" style={styles.rowIcon} />
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
+
+      <View style={styles.attributionCard}>
+        <Text style={styles.attributionText}>
+          App developed by{' '}
+          <Text
+            style={styles.attributionLink}
+            onPress={() => Linking.openURL('https://adam-montgomery.ca/foundry')}>
+            Montgomery Software Foundry Inc.
+          </Text>
+        </Text>
+      </View>
     </View>
   );
 }
@@ -319,6 +331,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#e54242',
     fontWeight: '600',
+  },
+  attributionCard: {
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    alignItems: 'center',
+  },
+  attributionText: {
+    fontSize: 12,
+    color: '#555',
+    textAlign: 'center',
+  },
+  attributionLink: {
+    color: '#888',
+    textDecorationLine: 'underline',
   },
   modalOverlay: {
     flex: 1,
