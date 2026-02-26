@@ -6,17 +6,18 @@ import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as Updates from 'expo-updates';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Linking,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Linking,
+    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 export default function ProfileScreen() {
@@ -26,6 +27,7 @@ export default function ProfileScreen() {
   const [loadingSplit, setLoadingSplit] = useState(true);
   const [savingSplit, setSavingSplit] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({  
     visible: false,
     message: '',
@@ -57,6 +59,24 @@ export default function ProfileScreen() {
 
     loadSplit();
   }, [user]);
+
+  const handleCheckForUpdate = async () => {
+    setCheckingUpdate(true);
+    try {
+      const result = await Updates.checkForUpdateAsync();
+      if (result.isAvailable) {
+        await Updates.fetchUpdateAsync();
+        await Updates.reloadAsync();
+      } else {
+        setToast({ visible: true, message: 'App is up to date', type: 'success' });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ visible: true, message: 'Could not check for updates', type: 'error' });
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
 
   const handleSignOut = () => setShowSignOutModal(true);
 
@@ -188,6 +208,21 @@ export default function ProfileScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={[styles.updateButton, checkingUpdate && styles.updateButtonDisabled]}
+        onPress={handleCheckForUpdate}
+        disabled={checkingUpdate}
+        activeOpacity={0.8}>
+        {checkingUpdate ? (
+          <ActivityIndicator size="small" color="#fff" style={styles.rowIcon} />
+        ) : (
+          <Ionicons name="cloud-download-outline" size={20} color="#fff" style={styles.rowIcon} />
+        )}
+        <Text style={styles.updateButtonText}>
+          {checkingUpdate ? 'Checking...' : 'Update App'}
+        </Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
         <Ionicons name="log-out-outline" size={20} color="#e54242" style={styles.rowIcon} />
@@ -322,6 +357,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  updateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 12,
+  },
+  updateButtonDisabled: {
+    opacity: 0.6,
+  },
+  updateButtonText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
   },
   signOutButton: {
     flexDirection: 'row',
