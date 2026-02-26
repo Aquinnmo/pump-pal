@@ -2,6 +2,47 @@ import { Workout } from '@/components/workout-card';
 import { GEMINI_API_KEY, GEMINI_MODEL } from '@/constants/gemini-config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+/**
+ * Asks Gemini to generate a list of workout day/type names for a custom
+ * training split described in plain text (e.g. "3-day full body + 1 cardio day").
+ * Returns an ordered array of day names such as ["Full Body A", "Full Body B", "Cardio"].
+ */
+export async function generateSplitWorkoutNames(customSplitDescription: string): Promise<string[]> {
+  const prompt = `You are an expert personal trainer. A user has described their custom training split as:
+"${customSplitDescription}"
+
+Generate a concise, ordered list of UNIQUE workout day names for this split.
+Rules:
+- If the description lists specific muscle groups or days (e.g. "Delts and Back"), treat EACH one as a separate workout day with its own distinct name (e.g. ["Delts", "Back"]).
+- Return between 2 and 6 names total.
+- Every name in the array MUST be different — no duplicates, no near-duplicates, no combined names.
+- Each name should be short (1–3 words), title-cased, and suitable as a workout session label.
+- Do NOT combine muscle groups into one name unless the user explicitly described a combined session.
+- Do NOT include rest days.
+- Do NOT add a letter suffix (A/B) unless the user described repeated identical days.
+- Return ONLY a valid JSON array of strings with no markdown fences and no explanation.
+Examples:
+  Input: "Delts and Back" → ["Delts", "Back"]
+  Input: "push pull legs" → ["Push", "Pull", "Legs"]
+  Input: "3-day full body + 1 cardio" → ["Full Body A", "Full Body B", "Full Body C", "Cardio"]`;
+
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  const result = await model.generateContent(prompt);
+  const text = result.response.text().trim();
+  const jsonText = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim();
+  const parsed: string[] = JSON.parse(jsonText);
+  // Deduplicate while preserving order
+  const seen = new Set<string>();
+  return parsed.filter((n) => {
+    if (typeof n !== 'string' || !n.trim()) return false;
+    const key = n.trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export interface SuggestedExercise {
   name: string;
   exerciseType: 'Sets of Reps' | 'Sets of Duration';

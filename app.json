@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "pump-pal",
+    "name": "Pump Pal",
     "slug": "pump-pal",
-    "version": "1.0.0",
+    "version": "0.1.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pumppal",
@@ -52,6 +52,12 @@
       "eas": {
         "projectId": "eb24e641-6528-4ad9-89ea-6cb006c170af"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/eb24e641-6528-4ad9-89ea-6cb006c170af"
     }
   }
 }
