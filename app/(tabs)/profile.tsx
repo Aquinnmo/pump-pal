@@ -10,14 +10,14 @@ import * as Updates from 'expo-updates';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Linking,
-    Modal,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Linking,
+  Modal,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 
 export default function ProfileScreen() {
@@ -155,20 +155,19 @@ export default function ProfileScreen() {
       <Text style={styles.title}>Profile</Text>
 
       <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
-        </View>
         <Text style={styles.displayName}>{user?.displayName ?? 'Athlete'}</Text>
         <Text style={styles.email}>{user?.email}</Text>
       </View>
 
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.row} onPress={() => router.push('/(tabs)/workouts')}>
-          <Ionicons name="barbell-outline" size={20} color="#e54242" style={styles.rowIcon} />
-          <Text style={styles.rowLabel}>My Workouts</Text>
-          <Ionicons name="chevron-forward" size={18} color="#555" />
-        </TouchableOpacity>
+      <View style={styles.attributionCard}>
+        <Text style={styles.attributionText}>
+          This app is currently in development. Features may change and data may be used to improve the app.
+        </Text>
       </View>
+
+      {/* only because the styling for above doesn't make sense, remove once the disclaimers get removed */}
+
+      <View style={{ height: 16 }} />
 
       <View style={styles.section}> 
         <View style={styles.splitHeader}>
@@ -208,6 +207,15 @@ export default function ProfileScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      <TouchableOpacity
+        style={styles.feedbackButton}
+        onPress={() => Linking.openURL('mailto:adammontcompany@gmail.com?subject=Pump Pal Feedback')}
+        activeOpacity={0.8}>
+        <Ionicons name="rocket" size={24} color="#fff" style={styles.rowIcon} />
+        <Text style={styles.feedbackButtonText}>Send Feedback</Text>
+        <Ionicons name="chevron-forward" size={20} color="#fff" />
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={[styles.updateButton, checkingUpdate && styles.updateButtonDisabled]}
@@ -255,6 +263,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f0f0f',
     paddingTop: 60,
     paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   title: {
     fontSize: 28,
@@ -391,6 +402,28 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#e54242',
     fontWeight: '600',
+  },
+  feedbackButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e54242',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 16,
+    shadowColor: '#e54242',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  feedbackButtonText: {
+    flex: 1,
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   attributionCard: {
     marginTop: 16,
