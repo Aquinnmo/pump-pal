@@ -13,15 +13,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -40,6 +40,8 @@ export default function AddWorkoutModal() {
 
   const [exercises, setExercises] = useState<{
     name: string;
+    isCustomName: boolean;
+    customName: string;
     exerciseType: ExerciseType;
     sets: number;
     reps: number;
@@ -47,7 +49,7 @@ export default function AddWorkoutModal() {
     durationSeconds: number;
     weight: string;
     bodyweight: boolean;
-  }[]>([{ name: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
+  }[]>([{ name: '', isCustomName: false, customName: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
   const [aiLoading, setAiLoading] = useState(false);
@@ -132,6 +134,8 @@ export default function AddWorkoutModal() {
             setExercises(
               data.exercises.map((ex: any) => ({
                 name: ex.name || '',
+                isCustomName: false,
+                customName: '',
                 exerciseType: ex.exerciseType || 'Sets of Reps',
                 sets: ex.sets || 0,
                 reps: ex.reps || 0,
@@ -169,8 +173,76 @@ export default function AddWorkoutModal() {
     }
   }, [id, workoutName, workoutNameOptions]);
 
+  // After workout name + history are known, resolve any exercise names that aren't
+  // in the known options list for this workout type — mark them as custom.
+  const editExercisesResolved = React.useRef(false);
+  useEffect(() => {
+    if (!id || editExercisesResolved.current || workoutHistory.length === 0) return;
+    const effectiveName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+    if (!effectiveName) return;
+    editExercisesResolved.current = true;
+    const opts = new Set(getExerciseOptions(effectiveName));
+    setExercises((prev) =>
+      prev.map((ex) => {
+        if (!ex.name.trim() || opts.has(ex.name.trim())) return ex;
+        return { ...ex, isCustomName: true, customName: ex.name, name: 'Other' };
+      })
+    );
+  }, [id, workoutName, isCustomWorkoutName, customWorkoutName, workoutHistory]);
+
   const addExercise = () =>
-    setExercises((prev) => [...prev, { name: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
+    setExercises((prev) => [...prev, { name: '', isCustomName: false, customName: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
+
+  const selectExerciseName = (i: number, value: string) => {
+    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+    if (value === 'Other') {
+      setExercises((prev) =>
+        prev.map((ex, idx) => idx === i ? { ...ex, name: 'Other', isCustomName: true, customName: '' } : ex)
+      );
+    } else {
+      const last = getLastExerciseData(effectiveWorkoutName, value);
+      setExercises((prev) =>
+        prev.map((ex, idx) => {
+          if (idx !== i) return ex;
+          return {
+            ...ex,
+            name: value,
+            isCustomName: false,
+            customName: '',
+            ...(last ? {
+              exerciseType: last.exerciseType ?? ex.exerciseType,
+              sets: last.sets ?? ex.sets,
+              reps: last.reps ?? ex.reps,
+              durationMinutes: last.durationMinutes ?? ex.durationMinutes,
+              durationSeconds: last.durationSeconds ?? ex.durationSeconds,
+              bodyweight: last.bodyweight ?? ex.bodyweight,
+              weight: last.bodyweight ? '' : String(last.weight ?? ex.weight),
+            } : {}),
+          };
+        })
+      );
+    }
+  };
+
+  const getExerciseOptions = (forWorkoutName: string): string[] => {
+    const seen = new Set<string>();
+    workoutHistory.forEach((w) => {
+      if (w.name === forWorkoutName) {
+        w.exercises.forEach((ex) => { if (ex.name?.trim()) seen.add(ex.name.trim()); });
+      }
+    });
+    return Array.from(seen);
+  };
+
+  // workoutHistory is already sorted date desc, so the first match is the most recent.
+  const getLastExerciseData = (forWorkoutName: string, exerciseName: string) => {
+    for (const w of workoutHistory) {
+      if (w.name !== forWorkoutName) continue;
+      const match = w.exercises.find((ex) => ex.name?.trim() === exerciseName);
+      if (match) return match;
+    }
+    return null;
+  };
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -257,10 +329,11 @@ export default function AddWorkoutModal() {
     setSaving(true);
     try {
       const filteredExercises = exercises
-        .filter((ex) => ex.name.trim() !== '')
+        .filter((ex) => (ex.isCustomName ? ex.customName.trim() : ex.name.trim()) !== '')
         .map((ex) => {
+          const actualName = ex.isCustomName ? ex.customName.trim() : ex.name;
           const base = {
-            name: ex.name,
+            name: actualName,
             exerciseType: ex.exerciseType,
             sets: ex.sets,
           };
@@ -447,13 +520,46 @@ export default function AddWorkoutModal() {
                 </TouchableOpacity>
               )}
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder="Exercise name"
-              placeholderTextColor="#555"
-              value={ex.name}
-              onChangeText={(v) => updateExercise(i, 'name', v)}
-            />
+            {(() => {
+              const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+              const exerciseOpts = getExerciseOptions(effectiveWorkoutName);
+              return exerciseOpts.length > 0 ? (
+                <>
+                  <Dropdown
+                    options={[...exerciseOpts, 'Other']}
+                    value={ex.isCustomName ? 'Other' : (ex.name || null)}
+                    onSelect={(v) => selectExerciseName(i, v)}
+                    placeholder="Select exercise"
+                    style={styles.exerciseNameDropdown}
+                  />
+                  {ex.isCustomName && (
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Exercise name"
+                      placeholderTextColor="#555"
+                      value={ex.customName}
+                      onChangeText={(v) =>
+                        setExercises((prev) =>
+                          prev.map((e, idx) => idx === i ? { ...e, customName: v } : e)
+                        )
+                      }
+                    />
+                  )}
+                </>
+              ) : (
+                <TextInput
+                  style={styles.input}
+                  placeholder="Exercise name"
+                  placeholderTextColor="#555"
+                  value={ex.isCustomName ? ex.customName : ex.name}
+                  onChangeText={(v) =>
+                    setExercises((prev) =>
+                      prev.map((e, idx) => idx === i ? { ...e, name: v, isCustomName: false, customName: '' } : e)
+                    )
+                  }
+                />
+              );
+            })()}
 
             <Text style={styles.exerciseTypeLabel}>Type of Exercise</Text>
             <Dropdown
@@ -917,6 +1023,9 @@ const styles = StyleSheet.create({
     color: '#444',
   },
   nameDropdown: {
+    marginBottom: 12,
+  },
+  exerciseNameDropdown: {
     marginBottom: 12,
   },
 });

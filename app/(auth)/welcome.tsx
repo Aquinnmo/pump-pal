@@ -1,16 +1,16 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  useWindowDimensions,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
+    FlatList,
+    NativeScrollEvent,
+    NativeSyntheticEvent,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    useWindowDimensions,
 } from 'react-native';
 
 const ONBOARDING_KEY = 'pumppal_onboarding_seen';
