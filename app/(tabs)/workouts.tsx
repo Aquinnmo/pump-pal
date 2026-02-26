@@ -14,9 +14,8 @@ import {
 import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     FlatList,
-    Platform,
+    Modal,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -27,6 +26,8 @@ export default function WorkoutsScreen() {
   const { user } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) return;
@@ -52,33 +53,22 @@ export default function WorkoutsScreen() {
     }, [fetchWorkouts])
   );
 
-  const handleDelete = async (id: string) => {
-    if (Platform.OS === 'web') {
-      if (window.confirm('Are you sure you want to delete this workout?')) {
-        try {
-          await deleteDoc(doc(db, 'users', user!.uid, 'workouts', id));
-          setWorkouts((prev) => prev.filter((w) => w.id !== id));
-        } catch {
-          window.alert('Could not delete workout.');
-        }
-      }
-      return;
+  const handleDelete = (id: string) => {
+    setPendingDeleteId(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
+    setShowDeleteModal(false);
+    try {
+      await deleteDoc(doc(db, 'users', user!.uid, 'workouts', pendingDeleteId));
+      setWorkouts((prev) => prev.filter((w) => w.id !== pendingDeleteId));
+    } catch {
+      // silently fail
+    } finally {
+      setPendingDeleteId(null);
     }
-    Alert.alert('Delete Workout', 'Are you sure you want to delete this workout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await deleteDoc(doc(db, 'users', user!.uid, 'workouts', id));
-            setWorkouts((prev) => prev.filter((w) => w.id !== id));
-          } catch {
-            Alert.alert('Error', 'Could not delete workout.');
-          }
-        },
-      },
-    ]);
   };
 
   const handleEdit = (workout: Workout) => {
@@ -95,6 +85,29 @@ export default function WorkoutsScreen() {
 
   return (
     <View style={styles.container}>
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Delete Workout</Text>
+            <Text style={styles.modalMessage}>Are you sure you want to delete this workout? This cannot be undone.</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => { setShowDeleteModal(false); setPendingDeleteId(null); }}
+                activeOpacity={0.8}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={confirmDelete}
+                activeOpacity={0.8}>
+                <Text style={styles.modalConfirmText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.headerRow}>
         <Text style={styles.title}>Workouts</Text>
         <TouchableOpacity style={styles.addButton} onPress={() => router.push('/modal')}>
@@ -172,5 +185,60 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     color: '#555',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  modalCard: {
+    backgroundColor: '#1c1c1c',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    padding: 24,
+    width: '100%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 15,
+    color: '#888',
+    marginBottom: 24,
+    lineHeight: 21,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalCancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#2a2a2a',
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#e54242',
+    alignItems: 'center',
+  },
+  modalConfirmText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
