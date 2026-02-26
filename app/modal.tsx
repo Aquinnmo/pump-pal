@@ -5,7 +5,7 @@ import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
-import { suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
+import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -80,7 +80,25 @@ export default function AddWorkoutModal() {
         const userSnap = await getDoc(doc(db, 'users', user.uid));
         const data = userSnap.data();
         const splitType = data?.workoutSplit?.type;
-        const splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
+        const customSplitDesc: string = data?.workoutSplit?.custom ?? '';
+        let splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
+
+        // For "Other" splits, ask Gemini to generate day names (cached per description)
+        if (splitType === 'Other' && customSplitDesc) {
+          const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
+          const cached = await AsyncStorage.getItem(cacheKey);
+          if (cached) {
+            try { splitNames = JSON.parse(cached); } catch { /* ignore */ }
+          } else {
+            try {
+              const generated = await generateSplitWorkoutNames(customSplitDesc);
+              if (generated.length > 0) {
+                splitNames = generated;
+                await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
+              }
+            } catch { /* silently fall through to used names */ }
+          }
+        }
 
         // Collect unique names actually used in saved workouts
         const workoutsSnap = await getDocs(
