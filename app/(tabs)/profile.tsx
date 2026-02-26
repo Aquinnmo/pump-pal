@@ -212,8 +212,8 @@ export default function ProfileScreen() {
         style={styles.feedbackButton}
         onPress={() => Linking.openURL('mailto:adammontcompany@gmail.com?subject=Pump Pal Feedback')}
         activeOpacity={0.8}>
-        <Ionicons name="rocket" size={24} color="#fff" style={styles.rowIcon} />
-        <Text style={styles.feedbackButtonText}>Send Feedback</Text>
+        <Ionicons name="megaphone" size={24} color="#fff" style={styles.rowIcon} />
+        <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>
         <Ionicons name="chevron-forward" size={20} color="#fff" />
       </TouchableOpacity>
 
