@@ -100,6 +100,20 @@ export default function AddWorkoutModal() {
         const merged = [...splitNames];
         usedNames.forEach((n) => { if (!merged.includes(n)) merged.push(n); });
         setWorkoutNameOptions(merged);
+
+        // Auto-select next predicted workout type for new workouts only
+        if (!id && splitNames.length > 1) {
+          // Find the most recent workout whose name is in the split rotation
+          const lastSplitWorkout = historyData.find((w) => splitNames.includes(w.name));
+          if (lastSplitWorkout) {
+            const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
+            const nextName = splitNames[(lastIdx + 1) % splitNames.length];
+            setWorkoutName(nextName);
+          } else if (splitNames.length > 0) {
+            // No history yet — default to first in rotation
+            setWorkoutName(splitNames[0]);
+          }
+        }
       } catch {
         // silently fail — user can still type a name
       }
