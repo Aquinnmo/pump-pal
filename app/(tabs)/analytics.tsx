@@ -141,7 +141,7 @@ export default function AnalyticsScreen() {
     let cData = null;
     const targetEx = selectedExercise || fav;
     
-    if (targetEx && exerciseHistory[targetEx] && exerciseHistory[targetEx].length > 0) {
+    if (targetEx && exerciseHistory[targetEx] && exerciseHistory[targetEx].length > 1) {
       const history = exerciseHistory[targetEx];
       // ChartKit needs at least 1 data point, but looks better with 2. We'll pass it anyway.
       cData = {

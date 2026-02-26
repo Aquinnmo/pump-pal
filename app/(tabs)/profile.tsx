@@ -196,6 +196,12 @@ export default function ProfileScreen() {
 
       <View style={styles.attributionCard}>
         <Text style={styles.attributionText}>
+          Your workout history may be sent to 3rd parties to power AI features.
+        </Text>
+      </View>
+
+      <View style={styles.attributionCard}>
+        <Text style={styles.attributionText}>
           App developed by{' '}
           <Text
             style={styles.attributionLink}
