@@ -24,6 +24,8 @@
     },
     "web": {
       "output": "static",
+      "name":"Pump Pal",
+      "description":"A workout tracker dedicated to balance your training.",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
