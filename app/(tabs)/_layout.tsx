@@ -37,6 +37,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="pushup-challenge"
+        options={{
+          title: 'TPC',
+          tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
