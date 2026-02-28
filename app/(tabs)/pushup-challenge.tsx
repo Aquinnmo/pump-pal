@@ -1,22 +1,23 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { getDailyName } from '@/utils/daily-name';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Animated,
-    Dimensions,
-    Easing,
-    LayoutChangeEvent,
-    PanResponder,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
+  LayoutChangeEvent,
+  PanResponder,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 interface ChallengeDay {
@@ -156,11 +157,13 @@ function SwipeToComplete({
   const maxX = trackWidth - SWIPE_THUMB - 8; // 4px padding each side
   const pan = useRef(new Animated.Value(0)).current;
   const triggered = useRef(false);
+  const disabledRef = useRef(disabled);
+  useEffect(() => { disabledRef.current = disabled; }, [disabled]);
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => !disabled,
-      onMoveShouldSetPanResponder: () => !disabled,
+      onStartShouldSetPanResponder: () => !disabledRef.current,
+      onMoveShouldSetPanResponder: () => !disabledRef.current,
       onPanResponderMove: (_, gs) => {
         const x = Math.max(0, Math.min(gs.dx, maxX));
         pan.setValue(x);
@@ -212,17 +215,57 @@ function SwipeToComplete({
   );
 }
 
-/* ─── Completed state slider ─── */
-function SwipeComplete({ label }: { label: string }) {
+/* ─── Completed state slider with left-swipe undo ─── */
+function SwipeComplete({ label, onUndo }: { label: string; onUndo: () => void }) {
   const trackWidth = SCREEN_WIDTH - 40;
   const maxX = trackWidth - SWIPE_THUMB - 8;
+  const pan = useRef(new Animated.Value(maxX)).current;
+  const triggered = useRef(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gs) => {
+        // Only allow dragging left from the right end
+        const x = Math.max(0, Math.min(maxX + gs.dx, maxX));
+        pan.setValue(x);
+      },
+      onPanResponderRelease: (_, gs) => {
+        const currentX = maxX + gs.dx;
+        if (currentX <= maxX * 0.15 && !triggered.current) {
+          triggered.current = true;
+          Animated.spring(pan, {
+            toValue: 0,
+            useNativeDriver: false,
+          }).start(() => onUndo());
+        } else {
+          triggered.current = false;
+          Animated.spring(pan, {
+            toValue: maxX,
+            useNativeDriver: false,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
+  // Label fades out as thumb slides left
+  const labelOpacity = pan.interpolate({
+    inputRange: [maxX * 0.5, maxX],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
   return (
     <View style={[swipeStyles.track, { width: trackWidth }]}>
-      <Text style={swipeStyles.labelDone}>{label}</Text>
-      <View style={[swipeStyles.thumbDone, { marginLeft: maxX }]}>
-        <Ionicons name="checkmark" size={22} color="#fff" />
-      </View>
+      <Animated.Text style={[swipeStyles.labelDone, { opacity: labelOpacity }]}>{label}</Animated.Text>
+      <Animated.View
+        style={[swipeStyles.thumbDone, { transform: [{ translateX: pan }] }]}
+        {...panResponder.panHandlers}
+      >
+        <Ionicons name="chevron-back" size={22} color="#fff" />
+      </Animated.View>
     </View>
   );
 }
@@ -241,6 +284,9 @@ export default function PushupChallengeScreen() {
   const burstAnim = useRef(new Animated.Value(0)).current;
   const [animatingCompletion, setAnimatingCompletion] = useState(false);
   const [connectorH, setConnectorH] = useState(0);
+  const undoAnim = useRef(new Animated.Value(0)).current;
+  const [undoingToday, setUndoingToday] = useState(false);
+  const [dailyName, setDailyName] = useState<string | null>(null);
 
   // Ember particle animation values (connector fire)
   const emberData = useRef(
@@ -373,12 +419,13 @@ export default function PushupChallengeScreen() {
     if (!docRef) return;
     setLoading(true);
     try {
-      const snap = await getDoc(docRef);
+      const [snap, name] = await Promise.all([getDoc(docRef), getDailyName()]);
       if (snap.exists()) {
         setData(snap.data() as ChallengeData);
       } else {
         setData(null);
       }
+      setDailyName(name);
     } catch (e) {
       console.error('Failed to load pushup challenge', e);
     } finally {
@@ -469,6 +516,43 @@ export default function PushupChallengeScreen() {
       setData(updated);
       setAnimatingCompletion(false);
     } finally {
+      setSaving(false);
+    }
+  };
+
+  const undoTodayPushups = async () => {
+    if (!docRef || !data) return;
+    setSaving(true);
+    try {
+      const today = toDateKey(new Date());
+      const newDays = data.days.filter((d) => d.date !== today);
+      const updated: ChallengeData = {
+        ...data,
+        days: newDays,
+      };
+
+      // Save first, then update the swipe bar/state so the UI reflects the undone state.
+      await setDoc(docRef, updated).catch((e) => console.error('Failed to undo pushup completion', e));
+      setData(updated);
+
+      // Wait a frame so the swipe bar update is applied in the UI, then run the fade animation.
+      await new Promise((res) => requestAnimationFrame(res));
+
+      undoAnim.setValue(0);
+      setUndoingToday(true);
+      await new Promise<void>((resolve) => {
+        Animated.timing(undoAnim, {
+          toValue: 1,
+          duration: 700,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: false,
+        }).start(() => resolve());
+      });
+    } catch (e) {
+      console.error('Failed to undo pushup completion', e);
+    } finally {
+      setUndoingToday(false);
+      undoAnim.setValue(0);
       setSaving(false);
     }
   };
@@ -571,12 +655,20 @@ export default function PushupChallengeScreen() {
           // Animated fire during completion
           const isAnimConnector = animatingCompletion && hasConnector && i === todayIndex - 1;
           const isAnimDot = animatingCompletion && node.isToday;
+          const isUndoDot = undoingToday && node.isToday;
+          const isUndoConnector = undoingToday && hasConnector && i === todayIndex - 1;
 
           // Dot fire color: invisible during connector burn, snap to red when burst starts
           const animDotColor = isAnimDot
             ? fillAnim.interpolate({
                 inputRange: [0, 0.54, 0.55, 1],
                 outputRange: ['transparent', 'transparent', RED, RED],
+                extrapolate: 'clamp',
+              })
+            : isUndoDot
+            ? undoAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [RED, GREY],
                 extrapolate: 'clamp',
               })
             : dotColor;
@@ -840,6 +932,16 @@ export default function PushupChallengeScreen() {
                         />
                       ))}
                     </View>
+                  ) : isUndoConnector ? (
+                    <Animated.View
+                      style={[styles.connector, {
+                        backgroundColor: undoAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [RED, GREY],
+                          extrapolate: 'clamp',
+                        }),
+                      }]}
+                    />
                   ) : (
                     <Animated.View style={[styles.connector, { backgroundColor: connectorColor }]} />
                   )
@@ -885,7 +987,8 @@ export default function PushupChallengeScreen() {
         <View style={styles.swipeWrapper}>
           {todayCompleted ? (
             <SwipeComplete
-              label="Today's pushups done!"
+              label={`Swipe left if you lied${dailyName ? ` (${dailyName}...)` : '...'}`}
+              onUndo={undoTodayPushups}
             />
           ) : (
             <SwipeToComplete

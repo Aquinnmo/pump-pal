@@ -1,14 +1,17 @@
 import { Dropdown } from '@/components/ui/dropdown';
 import { Toast } from '@/components/ui/toast';
-import { db } from '@/config/firebase';
+import { auth, db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
+import { File as FSFile, Paths } from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import * as Updates from 'expo-updates';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,7 +32,18 @@ export default function SettingsScreen() {
   const [loadingSplit, setLoadingSplit] = useState(true);
   const [savingSplit, setSavingSplit] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [deleteModalError, setDeleteModalError] = useState('');
+  const [changePasswordError, setChangePasswordError] = useState('');
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({  
     visible: false,
     message: '',
@@ -82,6 +96,81 @@ export default function SettingsScreen() {
 
   const handleSignOut = () => setShowSignOutModal(true);
 
+  const handleChangePassword = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setChangePasswordError('');
+    setShowChangePasswordModal(true);
+  };
+
+  const confirmChangePassword = async () => {
+    if (!user || !user.email) return;
+    // client-side validation
+    if (newPassword !== confirmNewPassword) {
+      setChangePasswordError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setChangePasswordError('Password must be at least 6 characters.');
+      return;
+    }
+    if (!oldPassword) {
+      setChangePasswordError('Please enter your current password.');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, oldPassword);
+      await reauthenticateWithCredential(auth.currentUser!, credential);
+      await updatePassword(auth.currentUser!, newPassword);
+      setShowChangePasswordModal(false);
+      setToast({ visible: true, message: 'Password updated successfully', type: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      const msg =
+        err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'
+          ? 'Current password is incorrect.'
+          : err.code === 'auth/weak-password'
+          ? 'New password must be at least 6 characters.'
+          : 'Could not update password. Please try again.';
+      setChangePasswordError(msg);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    setDeleteConfirmName('');
+    setDeleteModalError('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!user || deleteConfirmName !== user.displayName) return;
+    setDeletingAccount(true);
+    try {
+      const workoutsSnap = await getDocs(collection(db, 'users', user.uid, 'workouts'));
+      await Promise.all(workoutsSnap.docs.map((d) => deleteDoc(d.ref)));
+      await deleteDoc(doc(db, 'users', user.uid, 'pushup-challenge', 'data')).catch(() => {});
+      await deleteDoc(doc(db, 'users', user.uid));
+      await deleteUser(auth.currentUser!);
+      setShowDeleteModal(false);
+      setDeleteConfirmName('');
+      router.replace('/(auth)/sign-in');
+    } catch (err: any) {
+      console.error(err);
+      const msg =
+        err.code === 'auth/requires-recent-login'
+          ? 'Please sign out and sign back in before deleting your account.'
+          : 'Could not delete account. Please try again.';
+      setDeleteModalError(msg);
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   const confirmSignOut = async () => {
     setShowSignOutModal(false);
     await logOut();
@@ -120,6 +209,70 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleExportData = async () => {
+    if (!user) return;
+    setExporting(true);
+    try {
+      const workoutsSnap = await getDocs(
+        collection(db, 'users', user.uid, 'workouts')
+      );
+
+      const rows: string[] = [
+        ['Date', 'Workout', 'Notes', 'Exercise', 'Type', 'Sets', 'Reps', 'Weight (lbs)', 'Duration (min)', 'Duration (sec)', 'Bodyweight'].join(','),
+      ];
+
+      workoutsSnap.docs.forEach((d) => {
+        const w = d.data();
+        const dateMs = w.date?.seconds ? w.date.seconds * 1000 : Date.now();
+        const dateStr = new Date(dateMs).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        const name = `"${(w.name ?? '').replace(/"/g, '""')}"`;
+        const notes = `"${(w.notes ?? '').replace(/"/g, '""')}"`;
+
+        if (w.exercises && w.exercises.length > 0) {
+          (w.exercises as any[]).forEach((ex) => {
+            const exName = `"${(ex.name ?? '').replace(/"/g, '""')}"`;
+            const exType = ex.exerciseType ?? 'Sets of Reps';
+            rows.push(
+              [
+                dateStr,
+                name,
+                notes,
+                exName,
+                exType,
+                ex.sets ?? '',
+                ex.reps ?? '',
+                ex.bodyweight ? '' : (ex.weight ?? ''),
+                ex.durationMinutes ?? '',
+                ex.durationSeconds ?? '',
+                ex.bodyweight ? 'Yes' : 'No',
+              ].join(',')
+            );
+          });
+        } else {
+          rows.push([dateStr, name, notes, '', '', '', '', '', '', '', ''].join(','));
+        }
+      });
+
+      const csv = rows.join('\n');
+      const fileName = `pump-pal-workouts-${new Date().toISOString().slice(0, 10)}.csv`;
+      const file = new FSFile(Paths.cache, fileName);
+      if (file.exists) file.delete();
+      file.write(csv);
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', dialogTitle: 'Export Training Data', UTI: 'public.comma-separated-values-text' });
+      } else {
+        setToast({ visible: true, message: 'Sharing is not available on this device', type: 'error' });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ visible: true, message: 'Could not export data', type: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const initial = user?.displayName?.[0]?.toUpperCase() ?? '?';
 
   const [showTopFade, setShowTopFade] = useState(false);
@@ -135,6 +288,133 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <Modal visible={showChangePasswordModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <Text style={styles.modalMessage}>New passwords must be at least 6 characters.</Text>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Current password"
+              placeholderTextColor="#555"
+              value={oldPassword}
+              onChangeText={setOldPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="New password"
+              placeholderTextColor="#555"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={[
+                styles.passwordInput,
+                styles.passwordInputLast,
+                (confirmNewPassword.length > 0 && newPassword !== confirmNewPassword) || (newPassword.length > 0 && newPassword.length < 6)
+                  ? styles.passwordInputError
+                  : null,
+              ]}
+              placeholder="Confirm new password"
+              placeholderTextColor="#555"
+              value={confirmNewPassword}
+              onChangeText={setConfirmNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {changePasswordError ? (
+              <Text style={styles.modalErrorText}>{changePasswordError}</Text>
+            ) : newPassword.length > 0 && newPassword.length < 6 ? (
+              <Text style={styles.modalErrorText}>Password must be at least 6 characters.</Text>
+            ) : null}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowChangePasswordModal(false);
+                  setChangePasswordError('');
+                }}
+                activeOpacity={0.8}
+                disabled={changingPassword}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmButton,
+                  (newPassword !== confirmNewPassword || newPassword.length < 6 || !oldPassword || changingPassword) &&
+                    styles.modalButtonDisabled,
+                ]}
+                onPress={confirmChangePassword}
+                activeOpacity={0.8}
+                disabled={newPassword !== confirmNewPassword || newPassword.length < 6 || !oldPassword || changingPassword}>
+                {changingPassword ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Update</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalMessage}>
+              {'This will permanently delete your account and all associated data. This cannot be undone.\n\nType your name '}
+              <Text style={{ color: '#fff', fontWeight: '700' }}>{user?.displayName}</Text>
+              {' to confirm.'}
+            </Text>
+            <TextInput
+              style={styles.deleteConfirmInput}
+              placeholder="Your name"
+              placeholderTextColor="#555"
+              value={deleteConfirmName}
+              onChangeText={setDeleteConfirmName}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {deleteModalError ? <Text style={styles.modalErrorText}>{deleteModalError}</Text> : null}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteModalError('');
+                }}
+                activeOpacity={0.8}
+                disabled={deletingAccount}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmButton,
+                  styles.modalDeleteButton,
+                  (deleteConfirmName !== user?.displayName || deletingAccount) && styles.modalButtonDisabled,
+                ]}
+                onPress={confirmDeleteAccount}
+                activeOpacity={0.8}
+                disabled={deleteConfirmName !== user?.displayName || deletingAccount}>
+                {deletingAccount ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Delete</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showSignOutModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
@@ -257,16 +537,42 @@ export default function SettingsScreen() {
         {checkingUpdate ? (
           <ActivityIndicator size="small" color="#fff" style={styles.rowIcon} />
         ) : (
-          <Ionicons name="cloud-download-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <Ionicons name="cloud-download" size={20} color="#fff" style={styles.rowIcon} />
         )}
         <Text style={styles.updateButtonText}>
           {checkingUpdate ? 'Checking...' : 'Update App'}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Ionicons name="log-out-outline" size={20} color="#e54242" style={styles.rowIcon} />
+      <TouchableOpacity
+        style={[styles.changePasswordButton, { marginBottom: 12 }]}
+        onPress={handleChangePassword}
+        activeOpacity={0.8}>
+        <Ionicons name="lock-closed" size={20} color="#fff" style={styles.rowIcon} />
+        <Text style={styles.changePasswordText}>Change Password</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.changePasswordButton, { marginBottom: 12 }, exporting && styles.updateButtonDisabled]}
+        onPress={handleExportData}
+        disabled={exporting}
+        activeOpacity={0.8}>
+        {exporting ? (
+          <ActivityIndicator size="small" color="#fff" style={styles.rowIcon} />
+        ) : (
+          <Ionicons name="download" size={20} color="#fff" style={styles.rowIcon} />
+        )}
+        <Text style={styles.changePasswordText}>{exporting ? 'Exporting...' : 'Export Training Data'}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.signOutButton, { marginBottom: 12 }]} onPress={handleSignOut}>
+        <Ionicons name="log-out" size={20} color="#e54242" style={styles.rowIcon} />
         <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+        <Ionicons name="trash" size={20} color="#e54242" style={styles.rowIcon} />
+        <Text style={styles.deleteAccountText}>Delete Account</Text>
       </TouchableOpacity>
 
       <View style={styles.attributionCard}>
@@ -473,6 +779,70 @@ const styles = StyleSheet.create({
     color: '#e54242',
     fontWeight: '600',
   },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#3a1010',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  deleteAccountText: {
+    fontSize: 15,
+    color: '#e54242',
+    fontWeight: '600',
+  },
+  deleteConfirmInput: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#3a1010',
+    backgroundColor: '#151515',
+    color: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  modalDeleteButton: {
+    backgroundColor: '#b00020',
+  },
+  modalButtonDisabled: {
+    opacity: 0.4,
+  },
+  changePasswordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  changePasswordText: {
+    fontSize: 15,
+    color: '#fff',
+    fontWeight: '600',
+  },
+  passwordInput: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2e2e2e',
+    backgroundColor: '#151515',
+    color: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  passwordInputLast: {
+    marginBottom: 20,
+  },
+  passwordInputError: {
+    borderColor: '#b00020',
+  },
   feedbackButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -540,6 +910,12 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 24,
     lineHeight: 21,
+  },
+  modalErrorText: {
+    fontSize: 14,
+    color: '#ff8b8b',
+    marginBottom: 12,
+    textAlign: 'left',
   },
   modalActions: {
     flexDirection: 'row',

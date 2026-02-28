@@ -147,7 +147,7 @@ export function MuscleInsightCards({ workouts }: Props) {
           {/* Over-trained card */}
           <View style={[styles.insightCard, styles.overCard]}>
             <View style={styles.cardHeader}>
-              <Ionicons name="flame" size={18} color="#e54242" />
+              <Ionicons name="trending-down" size={18} color="#e54242" />
               <Text style={styles.cardTitle}>Over Trained</Text>
             </View>
             <Text style={styles.cardHint}>Muscles to train less</Text>
