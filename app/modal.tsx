@@ -62,25 +62,25 @@ export default function AddWorkoutModal() {
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Load today's AI suggestion usage count
-  useEffect(() => {
-    if (!user) return;
-    const key = `ai_suggest_uses_${user.uid}`;
-    AsyncStorage.getItem(key).then((raw) => {
-      if (!raw) return;
-      const cached: { date: string; count: number } = JSON.parse(raw);
-      const today = new Date().toISOString().slice(0, 10);
-      if (cached.date === today) setAiUsesLeft(3 - cached.count);
-    });
-  }, [user]);
-
   // Fetch user's split + names used in past workouts to build the name dropdown
+  // Also loads today's AI suggestion usage count from Firestore (shared across platforms,
+  // resets at midnight UTC)
   useEffect(() => {
     if (!user) return;
     const loadNameOptions = async () => {
       try {
         const userSnap = await getDoc(doc(db, 'users', user.uid));
         const data = userSnap.data();
+
+        // Load AI usage from Firestore
+        const todayUTC = new Date().toISOString().slice(0, 10);
+        const aiUsage = data?.aiUsage as { date: string; count: number } | undefined;
+        if (aiUsage && aiUsage.date === todayUTC) {
+          setAiUsesLeft(3 - (aiUsage.count ?? 0));
+        } else {
+          setAiUsesLeft(3);
+        }
+
         const splitType = data?.workoutSplit?.type;
         const customSplitDesc: string = data?.workoutSplit?.custom ?? '';
         let splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
@@ -327,16 +327,13 @@ export default function AddWorkoutModal() {
         workoutHistory
       );
 
-      // Increment usage count
-      const key = `ai_suggest_uses_${user.uid}`;
-      const today = new Date().toISOString().slice(0, 10);
-      const raw = await AsyncStorage.getItem(key);
-      let newCount = 1;
-      if (raw) {
-        const cached: { date: string; count: number } = JSON.parse(raw);
-        newCount = cached.date === today ? cached.count + 1 : 1;
-      }
-      await AsyncStorage.setItem(key, JSON.stringify({ date: today, count: newCount }));
+      // Increment usage count in Firestore (shared across platforms, resets at midnight UTC)
+      const todayUTC = new Date().toISOString().slice(0, 10);
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      const existing = userSnap.data()?.aiUsage as { date: string; count: number } | undefined;
+      const newCount = existing && existing.date === todayUTC ? existing.count + 1 : 1;
+      await updateDoc(userRef, { aiUsage: { date: todayUTC, count: newCount } });
       setAiUsesLeft(3 - newCount);
 
       if (suggested.length === 0) {
