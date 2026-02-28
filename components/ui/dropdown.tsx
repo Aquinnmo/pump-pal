@@ -1,16 +1,27 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
+    Dimensions,
     Modal,
     ScrollView,
     StyleProp,
     StyleSheet,
     Text,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View,
     ViewStyle,
 } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const DISMISS_THRESHOLD = 120;
 
 interface DropdownProps {
   options: readonly string[] | string[];
@@ -28,24 +39,71 @@ export function Dropdown({
   style,
 }: DropdownProps) {
   const [visible, setVisible] = useState(false);
+  const translateY = useSharedValue(0);
+  const overlayOpacity = useSharedValue(1);
+
+  const dismiss = useCallback(() => {
+    setVisible(false);
+  }, []);
+
+  const handleOpen = useCallback(() => {
+    translateY.value = 0;
+    overlayOpacity.value = 1;
+    setVisible(true);
+  }, [translateY, overlayOpacity]);
+
+  const handleClose = useCallback(() => {
+    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+    overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+      runOnJS(dismiss)();
+    });
+  }, [translateY, overlayOpacity, dismiss]);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (e.translationY > 0) {
+        translateY.value = e.translationY;
+        overlayOpacity.value = Math.max(0, 1 - e.translationY / (SCREEN_HEIGHT * 0.4));
+      }
+    })
+    .onEnd((e) => {
+      if (e.translationY > DISMISS_THRESHOLD) {
+        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+          runOnJS(dismiss)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        overlayOpacity.value = withSpring(1);
+      }
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${0.6 * overlayOpacity.value})`,
+  }));
 
   return (
     <>
-      <TouchableOpacity style={[styles.dropdownRow, style]} onPress={() => setVisible(true)}>
+      <TouchableOpacity style={[styles.dropdownRow, style]} onPress={handleOpen}>
         <Text style={value ? styles.dropdownText : styles.placeholderText}>
           {value || placeholder}
         </Text>
         <Ionicons name="chevron-down" size={18} color="#888" />
       </TouchableOpacity>
 
-      <Modal visible={visible} transparent animationType="fade">
-        <TouchableWithoutFeedback onPress={() => setVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
+            <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={handleClose} />
+            <GestureDetector gesture={panGesture}>
+              <Animated.View style={[styles.modalContent, cardAnimatedStyle]}>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>{placeholder}</Text>
-                  <TouchableOpacity onPress={() => setVisible(false)} hitSlop={8}>
+                  <TouchableOpacity onPress={handleClose} hitSlop={8}>
                     <Ionicons name="close" size={24} color="#888" />
                   </TouchableOpacity>
                 </View>
@@ -59,7 +117,7 @@ export function Dropdown({
                       ]}
                       onPress={() => {
                         onSelect(option);
-                        setVisible(false);
+                        handleClose();
                       }}>
                       <Text
                         style={[
@@ -74,10 +132,10 @@ export function Dropdown({
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
+              </Animated.View>
+            </GestureDetector>
+          </Animated.View>
+        </GestureHandlerRootView>
       </Modal>
     </>
   );
@@ -105,7 +163,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {

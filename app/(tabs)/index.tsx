@@ -128,7 +128,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/modal')}
           activeOpacity={0.85}>
           <View style={styles.nextWorkoutLeft}>
-            <Text style={styles.nextWorkoutLabel}>Today's Workout:</Text>
+            <Text style={styles.nextWorkoutLabel}>Up Next:</Text>
             <Text style={styles.nextWorkoutName}>{nextWorkout}</Text>
           </View>
           <View style={styles.nextWorkoutIcon}>
