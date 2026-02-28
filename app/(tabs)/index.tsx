@@ -144,6 +144,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/(tabs)/workouts')}
           activeOpacity={0.7}>
           <Text style={styles.seeAllText}>See all workouts</Text>
+          <Ionicons name="chevron-forward" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
 

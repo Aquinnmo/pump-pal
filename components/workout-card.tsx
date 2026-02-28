@@ -198,7 +198,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
             {onEdit && (
               <TouchableOpacity onPress={() => onEdit(workout)} hitSlop={8} style={styles.editButton}>
                 <Text style={styles.editText}>Edit</Text>
-                <Ionicons name="pencil-outline" size={16} color="#666" />
+                <Ionicons name="pencil-outline" size={20} color="#666" />
               </TouchableOpacity>
             )}
             {onDelete && (
