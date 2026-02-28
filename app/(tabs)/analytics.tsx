@@ -51,9 +51,9 @@ export default function AnalyticsScreen() {
     }, [fetchWorkouts])
   );
 
-  const { favoriteExercise, maxWeights, maxReps, maxDuration, chartData, allExercises, weightedExercises, bodyweightExerciseList, durationExerciseList, heaviestLift, bodyweightExercises, durationExercises } = useMemo(() => {
+  const { favoriteExercise, favoriteWorkoutType, maxWeights, maxReps, maxDuration, chartData, allExercises, weightedExercises, bodyweightExerciseList, durationExerciseList, heaviestLift, bodyweightExercises, durationExercises } = useMemo(() => {
     if (workouts.length === 0) {
-      return { favoriteExercise: null as string | null, maxWeights: {} as Record<string, number>, maxReps: {} as Record<string, number>, maxDuration: {} as Record<string, number>, chartData: null, allExercises: [] as string[], weightedExercises: [] as string[], bodyweightExerciseList: [] as string[], durationExerciseList: [] as string[], heaviestLift: null as { exercise: string; weight: number } | null, bodyweightExercises: new Set<string>(), durationExercises: new Set<string>() };
+      return { favoriteExercise: null as string | null, favoriteWorkoutType: null as string | null, maxWeights: {} as Record<string, number>, maxReps: {} as Record<string, number>, maxDuration: {} as Record<string, number>, chartData: null, allExercises: [] as string[], weightedExercises: [] as string[], bodyweightExerciseList: [] as string[], durationExerciseList: [] as string[], heaviestLift: null as { exercise: string; weight: number } | null, bodyweightExercises: new Set<string>(), durationExercises: new Set<string>() };
     }
 
     const counts: Record<string, number> = {};
@@ -64,10 +64,17 @@ export default function AnalyticsScreen() {
     const bodyweightExercises = new Set<string>();
     const durationExercises = new Set<string>();
     let heaviestLift: { exercise: string; weight: number } | null = null;
+    const workoutTypeCounts: Record<string, number> = {};
+    const workoutTypeLastDate: Record<string, number> = {};
 
     workouts.forEach((w) => {
       const dateObj = w.date instanceof Date ? w.date : new Date((w.date as any).seconds * 1000);
       const dateStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+
+      if (w.name) {
+        workoutTypeCounts[w.name] = (workoutTypeCounts[w.name] || 0) + 1;
+        workoutTypeLastDate[w.name] = dateObj.getTime();
+      }
 
       w.exercises.forEach((ex) => {
         const name = ex.name.trim();
@@ -133,6 +140,18 @@ export default function AnalyticsScreen() {
       }
     }
 
+    let favType: string | null = null;
+    let maxTypeCount = 0;
+    let maxTypeDate = 0;
+    for (const [name, count] of Object.entries(workoutTypeCounts)) {
+      const lastDate = workoutTypeLastDate[name] || 0;
+      if (count > maxTypeCount || (count === maxTypeCount && lastDate > maxTypeDate)) {
+        maxTypeCount = count;
+        maxTypeDate = lastDate;
+        favType = name;
+      }
+    }
+
     const allEx = Object.keys(counts).sort();
     const weightedEx = allEx.filter((name) => !bodyweightExercises.has(name) && !durationExercises.has(name));
     const bodyweightExList = allEx.filter((name) => bodyweightExercises.has(name));
@@ -156,6 +175,7 @@ export default function AnalyticsScreen() {
 
     return {
       favoriteExercise: fav,
+      favoriteWorkoutType: favType,
       maxWeights: maxW,
       maxReps: maxR,
       maxDuration: maxD,
@@ -205,6 +225,11 @@ export default function AnalyticsScreen() {
       ) : (
         <>
           <MuscleInsightCards workouts={workouts} />
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Favorite Workout Type</Text>
+            <Text style={styles.cardValue}>{favoriteWorkoutType || 'N/A'}</Text>
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Favorite Exercise</Text>
