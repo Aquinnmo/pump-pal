@@ -1,6 +1,7 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -8,6 +9,7 @@ import {
     ActivityIndicator,
     Animated,
     Dimensions,
+    Easing,
     LayoutChangeEvent,
     PanResponder,
     ScrollView,
@@ -226,6 +228,19 @@ export default function PushupChallengeScreen() {
   const scrolledRef = useRef(false);
   const fillAnim = useRef(new Animated.Value(0)).current;
   const [animatingCompletion, setAnimatingCompletion] = useState(false);
+  const [connectorH, setConnectorH] = useState(0);
+
+  // Ember particle animation values
+  const emberData = useRef(
+    [
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -9, size: 3,   color: '#ffdd44', delay: 0,   dur: 520, yTarget: -22 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: 7,  size: 4,   color: '#ffaa00', delay: 110, dur: 620, yTarget: -30 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -3, size: 3.5, color: '#ff6600', delay: 200, dur: 460, yTarget: -18 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: 11, size: 3,   color: '#ff4400', delay: 70,  dur: 560, yTarget: -26 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -11,size: 4.5, color: '#ffcc00', delay: 160, dur: 500, yTarget: -24 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: 3,  size: 3,   color: '#ff8800', delay: 260, dur: 490, yTarget: -28 },
+    ]
+  ).current;
 
   const onScrollLayout = (e: LayoutChangeEvent) => {
     setScrollViewH(e.nativeEvent.layout.height);
@@ -239,6 +254,51 @@ export default function PushupChallengeScreen() {
       scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: false });
     }
   }, [todayNodeY, scrollViewH]);
+
+  // Ember particle animation loop
+  useEffect(() => {
+    if (!animatingCompletion) return;
+
+    emberData.forEach((ember) => {
+      const loop = () => {
+        ember.offsetY.setValue(0);
+        ember.opacity.setValue(0);
+        Animated.sequence([
+          Animated.delay(ember.delay),
+          Animated.parallel([
+            Animated.timing(ember.offsetY, {
+              toValue: ember.yTarget,
+              duration: ember.dur,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: false,
+            }),
+            Animated.sequence([
+              Animated.timing(ember.opacity, {
+                toValue: 0.95,
+                duration: 70,
+                useNativeDriver: false,
+              }),
+              Animated.timing(ember.opacity, {
+                toValue: 0,
+                duration: ember.dur - 70,
+                useNativeDriver: false,
+              }),
+            ]),
+          ]),
+        ]).start(({ finished }) => {
+          if (finished) loop();
+        });
+      };
+      loop();
+    });
+
+    return () => {
+      emberData.forEach((e) => {
+        e.offsetY.stopAnimation();
+        e.opacity.stopAnimation();
+      });
+    };
+  }, [animatingCompletion]);
 
   // Reset scroll flag when challenge data changes
   useEffect(() => {
@@ -313,7 +373,8 @@ export default function PushupChallengeScreen() {
         new Promise<void>((resolve) => {
           Animated.timing(fillAnim, {
             toValue: 1,
-            duration: 1400,
+            duration: 2000,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: false,
           }).start(() => resolve());
         }),
@@ -420,15 +481,25 @@ export default function PushupChallengeScreen() {
           const hasConnector = i < nodes.length - 1;
           const connectorColor = node.completed && nextCompleted ? RED : GREY;
 
-          // Animated colors during completion
+          // Animated fire during completion
           const isAnimConnector = animatingCompletion && hasConnector && i === todayIndex - 1;
           const isAnimDot = animatingCompletion && node.isToday;
-          const animConnectorColor = isAnimConnector
-            ? fillAnim.interpolate({ inputRange: [0, 0.65], outputRange: [GREY, RED], extrapolate: 'clamp' })
-            : connectorColor;
+
+          // Dot fire color: grey → bright yellow → orange → red
           const animDotColor = isAnimDot
-            ? fillAnim.interpolate({ inputRange: [0.65, 1], outputRange: [GREY, RED], extrapolate: 'clamp' })
+            ? fillAnim.interpolate({
+                inputRange: [0.55, 0.65, 0.82, 1],
+                outputRange: [GREY, '#ffcc00', '#ff6600', RED],
+                extrapolate: 'clamp',
+              })
             : dotColor;
+
+          // Burn-front Y position on the connector (0 → connectorH)
+          const burnFrontY = fillAnim.interpolate({
+            inputRange: [0, 0.55],
+            outputRange: [0, Math.max(connectorH, 1)],
+            extrapolate: 'clamp',
+          });
 
           return (
             <View
@@ -439,10 +510,150 @@ export default function PushupChallengeScreen() {
               } : undefined}
             >
               {/* Left track: dot at top, connector stretches to fill row height */}
-              <View style={styles.nodeTrack}>
+              <View style={[styles.nodeTrack, { overflow: 'visible' }]}>
+                {/* ── Dot glow ring (behind dot) ── */}
+                {isAnimDot && (
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: NODE_DOT + 24,
+                      height: NODE_DOT + 24,
+                      borderRadius: (NODE_DOT + 24) / 2,
+                      top: -12,
+                      left: (NODE_DOT - (NODE_DOT + 24)) / 2,
+                      backgroundColor: 'rgba(255, 136, 0, 0.30)',
+                      zIndex: 1,
+                      opacity: fillAnim.interpolate({
+                        inputRange: [0.55, 0.68, 0.88, 1],
+                        outputRange: [0, 0.85, 0.5, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [{
+                        scale: fillAnim.interpolate({
+                          inputRange: [0.55, 0.75, 1],
+                          outputRange: [0.5, 1.4, 1],
+                          extrapolate: 'clamp',
+                        }),
+                      }],
+                    }}
+                  />
+                )}
+                {isAnimDot && (
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: NODE_DOT + 40,
+                      height: NODE_DOT + 40,
+                      borderRadius: (NODE_DOT + 40) / 2,
+                      top: -20,
+                      left: (NODE_DOT - (NODE_DOT + 40)) / 2,
+                      backgroundColor: 'transparent',
+                      borderWidth: 2,
+                      borderColor: '#ff880066',
+                      zIndex: 0,
+                      opacity: fillAnim.interpolate({
+                        inputRange: [0.58, 0.72, 0.9, 1],
+                        outputRange: [0, 0.7, 0.25, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [{
+                        scale: fillAnim.interpolate({
+                          inputRange: [0.58, 0.82, 1],
+                          outputRange: [0.4, 1.6, 1.2],
+                          extrapolate: 'clamp',
+                        }),
+                      }],
+                    }}
+                  />
+                )}
+
+                {/* ── Dot ── */}
                 <Animated.View style={[styles.dot, { backgroundColor: animDotColor }]} />
+
+                {/* ── Connector ── */}
                 {hasConnector && (
-                  <Animated.View style={[styles.connector, { backgroundColor: animConnectorColor }]} />
+                  isAnimConnector ? (
+                    <View
+                      style={[styles.connector, { backgroundColor: GREY, overflow: 'visible' }]}
+                      onLayout={(e) => setConnectorH(e.nativeEvent.layout.height)}
+                    >
+                      {/* Fire fill that grows top→bottom */}
+                      {connectorH > 0 && (
+                        <Animated.View
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: burnFrontY,
+                            borderRadius: 4,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {/* Solid burned (red) area */}
+                          <View style={{ flex: 1, backgroundColor: RED }} />
+                          {/* Fire gradient at burning edge */}
+                          <LinearGradient
+                            colors={[RED, '#ff3300', '#ff6600', '#ffaa00', '#ffdd44'] as any}
+                            locations={[0, 0.25, 0.5, 0.8, 1]}
+                            start={{ x: 0.5, y: 0 }}
+                            end={{ x: 0.5, y: 1 }}
+                            style={{ height: 32, borderRadius: 4 }}
+                          />
+                        </Animated.View>
+                      )}
+
+                      {/* Burning-front glow */}
+                      {connectorH > 0 && (
+                        <Animated.View
+                          style={{
+                            position: 'absolute',
+                            left: -14,
+                            right: -14,
+                            height: 28,
+                            top: -14,
+                            borderRadius: 14,
+                            backgroundColor: 'rgba(255, 136, 0, 0.35)',
+                            transform: [{ translateY: burnFrontY }],
+                            opacity: fillAnim.interpolate({
+                              inputRange: [0, 0.04, 0.48, 0.55],
+                              outputRange: [0, 0.85, 0.85, 0],
+                              extrapolate: 'clamp',
+                            }),
+                          }}
+                        />
+                      )}
+
+                      {/* Ember particles */}
+                      {connectorH > 0 && emberData.map((ember, idx) => (
+                        <Animated.View
+                          key={idx}
+                          style={{
+                            position: 'absolute',
+                            width: ember.size,
+                            height: ember.size,
+                            borderRadius: ember.size / 2,
+                            backgroundColor: ember.color,
+                            left: 4 - ember.size / 2 + ember.offsetX,
+                            top: -ember.size / 2,
+                            opacity: Animated.multiply(
+                              ember.opacity,
+                              fillAnim.interpolate({
+                                inputRange: [0, 0.04, 0.48, 0.55],
+                                outputRange: [0, 1, 1, 0],
+                                extrapolate: 'clamp',
+                              }),
+                            ),
+                            transform: [{
+                              translateY: Animated.add(burnFrontY, ember.offsetY),
+                            }],
+                          }}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <Animated.View style={[styles.connector, { backgroundColor: connectorColor }]} />
+                  )
                 )}
               </View>
 
