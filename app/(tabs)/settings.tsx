@@ -5,8 +5,10 @@ import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-opt
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
+import { File as FSFile, Paths } from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import * as Updates from 'expo-updates';
 import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -41,6 +43,7 @@ export default function SettingsScreen() {
   const [deleteModalError, setDeleteModalError] = useState('');
   const [changePasswordError, setChangePasswordError] = useState('');
   const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({  
     visible: false,
     message: '',
@@ -203,6 +206,70 @@ export default function SettingsScreen() {
       setToast({ visible: true, message: 'Could not save split', type: 'error' });
     } finally {
       setSavingSplit(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    if (!user) return;
+    setExporting(true);
+    try {
+      const workoutsSnap = await getDocs(
+        collection(db, 'users', user.uid, 'workouts')
+      );
+
+      const rows: string[] = [
+        ['Date', 'Workout', 'Notes', 'Exercise', 'Type', 'Sets', 'Reps', 'Weight (lbs)', 'Duration (min)', 'Duration (sec)', 'Bodyweight'].join(','),
+      ];
+
+      workoutsSnap.docs.forEach((d) => {
+        const w = d.data();
+        const dateMs = w.date?.seconds ? w.date.seconds * 1000 : Date.now();
+        const dateStr = new Date(dateMs).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        const name = `"${(w.name ?? '').replace(/"/g, '""')}"`;
+        const notes = `"${(w.notes ?? '').replace(/"/g, '""')}"`;
+
+        if (w.exercises && w.exercises.length > 0) {
+          (w.exercises as any[]).forEach((ex) => {
+            const exName = `"${(ex.name ?? '').replace(/"/g, '""')}"`;
+            const exType = ex.exerciseType ?? 'Sets of Reps';
+            rows.push(
+              [
+                dateStr,
+                name,
+                notes,
+                exName,
+                exType,
+                ex.sets ?? '',
+                ex.reps ?? '',
+                ex.bodyweight ? '' : (ex.weight ?? ''),
+                ex.durationMinutes ?? '',
+                ex.durationSeconds ?? '',
+                ex.bodyweight ? 'Yes' : 'No',
+              ].join(',')
+            );
+          });
+        } else {
+          rows.push([dateStr, name, notes, '', '', '', '', '', '', '', ''].join(','));
+        }
+      });
+
+      const csv = rows.join('\n');
+      const fileName = `pump-pal-workouts-${new Date().toISOString().slice(0, 10)}.csv`;
+      const file = new FSFile(Paths.cache, fileName);
+      if (file.exists) file.delete();
+      file.write(csv);
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', dialogTitle: 'Export Training Data', UTI: 'public.comma-separated-values-text' });
+      } else {
+        setToast({ visible: true, message: 'Sharing is not available on this device', type: 'error' });
+      }
+    } catch (err) {
+      console.error(err);
+      setToast({ visible: true, message: 'Could not export data', type: 'error' });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -483,6 +550,19 @@ export default function SettingsScreen() {
         activeOpacity={0.8}>
         <Ionicons name="lock-closed" size={20} color="#fff" style={styles.rowIcon} />
         <Text style={styles.changePasswordText}>Change Password</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.changePasswordButton, { marginBottom: 12 }, exporting && styles.updateButtonDisabled]}
+        onPress={handleExportData}
+        disabled={exporting}
+        activeOpacity={0.8}>
+        {exporting ? (
+          <ActivityIndicator size="small" color="#fff" style={styles.rowIcon} />
+        ) : (
+          <Ionicons name="download" size={20} color="#fff" style={styles.rowIcon} />
+        )}
+        <Text style={styles.changePasswordText}>{exporting ? 'Exporting...' : 'Export Training Data'}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={[styles.signOutButton, { marginBottom: 12 }]} onPress={handleSignOut}>

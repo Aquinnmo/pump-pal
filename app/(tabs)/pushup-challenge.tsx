@@ -1,5 +1,6 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { getDailyName } from '@/utils/daily-name';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
@@ -285,6 +286,7 @@ export default function PushupChallengeScreen() {
   const [connectorH, setConnectorH] = useState(0);
   const undoAnim = useRef(new Animated.Value(0)).current;
   const [undoingToday, setUndoingToday] = useState(false);
+  const [dailyName, setDailyName] = useState<string | null>(null);
 
   // Ember particle animation values (connector fire)
   const emberData = useRef(
@@ -417,12 +419,13 @@ export default function PushupChallengeScreen() {
     if (!docRef) return;
     setLoading(true);
     try {
-      const snap = await getDoc(docRef);
+      const [snap, name] = await Promise.all([getDoc(docRef), getDailyName()]);
       if (snap.exists()) {
         setData(snap.data() as ChallengeData);
       } else {
         setData(null);
       }
+      setDailyName(name);
     } catch (e) {
       console.error('Failed to load pushup challenge', e);
     } finally {
@@ -984,7 +987,7 @@ export default function PushupChallengeScreen() {
         <View style={styles.swipeWrapper}>
           {todayCompleted ? (
             <SwipeComplete
-              label="Swipe left if you lied..."
+              label={`Swipe left if you lied${dailyName ? ` (${dailyName}...)` : '...'}`}
               onUndo={undoTodayPushups}
             />
           ) : (
