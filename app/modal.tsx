@@ -28,7 +28,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddWorkoutModal() {
   const { user } = useAuth();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, suggestion } = useLocalSearchParams<{ id: string; suggestion: string }>();
   const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
@@ -121,17 +121,23 @@ export default function AddWorkoutModal() {
         usedNames.forEach((n) => { if (!merged.includes(n)) merged.push(n); });
         setWorkoutNameOptions(merged);
 
-        // Auto-select next predicted workout type for new workouts only
-        if (!id && splitNames.length > 1) {
-          // Find the most recent workout whose name is in the split rotation
-          const lastSplitWorkout = historyData.find((w) => splitNames.includes(w.name));
-          if (lastSplitWorkout) {
-            const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
-            const nextName = splitNames[(lastIdx + 1) % splitNames.length];
-            setWorkoutName(nextName);
-          } else if (splitNames.length > 0) {
-            // No history yet — default to first in rotation
-            setWorkoutName(splitNames[0]);
+        // Auto-select workout name for new workouts only
+        if (!id) {
+          if (suggestion && merged.includes(suggestion)) {
+            // Use the suggestion passed from the home screen (pattern-based prediction)
+            setWorkoutName(suggestion);
+          } else if (suggestion) {
+            // Suggestion isn't in the merged list yet — still honour it
+            setWorkoutName(suggestion);
+          } else if (splitNames.length > 1) {
+            // Fallback: round-robin if opened without a suggestion
+            const lastSplitWorkout = historyData.find((w) => splitNames.includes(w.name));
+            if (lastSplitWorkout) {
+              const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
+              setWorkoutName(splitNames[(lastIdx + 1) % splitNames.length]);
+            } else if (splitNames.length > 0) {
+              setWorkoutName(splitNames[0]);
+            }
           }
         }
       } catch {

@@ -69,18 +69,47 @@ export default function HomeScreen() {
             }
           }
 
-          if (splitNames.length > 1) {
-            const lastSplitWorkout = allFetched.find((w) => splitNames.includes(w.name));
-            if (lastSplitWorkout) {
-              const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
-              setNextWorkout(splitNames[(lastIdx + 1) % splitNames.length]);
-            } else {
-              setNextWorkout(splitNames[0]);
-            }
+          if (splitNames.length === 0) {
+            setNextWorkout(null);
           } else if (splitNames.length === 1) {
             setNextWorkout(splitNames[0]);
           } else {
-            setNextWorkout(null);
+            // All logged workouts that match a split category, sorted oldest → newest
+            const splitHistory = allFetched
+              .filter((w) => splitNames.includes(w.name))
+              .sort((a, b) => {
+                const aMs = a.date instanceof Date ? a.date.getTime() : (a.date as { seconds: number }).seconds * 1000;
+                const bMs = b.date instanceof Date ? b.date.getTime() : (b.date as { seconds: number }).seconds * 1000;
+                return aMs - bMs;
+              });
+
+            // Build a transition-frequency map from the user's actual workout sequence:
+            // transitions[A][B] = how many times the user did B right after A
+            const transitions: Record<string, Record<string, number>> = {};
+            for (let i = 0; i < splitHistory.length - 1; i++) {
+              const from = splitHistory[i].name;
+              const to = splitHistory[i + 1].name;
+              if (from === to) continue; // skip back-to-back same type (no real signal)
+              if (!transitions[from]) transitions[from] = {};
+              transitions[from][to] = (transitions[from][to] ?? 0) + 1;
+            }
+
+            const lastSplitWorkout = splitHistory[splitHistory.length - 1];
+            if (lastSplitWorkout) {
+              const fromTransitions = transitions[lastSplitWorkout.name];
+              if (fromTransitions && Object.keys(fromTransitions).length > 0) {
+                // Pick the most-frequently-observed next workout for this type
+                const predicted = Object.entries(fromTransitions)
+                  .sort((a, b) => b[1] - a[1])[0][0];
+                setNextWorkout(predicted);
+              } else {
+                // No pattern data yet — fall back to the predefined split order
+                const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
+                setNextWorkout(splitNames[(lastIdx + 1) % splitNames.length]);
+              }
+            } else {
+              setNextWorkout(splitNames[0]);
+            }
           }
         } catch (err) {
           console.error(err);
@@ -125,7 +154,7 @@ export default function HomeScreen() {
       {nextWorkout && (
         <TouchableOpacity
           style={styles.nextWorkoutCard}
-          onPress={() => router.push('/modal')}
+          onPress={() => router.push({ pathname: '/modal', params: { suggestion: nextWorkout } })}
           activeOpacity={0.85}>
           <View style={styles.nextWorkoutLeft}>
             <Text style={styles.nextWorkoutLabel}>Up Next:</Text>
