@@ -233,13 +233,13 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
-    backgroundColor: '#1a1a1a',
+    borderColor: '#525252',
+    backgroundColor: '#2c2c2c',
   },
   seeAllText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#444',
+    color: '#ffffff',
   },
   list: {
     paddingTop: 28,
