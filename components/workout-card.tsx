@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useState } from 'react';
-import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -94,6 +94,46 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
     setShowDetail(true);
   }, [translateY, overlayOpacity]);
 
+  const handleShare = useCallback(() => {
+    const weighted = workout.exercises.filter(
+      (ex) => ex.exerciseType !== 'Sets of Duration' && !ex.bodyweight && Number(ex.weight) > 0
+    );
+    const repsExs = workout.exercises.filter((ex) => ex.exerciseType !== 'Sets of Duration');
+    const totalVolume = weighted.reduce((s, ex) => s + ex.sets * ex.reps * Number(ex.weight), 0);
+    const totalReps = repsExs.reduce((s, ex) => s + ex.sets * ex.reps, 0);
+    const exerciseCount = workout.exercises.length;
+    const fmtVolume = totalVolume >= 1000
+      ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
+      : `${totalVolume}`;
+
+    const exerciseLines = workout.exercises.map((ex) => {
+      const detail = ex.exerciseType === 'Sets of Duration'
+        ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
+        : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`;
+      return `  • ${ex.name} — ${detail}`;
+    }).join('\n');
+
+    const metricParts: string[] = [];
+    if (weighted.length > 0) metricParts.push(`Volume: ${fmtVolume} lbs`);
+    if (repsExs.length > 0) metricParts.push(`Total Reps: ${totalReps}`);
+    metricParts.push(`Exercises: ${exerciseCount}`);
+
+    const message = [
+      `${workout.name} — ${dateStr}`,
+      '',
+      'Exercises:',
+      exerciseLines,
+      '',
+      metricParts.join('\n'),
+      workout.notes ? `\nNotes: ${workout.notes}` : '',
+      '',
+      'Logged with Pump Pal 💪',
+      'https://pump.adam-montgomery.ca',
+    ].filter((l) => l !== undefined).join('\n');
+
+    Share.share({ message });
+  }, [workout, dateStr]);
+
   return (
     <>
       <Modal visible={showDetail} transparent animationType="slide" onRequestClose={dismiss}>
@@ -154,10 +194,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
             <Text style={styles.date}>{dateStr}</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity onPress={handleOpen} hitSlop={8} style={styles.viewButton}>
-              <Text style={styles.viewText}>View</Text>
-              <Ionicons name="eye-outline" size={16} color="#e54242" />
-            </TouchableOpacity>
+            
             {onEdit && (
               <TouchableOpacity onPress={() => onEdit(workout)} hitSlop={8} style={styles.editButton}>
                 <Text style={styles.editText}>Edit</Text>
@@ -202,6 +239,17 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
           </View>
         );
       })()}
+      
+          <View style={styles.viewRow}>
+            <TouchableOpacity onPress={handleOpen} hitSlop={8} style={styles.viewButton}>
+              <Text style={styles.viewText}>View</Text>
+              <Ionicons name="eye-outline" size={20} color="#e54242" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleShare} hitSlop={8} style={styles.shareButton}>
+              <Text style={styles.shareText}>Share</Text>
+              <Ionicons name="share-social" size={20} color="#666" />
+            </TouchableOpacity>
+          </View>
     </View>
     </>
   );
@@ -281,11 +329,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    padding: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    marginLeft: 0,
+    marginTop: 4,
   },
   viewText: {
     fontSize: 15,
     color: '#e54242',
+    fontWeight: '600',
+  },
+  viewRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+  },
+  shareText: {
+    fontSize: 15,
+    color: '#666',
     fontWeight: '600',
   },
   navBarFill: {

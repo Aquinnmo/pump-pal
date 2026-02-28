@@ -1,6 +1,6 @@
 import { Dropdown } from '@/components/ui/dropdown';
 import { Toast } from '@/components/ui/toast';
-import { db } from '@/config/firebase';
+import { auth, db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
@@ -8,7 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Updates from 'expo-updates';
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,6 +30,14 @@ export default function SettingsScreen() {
   const [loadingSplit, setLoadingSplit] = useState(true);
   const [savingSplit, setSavingSplit] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({  
     visible: false,
@@ -81,6 +90,65 @@ export default function SettingsScreen() {
   };
 
   const handleSignOut = () => setShowSignOutModal(true);
+
+  const handleChangePassword = () => {
+    setOldPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setShowChangePasswordModal(true);
+  };
+
+  const confirmChangePassword = async () => {
+    if (!user || !user.email || newPassword !== confirmNewPassword || !newPassword) return;
+    setChangingPassword(true);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, oldPassword);
+      await reauthenticateWithCredential(auth.currentUser!, credential);
+      await updatePassword(auth.currentUser!, newPassword);
+      setShowChangePasswordModal(false);
+      setToast({ visible: true, message: 'Password updated successfully', type: 'success' });
+    } catch (err: any) {
+      console.error(err);
+      const msg =
+        err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'
+          ? 'Current password is incorrect.'
+          : err.code === 'auth/weak-password'
+          ? 'New password must be at least 6 characters.'
+          : 'Could not update password. Please try again.';
+      setToast({ visible: true, message: msg, type: 'error' });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    setDeleteConfirmName('');
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!user || deleteConfirmName !== user.displayName) return;
+    setDeletingAccount(true);
+    try {
+      const workoutsSnap = await getDocs(collection(db, 'users', user.uid, 'workouts'));
+      await Promise.all(workoutsSnap.docs.map((d) => deleteDoc(d.ref)));
+      await deleteDoc(doc(db, 'users', user.uid, 'pushup-challenge', 'data')).catch(() => {});
+      await deleteDoc(doc(db, 'users', user.uid));
+      await deleteUser(auth.currentUser!);
+      router.replace('/(auth)/sign-in');
+    } catch (err: any) {
+      console.error(err);
+      const msg =
+        err.code === 'auth/requires-recent-login'
+          ? 'Please sign out and sign back in before deleting your account.'
+          : 'Could not delete account. Please try again.';
+      setToast({ visible: true, message: msg, type: 'error' });
+    } finally {
+      setDeletingAccount(false);
+      setShowDeleteModal(false);
+      setDeleteConfirmName('');
+    }
+  };
 
   const confirmSignOut = async () => {
     setShowSignOutModal(false);
@@ -135,6 +203,119 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <Modal visible={showChangePasswordModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+            <Text style={styles.modalMessage}>Enter your current password and choose a new one.</Text>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Current password"
+              placeholderTextColor="#555"
+              value={oldPassword}
+              onChangeText={setOldPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="New password"
+              placeholderTextColor="#555"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TextInput
+              style={[
+                styles.passwordInput,
+                styles.passwordInputLast,
+                confirmNewPassword.length > 0 && newPassword !== confirmNewPassword && styles.passwordInputError,
+              ]}
+              placeholder="Confirm new password"
+              placeholderTextColor="#555"
+              value={confirmNewPassword}
+              onChangeText={setConfirmNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowChangePasswordModal(false)}
+                activeOpacity={0.8}
+                disabled={changingPassword}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmButton,
+                  (newPassword !== confirmNewPassword || !newPassword || !oldPassword || changingPassword) &&
+                    styles.modalButtonDisabled,
+                ]}
+                onPress={confirmChangePassword}
+                activeOpacity={0.8}
+                disabled={newPassword !== confirmNewPassword || !newPassword || !oldPassword || changingPassword}>
+                {changingPassword ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Update</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={showDeleteModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalMessage}>
+              {'This will permanently delete your account and all associated data. This cannot be undone.\n\nType your name '}
+              <Text style={{ color: '#fff', fontWeight: '700' }}>{user?.displayName}</Text>
+              {' to confirm.'}
+            </Text>
+            <TextInput
+              style={styles.deleteConfirmInput}
+              placeholder="Your name"
+              placeholderTextColor="#555"
+              value={deleteConfirmName}
+              onChangeText={setDeleteConfirmName}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowDeleteModal(false)}
+                activeOpacity={0.8}
+                disabled={deletingAccount}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmButton,
+                  styles.modalDeleteButton,
+                  (deleteConfirmName !== user?.displayName || deletingAccount) && styles.modalButtonDisabled,
+                ]}
+                onPress={confirmDeleteAccount}
+                activeOpacity={0.8}
+                disabled={deleteConfirmName !== user?.displayName || deletingAccount}>
+                {deletingAccount ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Delete</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={showSignOutModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
@@ -257,16 +438,29 @@ export default function SettingsScreen() {
         {checkingUpdate ? (
           <ActivityIndicator size="small" color="#fff" style={styles.rowIcon} />
         ) : (
-          <Ionicons name="cloud-download-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <Ionicons name="cloud-download" size={20} color="#fff" style={styles.rowIcon} />
         )}
         <Text style={styles.updateButtonText}>
           {checkingUpdate ? 'Checking...' : 'Update App'}
         </Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-        <Ionicons name="log-out-outline" size={20} color="#e54242" style={styles.rowIcon} />
+      <TouchableOpacity
+        style={[styles.changePasswordButton, { marginBottom: 12 }]}
+        onPress={handleChangePassword}
+        activeOpacity={0.8}>
+        <Ionicons name="lock-closed-outline" size={20} color="#aaa" style={styles.rowIcon} />
+        <Text style={styles.changePasswordText}>Change Password</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.signOutButton, { marginBottom: 12 }]} onPress={handleSignOut}>
+        <Ionicons name="log-out" size={20} color="#e54242" style={styles.rowIcon} />
         <Text style={styles.signOutText}>Sign Out</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+        <Ionicons name="trash" size={20} color="#b00020" style={styles.rowIcon} />
+        <Text style={styles.deleteAccountText}>Delete Account</Text>
       </TouchableOpacity>
 
       <View style={styles.attributionCard}>
@@ -472,6 +666,70 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#e54242',
     fontWeight: '600',
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#3a1010',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  deleteAccountText: {
+    fontSize: 15,
+    color: '#b00020',
+    fontWeight: '600',
+  },
+  deleteConfirmInput: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#3a1010',
+    backgroundColor: '#151515',
+    color: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    marginBottom: 20,
+  },
+  modalDeleteButton: {
+    backgroundColor: '#b00020',
+  },
+  modalButtonDisabled: {
+    opacity: 0.4,
+  },
+  changePasswordButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  changePasswordText: {
+    fontSize: 15,
+    color: '#aaa',
+    fontWeight: '600',
+  },
+  passwordInput: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2e2e2e',
+    backgroundColor: '#151515',
+    color: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  passwordInputLast: {
+    marginBottom: 20,
+  },
+  passwordInputError: {
+    borderColor: '#b00020',
   },
   feedbackButton: {
     flexDirection: 'row',
