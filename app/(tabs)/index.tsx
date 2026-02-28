@@ -8,13 +8,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    limit,
-    orderBy,
-    query,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -137,7 +137,15 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      <Text style={styles.sectionTitle}>Recent Workouts</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Recent Workouts</Text>
+        <TouchableOpacity
+          style={styles.seeAllButton}
+          onPress={() => router.push('/(tabs)/workouts')}
+          activeOpacity={0.7}>
+          <Text style={styles.seeAllText}>See all workouts</Text>
+        </TouchableOpacity>
+      </View>
 
       {recentWorkouts.length === 0 ? (
         <View style={styles.empty}>
@@ -206,11 +214,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 14,
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    backgroundColor: '#1a1a1a',
+  },
+  seeAllText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#444',
   },
   list: {
     paddingTop: 28,

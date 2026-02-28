@@ -20,7 +20,7 @@ import {
   View
 } from 'react-native';
 
-export default function ProfileScreen() {
+export default function SettingsScreen() {
   const { user, logOut } = useAuth();
   const [selectedSplit, setSelectedSplit] = useState<SplitOption>('Push / Pull / Legs');
   const [customSplit, setCustomSplit] = useState('');
@@ -152,7 +152,7 @@ export default function ProfileScreen() {
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
 
-      <Text style={styles.title}>Profile</Text>
+      <Text style={styles.title}>Settings</Text>
 
       <View style={styles.avatarContainer}>
         <Text style={styles.displayName}>{user?.displayName ?? 'Athlete'}</Text>
