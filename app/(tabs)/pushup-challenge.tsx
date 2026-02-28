@@ -145,10 +145,12 @@ function SwipeToComplete({
   label,
   onComplete,
   disabled,
+  loading,
 }: {
   label: string;
   onComplete: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   const trackWidth = SCREEN_WIDTH - 40; // 20px margin each side
   const maxX = trackWidth - SWIPE_THUMB - 8; // 4px padding each side
@@ -188,10 +190,18 @@ function SwipeToComplete({
   });
 
   return (
-    <View style={[swipeStyles.track, { width: trackWidth }]}> 
-      <Animated.Text style={[swipeStyles.label, { opacity: labelOpacity }]}>
-        {label}
-      </Animated.Text>
+    <View style={[swipeStyles.track, { width: trackWidth }]}>
+      {loading ? (
+        <ActivityIndicator
+          color={RED}
+          size="small"
+          style={swipeStyles.labelSpinner}
+        />
+      ) : (
+        <Animated.Text style={[swipeStyles.label, { opacity: labelOpacity }]}>
+          {label}
+        </Animated.Text>
+      )}
       <Animated.View
         style={[swipeStyles.thumb, { transform: [{ translateX: pan }] }]}
         {...panResponder.panHandlers}
@@ -225,12 +235,14 @@ export default function PushupChallengeScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const [scrollViewH, setScrollViewH] = useState(0);
   const [todayNodeY, setTodayNodeY] = useState<number | null>(null);
-  const scrolledRef = useRef(false);
+  const [scrollTrigger, setScrollTrigger] = useState(0);
+  const needsScrollRef = useRef(true);
   const fillAnim = useRef(new Animated.Value(0)).current;
+  const burstAnim = useRef(new Animated.Value(0)).current;
   const [animatingCompletion, setAnimatingCompletion] = useState(false);
   const [connectorH, setConnectorH] = useState(0);
 
-  // Ember particle animation values
+  // Ember particle animation values (connector fire)
   const emberData = useRef(
     [
       { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -9, size: 3,   color: '#ffdd44', delay: 0,   dur: 520, yTarget: -22 },
@@ -242,18 +254,68 @@ export default function PushupChallengeScreen() {
     ]
   ).current;
 
+  // Flame burst particles that radiate from the dot when it ignites
+  // Layer 1: core flash (hot white/yellow, fast, close)
+  // Layer 2: inner flames (orange/red, medium distance)
+  // Layer 3: outer embers (red/dark, far, slow fade)
+  // Layer 4: trailing sparks (tiny, fast, long distance)
+  const burstFlames = useRef(
+    [
+      // Core flash — bright, close, fast
+      { angle: 0,    dist: 14, size: 12, color: '#ffffcc', delay: 0,  layer: 'core' },
+      { angle: 60,   dist: 16, size: 11, color: '#ffeeaa', delay: 0,  layer: 'core' },
+      { angle: 120,  dist: 14, size: 13, color: '#fff5bb', delay: 0,  layer: 'core' },
+      { angle: 180,  dist: 15, size: 12, color: '#ffffdd', delay: 0,  layer: 'core' },
+      { angle: 240,  dist: 14, size: 11, color: '#ffeecc', delay: 0,  layer: 'core' },
+      { angle: 300,  dist: 16, size: 12, color: '#fff8bb', delay: 0,  layer: 'core' },
+      // Inner flames — hot orange, medium
+      { angle: 15,   dist: 36, size: 14, color: '#ff6600', delay: 20,  layer: 'inner' },
+      { angle: 55,   dist: 32, size: 12, color: '#ff8800', delay: 35,  layer: 'inner' },
+      { angle: 95,   dist: 38, size: 15, color: '#ff5500', delay: 10,  layer: 'inner' },
+      { angle: 140,  dist: 34, size: 13, color: '#ffaa00', delay: 40,  layer: 'inner' },
+      { angle: 185,  dist: 36, size: 14, color: '#ff7700', delay: 25,  layer: 'inner' },
+      { angle: 230,  dist: 33, size: 12, color: '#ff9900', delay: 45,  layer: 'inner' },
+      { angle: 275,  dist: 40, size: 16, color: '#ff4400', delay: 15,  layer: 'inner' },
+      { angle: 320,  dist: 34, size: 13, color: '#ff6600', delay: 30,  layer: 'inner' },
+      // Outer embers — darker, larger range
+      { angle: 30,   dist: 52, size: 10, color: '#cc3300', delay: 50,  layer: 'outer' },
+      { angle: 75,   dist: 56, size: 11, color: '#ff4400', delay: 60,  layer: 'outer' },
+      { angle: 110,  dist: 48, size: 9,  color: '#dd3300', delay: 55,  layer: 'outer' },
+      { angle: 155,  dist: 54, size: 10, color: '#ee4400', delay: 70,  layer: 'outer' },
+      { angle: 200,  dist: 50, size: 11, color: '#cc2200', delay: 65,  layer: 'outer' },
+      { angle: 250,  dist: 58, size: 10, color: '#ff3300', delay: 45,  layer: 'outer' },
+      { angle: 290,  dist: 52, size: 12, color: '#dd4400', delay: 75,  layer: 'outer' },
+      { angle: 340,  dist: 50, size: 9,  color: '#ee3300', delay: 55,  layer: 'outer' },
+      // Trailing sparks — tiny, fast, long
+      { angle: 10,   dist: 68, size: 4,  color: '#ffcc00', delay: 30,  layer: 'spark' },
+      { angle: 50,   dist: 72, size: 3,  color: '#ffdd44', delay: 40,  layer: 'spark' },
+      { angle: 100,  dist: 65, size: 4,  color: '#ffaa00', delay: 25,  layer: 'spark' },
+      { angle: 145,  dist: 70, size: 3,  color: '#ffbb00', delay: 50,  layer: 'spark' },
+      { angle: 190,  dist: 66, size: 4,  color: '#ffcc44', delay: 35,  layer: 'spark' },
+      { angle: 235,  dist: 74, size: 3,  color: '#ffdd00', delay: 60,  layer: 'spark' },
+      { angle: 285,  dist: 68, size: 4,  color: '#ffaa44', delay: 20,  layer: 'spark' },
+      { angle: 330,  dist: 72, size: 3,  color: '#ffcc00', delay: 45,  layer: 'spark' },
+    ]
+  ).current;
+
   const onScrollLayout = (e: LayoutChangeEvent) => {
     setScrollViewH(e.nativeEvent.layout.height);
   };
 
-  // Scroll to center today's node when both positions are known
-  useEffect(() => {
-    if (todayNodeY !== null && scrollViewH > 0 && !scrolledRef.current) {
-      scrolledRef.current = true;
-      const target = todayNodeY - scrollViewH / 2;
-      scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: false });
+  // When content size changes (or is first measured), scroll to bottom if needed
+  const onContentSizeChange = useCallback((_w: number, h: number) => {
+    if (needsScrollRef.current && h > 0) {
+      needsScrollRef.current = false;
+      scrollRef.current?.scrollToEnd({ animated: false });
     }
-  }, [todayNodeY, scrollViewH]);
+  }, []);
+
+  // Re-arm the scroll-to-bottom flag whenever the screen is focused
+  useEffect(() => {
+    if (scrollTrigger > 0) {
+      needsScrollRef.current = true;
+    }
+  }, [scrollTrigger]);
 
   // Ember particle animation loop
   useEffect(() => {
@@ -300,9 +362,8 @@ export default function PushupChallengeScreen() {
     };
   }, [animatingCompletion]);
 
-  // Reset scroll flag when challenge data changes
+  // Reset when challenge restarts (new startDate)
   useEffect(() => {
-    scrolledRef.current = false;
     setTodayNodeY(null);
   }, [data?.startDate]);
 
@@ -327,6 +388,7 @@ export default function PushupChallengeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setScrollTrigger((v) => v + 1);
       load();
     }, [load]),
   );
@@ -365,9 +427,21 @@ export default function PushupChallengeScreen() {
         longestStreak: Math.max(data.longestStreak ?? 0, newStreak),
       };
 
+      // Scroll today's node to center before the animation fires so
+      // the user sees it in position before the fire starts.
+      if (todayNodeY !== null && scrollViewH > 0) {
+        const target = todayNodeY - scrollViewH / 2;
+        scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: true });
+      }
+
       // Run fill animation and Firebase save concurrently
       fillAnim.setValue(0);
       setAnimatingCompletion(true);
+
+      // With Easing.out(Easing.cubic) over 2000ms, fillAnim reaches 0.55
+      // (connector fully burned, dot ignites) at t where 1-(1-t)^3 = 0.55 → t ≈ 0.234 → ~468ms
+      const BURST_DELAY_MS = 468;
+      burstAnim.setValue(0);
 
       await Promise.all([
         new Promise<void>((resolve) => {
@@ -378,17 +452,22 @@ export default function PushupChallengeScreen() {
             useNativeDriver: false,
           }).start(() => resolve());
         }),
+        new Promise<void>((resolve) => {
+          Animated.sequence([
+            Animated.delay(BURST_DELAY_MS),
+            Animated.timing(burstAnim, {
+              toValue: 1,
+              duration: 900,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: false,
+            }),
+          ]).start(() => resolve());
+        }),
         setDoc(docRef, updated).catch((e) => console.error('Failed to save pushup completion', e)),
       ]);
 
       setData(updated);
       setAnimatingCompletion(false);
-
-      // Scroll today into center with smooth animation
-      if (todayNodeY !== null && scrollViewH > 0) {
-        const target = todayNodeY - scrollViewH / 2;
-        scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: true });
-      }
     } finally {
       setSaving(false);
     }
@@ -465,16 +544,24 @@ export default function PushupChallengeScreen() {
       ) : null}
 
       {/* Timeline — today centred, past days above */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.timeline,
-          { paddingTop: Math.max(scrollViewH / 2 - NODE_DOT / 2, 20) },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onLayout={onScrollLayout}
-      >
+      <View style={styles.timelineWrapper}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.timeline,
+            {
+              paddingTop: Math.max(scrollViewH / 2 - NODE_DOT / 2, 20),
+              // nodeInfo paddingBottom (72) + half the dot height (NODE_DOT/2=15) are
+              // already below the last dot's center. Subtract so the bottom of
+              // scroll content lands the present day's dot at vertical center.
+              paddingBottom: Math.max(scrollViewH / 2 - NODE_DOT / 2 - 72 - NODE_DOT / 2, 0),
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          onLayout={onScrollLayout}
+          onContentSizeChange={onContentSizeChange}
+        >
         {nodes.map((node, i) => {
           const dotColor = node.completed ? RED : GREY;
           const nextCompleted = i < nodes.length - 1 && nodes[i + 1].completed;
@@ -485,11 +572,11 @@ export default function PushupChallengeScreen() {
           const isAnimConnector = animatingCompletion && hasConnector && i === todayIndex - 1;
           const isAnimDot = animatingCompletion && node.isToday;
 
-          // Dot fire color: grey → bright yellow → orange → red
+          // Dot fire color: invisible during connector burn, snap to red when burst starts
           const animDotColor = isAnimDot
             ? fillAnim.interpolate({
-                inputRange: [0.55, 0.65, 0.82, 1],
-                outputRange: [GREY, '#ffcc00', '#ff6600', RED],
+                inputRange: [0, 0.54, 0.55, 1],
+                outputRange: ['transparent', 'transparent', RED, RED],
                 extrapolate: 'clamp',
               })
             : dotColor;
@@ -511,55 +598,158 @@ export default function PushupChallengeScreen() {
             >
               {/* Left track: dot at top, connector stretches to fill row height */}
               <View style={[styles.nodeTrack, { overflow: 'visible' }]}>
-                {/* ── Dot glow ring (behind dot) ── */}
+                {/* ── Epic flame burst (behind dot) ── */}
+                {isAnimDot && burstFlames.map((flame, fi) => {
+                  const rad = (flame.angle * Math.PI) / 180;
+                  const dx = Math.cos(rad) * flame.dist;
+                  const dy = Math.sin(rad) * flame.dist;
+                  const d = flame.delay / 900;
+
+                  // Layer-specific timing
+                  const isCore = flame.layer === 'core';
+                  const isSpark = flame.layer === 'spark';
+                  const isOuter = flame.layer === 'outer';
+
+                  const peakOpacity = isCore ? 1 : isSpark ? 0.85 : 0.95;
+                  const fadeEnd = isCore ? 0.35 : isSpark ? 0.95 : isOuter ? 0.85 : 0.7;
+                  const scaleMax = isCore ? 2.0 : isSpark ? 1.0 : isOuter ? 1.5 : 1.8;
+                  const heightMult = isCore ? 1.2 : isSpark ? 2.5 : isOuter ? 1.8 : 1.6;
+
+                  return (
+                    <Animated.View
+                      key={fi}
+                      style={{
+                        position: 'absolute',
+                        width: flame.size,
+                        height: flame.size * heightMult,
+                        borderRadius: flame.size / 2,
+                        backgroundColor: flame.color,
+                        left: NODE_DOT / 2 - flame.size / 2,
+                        top: NODE_DOT / 2 - (flame.size * heightMult) / 2,
+                        zIndex: isCore ? 5 : isSpark ? 2 : 3,
+                        opacity: burstAnim.interpolate({
+                          inputRange: [
+                            Math.max(d - 0.01, 0),
+                            Math.min(d + 0.06, 0.15),
+                            Math.min(d + fadeEnd, 1),
+                            1,
+                          ],
+                          outputRange: [0, peakOpacity, 0, 0],
+                          extrapolate: 'clamp',
+                        }),
+                        transform: [
+                          {
+                            translateX: burstAnim.interpolate({
+                              inputRange: [d, Math.min(d + 0.5, 1), 1],
+                              outputRange: [0, dx * 0.85, dx],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                          {
+                            translateY: burstAnim.interpolate({
+                              inputRange: [d, Math.min(d + 0.5, 1), 1],
+                              outputRange: [0, dy * 0.85, dy],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                          {
+                            scale: burstAnim.interpolate({
+                              inputRange: [
+                                d,
+                                Math.min(d + 0.12, 0.25),
+                                Math.min(d + 0.4, 0.65),
+                                1,
+                              ],
+                              outputRange: [0.1, scaleMax, scaleMax * 0.6, 0],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                          { rotate: `${flame.angle + 90}deg` },
+                        ],
+                      }}
+                    />
+                  );
+                })}
+
+                {/* ── Hot core flash ── */}
                 {isAnimDot && (
                   <Animated.View
                     style={{
                       position: 'absolute',
-                      width: NODE_DOT + 24,
-                      height: NODE_DOT + 24,
-                      borderRadius: (NODE_DOT + 24) / 2,
-                      top: -12,
-                      left: (NODE_DOT - (NODE_DOT + 24)) / 2,
-                      backgroundColor: 'rgba(255, 136, 0, 0.30)',
-                      zIndex: 1,
-                      opacity: fillAnim.interpolate({
-                        inputRange: [0.55, 0.68, 0.88, 1],
-                        outputRange: [0, 0.85, 0.5, 0],
+                      width: NODE_DOT + 12,
+                      height: NODE_DOT + 12,
+                      borderRadius: (NODE_DOT + 12) / 2,
+                      top: -6,
+                      left: -6,
+                      backgroundColor: '#fff8dd',
+                      zIndex: 6,
+                      opacity: burstAnim.interpolate({
+                        inputRange: [0, 0.05, 0.18, 0.45],
+                        outputRange: [0, 0.95, 0.4, 0],
                         extrapolate: 'clamp',
                       }),
                       transform: [{
-                        scale: fillAnim.interpolate({
-                          inputRange: [0.55, 0.75, 1],
-                          outputRange: [0.5, 1.4, 1],
+                        scale: burstAnim.interpolate({
+                          inputRange: [0, 0.08, 0.3],
+                          outputRange: [0.2, 1.8, 0.6],
                           extrapolate: 'clamp',
                         }),
                       }],
                     }}
                   />
                 )}
+
+                {/* ── Mid-range heat glow ── */}
                 {isAnimDot && (
                   <Animated.View
                     style={{
                       position: 'absolute',
-                      width: NODE_DOT + 40,
-                      height: NODE_DOT + 40,
-                      borderRadius: (NODE_DOT + 40) / 2,
-                      top: -20,
-                      left: (NODE_DOT - (NODE_DOT + 40)) / 2,
-                      backgroundColor: 'transparent',
-                      borderWidth: 2,
-                      borderColor: '#ff880066',
-                      zIndex: 0,
-                      opacity: fillAnim.interpolate({
-                        inputRange: [0.58, 0.72, 0.9, 1],
-                        outputRange: [0, 0.7, 0.25, 0],
+                      width: NODE_DOT + 50,
+                      height: NODE_DOT + 50,
+                      borderRadius: (NODE_DOT + 50) / 2,
+                      top: -25,
+                      left: -25,
+                      backgroundColor: 'rgba(255, 100, 0, 0.35)',
+                      zIndex: 1,
+                      opacity: burstAnim.interpolate({
+                        inputRange: [0, 0.08, 0.35, 0.7],
+                        outputRange: [0, 0.85, 0.35, 0],
                         extrapolate: 'clamp',
                       }),
                       transform: [{
-                        scale: fillAnim.interpolate({
-                          inputRange: [0.58, 0.82, 1],
-                          outputRange: [0.4, 1.6, 1.2],
+                        scale: burstAnim.interpolate({
+                          inputRange: [0, 0.15, 0.6, 1],
+                          outputRange: [0.2, 1.8, 1.3, 0.8],
+                          extrapolate: 'clamp',
+                        }),
+                      }],
+                    }}
+                  />
+                )}
+
+                {/* ── Outer shockwave ring ── */}
+                {isAnimDot && (
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: NODE_DOT + 70,
+                      height: NODE_DOT + 70,
+                      borderRadius: (NODE_DOT + 70) / 2,
+                      top: -35,
+                      left: -35,
+                      backgroundColor: 'transparent',
+                      borderWidth: 2,
+                      borderColor: '#ff660055',
+                      zIndex: 0,
+                      opacity: burstAnim.interpolate({
+                        inputRange: [0.02, 0.12, 0.5, 0.8],
+                        outputRange: [0, 0.7, 0.2, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [{
+                        scale: burstAnim.interpolate({
+                          inputRange: [0.02, 0.35, 0.8],
+                          outputRange: [0.3, 1.8, 2.2],
                           extrapolate: 'clamp',
                         }),
                       }],
@@ -586,7 +776,6 @@ export default function PushupChallengeScreen() {
                             left: 0,
                             right: 0,
                             height: burnFrontY,
-                            borderRadius: 4,
                             overflow: 'hidden',
                           }}
                         >
@@ -598,7 +787,7 @@ export default function PushupChallengeScreen() {
                             locations={[0, 0.25, 0.5, 0.8, 1]}
                             start={{ x: 0.5, y: 0 }}
                             end={{ x: 0.5, y: 1 }}
-                            style={{ height: 32, borderRadius: 4 }}
+                            style={{ height: 32 }}
                           />
                         </Animated.View>
                       )}
@@ -677,6 +866,20 @@ export default function PushupChallengeScreen() {
         })}
       </ScrollView>
 
+        {/* Top fade */}
+        <LinearGradient
+          colors={[DARK_BG, 'transparent'] as any}
+          style={styles.fadeTop}
+          pointerEvents="none"
+        />
+        {/* Bottom fade */}
+        <LinearGradient
+          colors={['transparent', DARK_BG] as any}
+          style={styles.fadeBottom}
+          pointerEvents="none"
+        />
+      </View>
+
       {/* Bottom slider area */}
       {!streakBroken && todayNode && (
         <View style={styles.swipeWrapper}>
@@ -684,13 +887,12 @@ export default function PushupChallengeScreen() {
             <SwipeComplete
               label="Today's pushups done!"
             />
-          ) : saving ? (
-            <ActivityIndicator color={RED} size="small" />
           ) : (
             <SwipeToComplete
               label={`I did ${todayNode.dayNumber} pushup${todayNode.dayNumber > 1 ? 's' : ''} today`}
               onComplete={completeTodayPushups}
               disabled={saving}
+              loading={saving}
             />
           )}
         </View>
@@ -799,12 +1001,31 @@ const styles = StyleSheet.create({
   },
 
   // Timeline
+  timelineWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
   scrollView: {
     flex: 1,
   },
+  fadeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    pointerEvents: 'none',
+  },
+  fadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    pointerEvents: 'none',
+  },
   timeline: {
     paddingHorizontal: 24,
-    paddingBottom: 20,
   },
   nodeRow: {
     flexDirection: 'row',
@@ -870,6 +1091,11 @@ const swipeStyles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
     fontWeight: '600',
+  },
+  labelSpinner: {
+    position: 'absolute',
+    width: '100%',
+    alignSelf: 'center',
   },
   thumb: {
     width: SWIPE_THUMB,
