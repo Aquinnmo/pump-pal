@@ -10,18 +10,19 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { addDoc, collection, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -52,6 +53,7 @@ export default function AddWorkoutModal() {
   }[]>([{ name: '', isCustomName: false, customName: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsesLeft, setAiUsesLeft] = useState(3);
   const [splitType, setSplitType] = useState<string>('');
@@ -347,6 +349,18 @@ export default function AddWorkoutModal() {
       showAlert('Error', 'Could not get AI suggestions. Please try again.');
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || !user) return;
+    try {
+      await deleteDoc(doc(db, 'users', user.uid, 'workouts', id));
+      router.back();
+    } catch (err: any) {
+      showAlert('Error', 'Could not delete workout. ' + err.message);
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -762,18 +776,53 @@ export default function AddWorkoutModal() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.bigSaveButton, (saving || loading) && styles.bigSaveButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving || loading}
-          activeOpacity={0.8}
-        >
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.bigSaveButtonText}>{id ? 'Save Changes' : 'Save Workout'}</Text>
+        {id && (
+          <Modal visible={showDeleteConfirm} transparent animationType="fade">
+            <View style={styles.deleteModalOverlay}>
+              <View style={styles.deleteModalCard}>
+                <Text style={styles.deleteModalTitle}>Delete Workout</Text>
+                <Text style={styles.deleteModalMessage}>Are you sure you want to delete this workout? This cannot be undone.</Text>
+                <View style={styles.deleteModalActions}>
+                  <TouchableOpacity
+                    style={styles.deleteModalCancelButton}
+                    onPress={() => setShowDeleteConfirm(false)}
+                    activeOpacity={0.8}>
+                    <Text style={styles.deleteModalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.deleteModalConfirmButton}
+                    onPress={handleDelete}
+                    activeOpacity={0.8}>
+                    <Text style={styles.deleteModalConfirmText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        )}
+
+        <View style={id ? styles.saveRow : undefined}>
+          <TouchableOpacity
+            style={[styles.bigSaveButton, (saving || loading) && styles.bigSaveButtonDisabled]}
+            onPress={handleSave}
+            disabled={saving || loading}
+            activeOpacity={0.8}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.bigSaveButtonText}>{id ? 'Save Changes' : 'Save Workout'}</Text>
+            )}
+          </TouchableOpacity>
+          {id && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => setShowDeleteConfirm(true)}
+              activeOpacity={0.8}>
+              <Ionicons name="trash-outline" size={26} color="#e54242" />
+            </TouchableOpacity>
           )}
-        </TouchableOpacity>
+        </View>
       </ScrollView>
       )}
     </KeyboardAvoidingView>
@@ -1018,6 +1067,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
+    flex: 1,
   },
   bigSaveButtonDisabled: {
     opacity: 0.5,
@@ -1027,6 +1077,74 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.3,
+  },
+  saveRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  deleteButton: {
+    backgroundColor: '#000',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  deleteModalCard: {
+    backgroundColor: '#1c1c1c',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  deleteModalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  deleteModalMessage: {
+    fontSize: 14,
+    color: '#aaa',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  deleteModalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  deleteModalCancelButton: {
+    flex: 1,
+    backgroundColor: '#2a2a2a',
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  deleteModalCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  deleteModalConfirmButton: {
+    flex: 1,
+    backgroundColor: '#e54242',
+    borderRadius: 10,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  deleteModalConfirmText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
   },
   aiSuggestButton: {
     flexDirection: 'row',

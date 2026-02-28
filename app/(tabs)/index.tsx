@@ -31,15 +31,28 @@ export default function HomeScreen() {
       (async () => {
         setLoading(true);
         try {
-          // Fetch recent workouts for display (top 3) and prediction (top 20)
+          // Fetch recent workouts for display (last 7 days) and prediction (top 20)
           const q = query(
             collection(db, 'users', user.uid, 'workouts'),
             orderBy('date', 'desc'),
-            limit(20)
+            limit(30)
           );
           const snapshot = await getDocs(q);
           const allFetched = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
-          setRecentWorkouts(allFetched.slice(0, 3));
+
+          const startOfToday = new Date();
+          startOfToday.setHours(0, 0, 0, 0);
+          const sevenDaysAgo = new Date(startOfToday);
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+          const sevenDaysAgoMs = sevenDaysAgo.getTime();
+
+          const last7Days = allFetched.filter((w) => {
+            const ms = w.date instanceof Date
+              ? w.date.getTime()
+              : (w.date as { seconds: number }).seconds * 1000;
+            return ms >= sevenDaysAgoMs;
+          });
+          setRecentWorkouts(last7Days);
 
           // Predict next workout type
           const userSnap = await getDoc(doc(db, 'users', user.uid));
