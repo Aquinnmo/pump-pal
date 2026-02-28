@@ -1,13 +1,15 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Animated,
     Dimensions,
+    Easing,
     LayoutChangeEvent,
     PanResponder,
     ScrollView,
@@ -30,17 +32,19 @@ interface ChallengeData {
 }
 
 const NODE_DOT = 30;
-const EDGE_HEIGHT = 80;
 const RED = '#e54242';
 const GREY = '#555';
 const DARK_BG = '#111';
 const CARD_BG = '#1a1a1a';
 const SWIPE_TRACK_H = 56;
 const SWIPE_THUMB = 48;
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function toDateKey(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -141,10 +145,12 @@ function SwipeToComplete({
   label,
   onComplete,
   disabled,
+  loading,
 }: {
   label: string;
   onComplete: () => void;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   const trackWidth = SCREEN_WIDTH - 40; // 20px margin each side
   const maxX = trackWidth - SWIPE_THUMB - 8; // 4px padding each side
@@ -184,10 +190,18 @@ function SwipeToComplete({
   });
 
   return (
-    <View style={[swipeStyles.track, { width: trackWidth }]}> 
-      <Animated.Text style={[swipeStyles.label, { opacity: labelOpacity }]}>
-        {label}
-      </Animated.Text>
+    <View style={[swipeStyles.track, { width: trackWidth }]}>
+      {loading ? (
+        <ActivityIndicator
+          color={RED}
+          size="small"
+          style={swipeStyles.labelSpinner}
+        />
+      ) : (
+        <Animated.Text style={[swipeStyles.label, { opacity: labelOpacity }]}>
+          {label}
+        </Animated.Text>
+      )}
       <Animated.View
         style={[swipeStyles.thumb, { transform: [{ translateX: pan }] }]}
         {...panResponder.panHandlers}
@@ -219,11 +233,139 @@ export default function PushupChallengeScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const [scrollViewH, setScrollViewH] = useState(SCREEN_HEIGHT * 0.6);
+  const [scrollViewH, setScrollViewH] = useState(0);
+  const [todayNodeY, setTodayNodeY] = useState<number | null>(null);
+  const [scrollTrigger, setScrollTrigger] = useState(0);
+  const needsScrollRef = useRef(true);
+  const fillAnim = useRef(new Animated.Value(0)).current;
+  const burstAnim = useRef(new Animated.Value(0)).current;
+  const [animatingCompletion, setAnimatingCompletion] = useState(false);
+  const [connectorH, setConnectorH] = useState(0);
+
+  // Ember particle animation values (connector fire)
+  const emberData = useRef(
+    [
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -9, size: 3,   color: '#ffdd44', delay: 0,   dur: 520, yTarget: -22 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: 7,  size: 4,   color: '#ffaa00', delay: 110, dur: 620, yTarget: -30 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -3, size: 3.5, color: '#ff6600', delay: 200, dur: 460, yTarget: -18 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: 11, size: 3,   color: '#ff4400', delay: 70,  dur: 560, yTarget: -26 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: -11,size: 4.5, color: '#ffcc00', delay: 160, dur: 500, yTarget: -24 },
+      { offsetY: new Animated.Value(0), opacity: new Animated.Value(0), offsetX: 3,  size: 3,   color: '#ff8800', delay: 260, dur: 490, yTarget: -28 },
+    ]
+  ).current;
+
+  // Flame burst particles that radiate from the dot when it ignites
+  // Layer 1: core flash (hot white/yellow, fast, close)
+  // Layer 2: inner flames (orange/red, medium distance)
+  // Layer 3: outer embers (red/dark, far, slow fade)
+  // Layer 4: trailing sparks (tiny, fast, long distance)
+  const burstFlames = useRef(
+    [
+      // Core flash — bright, close, fast
+      { angle: 0,    dist: 14, size: 12, color: '#ffffcc', delay: 0,  layer: 'core' },
+      { angle: 60,   dist: 16, size: 11, color: '#ffeeaa', delay: 0,  layer: 'core' },
+      { angle: 120,  dist: 14, size: 13, color: '#fff5bb', delay: 0,  layer: 'core' },
+      { angle: 180,  dist: 15, size: 12, color: '#ffffdd', delay: 0,  layer: 'core' },
+      { angle: 240,  dist: 14, size: 11, color: '#ffeecc', delay: 0,  layer: 'core' },
+      { angle: 300,  dist: 16, size: 12, color: '#fff8bb', delay: 0,  layer: 'core' },
+      // Inner flames — hot orange, medium
+      { angle: 15,   dist: 36, size: 14, color: '#ff6600', delay: 20,  layer: 'inner' },
+      { angle: 55,   dist: 32, size: 12, color: '#ff8800', delay: 35,  layer: 'inner' },
+      { angle: 95,   dist: 38, size: 15, color: '#ff5500', delay: 10,  layer: 'inner' },
+      { angle: 140,  dist: 34, size: 13, color: '#ffaa00', delay: 40,  layer: 'inner' },
+      { angle: 185,  dist: 36, size: 14, color: '#ff7700', delay: 25,  layer: 'inner' },
+      { angle: 230,  dist: 33, size: 12, color: '#ff9900', delay: 45,  layer: 'inner' },
+      { angle: 275,  dist: 40, size: 16, color: '#ff4400', delay: 15,  layer: 'inner' },
+      { angle: 320,  dist: 34, size: 13, color: '#ff6600', delay: 30,  layer: 'inner' },
+      // Outer embers — darker, larger range
+      { angle: 30,   dist: 52, size: 10, color: '#cc3300', delay: 50,  layer: 'outer' },
+      { angle: 75,   dist: 56, size: 11, color: '#ff4400', delay: 60,  layer: 'outer' },
+      { angle: 110,  dist: 48, size: 9,  color: '#dd3300', delay: 55,  layer: 'outer' },
+      { angle: 155,  dist: 54, size: 10, color: '#ee4400', delay: 70,  layer: 'outer' },
+      { angle: 200,  dist: 50, size: 11, color: '#cc2200', delay: 65,  layer: 'outer' },
+      { angle: 250,  dist: 58, size: 10, color: '#ff3300', delay: 45,  layer: 'outer' },
+      { angle: 290,  dist: 52, size: 12, color: '#dd4400', delay: 75,  layer: 'outer' },
+      { angle: 340,  dist: 50, size: 9,  color: '#ee3300', delay: 55,  layer: 'outer' },
+      // Trailing sparks — tiny, fast, long
+      { angle: 10,   dist: 68, size: 4,  color: '#ffcc00', delay: 30,  layer: 'spark' },
+      { angle: 50,   dist: 72, size: 3,  color: '#ffdd44', delay: 40,  layer: 'spark' },
+      { angle: 100,  dist: 65, size: 4,  color: '#ffaa00', delay: 25,  layer: 'spark' },
+      { angle: 145,  dist: 70, size: 3,  color: '#ffbb00', delay: 50,  layer: 'spark' },
+      { angle: 190,  dist: 66, size: 4,  color: '#ffcc44', delay: 35,  layer: 'spark' },
+      { angle: 235,  dist: 74, size: 3,  color: '#ffdd00', delay: 60,  layer: 'spark' },
+      { angle: 285,  dist: 68, size: 4,  color: '#ffaa44', delay: 20,  layer: 'spark' },
+      { angle: 330,  dist: 72, size: 3,  color: '#ffcc00', delay: 45,  layer: 'spark' },
+    ]
+  ).current;
 
   const onScrollLayout = (e: LayoutChangeEvent) => {
     setScrollViewH(e.nativeEvent.layout.height);
   };
+
+  // When content size changes (or is first measured), scroll to bottom if needed
+  const onContentSizeChange = useCallback((_w: number, h: number) => {
+    if (needsScrollRef.current && h > 0) {
+      needsScrollRef.current = false;
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }
+  }, []);
+
+  // Re-arm the scroll-to-bottom flag whenever the screen is focused
+  useEffect(() => {
+    if (scrollTrigger > 0) {
+      needsScrollRef.current = true;
+    }
+  }, [scrollTrigger]);
+
+  // Ember particle animation loop
+  useEffect(() => {
+    if (!animatingCompletion) return;
+
+    emberData.forEach((ember) => {
+      const loop = () => {
+        ember.offsetY.setValue(0);
+        ember.opacity.setValue(0);
+        Animated.sequence([
+          Animated.delay(ember.delay),
+          Animated.parallel([
+            Animated.timing(ember.offsetY, {
+              toValue: ember.yTarget,
+              duration: ember.dur,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: false,
+            }),
+            Animated.sequence([
+              Animated.timing(ember.opacity, {
+                toValue: 0.95,
+                duration: 70,
+                useNativeDriver: false,
+              }),
+              Animated.timing(ember.opacity, {
+                toValue: 0,
+                duration: ember.dur - 70,
+                useNativeDriver: false,
+              }),
+            ]),
+          ]),
+        ]).start(({ finished }) => {
+          if (finished) loop();
+        });
+      };
+      loop();
+    });
+
+    return () => {
+      emberData.forEach((e) => {
+        e.offsetY.stopAnimation();
+        e.opacity.stopAnimation();
+      });
+    };
+  }, [animatingCompletion]);
+
+  // Reset when challenge restarts (new startDate)
+  useEffect(() => {
+    setTodayNodeY(null);
+  }, [data?.startDate]);
 
   const docRef = user ? doc(db, 'users', user.uid, 'pushup-challenge', 'data') : null;
 
@@ -246,6 +388,7 @@ export default function PushupChallengeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setScrollTrigger((v) => v + 1);
       load();
     }, [load]),
   );
@@ -283,10 +426,48 @@ export default function PushupChallengeScreen() {
         days: newDays,
         longestStreak: Math.max(data.longestStreak ?? 0, newStreak),
       };
-      await setDoc(docRef, updated);
+
+      // Scroll today's node to center before the animation fires so
+      // the user sees it in position before the fire starts.
+      if (todayNodeY !== null && scrollViewH > 0) {
+        const target = todayNodeY - scrollViewH / 2;
+        scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: true });
+      }
+
+      // Run fill animation and Firebase save concurrently
+      fillAnim.setValue(0);
+      setAnimatingCompletion(true);
+
+      // With Easing.out(Easing.cubic) over 2000ms, fillAnim reaches 0.55
+      // (connector fully burned, dot ignites) at t where 1-(1-t)^3 = 0.55 → t ≈ 0.234 → ~468ms
+      const BURST_DELAY_MS = 468;
+      burstAnim.setValue(0);
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          Animated.timing(fillAnim, {
+            toValue: 1,
+            duration: 2000,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: false,
+          }).start(() => resolve());
+        }),
+        new Promise<void>((resolve) => {
+          Animated.sequence([
+            Animated.delay(BURST_DELAY_MS),
+            Animated.timing(burstAnim, {
+              toValue: 1,
+              duration: 900,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: false,
+            }),
+          ]).start(() => resolve());
+        }),
+        setDoc(docRef, updated).catch((e) => console.error('Failed to save pushup completion', e)),
+      ]);
+
       setData(updated);
-    } catch (e) {
-      console.error('Failed to complete pushups', e);
+      setAnimatingCompletion(false);
     } finally {
       setSaving(false);
     }
@@ -328,6 +509,7 @@ export default function PushupChallengeScreen() {
   const nodes = buildTimeline(data);
   const streakAlive = isStreakAlive(nodes);
   const todayNode = nodes.find((n) => n.isToday);
+  const todayIndex = nodes.findIndex((n) => n.isToday);
   const todayCompleted = todayNode?.completed ?? false;
   const streakBroken = !streakAlive;
   const longest = data.longestStreak ?? 0;
@@ -362,63 +544,341 @@ export default function PushupChallengeScreen() {
       ) : null}
 
       {/* Timeline — today centred, past days above */}
-      <ScrollView
-        ref={scrollRef}
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.timeline,
-          { paddingTop: Math.max(scrollViewH / 2 - (NODE_DOT / 2), 20) },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onLayout={onScrollLayout}
-        onContentSizeChange={(_, contentH) => {
-          // Scroll so today (last node) is vertically centered
-          const target = contentH - scrollViewH;
-          if (target > 0) {
-            scrollRef.current?.scrollTo({ y: target, animated: false });
-          }
-        }}
-      >
+      <View style={styles.timelineWrapper}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.timeline,
+            {
+              paddingTop: Math.max(scrollViewH / 2 - NODE_DOT / 2, 20),
+              // nodeInfo paddingBottom (72) + half the dot height (NODE_DOT/2=15) are
+              // already below the last dot's center. Subtract so the bottom of
+              // scroll content lands the present day's dot at vertical center.
+              paddingBottom: Math.max(scrollViewH / 2 - NODE_DOT / 2 - 72 - NODE_DOT / 2, 0),
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          onLayout={onScrollLayout}
+          onContentSizeChange={onContentSizeChange}
+        >
         {nodes.map((node, i) => {
           const dotColor = node.completed ? RED : GREY;
-          const prevCompleted = i > 0 && nodes[i - 1].completed;
+          const nextCompleted = i < nodes.length - 1 && nodes[i + 1].completed;
+          const hasConnector = i < nodes.length - 1;
+          const connectorColor = node.completed && nextCompleted ? RED : GREY;
+
+          // Animated fire during completion
+          const isAnimConnector = animatingCompletion && hasConnector && i === todayIndex - 1;
+          const isAnimDot = animatingCompletion && node.isToday;
+
+          // Dot fire color: invisible during connector burn, snap to red when burst starts
+          const animDotColor = isAnimDot
+            ? fillAnim.interpolate({
+                inputRange: [0, 0.54, 0.55, 1],
+                outputRange: ['transparent', 'transparent', RED, RED],
+                extrapolate: 'clamp',
+              })
+            : dotColor;
+
+          // Burn-front Y position on the connector (0 → connectorH)
+          const burnFrontY = fillAnim.interpolate({
+            inputRange: [0, 0.55],
+            outputRange: [0, Math.max(connectorH, 1)],
+            extrapolate: 'clamp',
+          });
 
           return (
-            <View key={node.date} style={styles.nodeRow}>
-              {/* Edge from previous node */}
-              {i > 0 && (
-                <View
-                  style={[
-                    styles.edge,
-                    { backgroundColor: prevCompleted && node.completed ? RED : GREY },
-                  ]}
-                />
-              )}
+            <View
+              key={node.date}
+              style={[styles.nodeRow, i > 0 && styles.nodeRowOverlap]}
+              onLayout={node.isToday ? (e) => {
+                setTodayNodeY(e.nativeEvent.layout.y + NODE_DOT / 2);
+              } : undefined}
+            >
+              {/* Left track: dot at top, connector stretches to fill row height */}
+              <View style={[styles.nodeTrack, { overflow: 'visible' }]}>
+                {/* ── Epic flame burst (behind dot) ── */}
+                {isAnimDot && burstFlames.map((flame, fi) => {
+                  const rad = (flame.angle * Math.PI) / 180;
+                  const dx = Math.cos(rad) * flame.dist;
+                  const dy = Math.sin(rad) * flame.dist;
+                  const d = flame.delay / 900;
 
-              {/* Node */}
-              <View style={styles.nodeContainer}>
-                <View style={[styles.dot, { backgroundColor: dotColor }]} />
+                  // Layer-specific timing
+                  const isCore = flame.layer === 'core';
+                  const isSpark = flame.layer === 'spark';
+                  const isOuter = flame.layer === 'outer';
 
-                {/* Info beside node */}
-                <View style={styles.nodeInfo}>
-                  <Text style={styles.nodeDate}>
-                    {formatDate(node.date)}
-                  </Text>
-                  <Text style={styles.nodeLabel}>
-                    Day {node.dayNumber}
-                  </Text>
-                  {node.completedAt && (
-                    <Text style={styles.nodeTimestamp}>{formatTime(node.completedAt)}</Text>
-                  )}
-                  {node.isToday && !node.completed && !streakBroken && (
-                    <Text style={styles.nodePending}>Incomplete</Text>
-                  )}
-                </View>
+                  const peakOpacity = isCore ? 1 : isSpark ? 0.85 : 0.95;
+                  const fadeEnd = isCore ? 0.35 : isSpark ? 0.95 : isOuter ? 0.85 : 0.7;
+                  const scaleMax = isCore ? 2.0 : isSpark ? 1.0 : isOuter ? 1.5 : 1.8;
+                  const heightMult = isCore ? 1.2 : isSpark ? 2.5 : isOuter ? 1.8 : 1.6;
+
+                  return (
+                    <Animated.View
+                      key={fi}
+                      style={{
+                        position: 'absolute',
+                        width: flame.size,
+                        height: flame.size * heightMult,
+                        borderRadius: flame.size / 2,
+                        backgroundColor: flame.color,
+                        left: NODE_DOT / 2 - flame.size / 2,
+                        top: NODE_DOT / 2 - (flame.size * heightMult) / 2,
+                        zIndex: isCore ? 5 : isSpark ? 2 : 3,
+                        opacity: burstAnim.interpolate({
+                          inputRange: [
+                            Math.max(d - 0.01, 0),
+                            Math.min(d + 0.06, 0.15),
+                            Math.min(d + fadeEnd, 1),
+                            1,
+                          ],
+                          outputRange: [0, peakOpacity, 0, 0],
+                          extrapolate: 'clamp',
+                        }),
+                        transform: [
+                          {
+                            translateX: burstAnim.interpolate({
+                              inputRange: [d, Math.min(d + 0.5, 1), 1],
+                              outputRange: [0, dx * 0.85, dx],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                          {
+                            translateY: burstAnim.interpolate({
+                              inputRange: [d, Math.min(d + 0.5, 1), 1],
+                              outputRange: [0, dy * 0.85, dy],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                          {
+                            scale: burstAnim.interpolate({
+                              inputRange: [
+                                d,
+                                Math.min(d + 0.12, 0.25),
+                                Math.min(d + 0.4, 0.65),
+                                1,
+                              ],
+                              outputRange: [0.1, scaleMax, scaleMax * 0.6, 0],
+                              extrapolate: 'clamp',
+                            }),
+                          },
+                          { rotate: `${flame.angle + 90}deg` },
+                        ],
+                      }}
+                    />
+                  );
+                })}
+
+                {/* ── Hot core flash ── */}
+                {isAnimDot && (
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: NODE_DOT + 12,
+                      height: NODE_DOT + 12,
+                      borderRadius: (NODE_DOT + 12) / 2,
+                      top: -6,
+                      left: -6,
+                      backgroundColor: '#fff8dd',
+                      zIndex: 6,
+                      opacity: burstAnim.interpolate({
+                        inputRange: [0, 0.05, 0.18, 0.45],
+                        outputRange: [0, 0.95, 0.4, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [{
+                        scale: burstAnim.interpolate({
+                          inputRange: [0, 0.08, 0.3],
+                          outputRange: [0.2, 1.8, 0.6],
+                          extrapolate: 'clamp',
+                        }),
+                      }],
+                    }}
+                  />
+                )}
+
+                {/* ── Mid-range heat glow ── */}
+                {isAnimDot && (
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: NODE_DOT + 50,
+                      height: NODE_DOT + 50,
+                      borderRadius: (NODE_DOT + 50) / 2,
+                      top: -25,
+                      left: -25,
+                      backgroundColor: 'rgba(255, 100, 0, 0.35)',
+                      zIndex: 1,
+                      opacity: burstAnim.interpolate({
+                        inputRange: [0, 0.08, 0.35, 0.7],
+                        outputRange: [0, 0.85, 0.35, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [{
+                        scale: burstAnim.interpolate({
+                          inputRange: [0, 0.15, 0.6, 1],
+                          outputRange: [0.2, 1.8, 1.3, 0.8],
+                          extrapolate: 'clamp',
+                        }),
+                      }],
+                    }}
+                  />
+                )}
+
+                {/* ── Outer shockwave ring ── */}
+                {isAnimDot && (
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      width: NODE_DOT + 70,
+                      height: NODE_DOT + 70,
+                      borderRadius: (NODE_DOT + 70) / 2,
+                      top: -35,
+                      left: -35,
+                      backgroundColor: 'transparent',
+                      borderWidth: 2,
+                      borderColor: '#ff660055',
+                      zIndex: 0,
+                      opacity: burstAnim.interpolate({
+                        inputRange: [0.02, 0.12, 0.5, 0.8],
+                        outputRange: [0, 0.7, 0.2, 0],
+                        extrapolate: 'clamp',
+                      }),
+                      transform: [{
+                        scale: burstAnim.interpolate({
+                          inputRange: [0.02, 0.35, 0.8],
+                          outputRange: [0.3, 1.8, 2.2],
+                          extrapolate: 'clamp',
+                        }),
+                      }],
+                    }}
+                  />
+                )}
+
+                {/* ── Dot ── */}
+                <Animated.View style={[styles.dot, { backgroundColor: animDotColor }]} />
+
+                {/* ── Connector ── */}
+                {hasConnector && (
+                  isAnimConnector ? (
+                    <View
+                      style={[styles.connector, { backgroundColor: GREY, overflow: 'visible' }]}
+                      onLayout={(e) => setConnectorH(e.nativeEvent.layout.height)}
+                    >
+                      {/* Fire fill that grows top→bottom */}
+                      {connectorH > 0 && (
+                        <Animated.View
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: burnFrontY,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {/* Solid burned (red) area */}
+                          <View style={{ flex: 1, backgroundColor: RED }} />
+                          {/* Fire gradient at burning edge */}
+                          <LinearGradient
+                            colors={[RED, '#ff3300', '#ff6600', '#ffaa00', '#ffdd44'] as any}
+                            locations={[0, 0.25, 0.5, 0.8, 1]}
+                            start={{ x: 0.5, y: 0 }}
+                            end={{ x: 0.5, y: 1 }}
+                            style={{ height: 32 }}
+                          />
+                        </Animated.View>
+                      )}
+
+                      {/* Burning-front glow */}
+                      {connectorH > 0 && (
+                        <Animated.View
+                          style={{
+                            position: 'absolute',
+                            left: -14,
+                            right: -14,
+                            height: 28,
+                            top: -14,
+                            borderRadius: 14,
+                            backgroundColor: 'rgba(255, 136, 0, 0.35)',
+                            transform: [{ translateY: burnFrontY }],
+                            opacity: fillAnim.interpolate({
+                              inputRange: [0, 0.04, 0.48, 0.55],
+                              outputRange: [0, 0.85, 0.85, 0],
+                              extrapolate: 'clamp',
+                            }),
+                          }}
+                        />
+                      )}
+
+                      {/* Ember particles */}
+                      {connectorH > 0 && emberData.map((ember, idx) => (
+                        <Animated.View
+                          key={idx}
+                          style={{
+                            position: 'absolute',
+                            width: ember.size,
+                            height: ember.size,
+                            borderRadius: ember.size / 2,
+                            backgroundColor: ember.color,
+                            left: 4 - ember.size / 2 + ember.offsetX,
+                            top: -ember.size / 2,
+                            opacity: Animated.multiply(
+                              ember.opacity,
+                              fillAnim.interpolate({
+                                inputRange: [0, 0.04, 0.48, 0.55],
+                                outputRange: [0, 1, 1, 0],
+                                extrapolate: 'clamp',
+                              }),
+                            ),
+                            transform: [{
+                              translateY: Animated.add(burnFrontY, ember.offsetY),
+                            }],
+                          }}
+                        />
+                      ))}
+                    </View>
+                  ) : (
+                    <Animated.View style={[styles.connector, { backgroundColor: connectorColor }]} />
+                  )
+                )}
+              </View>
+
+              {/* Info beside node */}
+              <View style={styles.nodeInfo}>
+                <Text style={styles.nodeDate}>
+                  {formatDate(node.date)}
+                </Text>
+                <Text style={styles.nodeLabel}>
+                  Day {node.dayNumber}
+                </Text>
+                {node.completedAt && (
+                  <Text style={styles.nodeTimestamp}>{formatTime(node.completedAt)}</Text>
+                )}
+                {node.isToday && !node.completed && !streakBroken && (
+                  <Text style={styles.nodePending}>Incomplete</Text>
+                )}
               </View>
             </View>
           );
         })}
       </ScrollView>
+
+        {/* Top fade */}
+        <LinearGradient
+          colors={[DARK_BG, 'transparent'] as any}
+          style={styles.fadeTop}
+          pointerEvents="none"
+        />
+        {/* Bottom fade */}
+        <LinearGradient
+          colors={['transparent', DARK_BG] as any}
+          style={styles.fadeBottom}
+          pointerEvents="none"
+        />
+      </View>
 
       {/* Bottom slider area */}
       {!streakBroken && todayNode && (
@@ -427,13 +887,12 @@ export default function PushupChallengeScreen() {
             <SwipeComplete
               label="Today's pushups done!"
             />
-          ) : saving ? (
-            <ActivityIndicator color={RED} size="small" />
           ) : (
             <SwipeToComplete
               label={`I did ${todayNode.dayNumber} pushup${todayNode.dayNumber > 1 ? 's' : ''} today`}
               onComplete={completeTodayPushups}
               disabled={saving}
+              loading={saving}
             />
           )}
         </View>
@@ -542,35 +1001,60 @@ const styles = StyleSheet.create({
   },
 
   // Timeline
+  timelineWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
   scrollView: {
     flex: 1,
   },
+  fadeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    pointerEvents: 'none',
+  },
+  fadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    pointerEvents: 'none',
+  },
   timeline: {
     paddingHorizontal: 24,
-    paddingBottom: 20,
   },
   nodeRow: {
-    alignItems: 'flex-start',
-  },
-  edge: {
-    width: 3,
-    height: EDGE_HEIGHT,
-    marginLeft: NODE_DOT / 2 - 1.5,
-    borderRadius: 2,
-    marginBottom: 10,
-  },
-  nodeContainer: {
     flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  nodeRowOverlap: {
+    marginTop: -(NODE_DOT / 2),
+  },
+  nodeTrack: {
+    width: NODE_DOT,
     alignItems: 'center',
-    gap: 28,
+  },
+  connector: {
+    flex: 1,
+    width: 8,
+    borderRadius: 4,
+    marginTop: -(NODE_DOT / 2),
   },
   dot: {
     width: NODE_DOT,
     height: NODE_DOT,
     borderRadius: NODE_DOT / 2,
+    zIndex: 2,
   },
   nodeInfo: {
+    flex: 1,
     gap: 4,
+    paddingLeft: 20,
+    paddingBottom: 72,
   },
   nodeDate: {
     color: '#fff',
@@ -607,6 +1091,11 @@ const swipeStyles = StyleSheet.create({
     color: '#888',
     fontSize: 14,
     fontWeight: '600',
+  },
+  labelSpinner: {
+    position: 'absolute',
+    width: '100%',
+    alignSelf: 'center',
   },
   thumb: {
     width: SWIPE_THUMB,

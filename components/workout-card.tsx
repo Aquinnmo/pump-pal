@@ -1,6 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 
 export interface Exercise {
   name: string;
@@ -41,48 +49,96 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
     day: 'numeric',
   });
 
+  const SCREEN_HEIGHT = Dimensions.get('window').height;
+  const DISMISS_THRESHOLD = 120;
+
+  const translateY = useSharedValue(0);
+  const overlayOpacity = useSharedValue(1);
+
+  const dismiss = useCallback(() => {
+    setShowDetail(false);
+  }, []);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (e.translationY > 0) {
+        translateY.value = e.translationY;
+        overlayOpacity.value = Math.max(0, 1 - e.translationY / (SCREEN_HEIGHT * 0.4));
+      }
+    })
+    .onEnd((e) => {
+      if (e.translationY > DISMISS_THRESHOLD) {
+        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+          runOnJS(dismiss)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        overlayOpacity.value = withSpring(1);
+      }
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${0.7 * overlayOpacity.value})`,
+  }));
+
+  const handleOpen = useCallback(() => {
+    translateY.value = 0;
+    overlayOpacity.value = 1;
+    setShowDetail(true);
+  }, [translateY, overlayOpacity]);
+
   return (
     <>
-      <Modal visible={showDetail} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderLeft}>
-                <Text style={styles.modalName}>{workout.name}</Text>
-                <Text style={styles.modalDate}>{dateStr}</Text>
-              </View>
-              <TouchableOpacity onPress={() => setShowDetail(false)} hitSlop={10} style={styles.modalClose}>
-                <Ionicons name="close" size={22} color="#888" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.modalDivider} />
-
-            <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-              {workout.exercises.length > 0 ? (
-                workout.exercises.map((ex, i) => (
-                  <View key={i} style={styles.modalExercise}>
-                    <Text style={styles.modalExerciseName}>{ex.name}</Text>
-                    <Text style={styles.modalExerciseDetail}>
-                      {ex.exerciseType === 'Sets of Duration'
-                        ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
-                        : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
-                    </Text>
+      <Modal visible={showDetail} transparent animationType="slide" onRequestClose={dismiss}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
+            <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={dismiss} />
+            <GestureDetector gesture={panGesture}>
+              <Animated.View style={[styles.modalCard, cardAnimatedStyle]}>
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalHeaderLeft}>
+                    <Text style={styles.modalName}>{workout.name}</Text>
+                    <Text style={styles.modalDate}>{dateStr}</Text>
                   </View>
-                ))
-              ) : (
-                <Text style={styles.modalEmpty}>No exercises logged.</Text>
-              )}
-
-              {workout.notes ? (
-                <View style={styles.modalNotesBox}>
-                  <Text style={styles.modalNotesLabel}>Notes</Text>
-                  <Text style={styles.modalNotesText}>{workout.notes}</Text>
+                  <TouchableOpacity onPress={dismiss} hitSlop={10} style={styles.modalClose}>
+                    <Ionicons name="close" size={22} color="#888" />
+                  </TouchableOpacity>
                 </View>
-              ) : null}
-            </ScrollView>
-          </View>
-        </View>
+
+                <View style={styles.modalDivider} />
+
+                <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
+                  {workout.exercises.length > 0 ? (
+                    workout.exercises.map((ex, i) => (
+                      <View key={i} style={styles.modalExercise}>
+                        <Text style={styles.modalExerciseName}>{ex.name}</Text>
+                        <Text style={styles.modalExerciseDetail}>
+                          {ex.exerciseType === 'Sets of Duration'
+                            ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
+                            : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
+                        </Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.modalEmpty}>No exercises logged.</Text>
+                  )}
+
+                  {workout.notes ? (
+                    <View style={styles.modalNotesBox}>
+                      <Text style={styles.modalNotesLabel}>Notes</Text>
+                      <Text style={styles.modalNotesText}>{workout.notes}</Text>
+                    </View>
+                  ) : null}
+                </ScrollView>
+              </Animated.View>
+            </GestureDetector>
+          </Animated.View>
+        </GestureHandlerRootView>
       </Modal>
 
       <View style={styles.card}>
@@ -92,7 +148,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
             <Text style={styles.date}>{dateStr}</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity onPress={() => setShowDetail(true)} hitSlop={8} style={styles.viewButton}>
+            <TouchableOpacity onPress={handleOpen} hitSlop={8} style={styles.viewButton}>
               <Text style={styles.viewText}>View</Text>
               <Ionicons name="eye-outline" size={16} color="#e54242" />
             </TouchableOpacity>
@@ -110,22 +166,36 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
           </View>
         </View>
 
-      {workout.exercises.length > 0 && (
-        <View style={styles.exerciseList}>
-          {workout.exercises.map((ex, i) => (
-            <View key={i} style={styles.exerciseRow}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
-              <Text style={styles.exerciseDetail}>
-                {ex.exerciseType === 'Sets of Duration'
-                  ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
-                  : `${ex.sets} × ${ex.reps}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
+      {workout.exercises.length > 0 && (() => {
+        const weighted = workout.exercises.filter(
+          (ex) => ex.exerciseType !== 'Sets of Duration' && !ex.bodyweight && Number(ex.weight) > 0
+        );
+        const repsExs = workout.exercises.filter(
+          (ex) => ex.exerciseType !== 'Sets of Duration'
+        );
+        const totalVolume = weighted.reduce((s, ex) => s + ex.sets * ex.reps * Number(ex.weight), 0);
+        const totalReps = repsExs.reduce((s, ex) => s + ex.sets * ex.reps, 0);
+        const exerciseCount = workout.exercises.length;
+        const fmtVolume = totalVolume >= 1000
+          ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
+          : `${totalVolume}`;
 
-      {workout.notes ? <Text style={styles.notes}>{workout.notes}</Text> : null}
+        const chips: { value: string; label: string }[] = [];
+        if (weighted.length > 0) chips.push({ value: `${fmtVolume} lbs`, label: 'Volume' });
+        if (repsExs.length > 0) chips.push({ value: `${totalReps}`, label: 'Total Reps' });
+        chips.push({ value: `${exerciseCount}`, label: exerciseCount === 1 ? 'Exercise' : 'Exercises' });
+
+        return (
+          <View style={styles.insightRow}>
+            {chips.map((chip, i) => (
+              <View key={i} style={styles.insightChip}>
+                <Text style={styles.insightLabel}>{chip.label}</Text>
+                <Text style={styles.insightValue}>{chip.value}</Text>
+              </View>
+            ))}
+          </View>
+        );
+      })()}
     </View>
     </>
   );
@@ -169,37 +239,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   name: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 2,
   },
   date: {
+    fontSize: 13,
+    color: '#888',
+  },
+  insightRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
+  insightChip: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    paddingVertical: 4,
+  },
+  insightValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  insightLabel: {
     fontSize: 12,
     color: '#888',
-  },
-  exerciseList: {
-    gap: 6,
-  },
-  exerciseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  exerciseName: {
-    fontSize: 14,
-    color: '#ccc',
-    flex: 1,
-  },
-  exerciseDetail: {
-    fontSize: 13,
-    color: '#888',
-  },
-  notes: {
-    marginTop: 10,
-    fontSize: 13,
-    color: '#777',
-    fontStyle: 'italic',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   viewButton: {
     flexDirection: 'row',
