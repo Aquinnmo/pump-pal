@@ -3,7 +3,7 @@ import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Animated,
@@ -30,14 +30,13 @@ interface ChallengeData {
 }
 
 const NODE_DOT = 30;
-const EDGE_HEIGHT = 80;
 const RED = '#e54242';
 const GREY = '#555';
 const DARK_BG = '#111';
 const CARD_BG = '#1a1a1a';
 const SWIPE_TRACK_H = 56;
 const SWIPE_THUMB = 48;
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function toDateKey(d: Date): string {
   return d.toISOString().split('T')[0];
@@ -219,11 +218,28 @@ export default function PushupChallengeScreen() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const [scrollViewH, setScrollViewH] = useState(SCREEN_HEIGHT * 0.6);
+  const [scrollViewH, setScrollViewH] = useState(0);
+  const [todayNodeY, setTodayNodeY] = useState<number | null>(null);
+  const scrolledRef = useRef(false);
 
   const onScrollLayout = (e: LayoutChangeEvent) => {
     setScrollViewH(e.nativeEvent.layout.height);
   };
+
+  // Scroll to center today's node when both positions are known
+  useEffect(() => {
+    if (todayNodeY !== null && scrollViewH > 0 && !scrolledRef.current) {
+      scrolledRef.current = true;
+      const target = todayNodeY - scrollViewH / 2;
+      scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: false });
+    }
+  }, [todayNodeY, scrollViewH]);
+
+  // Reset scroll flag when challenge data changes
+  useEffect(() => {
+    scrolledRef.current = false;
+    setTodayNodeY(null);
+  }, [data?.startDate]);
 
   const docRef = user ? doc(db, 'users', user.uid, 'pushup-challenge', 'data') : null;
 
@@ -367,53 +383,47 @@ export default function PushupChallengeScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.timeline,
-          { paddingTop: Math.max(scrollViewH / 2 - (NODE_DOT / 2), 20) },
+          { paddingTop: Math.max(scrollViewH / 2 - NODE_DOT / 2, 20) },
         ]}
         showsVerticalScrollIndicator={false}
         onLayout={onScrollLayout}
-        onContentSizeChange={(_, contentH) => {
-          // Scroll so today (last node) is vertically centered
-          const target = contentH - scrollViewH;
-          if (target > 0) {
-            scrollRef.current?.scrollTo({ y: target, animated: false });
-          }
-        }}
       >
         {nodes.map((node, i) => {
           const dotColor = node.completed ? RED : GREY;
-          const prevCompleted = i > 0 && nodes[i - 1].completed;
+          const nextCompleted = i < nodes.length - 1 && nodes[i + 1].completed;
+          const hasConnector = i < nodes.length - 1;
+          const connectorColor = node.completed && nextCompleted ? RED : GREY;
 
           return (
-            <View key={node.date} style={styles.nodeRow}>
-              {/* Edge from previous node */}
-              {i > 0 && (
-                <View
-                  style={[
-                    styles.edge,
-                    { backgroundColor: prevCompleted && node.completed ? RED : GREY },
-                  ]}
-                />
-              )}
-
-              {/* Node */}
-              <View style={styles.nodeContainer}>
+            <View
+              key={node.date}
+              style={[styles.nodeRow, i > 0 && styles.nodeRowOverlap]}
+              onLayout={node.isToday ? (e) => {
+                setTodayNodeY(e.nativeEvent.layout.y + NODE_DOT / 2);
+              } : undefined}
+            >
+              {/* Left track: dot at top, connector stretches to fill row height */}
+              <View style={styles.nodeTrack}>
                 <View style={[styles.dot, { backgroundColor: dotColor }]} />
+                {hasConnector && (
+                  <View style={[styles.connector, { backgroundColor: connectorColor }]} />
+                )}
+              </View>
 
-                {/* Info beside node */}
-                <View style={styles.nodeInfo}>
-                  <Text style={styles.nodeDate}>
-                    {formatDate(node.date)}
-                  </Text>
-                  <Text style={styles.nodeLabel}>
-                    Day {node.dayNumber}
-                  </Text>
-                  {node.completedAt && (
-                    <Text style={styles.nodeTimestamp}>{formatTime(node.completedAt)}</Text>
-                  )}
-                  {node.isToday && !node.completed && !streakBroken && (
-                    <Text style={styles.nodePending}>Incomplete</Text>
-                  )}
-                </View>
+              {/* Info beside node */}
+              <View style={styles.nodeInfo}>
+                <Text style={styles.nodeDate}>
+                  {formatDate(node.date)}
+                </Text>
+                <Text style={styles.nodeLabel}>
+                  Day {node.dayNumber}
+                </Text>
+                {node.completedAt && (
+                  <Text style={styles.nodeTimestamp}>{formatTime(node.completedAt)}</Text>
+                )}
+                {node.isToday && !node.completed && !streakBroken && (
+                  <Text style={styles.nodePending}>Incomplete</Text>
+                )}
               </View>
             </View>
           );
@@ -550,27 +560,33 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   nodeRow: {
-    alignItems: 'flex-start',
-  },
-  edge: {
-    width: 3,
-    height: EDGE_HEIGHT,
-    marginLeft: NODE_DOT / 2 - 1.5,
-    borderRadius: 2,
-    marginBottom: 10,
-  },
-  nodeContainer: {
     flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  nodeRowOverlap: {
+    marginTop: -(NODE_DOT / 2),
+  },
+  nodeTrack: {
+    width: NODE_DOT,
     alignItems: 'center',
-    gap: 28,
+  },
+  connector: {
+    flex: 1,
+    width: 8,
+    borderRadius: 4,
+    marginTop: -(NODE_DOT / 2),
   },
   dot: {
     width: NODE_DOT,
     height: NODE_DOT,
     borderRadius: NODE_DOT / 2,
+    zIndex: 2,
   },
   nodeInfo: {
+    flex: 1,
     gap: 4,
+    paddingLeft: 20,
+    paddingBottom: 48,
   },
   nodeDate: {
     color: '#fff',
