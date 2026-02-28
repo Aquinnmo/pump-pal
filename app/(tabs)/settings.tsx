@@ -38,6 +38,8 @@ export default function SettingsScreen() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [deleteModalError, setDeleteModalError] = useState('');
+  const [changePasswordError, setChangePasswordError] = useState('');
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({  
     visible: false,
@@ -95,11 +97,26 @@ export default function SettingsScreen() {
     setOldPassword('');
     setNewPassword('');
     setConfirmNewPassword('');
+    setChangePasswordError('');
     setShowChangePasswordModal(true);
   };
 
   const confirmChangePassword = async () => {
-    if (!user || !user.email || newPassword !== confirmNewPassword || !newPassword) return;
+    if (!user || !user.email) return;
+    // client-side validation
+    if (newPassword !== confirmNewPassword) {
+      setChangePasswordError('New passwords do not match.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setChangePasswordError('Password must be at least 6 characters.');
+      return;
+    }
+    if (!oldPassword) {
+      setChangePasswordError('Please enter your current password.');
+      return;
+    }
+
     setChangingPassword(true);
     try {
       const credential = EmailAuthProvider.credential(user.email, oldPassword);
@@ -115,7 +132,7 @@ export default function SettingsScreen() {
           : err.code === 'auth/weak-password'
           ? 'New password must be at least 6 characters.'
           : 'Could not update password. Please try again.';
-      setToast({ visible: true, message: msg, type: 'error' });
+      setChangePasswordError(msg);
     } finally {
       setChangingPassword(false);
     }
@@ -123,6 +140,7 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     setDeleteConfirmName('');
+    setDeleteModalError('');
     setShowDeleteModal(true);
   };
 
@@ -135,6 +153,8 @@ export default function SettingsScreen() {
       await deleteDoc(doc(db, 'users', user.uid, 'pushup-challenge', 'data')).catch(() => {});
       await deleteDoc(doc(db, 'users', user.uid));
       await deleteUser(auth.currentUser!);
+      setShowDeleteModal(false);
+      setDeleteConfirmName('');
       router.replace('/(auth)/sign-in');
     } catch (err: any) {
       console.error(err);
@@ -142,11 +162,9 @@ export default function SettingsScreen() {
         err.code === 'auth/requires-recent-login'
           ? 'Please sign out and sign back in before deleting your account.'
           : 'Could not delete account. Please try again.';
-      setToast({ visible: true, message: msg, type: 'error' });
+      setDeleteModalError(msg);
     } finally {
       setDeletingAccount(false);
-      setShowDeleteModal(false);
-      setDeleteConfirmName('');
     }
   };
 
@@ -207,7 +225,7 @@ export default function SettingsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Change Password</Text>
-            <Text style={styles.modalMessage}>Enter your current password and choose a new one.</Text>
+            <Text style={styles.modalMessage}>New passwords must be at least 6 characters.</Text>
             <TextInput
               style={styles.passwordInput}
               placeholder="Current password"
@@ -232,7 +250,9 @@ export default function SettingsScreen() {
               style={[
                 styles.passwordInput,
                 styles.passwordInputLast,
-                confirmNewPassword.length > 0 && newPassword !== confirmNewPassword && styles.passwordInputError,
+                (confirmNewPassword.length > 0 && newPassword !== confirmNewPassword) || (newPassword.length > 0 && newPassword.length < 6)
+                  ? styles.passwordInputError
+                  : null,
               ]}
               placeholder="Confirm new password"
               placeholderTextColor="#555"
@@ -242,10 +262,18 @@ export default function SettingsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
+            {changePasswordError ? (
+              <Text style={styles.modalErrorText}>{changePasswordError}</Text>
+            ) : newPassword.length > 0 && newPassword.length < 6 ? (
+              <Text style={styles.modalErrorText}>Password must be at least 6 characters.</Text>
+            ) : null}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
-                onPress={() => setShowChangePasswordModal(false)}
+                onPress={() => {
+                  setShowChangePasswordModal(false);
+                  setChangePasswordError('');
+                }}
                 activeOpacity={0.8}
                 disabled={changingPassword}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
@@ -253,12 +281,12 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={[
                   styles.modalConfirmButton,
-                  (newPassword !== confirmNewPassword || !newPassword || !oldPassword || changingPassword) &&
+                  (newPassword !== confirmNewPassword || newPassword.length < 6 || !oldPassword || changingPassword) &&
                     styles.modalButtonDisabled,
                 ]}
                 onPress={confirmChangePassword}
                 activeOpacity={0.8}
-                disabled={newPassword !== confirmNewPassword || !newPassword || !oldPassword || changingPassword}>
+                disabled={newPassword !== confirmNewPassword || newPassword.length < 6 || !oldPassword || changingPassword}>
                 {changingPassword ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
@@ -288,10 +316,14 @@ export default function SettingsScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
+            {deleteModalError ? <Text style={styles.modalErrorText}>{deleteModalError}</Text> : null}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
-                onPress={() => setShowDeleteModal(false)}
+                onPress={() => {
+                  setShowDeleteModal(false);
+                  setDeleteModalError('');
+                }}
                 activeOpacity={0.8}
                 disabled={deletingAccount}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
@@ -449,7 +481,7 @@ export default function SettingsScreen() {
         style={[styles.changePasswordButton, { marginBottom: 12 }]}
         onPress={handleChangePassword}
         activeOpacity={0.8}>
-        <Ionicons name="lock-closed-outline" size={20} color="#aaa" style={styles.rowIcon} />
+        <Ionicons name="lock-closed" size={20} color="#fff" style={styles.rowIcon} />
         <Text style={styles.changePasswordText}>Change Password</Text>
       </TouchableOpacity>
 
@@ -459,7 +491,7 @@ export default function SettingsScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
-        <Ionicons name="trash" size={20} color="#b00020" style={styles.rowIcon} />
+        <Ionicons name="trash" size={20} color="#e54242" style={styles.rowIcon} />
         <Text style={styles.deleteAccountText}>Delete Account</Text>
       </TouchableOpacity>
 
@@ -679,7 +711,7 @@ const styles = StyleSheet.create({
   },
   deleteAccountText: {
     fontSize: 15,
-    color: '#b00020',
+    color: '#e54242',
     fontWeight: '600',
   },
   deleteConfirmInput: {
@@ -711,7 +743,7 @@ const styles = StyleSheet.create({
   },
   changePasswordText: {
     fontSize: 15,
-    color: '#aaa',
+    color: '#fff',
     fontWeight: '600',
   },
   passwordInput: {
@@ -798,6 +830,12 @@ const styles = StyleSheet.create({
     color: '#888',
     marginBottom: 24,
     lineHeight: 21,
+  },
+  modalErrorText: {
+    fontSize: 14,
+    color: '#ff8b8b',
+    marginBottom: 12,
+    textAlign: 'left',
   },
   modalActions: {
     flexDirection: 'row',
