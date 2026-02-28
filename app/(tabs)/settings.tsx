@@ -5,14 +5,16 @@ import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-opt
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Linking,
   Modal,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -120,6 +122,17 @@ export default function SettingsScreen() {
 
   const initial = user?.displayName?.[0]?.toUpperCase() ?? '?';
 
+  const [showTopFade, setShowTopFade] = useState(false);
+  const [showBottomFade, setShowBottomFade] = useState(true);
+  const scrollYRef = useRef(0);
+  const contentHeightRef = useRef(0);
+  const containerHeightRef = useRef(0);
+
+  const updateFades = () => {
+    setShowTopFade(scrollYRef.current > 2);
+    setShowBottomFade(scrollYRef.current + containerHeightRef.current < contentHeightRef.current - 2);
+  };
+
   return (
     <View style={styles.container}>
       <Modal visible={showSignOutModal} transparent animationType="fade">
@@ -153,6 +166,25 @@ export default function SettingsScreen() {
       />
 
       <Text style={styles.title}>Settings</Text>
+
+      <View style={styles.scrollWrapper}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          scrollYRef.current = e.nativeEvent.contentOffset.y;
+          updateFades();
+        }}
+        onContentSizeChange={(_w, h) => {
+          contentHeightRef.current = h;
+          updateFades();
+        }}
+        onLayout={(e) => {
+          containerHeightRef.current = e.nativeEvent.layout.height;
+          updateFades();
+        }}
+      >
 
       <View style={styles.avatarContainer}>
         <Text style={styles.displayName}>{user?.displayName ?? 'Athlete'}</Text>
@@ -253,6 +285,25 @@ export default function SettingsScreen() {
           </Text>
         </Text>
       </View>
+
+      </ScrollView>
+
+      {showTopFade && (
+        <LinearGradient
+          colors={['#0f0f0f', 'transparent']}
+          style={styles.topFade}
+          pointerEvents="none"
+        />
+      )}
+
+      {showBottomFade && (
+        <LinearGradient
+          colors={['transparent', '#0f0f0f']}
+          style={styles.bottomFade}
+          pointerEvents="none"
+        />
+      )}
+      </View>
     </View>
   );
 }
@@ -264,8 +315,27 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingHorizontal: 20,
   },
+  scrollWrapper: {
+    flex: 1,
+  },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 40,
+  },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 32,
+    zIndex: 10,
+  },
+  bottomFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 48,
+    zIndex: 10,
   },
   title: {
     fontSize: 28,

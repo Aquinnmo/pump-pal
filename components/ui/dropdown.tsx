@@ -1,24 +1,25 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useState } from 'react';
 import {
-    Dimensions,
-    Modal,
-    ScrollView,
-    StyleProp,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Dimensions,
+  Modal,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
@@ -41,6 +42,7 @@ export function Dropdown({
   const [visible, setVisible] = useState(false);
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(1);
+  const insets = useSafeAreaInsets();
 
   const dismiss = useCallback(() => {
     setVisible(false);
@@ -99,41 +101,48 @@ export function Dropdown({
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
             <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={handleClose} />
-            <GestureDetector gesture={panGesture}>
-              <Animated.View style={[styles.modalContent, cardAnimatedStyle]}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>{placeholder}</Text>
-                  <TouchableOpacity onPress={handleClose} hitSlop={8}>
-                    <Ionicons name="close" size={24} color="#888" />
-                  </TouchableOpacity>
-                </View>
-                <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
-                  {options.map((option) => (
-                    <TouchableOpacity
-                      key={option}
+            <Animated.View style={[styles.modalContent, cardAnimatedStyle, { paddingBottom: Math.max(30, insets.bottom) }]}>
+              {/* Extends sheet background colour behind the Android nav bar */}
+              <View style={[styles.navBarFill, { height: insets.bottom }]} />
+              <GestureDetector gesture={panGesture}>
+                <Animated.View>
+                  <View style={styles.modalHeader}>
+                    <View style={styles.pill} />
+                    <View style={styles.modalHeaderRow}>
+                      <Text style={styles.modalTitle}>{placeholder}</Text>
+                      <TouchableOpacity onPress={handleClose} hitSlop={8}>
+                        <Ionicons name="close" size={24} color="#888" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </Animated.View>
+              </GestureDetector>
+              <ScrollView style={styles.optionsList} showsVerticalScrollIndicator={false}>
+                {options.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.optionRow,
+                      value === option && styles.optionRowSelected,
+                    ]}
+                    onPress={() => {
+                      onSelect(option);
+                      handleClose();
+                    }}>
+                    <Text
                       style={[
-                        styles.optionRow,
-                        value === option && styles.optionRowSelected,
-                      ]}
-                      onPress={() => {
-                        onSelect(option);
-                        handleClose();
-                      }}>
-                      <Text
-                        style={[
-                          styles.optionText,
-                          value === option && styles.optionTextSelected,
-                        ]}>
-                        {option}
-                      </Text>
-                      {value === option && (
-                        <Ionicons name="checkmark" size={20} color="#e54242" />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </Animated.View>
-            </GestureDetector>
+                        styles.optionText,
+                        value === option && styles.optionTextSelected,
+                      ]}>
+                      {option}
+                    </Text>
+                    {value === option && (
+                      <Ionicons name="checkmark" size={20} color="#e54242" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </Animated.View>
           </Animated.View>
         </GestureHandlerRootView>
       </Modal>
@@ -165,6 +174,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
+  navBarFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1c1c1c',
+  },
   modalContent: {
     backgroundColor: '#1c1c1c',
     borderTopLeftRadius: 20,
@@ -172,13 +188,26 @@ const styles = StyleSheet.create({
     maxHeight: '70%',
     paddingBottom: 30,
   },
+  pill: {
+    width: 36,
+    height: 4,
+    backgroundColor: '#444',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 14,
+    marginTop: 6,
+  },
   modalHeader: {
+    flexDirection: 'column',
+    padding: 20,
+    paddingTop: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a2a',
+  },
+  modalHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
   },
   modalTitle: {
     fontSize: 18,
