@@ -39,7 +39,10 @@ const SWIPE_THUMB = 48;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function toDateKey(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function formatDate(dateStr: string): string {
@@ -221,6 +224,8 @@ export default function PushupChallengeScreen() {
   const [scrollViewH, setScrollViewH] = useState(0);
   const [todayNodeY, setTodayNodeY] = useState<number | null>(null);
   const scrolledRef = useRef(false);
+  const fillAnim = useRef(new Animated.Value(0)).current;
+  const [animatingCompletion, setAnimatingCompletion] = useState(false);
 
   const onScrollLayout = (e: LayoutChangeEvent) => {
     setScrollViewH(e.nativeEvent.layout.height);
@@ -299,10 +304,30 @@ export default function PushupChallengeScreen() {
         days: newDays,
         longestStreak: Math.max(data.longestStreak ?? 0, newStreak),
       };
-      await setDoc(docRef, updated);
+
+      // Run fill animation and Firebase save concurrently
+      fillAnim.setValue(0);
+      setAnimatingCompletion(true);
+
+      await Promise.all([
+        new Promise<void>((resolve) => {
+          Animated.timing(fillAnim, {
+            toValue: 1,
+            duration: 1400,
+            useNativeDriver: false,
+          }).start(() => resolve());
+        }),
+        setDoc(docRef, updated).catch((e) => console.error('Failed to save pushup completion', e)),
+      ]);
+
       setData(updated);
-    } catch (e) {
-      console.error('Failed to complete pushups', e);
+      setAnimatingCompletion(false);
+
+      // Scroll today into center with smooth animation
+      if (todayNodeY !== null && scrollViewH > 0) {
+        const target = todayNodeY - scrollViewH / 2;
+        scrollRef.current?.scrollTo({ y: Math.max(0, target), animated: true });
+      }
     } finally {
       setSaving(false);
     }
@@ -344,6 +369,7 @@ export default function PushupChallengeScreen() {
   const nodes = buildTimeline(data);
   const streakAlive = isStreakAlive(nodes);
   const todayNode = nodes.find((n) => n.isToday);
+  const todayIndex = nodes.findIndex((n) => n.isToday);
   const todayCompleted = todayNode?.completed ?? false;
   const streakBroken = !streakAlive;
   const longest = data.longestStreak ?? 0;
@@ -394,6 +420,16 @@ export default function PushupChallengeScreen() {
           const hasConnector = i < nodes.length - 1;
           const connectorColor = node.completed && nextCompleted ? RED : GREY;
 
+          // Animated colors during completion
+          const isAnimConnector = animatingCompletion && hasConnector && i === todayIndex - 1;
+          const isAnimDot = animatingCompletion && node.isToday;
+          const animConnectorColor = isAnimConnector
+            ? fillAnim.interpolate({ inputRange: [0, 0.65], outputRange: [GREY, RED], extrapolate: 'clamp' })
+            : connectorColor;
+          const animDotColor = isAnimDot
+            ? fillAnim.interpolate({ inputRange: [0.65, 1], outputRange: [GREY, RED], extrapolate: 'clamp' })
+            : dotColor;
+
           return (
             <View
               key={node.date}
@@ -404,9 +440,9 @@ export default function PushupChallengeScreen() {
             >
               {/* Left track: dot at top, connector stretches to fill row height */}
               <View style={styles.nodeTrack}>
-                <View style={[styles.dot, { backgroundColor: dotColor }]} />
+                <Animated.View style={[styles.dot, { backgroundColor: animDotColor }]} />
                 {hasConnector && (
-                  <View style={[styles.connector, { backgroundColor: connectorColor }]} />
+                  <Animated.View style={[styles.connector, { backgroundColor: animConnectorColor }]} />
                 )}
               </View>
 
@@ -586,7 +622,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
     paddingLeft: 20,
-    paddingBottom: 48,
+    paddingBottom: 72,
   },
   nodeDate: {
     color: '#fff',
