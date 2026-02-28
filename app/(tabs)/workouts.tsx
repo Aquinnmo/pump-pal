@@ -2,6 +2,7 @@ import { Workout, WorkoutCard } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import {
   collection,
@@ -22,12 +23,19 @@ import {
   View,
 } from 'react-native';
 
+const PAGE_SIZE = 50;
+const FADE_HEIGHT = 24;
+
 export default function WorkoutsScreen() {
   const { user } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [layoutHeight, setLayoutHeight] = useState(0);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) return;
@@ -40,6 +48,7 @@ export default function WorkoutsScreen() {
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
       setWorkouts(data);
+      setPage(0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -73,6 +82,21 @@ export default function WorkoutsScreen() {
 
   const handleEdit = (workout: Workout) => {
     router.push({ pathname: '/modal', params: { id: workout.id } });
+  };
+
+  const currentPageWorkouts = workouts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  const formatDate = (d: any) => {
+    if (!d) return '';
+    try {
+      let dt: Date;
+      if (d.toDate && typeof d.toDate === 'function') dt = d.toDate();
+      else if (typeof d === 'number') dt = new Date(d);
+      else dt = new Date(d);
+      return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } catch {
+      return '';
+    }
   };
 
   if (loading) {
@@ -124,15 +148,66 @@ export default function WorkoutsScreen() {
           <Text style={styles.emptySubtitle}>Tap + to log your first workout</Text>
         </View>
       ) : (
-        <FlatList
-          data={workouts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <WorkoutCard workout={item} onDelete={handleDelete} onEdit={handleEdit} />
-          )}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          <View style={styles.listWrapper} onLayout={(e) => setLayoutHeight(e.nativeEvent.layout.height)}>
+            <FlatList
+              style={{ flex: 1 }}
+              data={workouts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <WorkoutCard workout={item} onDelete={handleDelete} onEdit={handleEdit} />
+              )}
+              contentContainerStyle={[styles.list, { paddingTop: FADE_HEIGHT, paddingBottom: 12 + FADE_HEIGHT }]}
+              showsVerticalScrollIndicator={false}
+              onScroll={(e: any) => setScrollY(e.nativeEvent.contentOffset.y)}
+              scrollEventThrottle={16}
+              onContentSizeChange={(_, h) => setContentHeight(h)}
+            />
+
+            <View pointerEvents="none" style={[styles.fadeTop, { opacity: scrollY <= 4 ? 0 : 1 }]}>
+              <LinearGradient
+                colors={[/* background to transparent */ '#0f0f0f', 'transparent']}
+                style={{ flex: 1 }}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              />
+            </View>
+
+            <View pointerEvents="none" style={[styles.fadeBottom, { opacity: scrollY + layoutHeight >= contentHeight - 4 ? 0 : 1 }]}>
+              <LinearGradient
+                colors={['transparent', '#0f0f0f']}
+                style={{ flex: 1 }}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              />
+            </View>
+
+            
+          </View>
+          <View style={styles.pagination}>
+            <TouchableOpacity
+              style={[styles.pageButton, page === 0 && styles.pageButtonDisabled]}
+              onPress={() => setPage((p) => Math.max(0, p - 1))}
+              disabled={page === 0}
+              activeOpacity={0.7}>
+              <Ionicons name="chevron-back" size={18} color={page === 0 ? '#444' : '#e54242'} />
+              <Text style={[styles.pageButtonText, page === 0 && styles.pageButtonTextDisabled]}>Prev</Text>
+            </TouchableOpacity>
+            <Text style={styles.pageIndicator}>
+              {currentPageWorkouts.length > 0
+                ? `${formatDate(currentPageWorkouts[0].date)} to ${formatDate(currentPageWorkouts[currentPageWorkouts.length - 1].date)}`
+                : ''}
+            </Text>
+            <TouchableOpacity
+              style={[styles.pageButton, (page + 1) * PAGE_SIZE >= workouts.length && styles.pageButtonDisabled]}
+              onPress={() => setPage((p) => p + 1)}
+              disabled={(page + 1) * PAGE_SIZE >= workouts.length}
+              activeOpacity={0.7}>
+              <Text style={[styles.pageButtonText, (page + 1) * PAGE_SIZE >= workouts.length && styles.pageButtonTextDisabled]}>Next</Text>
+              <Ionicons name="chevron-forward" size={18} color={(page + 1) * PAGE_SIZE >= workouts.length ? '#444' : '#e54242'} />
+            </TouchableOpacity>
+          </View>
+        </>
       )}
     </View>
   );
@@ -183,7 +258,59 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   list: {
-    paddingBottom: 20,
+    paddingBottom: 8,
+  },
+  listWrapper: {
+    flex: 1,
+    position: 'relative',
+  },
+  fadeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: FADE_HEIGHT,
+  },
+  fadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: FADE_HEIGHT,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingBottom: 12,
+  },
+  pageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1c1c1c',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    gap: 2,
+  },
+  pageButtonDisabled: {
+    borderColor: '#1a1a1a',
+  },
+  pageButtonText: {
+    color: '#e54242',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  pageButtonTextDisabled: {
+    color: '#444',
+  },
+  pageIndicator: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '600',
   },
   empty: {
     flex: 1,
