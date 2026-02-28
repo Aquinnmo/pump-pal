@@ -22,13 +22,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="workouts"
-        options={{
-          title: 'Workouts',
-          tabBarIcon: ({ color, size }) => <Ionicons name="barbell" size={size} color={color} />,
-        }}
-      />
+      <Tabs.Screen name="workouts" options={{ href: null }} />
       <Tabs.Screen
         name="analytics"
         options={{
@@ -44,10 +38,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="settings"
         options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => <Ionicons name="cog" size={size} color={color} />,
         }}
       />
       <Tabs.Screen name="explore" options={{ href: null }} />

@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface Exercise {
   name: string;
@@ -42,6 +43,7 @@ function getDate(date: Workout['date']): Date {
 
 export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   const [showDetail, setShowDetail] = useState(false);
+  const insets = useSafeAreaInsets();
   const date = getDate(workout.date);
   const dateStr = date.toLocaleDateString('en-US', {
     weekday: 'short',
@@ -98,45 +100,49 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
             <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={dismiss} />
-            <GestureDetector gesture={panGesture}>
-              <Animated.View style={[styles.modalCard, cardAnimatedStyle]}>
-                <View style={styles.modalHeader}>
-                  <View style={styles.modalHeaderLeft}>
-                    <Text style={styles.modalName}>{workout.name}</Text>
-                    <Text style={styles.modalDate}>{dateStr}</Text>
-                  </View>
-                  <TouchableOpacity onPress={dismiss} hitSlop={10} style={styles.modalClose}>
-                    <Ionicons name="close" size={22} color="#888" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.modalDivider} />
-
-                <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-                  {workout.exercises.length > 0 ? (
-                    workout.exercises.map((ex, i) => (
-                      <View key={i} style={styles.modalExercise}>
-                        <Text style={styles.modalExerciseName}>{ex.name}</Text>
-                        <Text style={styles.modalExerciseDetail}>
-                          {ex.exerciseType === 'Sets of Duration'
-                            ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
-                            : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
-                        </Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.modalEmpty}>No exercises logged.</Text>
-                  )}
-
-                  {workout.notes ? (
-                    <View style={styles.modalNotesBox}>
-                      <Text style={styles.modalNotesLabel}>Notes</Text>
-                      <Text style={styles.modalNotesText}>{workout.notes}</Text>
+            <Animated.View style={[styles.modalCard, cardAnimatedStyle, { paddingBottom: Math.max(40, insets.bottom) }]}>
+              {/* Extends sheet background colour behind the Android nav bar */}
+              <View style={[styles.navBarFill, { height: insets.bottom }]} />
+              <GestureDetector gesture={panGesture}>
+                <Animated.View>
+                  <View style={styles.modalHeader}>
+                    <View style={styles.modalHeaderLeft}>
+                      <Text style={styles.modalName}>{workout.name}</Text>
+                      <Text style={styles.modalDate}>{dateStr}</Text>
                     </View>
-                  ) : null}
-                </ScrollView>
-              </Animated.View>
-            </GestureDetector>
+                    <TouchableOpacity onPress={dismiss} hitSlop={10} style={styles.modalClose}>
+                      <Ionicons name="close" size={22} color="#888" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.modalDivider} />
+                </Animated.View>
+              </GestureDetector>
+
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
+                {workout.exercises.length > 0 ? (
+                  workout.exercises.map((ex, i) => (
+                    <View key={i} style={styles.modalExercise}>
+                      <Text style={styles.modalExerciseName}>{ex.name}</Text>
+                      <Text style={styles.modalExerciseDetail}>
+                        {ex.exerciseType === 'Sets of Duration'
+                          ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
+                          : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.modalEmpty}>No exercises logged.</Text>
+                )}
+
+                {workout.notes ? (
+                  <View style={styles.modalNotesBox}>
+                    <Text style={styles.modalNotesLabel}>Notes</Text>
+                    <Text style={styles.modalNotesText}>{workout.notes}</Text>
+                  </View>
+                ) : null}
+              </ScrollView>
+            </Animated.View>
           </Animated.View>
         </GestureHandlerRootView>
       </Modal>
@@ -281,6 +287,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#e54242',
     fontWeight: '600',
+  },
+  navBarFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1c1c1c',
   },
   // --- detail modal ---
   modalOverlay: {

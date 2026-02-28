@@ -4,22 +4,22 @@ import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import {
-    collection,
-    deleteDoc,
-    doc,
-    getDocs,
-    orderBy,
-    query,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  orderBy,
+  query,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function WorkoutsScreen() {
@@ -109,10 +109,12 @@ export default function WorkoutsScreen() {
       </Modal>
 
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Workouts</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/modal')}>
-          <Ionicons name="add" size={22} color="#fff" />
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+          <Ionicons name="chevron-back" size={22} color="#e54242" />
+          <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
+        <Text style={styles.title}>All Workouts</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       {workouts.length === 0 ? (
@@ -155,18 +157,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    backgroundColor: '#1c1c1c',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    gap: 2,
+  },
+  backButtonText: {
+    color: '#e54242',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  headerSpacer: {
+    width: 70,
+  },
   title: {
     fontSize: 28,
     fontWeight: '800',
     color: '#fff',
-  },
-  addButton: {
-    backgroundColor: '#e54242',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   list: {
     paddingBottom: 20,

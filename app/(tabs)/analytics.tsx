@@ -3,16 +3,17 @@ import { Dropdown } from '@/components/ui/dropdown';
 import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
@@ -26,6 +27,7 @@ export default function AnalyticsScreen() {
   const [selectedMaxExercise, setSelectedMaxExercise] = useState<string | null>(null);
   const [selectedMaxRepsExercise, setSelectedMaxRepsExercise] = useState<string | null>(null);
   const [selectedLongestDurationExercise, setSelectedLongestDurationExercise] = useState<string | null>(null);
+  const [scrollY, setScrollY] = useState(0);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) return;
@@ -215,15 +217,24 @@ export default function AnalyticsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Analytics</Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Analytics</Text>
+      </View>
 
-      {workouts.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Log some workouts to see your analytics!</Text>
-        </View>
-      ) : (
-        <>
+      <View style={styles.scrollWrapper}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={16}
+        >
+          {workouts.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>Log some workouts to see your analytics!</Text>
+            </View>
+          ) : (
+            <>
           <MuscleInsightCards workouts={workouts} />
 
           <View style={styles.card}>
@@ -359,9 +370,25 @@ export default function AnalyticsScreen() {
               )}
             </View>
           )}
-        </>
-      )}
-    </ScrollView>
+            </>
+          )}
+        </ScrollView>
+
+        {scrollY > 0 && (
+          <LinearGradient
+            colors={['#0f0f0f', 'transparent']}
+            style={styles.fadeTop}
+            pointerEvents="none"
+          />
+        )}
+
+        <LinearGradient
+          colors={['transparent', '#0f0f0f']}
+          style={styles.fadeBottom}
+          pointerEvents="none"
+        />
+      </View>
+    </View>
   );
 }
 
@@ -370,10 +397,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f0f0f',
   },
-  content: {
+  header: {
     paddingTop: 60,
     paddingHorizontal: 20,
+    paddingBottom: 8,
+    backgroundColor: '#0f0f0f',
+  },
+  scrollWrapper: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 40,
+  },
+  fadeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    pointerEvents: 'none',
+  },
+  fadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+    pointerEvents: 'none',
   },
   center: {
     flex: 1,
