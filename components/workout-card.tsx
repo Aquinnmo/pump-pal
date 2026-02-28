@@ -110,22 +110,36 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
           </View>
         </View>
 
-      {workout.exercises.length > 0 && (
-        <View style={styles.exerciseList}>
-          {workout.exercises.map((ex, i) => (
-            <View key={i} style={styles.exerciseRow}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
-              <Text style={styles.exerciseDetail}>
-                {ex.exerciseType === 'Sets of Duration'
-                  ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
-                  : `${ex.sets} × ${ex.reps}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
+      {workout.exercises.length > 0 && (() => {
+        const weighted = workout.exercises.filter(
+          (ex) => ex.exerciseType !== 'Sets of Duration' && !ex.bodyweight && Number(ex.weight) > 0
+        );
+        const repsExs = workout.exercises.filter(
+          (ex) => ex.exerciseType !== 'Sets of Duration'
+        );
+        const totalVolume = weighted.reduce((s, ex) => s + ex.sets * ex.reps * Number(ex.weight), 0);
+        const totalReps = repsExs.reduce((s, ex) => s + ex.sets * ex.reps, 0);
+        const exerciseCount = workout.exercises.length;
+        const fmtVolume = totalVolume >= 1000
+          ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
+          : `${totalVolume}`;
 
-      {workout.notes ? <Text style={styles.notes}>{workout.notes}</Text> : null}
+        const chips: { value: string; label: string }[] = [];
+        if (weighted.length > 0) chips.push({ value: `${fmtVolume} lbs`, label: 'Volume' });
+        if (repsExs.length > 0) chips.push({ value: `${totalReps}`, label: 'Total Reps' });
+        chips.push({ value: `${exerciseCount}`, label: exerciseCount === 1 ? 'Exercise' : 'Exercises' });
+
+        return (
+          <View style={styles.insightRow}>
+            {chips.map((chip, i) => (
+              <View key={i} style={styles.insightChip}>
+                <Text style={styles.insightLabel}>{chip.label}</Text>
+                <Text style={styles.insightValue}>{chip.value}</Text>
+              </View>
+            ))}
+          </View>
+        );
+      })()}
     </View>
     </>
   );
@@ -169,37 +183,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   name: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#fff',
     marginBottom: 2,
   },
   date: {
+    fontSize: 13,
+    color: '#888',
+  },
+  insightRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
+  insightChip: {
+    flex: 1,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    paddingVertical: 4,
+  },
+  insightValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  insightLabel: {
     fontSize: 12,
     color: '#888',
-  },
-  exerciseList: {
-    gap: 6,
-  },
-  exerciseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  exerciseName: {
-    fontSize: 14,
-    color: '#ccc',
-    flex: 1,
-  },
-  exerciseDetail: {
-    fontSize: 13,
-    color: '#888',
-  },
-  notes: {
-    marginTop: 10,
-    fontSize: 13,
-    color: '#777',
-    fontStyle: 'italic',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   viewButton: {
     flexDirection: 'row',
