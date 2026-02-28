@@ -5,15 +5,16 @@ import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    limit,
+    orderBy,
+    query,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -132,13 +133,25 @@ export default function HomeScreen() {
           <Text style={styles.emptySubtitle}>Tap + to log your first session</Text>
         </View>
       ) : (
-        <FlatList
-          data={recentWorkouts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <WorkoutCard workout={item} onEdit={handleEdit} />}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.listWrapper}>
+          <FlatList
+            data={recentWorkouts}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <WorkoutCard workout={item} onEdit={handleEdit} />}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+          <LinearGradient
+            colors={['#0f0f0f', 'transparent']}
+            style={styles.fadeTop}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['transparent', '#0f0f0f']}
+            style={styles.fadeBottom}
+            pointerEvents="none"
+          />
+        </View>
       )}
     </View>
   );
@@ -187,7 +200,25 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   list: {
-    paddingBottom: 20,
+    paddingTop: 28,
+    paddingBottom: 48,
+  },
+  listWrapper: {
+    flex: 1,
+  },
+  fadeTop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 28,
+  },
+  fadeBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 48,
   },
   empty: {
     flex: 1,
