@@ -14,7 +14,7 @@ function todayUTC(): string {
 
 /** Asks Gemini for a single random first name to use in the "Swipe left if you lied" prompt. */
 async function generateRandomName(): Promise<string> {
-  const prompt = `Give me one single random human first name. It can be any name from any culture — be creative and varied. Return ONLY the name itself with no punctuation, explanation, or extra text.`;
+  const prompt = `Use python to generate a random number between 1 and 20. If the number is 5, give me the most creative name you can generate. This can be a crazy human name or a fictional character's name. Return ONLY the name itself with no punctuation, explanation, or extra text. If the number is not 5, give me one single random human first name. Return ONLY the name itself with no punctuation, explanation, or extra text. You are allowed 15 characters MAXIMUM.`;
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
