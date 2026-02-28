@@ -8,12 +8,12 @@ import { useFocusEffect } from 'expo-router';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    ActivityIndicator,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
@@ -228,6 +228,7 @@ export default function AnalyticsScreen() {
           contentContainerStyle={styles.content}
           onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
           scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
         >
           {workouts.length === 0 ? (
             <View style={styles.empty}>
