@@ -5,10 +5,8 @@ import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-opt
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
-import { File as FSFile, Paths } from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import * as Sharing from 'expo-sharing';
 import * as Updates from 'expo-updates';
 import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -213,6 +211,11 @@ export default function SettingsScreen() {
     if (!user) return;
     setExporting(true);
     try {
+      const [fileSystemModule, sharingModule] = await Promise.all([
+        import('expo-file-system'),
+        import('expo-sharing'),
+      ]);
+
       const workoutsSnap = await getDocs(
         collection(db, 'users', user.uid, 'workouts')
       );
@@ -255,19 +258,50 @@ export default function SettingsScreen() {
 
       const csv = rows.join('\n');
       const fileName = `pump-pal-workouts-${new Date().toISOString().slice(0, 10)}.csv`;
-      const file = new FSFile(Paths.cache, fileName);
-      if (file.exists) file.delete();
-      file.write(csv);
 
-      const canShare = await Sharing.isAvailableAsync();
+      let fileUri = '';
+      if ((fileSystemModule as any).File && (fileSystemModule as any).Paths?.cache) {
+        const file = new (fileSystemModule as any).File((fileSystemModule as any).Paths.cache, fileName);
+        if (file.exists) file.delete();
+        file.write(csv);
+        fileUri = file.uri;
+      } else {
+        const cacheDirectory = (fileSystemModule as any).cacheDirectory;
+        if (!cacheDirectory || typeof (fileSystemModule as any).writeAsStringAsync !== 'function') {
+          throw new Error('File system export APIs are unavailable in this app build.');
+        }
+
+        fileUri = `${cacheDirectory}${fileName}`;
+        const encoding = (fileSystemModule as any).EncodingType?.UTF8 ?? 'utf8';
+        await (fileSystemModule as any).writeAsStringAsync(fileUri, csv, { encoding });
+      }
+
+      const canShare = await (sharingModule as any).isAvailableAsync();
       if (canShare) {
-        await Sharing.shareAsync(file.uri, { mimeType: 'text/csv', dialogTitle: 'Export Training Data', UTI: 'public.comma-separated-values-text' });
+        await (sharingModule as any).shareAsync(fileUri, {
+          mimeType: 'text/csv',
+          dialogTitle: 'Export Training Data',
+          UTI: 'public.comma-separated-values-text',
+        });
       } else {
         setToast({ visible: true, message: 'Sharing is not available on this device', type: 'error' });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setToast({ visible: true, message: 'Could not export data', type: 'error' });
+      const errText = String(err?.message ?? err ?? '').toLowerCase();
+      const missingNativeModule =
+        errText.includes('native module') ||
+        errText.includes('cannot find native module') ||
+        errText.includes('cannot find module') ||
+        errText.includes('unavailable in this app build');
+
+      setToast({
+        visible: true,
+        message: missingNativeModule
+          ? 'Export is unavailable on this app build. Update the app to use this feature.'
+          : 'Could not export data',
+        type: 'error',
+      });
     } finally {
       setExporting(false);
     }
