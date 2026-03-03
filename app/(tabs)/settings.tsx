@@ -12,15 +12,15 @@ import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePass
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Linking,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Linking,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 export default function SettingsScreen() {
@@ -221,7 +221,7 @@ export default function SettingsScreen() {
       );
 
       const rows: string[] = [
-        ['Date', 'Workout', 'Notes', 'Exercise', 'Type', 'Sets', 'Reps', 'Weight (lbs)', 'Duration (min)', 'Duration (sec)', 'Bodyweight'].join(','),
+        ['Date', 'Workout', 'Notes', 'Exercise', 'Type', 'Sets', 'Reps', 'Weight (lbs)', 'Duration (min)', 'Duration (sec)', 'Hold (s)', 'Bodyweight'].join(','),
       ];
 
       workoutsSnap.docs.forEach((d) => {
@@ -247,12 +247,13 @@ export default function SettingsScreen() {
                 ex.bodyweight ? '' : (ex.weight ?? ''),
                 ex.durationMinutes ?? '',
                 ex.durationSeconds ?? '',
+                ex.holdSeconds ?? '',
                 ex.bodyweight ? 'Yes' : 'No',
               ].join(',')
             );
           });
         } else {
-          rows.push([dateStr, name, notes, '', '', '', '', '', '', '', ''].join(','));
+          rows.push([dateStr, name, notes, '', '', '', '', '', '', '', '', ''].join(','));
         }
       });
 

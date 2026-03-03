@@ -45,22 +45,24 @@ Examples:
 
 export interface SuggestedExercise {
   name: string;
-  exerciseType: 'Sets of Reps' | 'Sets of Duration';
+  exerciseType: 'Sets of Reps' | 'Sets of Duration' | 'Sets of Reps with Hold';
   sets: number;
   reps: number;
   durationMinutes: number;
   durationSeconds: number;
+  holdSeconds: number;
   weight: string;
   bodyweight: boolean;
 }
 
 interface CurrentExercise {
   name: string;
-  exerciseType: 'Sets of Reps' | 'Sets of Duration';
+  exerciseType: 'Sets of Reps' | 'Sets of Duration' | 'Sets of Reps with Hold';
   sets: number;
   reps: number;
   durationMinutes: number;
   durationSeconds: number;
+  holdSeconds: number;
   weight: string;
   bodyweight: boolean;
 }
@@ -208,6 +210,7 @@ Return ONLY a valid JSON array with no markdown fences, no explanation:
     reps: Number(ex.reps) || 10,
     durationMinutes: Number(ex.durationMinutes) || 0,
     durationSeconds: Number(ex.durationSeconds) || 30,
+    holdSeconds: Number(ex.holdSeconds) || 0,
     weight: String(ex.weight ?? ''),
     bodyweight: !!ex.bodyweight,
   }));

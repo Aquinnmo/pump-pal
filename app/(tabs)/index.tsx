@@ -8,13 +8,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    limit,
+    orderBy,
+    query,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -281,15 +281,15 @@ const styles = StyleSheet.create({
   fadeTop: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
+    left: -20,
+    right: -20,
     height: 28,
   },
   fadeBottom: {
     position: 'absolute',
     bottom: 0,
-    left: 0,
-    right: 0,
+    left: -20,
+    right: -20,
     height: 48,
   },
   empty: {

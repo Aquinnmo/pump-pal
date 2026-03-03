@@ -3,23 +3,24 @@ import { useCallback, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
+    runOnJS,
+    useAnimatedStyle,
+    useSharedValue,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface Exercise {
   name: string;
-  exerciseType?: 'Sets of Reps' | 'Sets of Duration';
+  exerciseType?: 'Sets of Reps' | 'Sets of Duration' | 'Sets of Reps with Hold';
   sets: number;
   reps: number;
   weight: number;
   bodyweight?: boolean;
   durationMinutes?: number;
   durationSeconds?: number;
+  holdSeconds?: number;
 }
 
 export interface Workout {
@@ -109,6 +110,8 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
     const exerciseLines = workout.exercises.map((ex) => {
       const detail = ex.exerciseType === 'Sets of Duration'
         ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
+        : ex.exerciseType === 'Sets of Reps with Hold'
+        ? `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''} (${ex.holdSeconds ?? 0}s hold)${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`
         : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`;
       return `  • ${ex.name} — ${detail}`;
     }).join('\n');
@@ -124,7 +127,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
       'Exercises:',
       exerciseLines,
       '',
-      metricParts.join('\n'),
+      metricParts.join('  |  '),
       workout.notes ? `\nNotes: ${workout.notes}` : '',
       '',
       'Logged with Pump Pal 💪',
@@ -167,6 +170,8 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
                       <Text style={styles.modalExerciseDetail}>
                         {ex.exerciseType === 'Sets of Duration'
                           ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
+                          : ex.exerciseType === 'Sets of Reps with Hold'
+                          ? `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''} (${ex.holdSeconds ?? 0}s hold)${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`
                           : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
                       </Text>
                     </View>
