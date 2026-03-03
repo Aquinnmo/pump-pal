@@ -45,6 +45,7 @@ export async function getDailyName(): Promise<string> {
     }
 
     // Not found or missing name — generate a fresh one
+    
     const name = await generateRandomName();
     await setDoc(docRef, { name, createdAt: new Date().toISOString() });
     return name;
