@@ -1,4 +1,6 @@
+import { HorizontalCounter, VerticalCounter } from '@/components/ui/counter';
 import { Dropdown } from '@/components/ui/dropdown';
+import { HorizontalNumberInput, VerticalNumberInput } from '@/components/ui/number-input';
 import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
@@ -13,16 +15,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -349,7 +351,22 @@ export default function AddWorkoutModal() {
         showAlert('AI Suggestions', 'Your workout already looks well balanced!');
         return;
       }
-      setExercises((prev) => [...prev, ...suggested]);
+      setExercises((prev) => [
+        ...prev,
+        ...suggested.map((s: any) => ({
+          ...s,
+          isCustomName: false,
+          customName: '',
+          exerciseType: s.exerciseType || 'Sets of Reps',
+          sets: s.sets ?? 3,
+          reps: s.reps ?? 10,
+          durationMinutes: s.durationMinutes ?? 0,
+          durationSeconds: s.durationSeconds ?? 30,
+          holdSeconds: s.holdSeconds ?? 0,
+          weight: s.weight ?? '',
+          bodyweight: s.bodyweight ?? false,
+        })),
+      ]);
     } catch (e) {
       console.error('AI workout suggestion failed:', e);
       showAlert('Error', 'Could not get AI suggestions. Please try again.');
@@ -637,37 +654,66 @@ export default function AddWorkoutModal() {
                   /* Bodyweight hold: Sets | Reps | Hold — vertical incrementers matching Sets of Reps weighted style, Hold is a text input that stretches to match */
                   <View style={styles.row}>
                     {/* Sets */}
-                    <View style={styles.numField}>
-                      <Text style={styles.numLabel}>Sets</Text>
-                      <View style={styles.incrementerContainer}>
-                        <TouchableOpacity onPress={() => increment(i, 'sets')} style={styles.incrementerButton} hitSlop={10}>
-                          <Ionicons name="add-circle" size={28} color="#e54242" />
-                        </TouchableOpacity>
-                        <Text style={styles.incrementerValue}>{ex.sets}</Text>
-                        <TouchableOpacity onPress={() => decrement(i, 'sets')} style={styles.incrementerButton} hitSlop={10}>
-                          <Ionicons name="remove-circle" size={28} color="#e54242" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+                    <VerticalCounter 
+                      label="Sets" 
+                      value={ex.sets} 
+                      onIncrement={() => increment(i, 'sets')} 
+                      onDecrement={() => decrement(i, 'sets')} 
+                    />
                     {/* Reps */}
-                    <View style={styles.numField}>
-                      <Text style={styles.numLabel}>Reps</Text>
-                      <View style={styles.incrementerContainer}>
-                        <TouchableOpacity onPress={() => increment(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
-                          <Ionicons name="add-circle" size={28} color="#e54242" />
-                        </TouchableOpacity>
-                        <Text style={styles.incrementerValue}>{ex.reps}</Text>
-                        <TouchableOpacity onPress={() => decrement(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
-                          <Ionicons name="remove-circle" size={28} color="#e54242" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
+                    <VerticalCounter 
+                      label="Reps" 
+                      value={ex.reps} 
+                      onIncrement={() => increment(i, 'reps')} 
+                      onDecrement={() => decrement(i, 'reps')} 
+                    />
                     {/* Hold */}
-                    <View style={styles.numField}>
-                      <Text style={styles.numLabel}>Hold (s)</Text>
-                      <TextInput
-                        style={[styles.numInput, styles.numInputStretch]}
-                        keyboardType="number-pad"
+                    <VerticalNumberInput
+                      label="Hold (s)"
+                      value={String(ex.holdSeconds)}
+                      onChangeText={(v) => updateExercise(i, 'holdSeconds', v)}
+                      onBlur={() => {
+                        if (!ex.holdSeconds || isNaN(ex.holdSeconds)) {
+                          updateExercise(i, 'holdSeconds', '0');
+                        }
+                      }}
+                    />
+                  </View>
+                ) : (
+                  /* Weighted hold: 2×2 grid — Sets/Reps on top (horizontal incrementers), Weight/Hold on bottom (text inputs) */
+                  <>
+                    <View style={styles.row}>
+                      {/* Sets */}
+                      <HorizontalCounter 
+                        label="Sets" 
+                        value={ex.sets} 
+                        onIncrement={() => increment(i, 'sets')} 
+                        onDecrement={() => decrement(i, 'sets')} 
+                      />
+                      {/* Reps */}
+                      <HorizontalCounter 
+                        label="Reps" 
+                        value={ex.reps} 
+                        onIncrement={() => increment(i, 'reps')} 
+                        onDecrement={() => decrement(i, 'reps')} 
+                      />
+                    </View>
+                    <View style={[styles.row, { marginTop: 8 }]}>
+                      {/* Weight */}
+                      <HorizontalNumberInput
+                        label="Weight (lbs)"
+                        keyboardType="decimal-pad"
+                        value={ex.weight}
+                        onChangeText={(v) => updateExercise(i, 'weight', v)}
+                        onBlur={() => {
+                          if (ex.weight === '' || ex.weight === '.') {
+                            updateExercise(i, 'weight', '0');
+                          }
+                        }}
+                      />
+                      {/* Hold */}
+                      <HorizontalNumberInput
+                        label="Hold (s)"
                         value={String(ex.holdSeconds)}
                         onChangeText={(v) => updateExercise(i, 'holdSeconds', v)}
                         onBlur={() => {
@@ -677,182 +723,87 @@ export default function AddWorkoutModal() {
                         }}
                       />
                     </View>
-                  </View>
-                ) : (
-                  /* Weighted hold: 2×2 grid — Sets/Reps on top (horizontal incrementers), Weight/Hold on bottom (text inputs) */
-                  <>
-                    <View style={styles.row}>
-                      {/* Sets */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Sets</Text>
-                        <View style={styles.incrementerContainerHorizontal}>
-                          <TouchableOpacity onPress={() => decrement(i, 'sets')} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                          <Text style={styles.incrementerValue}>{ex.sets}</Text>
-                          <TouchableOpacity onPress={() => increment(i, 'sets')} hitSlop={10}>
-                            <Ionicons name="add-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                      {/* Reps */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Reps</Text>
-                        <View style={styles.incrementerContainerHorizontal}>
-                          <TouchableOpacity onPress={() => decrement(i, 'reps')} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                          <Text style={styles.incrementerValue}>{ex.reps}</Text>
-                          <TouchableOpacity onPress={() => increment(i, 'reps')} hitSlop={10}>
-                            <Ionicons name="add-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                    <View style={[styles.row, { marginTop: 8 }]}>
-                      {/* Weight */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Weight (lbs)</Text>
-                        <TextInput
-                          style={styles.numInput}
-                          keyboardType="decimal-pad"
-                          value={ex.weight}
-                          onChangeText={(v) => updateExercise(i, 'weight', v)}
-                          onBlur={() => {
-                            if (ex.weight === '' || ex.weight === '.') {
-                              updateExercise(i, 'weight', '0');
-                            }
-                          }}
-                        />
-                      </View>
-                      {/* Hold */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Hold (s)</Text>
-                        <TextInput
-                          style={styles.numInput}
-                          keyboardType="number-pad"
-                          value={String(ex.holdSeconds)}
-                          onChangeText={(v) => updateExercise(i, 'holdSeconds', v)}
-                          onBlur={() => {
-                            if (!ex.holdSeconds || isNaN(ex.holdSeconds)) {
-                              updateExercise(i, 'holdSeconds', '0');
-                            }
-                          }}
-                        />
-                      </View>
-                    </View>
                   </>
                 )}
               </>
             ) : (
               <View style={styles.row}>
                 {/* Sets — shared by both types */}
-                <View style={styles.numField}>
-                  <Text style={styles.numLabel}>Sets</Text>
-                  {ex.exerciseType === 'Sets of Duration' || ex.bodyweight ? (
-                    <View style={styles.incrementerContainerHorizontal}>
-                      <TouchableOpacity onPress={() => decrement(i, 'sets')} hitSlop={10}>
-                        <Ionicons name="remove-circle" size={28} color="#e54242" />
-                      </TouchableOpacity>
-                      <Text style={styles.incrementerValue}>{ex.sets}</Text>
-                      <TouchableOpacity onPress={() => increment(i, 'sets')} hitSlop={10}>
-                        <Ionicons name="add-circle" size={28} color="#e54242" />
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    <View style={styles.incrementerContainer}>
-                      <TouchableOpacity onPress={() => increment(i, 'sets')} style={styles.incrementerButton} hitSlop={10}>
-                        <Ionicons name="add-circle" size={28} color="#e54242" />
-                      </TouchableOpacity>
-                      <Text style={styles.incrementerValue}>{ex.sets}</Text>
-                      <TouchableOpacity onPress={() => decrement(i, 'sets')} style={styles.incrementerButton} hitSlop={10}>
-                        <Ionicons name="remove-circle" size={28} color="#e54242" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
+                {ex.exerciseType === 'Sets of Duration' || ex.bodyweight ? (
+                  <HorizontalCounter 
+                    label="Sets" 
+                    value={ex.sets} 
+                    onIncrement={() => increment(i, 'sets')} 
+                    onDecrement={() => decrement(i, 'sets')} 
+                  />
+                ) : (
+                  <VerticalCounter 
+                    label="Sets" 
+                    value={ex.sets} 
+                    onIncrement={() => increment(i, 'sets')} 
+                    onDecrement={() => decrement(i, 'sets')} 
+                  />
+                )}
 
                 {ex.exerciseType === 'Sets of Duration' ? (
                   <>
                     {/* Minutes */}
-                    <View style={styles.numField}>
-                      <Text style={styles.numLabel}>Minutes</Text>
-                      <TextInput
-                        style={styles.numInput}
-                        keyboardType="number-pad"
-                        value={String(ex.durationMinutes)}
-                        onChangeText={(v) => updateExercise(i, 'durationMinutes', v)}
-                        onBlur={() => {
-                          if (ex.durationMinutes === 0 || isNaN(ex.durationMinutes)) {
-                            updateExercise(i, 'durationMinutes', '0');
-                          }
-                        }}
-                      />
-                    </View>
+                    <HorizontalNumberInput
+                      label="Minutes"
+                      value={String(ex.durationMinutes)}
+                      onChangeText={(v) => updateExercise(i, 'durationMinutes', v)}
+                      onBlur={() => {
+                        if (ex.durationMinutes === 0 || isNaN(ex.durationMinutes)) {
+                          updateExercise(i, 'durationMinutes', '0');
+                        }
+                      }}
+                    />
                     {/* Seconds */}
-                    <View style={styles.numField}>
-                      <Text style={styles.numLabel}>Seconds</Text>
-                      <TextInput
-                        style={styles.numInput}
-                        keyboardType="number-pad"
-                        value={String(ex.durationSeconds)}
-                        onChangeText={(v) => {
-                          const n = Number(v) || 0;
-                          updateExercise(i, 'durationSeconds', String(Math.min(59, n)));
-                        }}
-                        onBlur={() => {
-                          if (ex.durationSeconds === 0 || isNaN(ex.durationSeconds)) {
-                            updateExercise(i, 'durationSeconds', '0');
-                          }
-                        }}
-                      />
-                    </View>
+                    <HorizontalNumberInput
+                      label="Seconds"
+                      value={String(ex.durationSeconds)}
+                      onChangeText={(v) => {
+                        const n = Number(v) || 0;
+                        updateExercise(i, 'durationSeconds', String(Math.min(59, n)));
+                      }}
+                      onBlur={() => {
+                        if (ex.durationSeconds === 0 || isNaN(ex.durationSeconds)) {
+                          updateExercise(i, 'durationSeconds', '0');
+                        }
+                      }}
+                    />
                   </>
                 ) : (
                   <>
                     {/* Reps */}
-                    <View style={styles.numField}>
-                      <Text style={styles.numLabel}>Reps</Text>
-                      {ex.bodyweight ? (
-                        <View style={styles.incrementerContainerHorizontal}>
-                          <TouchableOpacity onPress={() => decrement(i, 'reps')} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                          <Text style={styles.incrementerValue}>{ex.reps}</Text>
-                          <TouchableOpacity onPress={() => increment(i, 'reps')} hitSlop={10}>
-                            <Ionicons name="add-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <View style={styles.incrementerContainer}>
-                          <TouchableOpacity onPress={() => increment(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
-                            <Ionicons name="add-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                          <Text style={styles.incrementerValue}>{ex.reps}</Text>
-                          <TouchableOpacity onPress={() => decrement(i, 'reps')} style={styles.incrementerButton} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                        </View>
-                      )}
-                    </View>
+                    {ex.bodyweight ? (
+                      <HorizontalCounter 
+                        label="Reps" 
+                        value={ex.reps} 
+                        onIncrement={() => increment(i, 'reps')} 
+                        onDecrement={() => decrement(i, 'reps')} 
+                      />
+                    ) : (
+                      <VerticalCounter 
+                        label="Reps" 
+                        value={ex.reps} 
+                        onIncrement={() => increment(i, 'reps')} 
+                        onDecrement={() => decrement(i, 'reps')} 
+                      />
+                    )}
                     {/* Weight */}
                     {!ex.bodyweight && (
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Weight (lbs)</Text>
-                        <View style={styles.weightInputContainer}>
-                          <TextInput
-                            style={[styles.numInput, styles.weightInput]}
-                            keyboardType="decimal-pad"
-                            value={ex.weight}
-                            onChangeText={(v) => updateExercise(i, 'weight', v)}
-                            onBlur={() => {
-                              if (ex.weight === '' || ex.weight === '.') {
-                                updateExercise(i, 'weight', '0');
-                              }
-                            }}
-                          />
-                        </View>
-                      </View>
+                      <VerticalNumberInput
+                        label="Weight (lbs)"
+                        keyboardType="decimal-pad"
+                        value={ex.weight}
+                        onChangeText={(v) => updateExercise(i, 'weight', v)}
+                        onBlur={() => {
+                          if (ex.weight === '' || ex.weight === '.') {
+                            updateExercise(i, 'weight', '0');
+                          }
+                        }}
+                      />
                     )}
                   </>
                 )}
