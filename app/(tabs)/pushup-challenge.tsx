@@ -598,6 +598,21 @@ export default function PushupChallengeScreen() {
   const streakBroken = !streakAlive;
   const longest = data.longestStreak ?? 0;
 
+  if (streakBroken) {
+    const lastStreak = currentStreakLength(data);
+    return (
+      <View style={styles.center}>
+        <Ionicons name="sad-outline" size={86} color={RED} />
+        <Text style={styles.lostTitle}>You lost the pushup challenge :(</Text>
+        <Text style={styles.lostStat}>last streak: {lastStreak} day{lastStreak === 1 ? '' : 's'}</Text>
+        <Text style={styles.lostStat}>max streak: {longest} day{longest === 1 ? '' : 's'}</Text>
+        <TouchableOpacity style={styles.startBtn} onPress={resetChallenge}>
+          <Text style={styles.startBtnText}>Restart Challenge</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -610,22 +625,8 @@ export default function PushupChallengeScreen() {
               <Text style={styles.streakBadgeText}>{longest}</Text>
             </View>
           )}
-          {streakBroken && (
-            <TouchableOpacity onPress={resetChallenge}>
-              <Text style={styles.resetText}>Restart</Text>
-            </TouchableOpacity>
-          )}
         </View>
       </View>
-
-      {streakBroken ? (
-        <View style={styles.streakBrokenBanner}>
-          <Ionicons name="close-circle" size={20} color={RED} />
-          <Text style={styles.streakBrokenText}>
-            Streak broken — you missed a day. Restart to try again.
-          </Text>
-        </View>
-      ) : null}
 
       {/* Timeline — today centred, past days above */}
       <View style={styles.timelineWrapper}>
@@ -1063,6 +1064,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 22,
+  },
+  lostTitle: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  lostStat: {
+    color: '#979797',
+    fontSize: 19,
+    marginBottom: 6,
   },
   startBtn: {
     marginTop: 24,
