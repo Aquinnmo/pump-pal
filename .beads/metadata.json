@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "pump_pal",
+  "project_id": "b137ce7f-f54c-425e-b21f-365b377bc596"
+}

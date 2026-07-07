@@ -1,49 +1,52 @@
-import { DraftExerciseRow, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
+import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
 
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
-  const setCount = Math.max(0, Number(row.sets) || 0);
-  const sets: PerformedSet[] = [];
-
-  for (let index = 0; index < setCount; index += 1) {
+  return row.sets.map((draftSet, index) => {
     if (row.exerciseType === 'Sets of Duration') {
-      sets.push({
-        setNumber: index + 1,
-        durationSeconds: (Number(row.durationMinutes) || 0) * 60 + (Number(row.durationSeconds) || 0),
-      });
-    } else {
       const set: PerformedSet = {
         setNumber: index + 1,
-        reps: Number(row.reps) || 0,
-        weight: row.bodyweight ? 0 : Number(row.weight) || 0,
-        bodyweight: Boolean(row.bodyweight),
+        durationSeconds: (Number(draftSet.durationMinutes) || 0) * 60 + (Number(draftSet.durationSeconds) || 0),
       };
       if (row.holdSeconds !== undefined) {
         set.holdSeconds = row.holdSeconds;
       }
-      sets.push(set);
+      return set;
     }
-  }
-
-  return sets;
+    const set: PerformedSet = {
+      setNumber: index + 1,
+      reps: Number(draftSet.reps) || 0,
+      weight: row.bodyweight ? 0 : Number(draftSet.weight) || 0,
+      bodyweight: Boolean(row.bodyweight),
+    };
+    if (row.holdSeconds !== undefined) {
+      set.holdSeconds = row.holdSeconds;
+    }
+    return set;
+  });
 }
 
 export function collapseSetsToDraft(pe: PerformedExercise): DraftExerciseRow {
-  const setCount = Math.max(1, pe.sets.length);
   const first = pe.sets[0];
   const duration = first?.durationSeconds !== undefined && first?.reps === undefined;
-  const totalSeconds = duration ? (first?.durationSeconds ?? 0) : 0;
+  const sourceSets = pe.sets.length > 0 ? pe.sets : [first];
+
+  const sets: DraftSet[] = sourceSets.map((s): DraftSet => {
+    const totalSeconds = duration ? (s?.durationSeconds ?? 0) : 0;
+    return {
+      reps: duration ? 0 : s?.reps ?? 0,
+      weight: duration || s?.bodyweight ? '' : String(s?.weight ?? ''),
+      durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
+      durationSeconds: duration ? totalSeconds % 60 : 0,
+    };
+  });
 
   return {
     exerciseId: pe.exerciseId,
     variationId: pe.variationId,
     label: pe.variationNameSnapshot ?? pe.exerciseNameSnapshot,
     exerciseType: duration ? 'Sets of Duration' : 'Sets of Reps',
-    sets: setCount,
-    reps: duration ? 0 : first?.reps ?? 0,
-    durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
-    durationSeconds: duration ? totalSeconds % 60 : 0,
-    weight: duration || first?.bodyweight ? '' : String(first?.weight ?? ''),
     bodyweight: Boolean(first?.bodyweight),
+    sets,
     holdSeconds: first?.holdSeconds,
     peNotes: pe.notes,
     legacy: pe.legacy,
@@ -73,23 +76,40 @@ export function isDurationExercise(pe: PerformedExercise): boolean {
   return first?.durationSeconds !== undefined && first?.reps === undefined;
 }
 
+function fmtDuration(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes ? `${minutes}m ` : ''}${seconds}s`;
+}
+
 export function summarizePerformedExercise(pe: PerformedExercise): string {
-  const setCount = pe.sets.length;
-  const first = pe.sets[0];
+  const sets = pe.sets;
+  const setCount = sets.length;
+  const first = sets[0];
+  const holdSuffix = (s?: PerformedSet) => (s?.holdSeconds !== undefined ? ` + ${s.holdSeconds}s hold` : '');
+  const holdUniform = sets.every((s) => s.holdSeconds === first?.holdSeconds);
 
   let base: string;
   if (isDurationExercise(pe)) {
-    const totalSeconds = first?.durationSeconds ?? 0;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    base = `${setCount} × ${minutes ? `${minutes}m ` : ''}${seconds}s`;
+    const durations = sets.map((s) => s.durationSeconds ?? 0);
+    const uniform = durations.every((d) => d === durations[0]) && holdUniform;
+    base = uniform
+      ? `${setCount} × ${fmtDuration(durations[0] ?? 0)}`
+      : sets.map((s) => `${fmtDuration(s.durationSeconds ?? 0)}${holdSuffix(s)}`).join(', ');
   } else {
-    const reps = first?.reps ?? 0;
-    const weightSuffix = first?.bodyweight ? '' : ` @ ${first?.weight ?? 0} lbs`;
-    base = `${setCount} × ${reps} rep${reps !== 1 ? 's' : ''}${weightSuffix}`;
+    const uniform =
+      sets.every((s) => s.reps === first?.reps && s.weight === first?.weight && s.bodyweight === first?.bodyweight) &&
+      holdUniform;
+    const weightSuffix = (s?: PerformedSet) => (s?.bodyweight ? '' : ` @ ${s?.weight ?? 0} lbs`);
+    if (uniform) {
+      const reps = first?.reps ?? 0;
+      base = `${setCount} × ${reps} rep${reps !== 1 ? 's' : ''}${weightSuffix(first)}`;
+    } else {
+      base = sets.map((s) => `${s.reps ?? 0}${weightSuffix(s)}${holdSuffix(s)}`).join(', ');
+    }
   }
 
-  if (first?.holdSeconds !== undefined) {
+  if (holdUniform && first?.holdSeconds !== undefined) {
     base += ` + ${first.holdSeconds}s hold`;
   }
 

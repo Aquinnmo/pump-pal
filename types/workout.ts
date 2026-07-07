@@ -91,21 +91,24 @@ export type ExerciseSearchOption = {
 
 export type ExerciseType = 'Sets of Reps' | 'Sets of Duration';
 
-// Modal's aggregate editing shape — one row per exercise, expanded to
-// PerformedSet[] on save (see utils/workout-conversion.ts). The last three
-// fields are hidden passthroughs so editing migrated data never drops
-// hold/notes/legacy data.
+export type DraftSet = {
+  reps: number;
+  weight: string;
+  durationMinutes: number;
+  durationSeconds: number;
+};
+
+// Modal's per-set editing shape — one row per exercise, expanded to
+// PerformedSet[] on save (see utils/workout-conversion.ts). exerciseType and
+// bodyweight are exercise-wide; holdSeconds/peNotes/legacy are hidden
+// passthroughs so editing migrated data never drops hold/notes/legacy data.
 export type DraftExerciseRow = {
   exerciseId: string | null;
   variationId: string | null;
   label: string;
   exerciseType: ExerciseType;
-  sets: number;
-  reps: number;
-  durationMinutes: number;
-  durationSeconds: number;
-  weight: string;
   bodyweight: boolean;
+  sets: DraftSet[];
   holdSeconds?: number;
   peNotes?: string;
   legacy?: Record<string, unknown>;
