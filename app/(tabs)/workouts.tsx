@@ -25,7 +25,7 @@ import {
   View,
 } from 'react-native';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 15;
 const FADE_HEIGHT = 24;
 
 export default function WorkoutsScreen() {
