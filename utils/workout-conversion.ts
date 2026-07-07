@@ -1,49 +1,52 @@
-import { DraftExerciseRow, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
+import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
 
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
-  const setCount = Math.max(0, Number(row.sets) || 0);
-  const sets: PerformedSet[] = [];
-
-  for (let index = 0; index < setCount; index += 1) {
+  return row.sets.map((draftSet, index) => {
     if (row.exerciseType === 'Sets of Duration') {
-      sets.push({
-        setNumber: index + 1,
-        durationSeconds: (Number(row.durationMinutes) || 0) * 60 + (Number(row.durationSeconds) || 0),
-      });
-    } else {
       const set: PerformedSet = {
         setNumber: index + 1,
-        reps: Number(row.reps) || 0,
-        weight: row.bodyweight ? 0 : Number(row.weight) || 0,
-        bodyweight: Boolean(row.bodyweight),
+        durationSeconds: (Number(draftSet.durationMinutes) || 0) * 60 + (Number(draftSet.durationSeconds) || 0),
       };
       if (row.holdSeconds !== undefined) {
         set.holdSeconds = row.holdSeconds;
       }
-      sets.push(set);
+      return set;
     }
-  }
-
-  return sets;
+    const set: PerformedSet = {
+      setNumber: index + 1,
+      reps: Number(draftSet.reps) || 0,
+      weight: row.bodyweight ? 0 : Number(draftSet.weight) || 0,
+      bodyweight: Boolean(row.bodyweight),
+    };
+    if (row.holdSeconds !== undefined) {
+      set.holdSeconds = row.holdSeconds;
+    }
+    return set;
+  });
 }
 
 export function collapseSetsToDraft(pe: PerformedExercise): DraftExerciseRow {
-  const setCount = Math.max(1, pe.sets.length);
   const first = pe.sets[0];
   const duration = first?.durationSeconds !== undefined && first?.reps === undefined;
-  const totalSeconds = duration ? (first?.durationSeconds ?? 0) : 0;
+  const sourceSets = pe.sets.length > 0 ? pe.sets : [first];
+
+  const sets: DraftSet[] = sourceSets.map((s): DraftSet => {
+    const totalSeconds = duration ? (s?.durationSeconds ?? 0) : 0;
+    return {
+      reps: duration ? 0 : s?.reps ?? 0,
+      weight: duration || s?.bodyweight ? '' : String(s?.weight ?? ''),
+      durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
+      durationSeconds: duration ? totalSeconds % 60 : 0,
+    };
+  });
 
   return {
     exerciseId: pe.exerciseId,
     variationId: pe.variationId,
     label: pe.variationNameSnapshot ?? pe.exerciseNameSnapshot,
     exerciseType: duration ? 'Sets of Duration' : 'Sets of Reps',
-    sets: setCount,
-    reps: duration ? 0 : first?.reps ?? 0,
-    durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
-    durationSeconds: duration ? totalSeconds % 60 : 0,
-    weight: duration || first?.bodyweight ? '' : String(first?.weight ?? ''),
     bodyweight: Boolean(first?.bodyweight),
+    sets,
     holdSeconds: first?.holdSeconds,
     peNotes: pe.notes,
     legacy: pe.legacy,

@@ -136,13 +136,15 @@ export async function suggestWorkoutCompletion(
   const currentLines = current
     .filter((ex) => ex.label.trim())
     .map((ex) => {
+      const setCount = ex.sets.length;
+      const first = ex.sets[0];
       if (ex.exerciseType === 'Sets of Duration') {
-        return `  - ${ex.label}: ${ex.sets} sets × ${ex.durationMinutes}m ${ex.durationSeconds}s`;
+        return `  - ${ex.label}: ${setCount} sets × ${first?.durationMinutes ?? 0}m ${first?.durationSeconds ?? 0}s`;
       }
       if (ex.bodyweight) {
-        return `  - ${ex.label}: ${ex.sets} sets × ${ex.reps} reps (bodyweight)`;
+        return `  - ${ex.label}: ${setCount} sets × ${first?.reps ?? 0} reps (bodyweight)`;
       }
-      return `  - ${ex.label}: ${ex.sets} sets × ${ex.reps} reps @ ${ex.weight || '?'} lbs`;
+      return `  - ${ex.label}: ${setCount} sets × ${first?.reps ?? 0} reps @ ${first?.weight || '?'} lbs`;
     })
     .join('\n') || '  (nothing yet)';
 
