@@ -9,7 +9,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:web": "npx expo export -p web"
+    "build:web": "npx expo export -p web",
+    "migration:inventory": "node scripts/build-exercise-inventory.js",
+    "migration:v2": "node scripts/build-v2-migration.js",
+    "migration:write-v2": "node scripts/write-v2-firestore.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

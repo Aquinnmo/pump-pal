@@ -1,0 +1,871 @@
+{
+  "schemaVersion": 1,
+  "sourceExport": "temp/firestore-workouts-export.json",
+  "sourceExportedAt": "2026-05-24T23:26:50.339Z",
+  "purpose": "Manual mapping from historical exercise display names to stable exercise catalog IDs and default per-usage flags. Edit exerciseId/displayName/defaultFlags/reviewStatus before running later migration phases.",
+  "reviewStatusValues": [
+    "needs-review",
+    "approved",
+    "rejected"
+  ],
+  "mappings": {
+    "Bench Press": {
+      "exerciseId": "bench-press",
+      "displayName": "Bench Press",
+      "defaultFlags": {
+        "equipment": "barbell",
+        "limbMode": null
+      },
+      "reviewStatus": "approved",
+      "sourceCount": 16,
+      "sourceWorkoutCount": 15,
+      "sourceUserCount": 3,
+      "notes": ""
+    },
+    "Pull Ups": {
+      "exerciseId": "pull-up",
+      "displayName": "Pull Ups",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "approved",
+      "sourceCount": 16,
+      "sourceWorkoutCount": 16,
+      "sourceUserCount": 2,
+      "notes": ""
+    },
+    "Muscle Ups": {
+      "exerciseId": "muscle-up",
+      "displayName": "Muscle Ups",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "approved",
+      "sourceCount": 15,
+      "sourceWorkoutCount": 15,
+      "sourceUserCount": 2,
+      "notes": ""
+    },
+    "Rear Delt Flies": {
+      "exerciseId": "rear-delt-fly",
+      "displayName": "Rear Delt Fly",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 15,
+      "sourceWorkoutCount": 15,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Tricep Push Down": {
+      "exerciseId": "tricep-push-down",
+      "displayName": "Tricep Push Down",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 15,
+      "sourceWorkoutCount": 14,
+      "sourceUserCount": 2,
+      "notes": ""
+    },
+    "Bicep Curls": {
+      "exerciseId": "bicep-curls",
+      "displayName": "Bicep Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 14,
+      "sourceWorkoutCount": 14,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable Hammer Curls": {
+      "exerciseId": "cable-hammer-curls",
+      "displayName": "Cable Hammer Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 14,
+      "sourceWorkoutCount": 14,
+      "sourceUserCount": 2,
+      "notes": ""
+    },
+    "Seated Lateral Rows": {
+      "exerciseId": "seated-lateral-rows",
+      "displayName": "Seated Lateral Rows",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 14,
+      "sourceWorkoutCount": 14,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Single Arm Lat Pulldowns": {
+      "exerciseId": "single-arm-lat-pulldowns",
+      "displayName": "Single Arm Lat Pulldowns",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 14,
+      "sourceWorkoutCount": 14,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Dips": {
+      "exerciseId": "dips",
+      "displayName": "Dips",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 13,
+      "sourceWorkoutCount": 13,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Arnold Press": {
+      "exerciseId": "arnold-press",
+      "displayName": "Arnold Press",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 12,
+      "sourceWorkoutCount": 12,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Leg Press": {
+      "exerciseId": "leg-press",
+      "displayName": "Leg Press",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 12,
+      "sourceWorkoutCount": 12,
+      "sourceUserCount": 2,
+      "notes": ""
+    },
+    "Pec Flies": {
+      "exerciseId": "pec-flies",
+      "displayName": "Pec Flies",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 12,
+      "sourceWorkoutCount": 12,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Lateral Raises": {
+      "exerciseId": "lateral-raises",
+      "displayName": "Lateral Raises",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 11,
+      "sourceWorkoutCount": 11,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Single-Leg RDLs": {
+      "exerciseId": "single-leg-rdls",
+      "displayName": "Single-Leg RDLs",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 11,
+      "sourceWorkoutCount": 11,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Leg Extensions": {
+      "exerciseId": "leg-extensions",
+      "displayName": "Leg Extensions",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 10,
+      "sourceWorkoutCount": 9,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Lying Hamstring Curls": {
+      "exerciseId": "lying-hamstring-curls",
+      "displayName": "Lying Hamstring Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 10,
+      "sourceWorkoutCount": 10,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Calf Raises": {
+      "exerciseId": "calf-raises",
+      "displayName": "Calf Raises",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 8,
+      "sourceWorkoutCount": 8,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Hip Abductor Machine": {
+      "exerciseId": "hip-abductor-machine",
+      "displayName": "Hip Abductor Machine",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 6,
+      "sourceWorkoutCount": 6,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Hip Adductor Machine": {
+      "exerciseId": "hip-adductor-machine",
+      "displayName": "Hip Adductor Machine",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 6,
+      "sourceWorkoutCount": 6,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Leg Raises": {
+      "exerciseId": "leg-raises",
+      "displayName": "Leg Raises",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 6,
+      "sourceWorkoutCount": 6,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Pendulum Squats": {
+      "exerciseId": "pendulum-squats",
+      "displayName": "Pendulum Squats",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 5,
+      "sourceWorkoutCount": 5,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Hanging L Sits": {
+      "exerciseId": "hanging-l-sits",
+      "displayName": "Hanging L Sits",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 4,
+      "sourceWorkoutCount": 4,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Straight Arm Pulldowns": {
+      "exerciseId": "straight-arm-pulldowns",
+      "displayName": "Straight Arm Pulldowns",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 4,
+      "sourceWorkoutCount": 4,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Straight Arm Pushdowns": {
+      "exerciseId": "straight-arm-pushdowns",
+      "displayName": "Straight Arm Pushdowns",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 4,
+      "sourceWorkoutCount": 4,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Trap Dips": {
+      "exerciseId": "trap-dips",
+      "displayName": "Trap Dips",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 4,
+      "sourceWorkoutCount": 4,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Barbell Forearm Curls": {
+      "exerciseId": "barbell-forearm-curls",
+      "displayName": "Barbell Forearm Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 3,
+      "sourceWorkoutCount": 3,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable Trunk Rotations": {
+      "exerciseId": "cable-trunk-rotations",
+      "displayName": "Cable Trunk Rotations",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 3,
+      "sourceWorkoutCount": 3,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Goblet Squat": {
+      "exerciseId": "goblet-squat",
+      "displayName": "Goblet Squat",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 3,
+      "sourceWorkoutCount": 3,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Hack Squat": {
+      "exerciseId": "hack-squat",
+      "displayName": "Hack Squat",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 3,
+      "sourceWorkoutCount": 3,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "45 Degree Back Extension": {
+      "exerciseId": "45-degree-back-extension",
+      "displayName": "45 Degree Back Extension",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 2,
+      "sourceWorkoutCount": 2,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Barbell Reverse Forearm Curl": {
+      "exerciseId": "barbell-reverse-forearm-curl",
+      "displayName": "Barbell Reverse Forearm Curl",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 2,
+      "sourceWorkoutCount": 2,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable Bicep Curls": {
+      "exerciseId": "cable-bicep-curls",
+      "displayName": "Cable Bicep Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 2,
+      "sourceWorkoutCount": 2,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Leg Raise Holds": {
+      "exerciseId": "leg-raise-holds",
+      "displayName": "Leg Raise Holds",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 2,
+      "sourceWorkoutCount": 2,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Nshevev": {
+      "exerciseId": "nshevev",
+      "displayName": "Nshevev",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 2,
+      "sourceWorkoutCount": 2,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Pseudo Planche Pushup": {
+      "exerciseId": "pseudo-planche-pushup",
+      "displayName": "Pseudo Planche Pushup",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 2,
+      "sourceWorkoutCount": 2,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Ab Bench Machine": {
+      "exerciseId": "ab-bench-machine",
+      "displayName": "Ab Bench Machine",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Banana Holds": {
+      "exerciseId": "banana-holds",
+      "displayName": "Banana Holds",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Barbell Back Squat": {
+      "exerciseId": "barbell-back-squat",
+      "displayName": "Barbell Back Squat",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Barbell Hip Thrusts": {
+      "exerciseId": "barbell-hip-thrusts",
+      "displayName": "Barbell Hip Thrusts",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable curls": {
+      "exerciseId": "cable-curls",
+      "displayName": "Cable curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable Forearm Curls": {
+      "exerciseId": "cable-forearm-curls",
+      "displayName": "Cable Forearm Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable Lat Raises": {
+      "exerciseId": "cable-lat-raises",
+      "displayName": "Cable Lat Raises",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Cable rows": {
+      "exerciseId": "cable-rows",
+      "displayName": "Cable rows",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Calf Raises (Standing)": {
+      "exerciseId": "calf-raises-standing",
+      "displayName": "Calf Raises (Standing)",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Chest Supported Rows": {
+      "exerciseId": "chest-supported-rows",
+      "displayName": "Chest Supported Rows",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Dgsh": {
+      "exerciseId": "dgsh",
+      "displayName": "Dgsh",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Dumbbell Bent Over Rows": {
+      "exerciseId": "dumbbell-bent-over-rows",
+      "displayName": "Dumbbell Bent Over Rows",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Dumbbell Forearm Curls": {
+      "exerciseId": "dumbbell-forearm-curls",
+      "displayName": "Dumbbell Forearm Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Dumbbell Forearm Extensions": {
+      "exerciseId": "dumbbell-forearm-extensions",
+      "displayName": "Dumbbell Forearm Extensions",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Hammer Curls": {
+      "exerciseId": "hammer-curls",
+      "displayName": "Hammer Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Hwhegvs": {
+      "exerciseId": "hwhegvs",
+      "displayName": "Hwhegvs",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Incline Bench Press": {
+      "exerciseId": "incline-bench-press",
+      "displayName": "Incline Bench Press",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Lat pull downs": {
+      "exerciseId": "lat-pull-downs",
+      "displayName": "Lat pull downs",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Machine Overhead Shoulder Press": {
+      "exerciseId": "machine-overhead-shoulder-press",
+      "displayName": "Machine Overhead Shoulder Press",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Machine Preacher Curls": {
+      "exerciseId": "machine-preacher-curls",
+      "displayName": "Machine Preacher Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "One-Arm Pushup": {
+      "exerciseId": "one-arm-pushup",
+      "displayName": "One-Arm Pushup",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Overhead Shoulder Press": {
+      "exerciseId": "overhead-shoulder-press",
+      "displayName": "Overhead Shoulder Press",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Overhead Tricep": {
+      "exerciseId": "overhead-tricep",
+      "displayName": "Overhead Tricep",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Overhead Tricep Extensions": {
+      "exerciseId": "overhead-tricep-extensions",
+      "displayName": "Overhead Tricep Extensions",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Pec Fly": {
+      "exerciseId": "pec-fly",
+      "displayName": "Pec Fly",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Reverse Cable Forearm Curls": {
+      "exerciseId": "reverse-cable-forearm-curls",
+      "displayName": "Reverse Cable Forearm Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Roman Chair Holds": {
+      "exerciseId": "roman-chair-holds",
+      "displayName": "Roman Chair Holds",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Romanian Deadlift": {
+      "exerciseId": "romanian-deadlift",
+      "displayName": "Romanian Deadlift",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Seated Curls": {
+      "exerciseId": "seated-curls",
+      "displayName": "Seated Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    },
+    "Side Dumbbell Forearm Curls": {
+      "exerciseId": "side-dumbbell-forearm-curls",
+      "displayName": "Side Dumbbell Forearm Curls",
+      "defaultFlags": {
+        "equipment": null,
+        "limbMode": null
+      },
+      "reviewStatus": "needs-review",
+      "sourceCount": 1,
+      "sourceWorkoutCount": 1,
+      "sourceUserCount": 1,
+      "notes": ""
+    }
+  }
+}
