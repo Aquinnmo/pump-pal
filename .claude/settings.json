@@ -1,23 +1,45 @@
 {
   "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "command": "bd prime",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
+      }
+    ],
     "PreToolUse": [
       {
-        "matcher": "Bash",
         "hooks": [
           {
-            "type": "command",
-            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-guard search"
+            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-guard search",
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": "Bash"
       },
       {
-        "matcher": "Read|Glob",
         "hooks": [
           {
-            "type": "command",
-            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-guard read"
+            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-guard read",
+            "type": "command"
           }
-        ]
+        ],
+        "matcher": "Read|Glob"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bd prime",
+            "type": "command"
+          }
+        ],
+        "matcher": ""
       }
     ]
   }

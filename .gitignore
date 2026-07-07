@@ -53,3 +53,8 @@ app-example
 migration/reports/
 migration/*.generated.json
 migration/*.snapshot.json
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
