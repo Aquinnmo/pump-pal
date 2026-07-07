@@ -35,6 +35,7 @@ yarn-error.*
 .env*.local
 pumppal-read-only-perms.json
 pumppal-write-perms.json
+db-agent-read-perms.json
 
 # typescript
 *.tsbuildinfo

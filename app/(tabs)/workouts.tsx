@@ -1,6 +1,7 @@
-import { Workout, WorkoutCard } from '@/components/workout-card';
+import { WorkoutCard } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { Workout } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
@@ -11,6 +12,7 @@ import {
   getDocs,
   orderBy,
   query,
+  where,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import {
@@ -42,7 +44,8 @@ export default function WorkoutsScreen() {
     setLoading(true);
     try {
       const q = query(
-        collection(db, 'users', user.uid, 'workouts'),
+        collection(db, 'workouts'),
+        where('userId', '==', user.uid),
         orderBy('date', 'desc')
       );
       const snapshot = await getDocs(q);
@@ -71,7 +74,7 @@ export default function WorkoutsScreen() {
     if (!pendingDeleteId) return;
     setShowDeleteModal(false);
     try {
-      await deleteDoc(doc(db, 'users', user!.uid, 'workouts', pendingDeleteId));
+      await deleteDoc(doc(db, 'workouts', pendingDeleteId));
       setWorkouts((prev) => prev.filter((w) => w.id !== pendingDeleteId));
     } catch {
       // silently fail

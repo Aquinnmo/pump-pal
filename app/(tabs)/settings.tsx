@@ -3,13 +3,15 @@ import { Toast } from '@/components/ui/toast';
 import { auth, db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
+import { Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
+import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import * as Updates from 'expo-updates';
 import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -149,6 +151,11 @@ export default function SettingsScreen() {
     if (!user || deleteConfirmName !== user.displayName) return;
     setDeletingAccount(true);
     try {
+      const v2Snap = await getDocs(
+        query(collection(db, 'workouts'), where('userId', '==', user.uid))
+      );
+      await Promise.all(v2Snap.docs.map((d) => deleteDoc(d.ref)));
+
       const workoutsSnap = await getDocs(collection(db, 'users', user.uid, 'workouts'));
       await Promise.all(workoutsSnap.docs.map((d) => deleteDoc(d.ref)));
       await deleteDoc(doc(db, 'users', user.uid, 'pushup-challenge', 'data')).catch(() => {});
@@ -217,39 +224,42 @@ export default function SettingsScreen() {
       ]);
 
       const workoutsSnap = await getDocs(
-        collection(db, 'users', user.uid, 'workouts')
+        query(collection(db, 'workouts'), where('userId', '==', user.uid))
       );
 
       const rows: string[] = [
-        ['Date', 'Workout', 'Notes', 'Exercise', 'Type', 'Sets', 'Reps', 'Weight (lbs)', 'Duration (min)', 'Duration (sec)', 'Bodyweight'].join(','),
+        ['Date', 'Workout', 'Notes', 'Exercise', 'Variation', 'Set', 'Reps', 'Weight (lbs)', 'Duration (sec)', 'Hold (sec)', 'Bodyweight'].join(','),
       ];
 
       workoutsSnap.docs.forEach((d) => {
-        const w = d.data();
-        const dateMs = w.date?.seconds ? w.date.seconds * 1000 : Date.now();
+        const w = d.data() as Workout;
+        const dateMs = toDateObj(w.date).getTime();
         const dateStr = new Date(dateMs).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         const name = `"${(w.name ?? '').replace(/"/g, '""')}"`;
         const notes = `"${(w.notes ?? '').replace(/"/g, '""')}"`;
 
-        if (w.exercises && w.exercises.length > 0) {
-          (w.exercises as any[]).forEach((ex) => {
-            const exName = `"${(ex.name ?? '').replace(/"/g, '""')}"`;
-            const exType = ex.exerciseType ?? 'Sets of Reps';
-            rows.push(
-              [
-                dateStr,
-                name,
-                notes,
-                exName,
-                exType,
-                ex.sets ?? '',
-                ex.reps ?? '',
-                ex.bodyweight ? '' : (ex.weight ?? ''),
-                ex.durationMinutes ?? '',
-                ex.durationSeconds ?? '',
-                ex.bodyweight ? 'Yes' : 'No',
-              ].join(',')
-            );
+        const performedExercises = w.performedExercises ?? [];
+        if (performedExercises.length > 0) {
+          performedExercises.forEach((pe) => {
+            const exName = `"${(pe.exerciseNameSnapshot ?? '').replace(/"/g, '""')}"`;
+            const variation = `"${(pe.variationNameSnapshot ?? '').replace(/"/g, '""')}"`;
+            pe.sets.forEach((set) => {
+              rows.push(
+                [
+                  dateStr,
+                  name,
+                  notes,
+                  exName,
+                  variation,
+                  set.setNumber,
+                  set.reps ?? '',
+                  set.bodyweight ? '' : (set.weight ?? ''),
+                  set.durationSeconds ?? '',
+                  set.holdSeconds ?? '',
+                  set.bodyweight ? 'Yes' : 'No',
+                ].join(',')
+              );
+            });
           });
         } else {
           rows.push([dateStr, name, notes, '', '', '', '', '', '', '', ''].join(','));

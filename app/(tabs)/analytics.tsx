@@ -1,11 +1,12 @@
 import { MuscleInsightCards } from '@/components/muscle-insight-cards';
 import { Dropdown } from '@/components/ui/dropdown';
-import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { Workout } from '@/types/workout';
+import { exerciseLabel, isDurationExercise, toDateObj } from '@/utils/workout-conversion';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -34,7 +35,8 @@ export default function AnalyticsScreen() {
     setLoading(true);
     try {
       const q = query(
-        collection(db, 'users', user.uid, 'workouts'),
+        collection(db, 'workouts'),
+        where('userId', '==', user.uid),
         orderBy('date', 'asc') // Ascending for chronological chart
       );
       const snapshot = await getDocs(q);
@@ -70,7 +72,7 @@ export default function AnalyticsScreen() {
     const workoutTypeLastDate: Record<string, number> = {};
 
     workouts.forEach((w) => {
-      const dateObj = w.date instanceof Date ? w.date : new Date((w.date as any).seconds * 1000);
+      const dateObj = toDateObj(w.date);
       const dateStr = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
 
       if (w.name) {
@@ -78,58 +80,60 @@ export default function AnalyticsScreen() {
         workoutTypeLastDate[w.name] = dateObj.getTime();
       }
 
-      w.exercises.forEach((ex) => {
-        const name = ex.name.trim();
+      (w.performedExercises ?? []).forEach((pe) => {
+        const name = exerciseLabel(pe).trim();
         if (!name) return;
 
-        // Count for favorite
+        // Count for favorite (once per exercise entry, not per set)
         counts[name] = (counts[name] || 0) + 1;
 
         // Track bodyweight / duration status
-        if (ex.bodyweight) bodyweightExercises.add(name);
-        if (ex.exerciseType === 'Sets of Duration') durationExercises.add(name);
-
-        // Max weight
-        maxW[name] = Math.max(maxW[name] || 0, ex.weight);
-
-        // Max reps (for bodyweight exercises)
-        if (ex.bodyweight) {
-          maxR[name] = Math.max(maxR[name] || 0, ex.reps);
-        }
-
-        // Max duration in seconds (for duration exercises)
-        if (ex.exerciseType === 'Sets of Duration') {
-          const totalSecs = (ex.durationMinutes ?? 0) * 60 + (ex.durationSeconds ?? 0);
-          maxD[name] = Math.max(maxD[name] || 0, totalSecs);
-        }
-
-        // Heaviest single lift overall
-        if (!ex.bodyweight && ex.exerciseType !== 'Sets of Duration' && ex.weight > 0 && (!heaviestLift || ex.weight > heaviestLift.weight)) {
-          heaviestLift = { exercise: name, weight: ex.weight };
-        }
-
-        // Strength-o-meter score:
-        // - Duration: max set duration in seconds (minutes * 60 + seconds)
-        // - Bodyweight: max reps in a set
-        // - Weighted: Epley 1RM formula: weight * (1 + reps / 30)
-        const score =
-          ex.exerciseType === 'Sets of Duration'
-            ? (ex.durationMinutes ?? 0) * 60 + (ex.durationSeconds ?? 0)
-            : ex.bodyweight
-            ? ex.reps
-            : ex.weight * (1 + ex.reps / 30);
+        if (pe.sets.some((s) => s.bodyweight)) bodyweightExercises.add(name);
+        if (isDurationExercise(pe)) durationExercises.add(name);
 
         if (!exerciseHistory[name]) {
           exerciseHistory[name] = [];
         }
 
-        // If multiple sets in same workout, keep the max score for that day
-        const existingDay = exerciseHistory[name].find((h) => h.date === dateStr);
-        if (existingDay) {
-          existingDay.score = Math.max(existingDay.score, score);
-        } else {
-          exerciseHistory[name].push({ date: dateStr, score });
-        }
+        pe.sets.forEach((set) => {
+          const isDuration = set.durationSeconds !== undefined && set.reps === undefined;
+
+          if (isDuration) {
+            // Max duration in seconds (for duration exercises)
+            maxD[name] = Math.max(maxD[name] || 0, set.durationSeconds ?? 0);
+          } else {
+            // Max weight
+            maxW[name] = Math.max(maxW[name] || 0, set.weight ?? 0);
+
+            // Max reps (for bodyweight exercises)
+            if (set.bodyweight) {
+              maxR[name] = Math.max(maxR[name] || 0, set.reps ?? 0);
+            }
+
+            // Heaviest single lift overall
+            if (!set.bodyweight && (set.weight ?? 0) > 0 && (!heaviestLift || (set.weight ?? 0) > heaviestLift.weight)) {
+              heaviestLift = { exercise: name, weight: set.weight ?? 0 };
+            }
+          }
+
+          // Strength-o-meter score:
+          // - Duration: set duration in seconds
+          // - Bodyweight: reps in the set
+          // - Weighted: Epley 1RM formula: weight * (1 + reps / 30)
+          const score = isDuration
+            ? set.durationSeconds ?? 0
+            : set.bodyweight
+            ? set.reps ?? 0
+            : (set.weight ?? 0) * (1 + (set.reps ?? 0) / 30);
+
+          // If multiple sets in same workout, keep the max score for that day
+          const existingDay = exerciseHistory[name].find((h) => h.date === dateStr);
+          if (existingDay) {
+            existingDay.score = Math.max(existingDay.score, score);
+          } else {
+            exerciseHistory[name].push({ date: dateStr, score });
+          }
+        });
       });
     });
 

@@ -1,17 +1,21 @@
+import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { Dropdown } from '@/components/ui/dropdown';
-import { Workout } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
+import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
+import { DraftExerciseRow, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
+import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
+import { buildPerformedExercise, collapseSetsToDraft, exerciseLabel, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
-import React, { useEffect, useState } from 'react';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -37,20 +41,22 @@ export default function AddWorkoutModal() {
   const [notes, setNotes] = useState('');
 
   const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
-  type ExerciseType = typeof EXERCISE_TYPES[number];
 
-  const [exercises, setExercises] = useState<{
-    name: string;
-    isCustomName: boolean;
-    customName: string;
-    exerciseType: ExerciseType;
-    sets: number;
-    reps: number;
-    durationMinutes: number;
-    durationSeconds: number;
-    weight: string;
-    bodyweight: boolean;
-  }[]>([{ name: '', isCustomName: false, customName: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
+  const blankRow = (): DraftExerciseRow => ({
+    exerciseId: null,
+    variationId: null,
+    label: '',
+    exerciseType: 'Sets of Reps',
+    sets: 3,
+    reps: 10,
+    durationMinutes: 0,
+    durationSeconds: 30,
+    weight: '',
+    bodyweight: false,
+  });
+
+  const [exercises, setExercises] = useState<DraftExerciseRow[]>([blankRow()]);
+  const { options: catalogOptions } = useExerciseCatalog();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -104,7 +110,7 @@ export default function AddWorkoutModal() {
 
         // Collect unique names actually used in saved workouts
         const workoutsSnap = await getDocs(
-          query(collection(db, 'users', user.uid, 'workouts'), orderBy('date', 'desc'))
+          query(collection(db, 'workouts'), where('userId', '==', user.uid), orderBy('date', 'desc'))
         );
         const usedNames = new Set<string>();
         const historyData: Workout[] = [];
@@ -152,14 +158,19 @@ export default function AddWorkoutModal() {
 
     const fetchWorkout = async () => {
       try {
-        const docRef = doc(db, 'users', user.uid, 'workouts', id);
+        const docRef = doc(db, 'workouts', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          const data = docSnap.data();
+          const data = docSnap.data() as Workout;
+          if (data.userId !== user.uid) {
+            showAlert('Error', 'Could not load workout details.');
+            router.back();
+            return;
+          }
           setWorkoutName(data.name || '');
           setNotes(data.notes || '');
           if (data.date) {
-            const date = data.date.toDate();
+            const date = toDateObj(data.date);
             setWorkoutDate(date);
             const today = new Date();
             if (
@@ -170,21 +181,8 @@ export default function AddWorkoutModal() {
               setIsToday(false);
             }
           }
-          if (data.exercises && data.exercises.length > 0) {
-            setExercises(
-              data.exercises.map((ex: any) => ({
-                name: ex.name || '',
-                isCustomName: false,
-                customName: '',
-                exerciseType: ex.exerciseType || 'Sets of Reps',
-                sets: ex.sets || 0,
-                reps: ex.reps || 0,
-                durationMinutes: ex.durationMinutes || 0,
-                durationSeconds: ex.durationSeconds || 0,
-                weight: ex.bodyweight ? '' : String(ex.weight || ''),
-                bodyweight: ex.bodyweight || false,
-              }))
-            );
+          if (data.performedExercises && data.performedExercises.length > 0) {
+            setExercises(data.performedExercises.map(collapseSetsToDraft));
           }
         }
       } catch (err) {
@@ -197,92 +195,72 @@ export default function AddWorkoutModal() {
     fetchWorkout();
   }, [id, user]);
 
-  // When editing a workout, once both the workout name and name options are available,
-  // determine whether the loaded name is a known option or a custom one.
-  // We use a ref to ensure resolution only happens once per edit session.
-  const editNameResolved = React.useRef(false);
-  useEffect(() => {
-    if (!id || editNameResolved.current || !workoutName || workoutNameOptions.length === 0) return;
-    editNameResolved.current = true;
-    if (!workoutNameOptions.includes(workoutName)) {
-      setIsCustomWorkoutName(true);
-      setCustomWorkoutName(workoutName);
-      setWorkoutName('Other');
-    } else {
-      setIsCustomWorkoutName(false);
-    }
-  }, [id, workoutName, workoutNameOptions]);
-
-  // After workout name + history are known, resolve any exercise names that aren't
-  // in the known options list for this workout type — mark them as custom.
-  const editExercisesResolved = React.useRef(false);
-  useEffect(() => {
-    if (!id || editExercisesResolved.current || workoutHistory.length === 0) return;
-    const effectiveName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
-    if (!effectiveName) return;
-    editExercisesResolved.current = true;
-    const opts = new Set(getExerciseOptions(effectiveName));
-    setExercises((prev) =>
-      prev.map((ex) => {
-        if (!ex.name.trim() || opts.has(ex.name.trim())) return ex;
-        return { ...ex, isCustomName: true, customName: ex.name, name: 'Other' };
-      })
-    );
-  }, [id, workoutName, isCustomWorkoutName, customWorkoutName, workoutHistory]);
-
-  const addExercise = () =>
-    setExercises((prev) => [...prev, { name: '', isCustomName: false, customName: '', exerciseType: 'Sets of Reps', sets: 3, reps: 10, durationMinutes: 0, durationSeconds: 30, weight: '', bodyweight: false }]);
-
-  const selectExerciseName = (i: number, value: string) => {
-    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
-    if (value === 'Other') {
-      setExercises((prev) =>
-        prev.map((ex, idx) => idx === i ? { ...ex, name: 'Other', isCustomName: true, customName: '' } : ex)
-      );
-    } else {
-      const last = getLastExerciseData(effectiveWorkoutName, value);
-      setExercises((prev) =>
-        prev.map((ex, idx) => {
-          if (idx !== i) return ex;
-          return {
-            ...ex,
-            name: value,
-            isCustomName: false,
-            customName: '',
-            ...(last ? {
-              exerciseType: last.exerciseType ?? ex.exerciseType,
-              sets: last.sets ?? ex.sets,
-              reps: last.reps ?? ex.reps,
-              durationMinutes: last.durationMinutes ?? ex.durationMinutes,
-              durationSeconds: last.durationSeconds ?? ex.durationSeconds,
-              bodyweight: last.bodyweight ?? ex.bodyweight,
-              weight: last.bodyweight ? '' : String(last.weight ?? ex.weight),
-            } : {}),
-          };
-        })
-      );
-    }
-  };
-
-  const getExerciseOptions = (forWorkoutName: string): string[] => {
-    const seen = new Set<string>();
-    workoutHistory.forEach((w) => {
-      if (w.name === forWorkoutName) {
-        w.exercises.forEach((ex) => { if (ex.name?.trim()) seen.add(ex.name.trim()); });
-      }
-    });
-    return Array.from(seen);
-  };
+  const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
 
   // workoutHistory is already sorted date desc, so the first match is the most recent.
-  const getLastExerciseData = (forWorkoutName: string, exerciseName: string) => {
-    for (const w of workoutHistory) {
-      if (w.name !== forWorkoutName) continue;
-      const match = w.exercises.find((ex) => ex.name?.trim() === exerciseName);
-      if (match) return match;
-    }
-    return null;
+  // Prefers a match from a workout with the same name before falling back to any workout.
+  const findLastPerformed = (
+    forWorkoutName: string,
+    exerciseId: string,
+    variationId: string | null
+  ): PerformedExercise | null => {
+    const search = (predicate: (w: Workout) => boolean): PerformedExercise | null => {
+      for (const w of workoutHistory) {
+        if (!predicate(w)) continue;
+        const match = (w.performedExercises ?? []).find(
+          (pe) => pe.exerciseId === exerciseId && pe.variationId === variationId
+        );
+        if (match) return match;
+      }
+      return null;
+    };
+    return search((w) => w.name === forWorkoutName) ?? search(() => true);
   };
+
+  const selectExercise = (i: number, selection: ExercisePickerSelection) => {
+    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+    const last = findLastPerformed(effectiveWorkoutName, selection.exerciseId, selection.variationId);
+    setExercises((prev) =>
+      prev.map((ex, idx) => {
+        if (idx !== i) return ex;
+        if (last) {
+          return {
+            ...collapseSetsToDraft(last),
+            exerciseId: selection.exerciseId,
+            variationId: selection.variationId,
+            label: selection.label,
+          };
+        }
+        return { ...ex, exerciseId: selection.exerciseId, variationId: selection.variationId, label: selection.label };
+      })
+    );
+  };
+
+  // Recently-used exercise labels for this workout name float to the top of the picker.
+  const recentLabels = useMemo(() => {
+    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+    const seen = new Set<string>();
+    const sameName: string[] = [];
+    workoutHistory.forEach((w) => {
+      if (w.name !== effectiveWorkoutName) return;
+      (w.performedExercises ?? []).forEach((pe) => {
+        const label = exerciseLabel(pe);
+        if (!label || seen.has(label)) return;
+        seen.add(label);
+        sameName.push(label);
+      });
+    });
+    const other: string[] = [];
+    workoutHistory.forEach((w) => {
+      (w.performedExercises ?? []).forEach((pe) => {
+        const label = exerciseLabel(pe);
+        if (!label || seen.has(label)) return;
+        seen.add(label);
+        other.push(label);
+      });
+    });
+    return [...sameName, ...other];
+  }, [workoutHistory, workoutName, isCustomWorkoutName, customWorkoutName]);
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -298,7 +276,7 @@ export default function AddWorkoutModal() {
     setExercises((prev) =>
       prev.map((ex, idx) =>
         idx === i
-          ? { ...ex, [field]: ['name', 'weight', 'exerciseType'].includes(field) ? value : Number(value) || 0 }
+          ? { ...ex, [field]: ['weight', 'exerciseType'].includes(field) ? value : Number(value) || 0 }
           : ex
       )
     );
@@ -346,7 +324,24 @@ export default function AddWorkoutModal() {
         showAlert('AI Suggestions', 'Your workout already looks well balanced!');
         return;
       }
-      setExercises((prev) => [...prev, ...suggested]);
+
+      const newRows: DraftExerciseRow[] = suggested.map((ex) => {
+        const match = rankSearchOptions(catalogOptions, ex.name, [])[0];
+        const resolved = match
+          ? { exerciseId: match.exerciseId, variationId: match.variationId, label: match.label }
+          : { exerciseId: 'under-review', variationId: `ur_${slugify(ex.name)}`, label: ex.name };
+        return {
+          ...resolved,
+          exerciseType: ex.exerciseType,
+          sets: ex.sets,
+          reps: ex.reps,
+          durationMinutes: ex.durationMinutes,
+          durationSeconds: ex.durationSeconds,
+          weight: ex.weight,
+          bodyweight: ex.bodyweight,
+        };
+      });
+      setExercises((prev) => [...prev, ...newRows]);
     } catch (e) {
       console.error('AI workout suggestion failed:', e);
       showAlert('Error', 'Could not get AI suggestions. Please try again.');
@@ -358,7 +353,7 @@ export default function AddWorkoutModal() {
   const handleDelete = async () => {
     if (!id || !user) return;
     try {
-      await deleteDoc(doc(db, 'users', user.uid, 'workouts', id));
+      await deleteDoc(doc(db, 'workouts', id));
       router.back();
     } catch (err: any) {
       showAlert('Error', 'Could not delete workout. ' + err.message);
@@ -377,41 +372,30 @@ export default function AddWorkoutModal() {
 
     setSaving(true);
     try {
-      const filteredExercises = exercises
-        .filter((ex) => (ex.isCustomName ? ex.customName.trim() : ex.name.trim()) !== '')
-        .map((ex) => {
-          const actualName = ex.isCustomName ? ex.customName.trim() : ex.name;
-          const base = {
-            name: actualName,
-            exerciseType: ex.exerciseType,
-            sets: ex.sets,
-          };
-          if (ex.exerciseType === 'Sets of Duration') {
-            return { ...base, durationMinutes: ex.durationMinutes, durationSeconds: ex.durationSeconds };
-          }
-          return {
-            ...base,
-            reps: ex.reps,
-            bodyweight: ex.bodyweight,
-            weight: ex.bodyweight ? 0 : Number(ex.weight) || 0,
-          };
-        });
+      const performedExercises: PerformedExercise[] = exercises
+        .filter((ex) => ex.label.trim() !== '')
+        .map((ex, order) => buildPerformedExercise(ex, order));
 
       const finalDate = isToday ? new Date() : workoutDate;
 
       if (id) {
-        await updateDoc(doc(db, 'users', user.uid, 'workouts', id), {
+        await updateDoc(doc(db, 'workouts', id), {
           name: finalName,
           date: Timestamp.fromDate(finalDate),
-          exercises: filteredExercises,
+          performedExercises,
           notes: notes.trim(),
+          updatedAt: serverTimestamp(),
         });
       } else {
-        await addDoc(collection(db, 'users', user.uid, 'workouts'), {
+        await addDoc(collection(db, 'workouts'), {
+          userId: user.uid,
           name: finalName,
           date: Timestamp.fromDate(finalDate),
-          exercises: filteredExercises,
+          performedExercises,
           notes: notes.trim(),
+          schemaVersion: 2,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
       }
       router.back();
@@ -569,46 +553,14 @@ export default function AddWorkoutModal() {
                 </TouchableOpacity>
               )}
             </View>
-            {(() => {
-              const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
-              const exerciseOpts = getExerciseOptions(effectiveWorkoutName);
-              return exerciseOpts.length > 0 ? (
-                <>
-                  <Dropdown
-                    options={[...exerciseOpts, 'Other']}
-                    value={ex.isCustomName ? 'Other' : (ex.name || null)}
-                    onSelect={(v) => selectExerciseName(i, v)}
-                    placeholder="Select exercise"
-                    style={styles.exerciseNameDropdown}
-                  />
-                  {ex.isCustomName && (
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Exercise name"
-                      placeholderTextColor="#555"
-                      value={ex.customName}
-                      onChangeText={(v) =>
-                        setExercises((prev) =>
-                          prev.map((e, idx) => idx === i ? { ...e, customName: v } : e)
-                        )
-                      }
-                    />
-                  )}
-                </>
-              ) : (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Exercise name"
-                  placeholderTextColor="#555"
-                  value={ex.isCustomName ? ex.customName : ex.name}
-                  onChangeText={(v) =>
-                    setExercises((prev) =>
-                      prev.map((e, idx) => idx === i ? { ...e, name: v, isCustomName: false, customName: '' } : e)
-                    )
-                  }
-                />
-              );
-            })()}
+            <ExercisePicker
+              options={catalogOptions}
+              value={ex.label || null}
+              recentLabels={recentLabels}
+              onSelect={(selection) => selectExercise(i, selection)}
+              placeholder="Select exercise"
+              style={styles.exerciseNameDropdown}
+            />
 
             <Text style={styles.exerciseTypeLabel}>Type of Exercise</Text>
             <Dropdown

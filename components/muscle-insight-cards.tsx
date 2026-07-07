@@ -1,5 +1,5 @@
-import { Workout } from '@/components/workout-card';
 import { useAuth } from '@/context/auth-context';
+import { Workout } from '@/types/workout';
 import { analyzeMuscles, MuscleInsights } from '@/utils/gemini-muscle-analysis';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';

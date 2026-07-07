@@ -1,5 +1,7 @@
+import { Workout } from '@/types/workout';
+import { exerciseLabel, summarizePerformedExercise, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -11,24 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-export interface Exercise {
-  name: string;
-  exerciseType?: 'Sets of Reps' | 'Sets of Duration';
-  sets: number;
-  reps: number;
-  weight: number;
-  bodyweight?: boolean;
-  durationMinutes?: number;
-  durationSeconds?: number;
-}
-
-export interface Workout {
-  id: string;
-  name: string;
-  date: { seconds: number; nanoseconds: number } | Date;
-  exercises: Exercise[];
-  notes?: string;
-}
+export type { Workout };
 
 interface WorkoutCardProps {
   workout: Workout;
@@ -36,15 +21,11 @@ interface WorkoutCardProps {
   onEdit?: (workout: Workout) => void;
 }
 
-function getDate(date: Workout['date']): Date {
-  if (date instanceof Date) return date;
-  return new Date(date.seconds * 1000);
-}
-
 export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   const [showDetail, setShowDetail] = useState(false);
   const insets = useSafeAreaInsets();
-  const date = getDate(workout.date);
+  const date = toDateObj(workout.date);
+  const performedExercises = useMemo(() => workout.performedExercises ?? [], [workout.performedExercises]);
   const dateStr = date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
@@ -95,27 +76,20 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   }, [translateY, overlayOpacity]);
 
   const handleShare = useCallback(() => {
-    const weighted = workout.exercises.filter(
-      (ex) => ex.exerciseType !== 'Sets of Duration' && !ex.bodyweight && Number(ex.weight) > 0
-    );
-    const repsExs = workout.exercises.filter((ex) => ex.exerciseType !== 'Sets of Duration');
-    const totalVolume = weighted.reduce((s, ex) => s + ex.sets * ex.reps * Number(ex.weight), 0);
-    const totalReps = repsExs.reduce((s, ex) => s + ex.sets * ex.reps, 0);
-    const exerciseCount = workout.exercises.length;
+    const totalVolume = workoutVolume(workout);
+    const totalReps = workoutTotalReps(workout);
+    const exerciseCount = performedExercises.length;
     const fmtVolume = totalVolume >= 1000
       ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
       : `${totalVolume}`;
 
-    const exerciseLines = workout.exercises.map((ex) => {
-      const detail = ex.exerciseType === 'Sets of Duration'
-        ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
-        : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`;
-      return `  • ${ex.name} — ${detail}`;
+    const exerciseLines = performedExercises.map((pe) => {
+      return `  • ${exerciseLabel(pe)} — ${summarizePerformedExercise(pe)}`;
     }).join('\n');
 
     const metricParts: string[] = [];
-    if (weighted.length > 0) metricParts.push(`Volume: ${fmtVolume} lbs`);
-    if (repsExs.length > 0) metricParts.push(`Total Reps: ${totalReps}`);
+    if (totalVolume > 0) metricParts.push(`Volume: ${fmtVolume} lbs`);
+    if (totalReps > 0) metricParts.push(`Total Reps: ${totalReps}`);
     metricParts.push(`Exercises: ${exerciseCount}`);
 
     const message = [
@@ -132,7 +106,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
     ].filter((l) => l !== undefined).join('\n');
 
     Share.share({ message });
-  }, [workout, dateStr]);
+  }, [workout, dateStr, performedExercises]);
 
   return (
     <>
@@ -160,14 +134,12 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
               </GestureDetector>
 
               <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
-                {workout.exercises.length > 0 ? (
-                  workout.exercises.map((ex, i) => (
+                {performedExercises.length > 0 ? (
+                  performedExercises.map((pe, i) => (
                     <View key={i} style={styles.modalExercise}>
-                      <Text style={styles.modalExerciseName}>{ex.name}</Text>
+                      <Text style={styles.modalExerciseName}>{exerciseLabel(pe)}</Text>
                       <Text style={styles.modalExerciseDetail}>
-                        {ex.exerciseType === 'Sets of Duration'
-                          ? `${ex.sets} × ${ex.durationMinutes ? `${ex.durationMinutes}m ` : ''}${ex.durationSeconds ?? 0}s`
-                          : `${ex.sets} × ${ex.reps} rep${ex.reps !== 1 ? 's' : ''}${!ex.bodyweight ? ` @ ${ex.weight} lbs` : ''}`}
+                        {summarizePerformedExercise(pe)}
                       </Text>
                     </View>
                   ))
@@ -209,23 +181,17 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
           </View>
         </View>
 
-      {workout.exercises.length > 0 && (() => {
-        const weighted = workout.exercises.filter(
-          (ex) => ex.exerciseType !== 'Sets of Duration' && !ex.bodyweight && Number(ex.weight) > 0
-        );
-        const repsExs = workout.exercises.filter(
-          (ex) => ex.exerciseType !== 'Sets of Duration'
-        );
-        const totalVolume = weighted.reduce((s, ex) => s + ex.sets * ex.reps * Number(ex.weight), 0);
-        const totalReps = repsExs.reduce((s, ex) => s + ex.sets * ex.reps, 0);
-        const exerciseCount = workout.exercises.length;
+      {performedExercises.length > 0 && (() => {
+        const totalVolume = workoutVolume(workout);
+        const totalReps = workoutTotalReps(workout);
+        const exerciseCount = performedExercises.length;
         const fmtVolume = totalVolume >= 1000
           ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
           : `${totalVolume}`;
 
         const chips: { value: string; label: string }[] = [];
-        if (weighted.length > 0) chips.push({ value: `${fmtVolume} lbs`, label: 'Volume' });
-        if (repsExs.length > 0) chips.push({ value: `${totalReps}`, label: 'Total Reps' });
+        if (totalVolume > 0) chips.push({ value: `${fmtVolume} lbs`, label: 'Volume' });
+        if (totalReps > 0) chips.push({ value: `${totalReps}`, label: 'Total Reps' });
         chips.push({ value: `${exerciseCount}`, label: exerciseCount === 1 ? 'Exercise' : 'Exercises' });
 
         return (
