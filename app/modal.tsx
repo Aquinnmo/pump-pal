@@ -9,6 +9,7 @@ import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } 
 import { showAlert } from '@/utils/alert';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
+import { predictNextWorkoutName } from '@/utils/predict-next-workout';
 import { buildPerformedExercise, collapseSetsToDraft, exerciseLabel, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -133,15 +134,10 @@ export default function AddWorkoutModal() {
           } else if (suggestion) {
             // Suggestion isn't in the merged list yet — still honour it
             setWorkoutName(suggestion);
-          } else if (splitNames.length > 1) {
-            // Fallback: round-robin if opened without a suggestion
-            const lastSplitWorkout = historyData.find((w) => splitNames.includes(w.name));
-            if (lastSplitWorkout) {
-              const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
-              setWorkoutName(splitNames[(lastIdx + 1) % splitNames.length]);
-            } else if (splitNames.length > 0) {
-              setWorkoutName(splitNames[0]);
-            }
+          } else {
+            // Fallback if opened without a suggestion — same prediction logic as "Up Next"
+            const predicted = predictNextWorkoutName(splitNames, historyData);
+            if (predicted) setWorkoutName(predicted);
           }
         }
       } catch {

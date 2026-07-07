@@ -4,6 +4,7 @@ import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
+import { predictNextWorkoutName } from '@/utils/predict-next-workout';
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -71,44 +72,7 @@ export default function HomeScreen() {
             }
           }
 
-          if (splitNames.length === 0) {
-            setNextWorkout(null);
-          } else if (splitNames.length === 1) {
-            setNextWorkout(splitNames[0]);
-          } else {
-            // All logged workouts that match a split category, sorted oldest → newest
-            const splitHistory = allFetched
-              .filter((w) => splitNames.includes(w.name))
-              .sort((a, b) => toDateObj(a.date).getTime() - toDateObj(b.date).getTime());
-
-            // Build a transition-frequency map from the user's actual workout sequence:
-            // transitions[A][B] = how many times the user did B right after A
-            const transitions: Record<string, Record<string, number>> = {};
-            for (let i = 0; i < splitHistory.length - 1; i++) {
-              const from = splitHistory[i].name;
-              const to = splitHistory[i + 1].name;
-              if (from === to) continue; // skip back-to-back same type (no real signal)
-              if (!transitions[from]) transitions[from] = {};
-              transitions[from][to] = (transitions[from][to] ?? 0) + 1;
-            }
-
-            const lastSplitWorkout = splitHistory[splitHistory.length - 1];
-            if (lastSplitWorkout) {
-              const fromTransitions = transitions[lastSplitWorkout.name];
-              if (fromTransitions && Object.keys(fromTransitions).length > 0) {
-                // Pick the most-frequently-observed next workout for this type
-                const predicted = Object.entries(fromTransitions)
-                  .sort((a, b) => b[1] - a[1])[0][0];
-                setNextWorkout(predicted);
-              } else {
-                // No pattern data yet — fall back to the predefined split order
-                const lastIdx = splitNames.indexOf(lastSplitWorkout.name);
-                setNextWorkout(splitNames[(lastIdx + 1) % splitNames.length]);
-              }
-            } else {
-              setNextWorkout(splitNames[0]);
-            }
-          }
+          setNextWorkout(predictNextWorkoutName(splitNames, allFetched));
         } catch (err) {
           console.error(err);
         } finally {
