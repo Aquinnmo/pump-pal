@@ -30,18 +30,13 @@ Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React
 
 - `(auth)` — welcome/sign-in/sign-up/phone-auth, shown when logged out
 - `set-split` — forced first-run screen when logged in but no split chosen yet
-- `(tabs)` — main app (Home/index, Analytics, TPC pushup-challenge, Settings; `workouts` and `explore` tabs exist as screens but are hidden from the tab bar via `href: null`)
+- `(tabs)` — main app (Home/index, Analytics, TPC pushup-challenge, Settings; `workouts` tab exists as a screen but is hidden from the tab bar via `href: null`, reachable from a button on Home)
 
 ### Firebase
 
 `config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example`), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
 
-**Important: the app currently reads/writes workouts at the legacy path `users/{uid}/workouts/{workoutId}`** (see `app/modal.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/workouts.tsx`, `app/(tabs)/analytics.tsx`, `app/(tabs)/settings.tsx`). A schema migration to top-level, analytics-ready collections has been run against Firestore data but the app has **not** been cut over to read from it yet:
-
-- New canonical shape (already written to Firestore, not yet consumed by the app): top-level `exercises/{exerciseId}` (catalog with variations), top-level `workouts/{workoutId}` (has `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full target schema and remaining cutover checklist: `docs/firestore-data-refactor.md`.
-- `docs/v2-migration-plan.md` and `migration/README.md` describe an **earlier, superseded** plan (`v2-users`/`v2-workouts` nested under users, `v2-exercises`). The scripts that actually ran and the data actually in Firestore follow `docs/firestore-data-refactor.md` instead (top-level `workouts`/`exercises`, no `v2-` prefix) — don't follow the v2 doc's collection names when touching Firestore data.
-
-When changing anything related to workouts/exercises, check `docs/firestore-data-refactor.md`'s "Remaining Work" section first — it lists the exact files still needing cutover to the new schema.
+The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/firestore-data-refactor.md`. The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
 
 ### Migration scripts (`scripts/migration/`, `migration/`)
 
@@ -49,7 +44,7 @@ One-off, npm-scripted Node scripts (not part of the app bundle) that read/conver
 
 ### AI features
 
-Google Gemini (`@google/generative-ai`, model set in `constants/gemini-config.ts`, key from `EXPO_PUBLIC_GEMINI_API_KEY`) powers `utils/gemini-muscle-analysis.ts` (muscle group insight cards on Home) and `utils/gemini-workout-suggestions.ts`. Both currently consume the legacy workout shape and are listed in the app-cutover list above.
+Google Gemini (`@google/generative-ai`, model set in `constants/gemini-config.ts`, key from `EXPO_PUBLIC_GEMINI_API_KEY`) powers `utils/gemini-muscle-analysis.ts` (muscle group insight cards on Home) and `utils/gemini-workout-suggestions.ts`. Both consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
 
 ### Theming
 
