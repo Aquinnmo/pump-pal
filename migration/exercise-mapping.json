@@ -1,0 +1,1033 @@
+{
+  "schemaVersion": 1,
+  "notes": [
+    "Reviewed mapping generated after user markup in migration/mapping-review.md.",
+    "All legacy names are approved for dry-run conversion.",
+    "test-exercise entries preserve historical rows and are planned for later deletion from production history."
+  ],
+  "mappings": [
+    {
+      "legacyName": "45 Degree Back Extension",
+      "exerciseId": "back-extension",
+      "exerciseNameSnapshot": "Back Extension",
+      "variationId": "45_degree",
+      "variationNameSnapshot": "45 Degree Back Extension",
+      "status": "approved",
+      "occurrenceCount": 2,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Jaj52x25uzBXN3Hw8YvN",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/m3hrjY0FalEbvpaCKahC"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Ab Bench Machine",
+      "exerciseId": "ab-crunch",
+      "exerciseNameSnapshot": "Ab Crunch",
+      "variationId": "machine",
+      "variationNameSnapshot": "Machine Ab Crunch",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/bRgBzNq62BPvDkA7f77J"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Arnold Press",
+      "exerciseId": "overhead-press",
+      "exerciseNameSnapshot": "Overhead Press",
+      "variationId": "arnold_dumbbell",
+      "variationNameSnapshot": "Arnold Press",
+      "status": "approved",
+      "occurrenceCount": 18,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1EN5M9wSn6iK9hbWfrnb",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8LL2LaWXW7BzZAQqI4F7",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AZfpf8cDbn0Shn1KvYGB",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AaJBVfYHEbm20OQG8H5Y",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GLvs9qLXEXcUvUJcP8a5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Banana Holds",
+      "exerciseId": "banana-hold",
+      "exerciseNameSnapshot": "Banana Hold",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/bRgBzNq62BPvDkA7f77J"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Barbell Back Squat",
+      "exerciseId": "squat",
+      "exerciseNameSnapshot": "Squat",
+      "variationId": "barbell_back",
+      "variationNameSnapshot": "Barbell Back Squat",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/sZRUtB31HPeQ7jtWZTadblLg55S2/workouts/h2ya51lvyfZVTld6uji5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Barbell Forearm Curls",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "barbell",
+      "variationNameSnapshot": "Barbell Forearm Curl",
+      "status": "approved",
+      "occurrenceCount": 6,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AaJBVfYHEbm20OQG8H5Y",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/I5vtDHMQOTnBLPN4adet",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ID58XRpt4ATZ8vcpxN5d",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/NIThfcuzk5VpHAEZRrvU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ZR4GOtmI5VPWxHPSoJ7O"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Barbell Hip Thrusts",
+      "exerciseId": "hip-thrust",
+      "exerciseNameSnapshot": "Hip Thrust",
+      "variationId": "barbell",
+      "variationNameSnapshot": "Barbell Hip Thrust",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/vqTvb1fKuJLVyRE6MJjJ"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Barbell Reverse Forearm Curl",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "barbell_reverse",
+      "variationNameSnapshot": "Barbell Reverse Forearm Curl",
+      "status": "approved",
+      "occurrenceCount": 3,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/I5vtDHMQOTnBLPN4adet",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ID58XRpt4ATZ8vcpxN5d",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/bVT4mgEtzk5BldXPwmeK"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Bench Press",
+      "exerciseId": "bench-press",
+      "exerciseNameSnapshot": "Bench Press",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 21,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1EN5M9wSn6iK9hbWfrnb",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8LL2LaWXW7BzZAQqI4F7",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AZfpf8cDbn0Shn1KvYGB",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AaJBVfYHEbm20OQG8H5Y",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GLvs9qLXEXcUvUJcP8a5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Bicep Curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 17,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable Bicep Curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": "cable",
+      "variationNameSnapshot": "Cable Bicep Curl",
+      "status": "approved",
+      "occurrenceCount": 2,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/KbdaWFMRHxg6k3ywCoa4",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/goMKwQdkalgaqNULBDQE"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": "cable",
+      "variationNameSnapshot": "Cable Bicep Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/AFxnNtK98ENpUJ8HN5hVW4lbnKF2/workouts/ovuLIdxAsgA4Rl48zvSu"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable Forearm Curls",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "cable",
+      "variationNameSnapshot": "Cable Forearm Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/UAKqk947OkN2kSruxZ8W"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable Hammer Curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": "cable_hammer",
+      "variationNameSnapshot": "Cable Hammer Curl",
+      "status": "approved",
+      "occurrenceCount": 19,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable Lat Raises",
+      "exerciseId": "lateral-raise",
+      "exerciseNameSnapshot": "Lateral Raise",
+      "variationId": "cable",
+      "variationNameSnapshot": "Cable Lateral Raise",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/GeNyNCqdLuXGVCVvSirF"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable rows",
+      "exerciseId": "row",
+      "exerciseNameSnapshot": "Row",
+      "variationId": "cable",
+      "variationNameSnapshot": "Cable Row",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/AFxnNtK98ENpUJ8HN5hVW4lbnKF2/workouts/ovuLIdxAsgA4Rl48zvSu"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Cable Trunk Rotations",
+      "exerciseId": "trunk-rotation",
+      "exerciseNameSnapshot": "Trunk Rotation",
+      "variationId": "cable",
+      "variationNameSnapshot": "Cable Trunk Rotation",
+      "status": "approved",
+      "occurrenceCount": 3,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Y13nVnyaHWrYySwaiv4H",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ePcjcT8A7winaipNkR8g",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/hYXYnir6WHFK1ikLY08c"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Calf Raises",
+      "exerciseId": "calf-raise",
+      "exerciseNameSnapshot": "Calf Raise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 9,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1Y6EYx8BVtnF8wlh0ajL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/3JWlKeEOm38GC3MpLgaU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Calf Raises (Standing)",
+      "exerciseId": "calf-raise",
+      "exerciseNameSnapshot": "Calf Raise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/sZRUtB31HPeQ7jtWZTadblLg55S2/workouts/h2ya51lvyfZVTld6uji5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Chest Supported Rows",
+      "exerciseId": "row",
+      "exerciseNameSnapshot": "Row",
+      "variationId": "chest_supported",
+      "variationNameSnapshot": "Chest Supported Row",
+      "status": "approved",
+      "occurrenceCount": 6,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GmxP3qPpUNwEaR1SzOMi",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/HzkFFFxjGA0vwPIB26aZ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Ihk5jwka2rVdXCrwYrkU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/fbIZdnggk5NxyVjwulga"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Dgsh",
+      "exerciseId": "test-exercise",
+      "exerciseNameSnapshot": "Test Exercise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CRvs9shXXkNnEA5lrmiFCIIKxe52/workouts/Nqh7GnfyFrGjld0GFp8X"
+      ],
+      "reviewNotes": "Mapped to test-exercise per review; preserve now, delete later."
+    },
+    {
+      "legacyName": "Dips",
+      "exerciseId": "dip",
+      "exerciseNameSnapshot": "Dip",
+      "variationId": "weighted",
+      "variationNameSnapshot": "Weighted Dip",
+      "status": "approved",
+      "occurrenceCount": 19,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1EN5M9wSn6iK9hbWfrnb",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8LL2LaWXW7BzZAQqI4F7",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AZfpf8cDbn0Shn1KvYGB",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AaJBVfYHEbm20OQG8H5Y",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GLvs9qLXEXcUvUJcP8a5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Dumbbell Bent Over Rows",
+      "exerciseId": "row",
+      "exerciseNameSnapshot": "Row",
+      "variationId": "dumbbell_bent_over",
+      "variationNameSnapshot": "Dumbbell Bent Over Row",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/hTV76MYOj0PWrpybmpg0"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Dumbbell Forearm Curls",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "dumbbell",
+      "variationNameSnapshot": "Dumbbell Forearm Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Vg5vVtJf68DyMEQkQs8p"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Dumbbell Forearm Extensions",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "dumbbell_extension",
+      "variationNameSnapshot": "Dumbbell Forearm Extension",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Vg5vVtJf68DyMEQkQs8p"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Goblet Squat",
+      "exerciseId": "squat",
+      "exerciseNameSnapshot": "Squat",
+      "variationId": "goblet",
+      "variationNameSnapshot": "Goblet Squat",
+      "status": "approved",
+      "occurrenceCount": 3,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/TfIWA7HPbLDtT1UyHUgl",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/flwj4qW3Y1l649Lbc5NQ"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Hack Squat",
+      "exerciseId": "hack-squat",
+      "exerciseNameSnapshot": "Hack Squat",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 5,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Spi2RMINPzaxyr9odQxm",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/VlEhRzvpoEMtv4HfoHH9",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/YRd1Lis2SVy1hK9Cs33q",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/lpq8d5q8fqpVKXhp0AOi"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Hammer Curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": "hammer",
+      "variationNameSnapshot": "Hammer Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/AFxnNtK98ENpUJ8HN5hVW4lbnKF2/workouts/ovuLIdxAsgA4Rl48zvSu"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Hanging L Sits",
+      "exerciseId": "l-sit",
+      "exerciseNameSnapshot": "L-Sit",
+      "variationId": "hanging",
+      "variationNameSnapshot": "Hanging L-Sit",
+      "status": "approved",
+      "occurrenceCount": 4,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1Y6EYx8BVtnF8wlh0ajL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Vg5vVtJf68DyMEQkQs8p",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/bRgBzNq62BPvDkA7f77J",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/hYXYnir6WHFK1ikLY08c"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Hip Abductor Machine",
+      "exerciseId": "hip-abduction",
+      "exerciseNameSnapshot": "Hip Abduction",
+      "variationId": "machine",
+      "variationNameSnapshot": "Hip Abductor Machine",
+      "status": "approved",
+      "occurrenceCount": 8,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1Y6EYx8BVtnF8wlh0ajL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Spi2RMINPzaxyr9odQxm"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Hip Adductor Machine",
+      "exerciseId": "hip-adduction",
+      "exerciseNameSnapshot": "Hip Adduction",
+      "variationId": "machine",
+      "variationNameSnapshot": "Hip Adductor Machine",
+      "status": "approved",
+      "occurrenceCount": 8,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1Y6EYx8BVtnF8wlh0ajL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Spi2RMINPzaxyr9odQxm"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Hwhegvs",
+      "exerciseId": "test-exercise",
+      "exerciseNameSnapshot": "Test Exercise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/gl3HmvGkC4a02G8Oo2GKAklAlJz1/workouts/62yzNxhvnUp4L1ltu1dZ"
+      ],
+      "reviewNotes": "Mapped to test-exercise per review; preserve now, delete later."
+    },
+    {
+      "legacyName": "Incline Bench Press",
+      "exerciseId": "bench-press",
+      "exerciseNameSnapshot": "Bench Press",
+      "variationId": "incline",
+      "variationNameSnapshot": "Incline Bench Press",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/p4UjOApAwTuAWWAlA3pv"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Lat pull downs",
+      "exerciseId": "lat-pulldown",
+      "exerciseNameSnapshot": "Lat Pulldown",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/AFxnNtK98ENpUJ8HN5hVW4lbnKF2/workouts/ovuLIdxAsgA4Rl48zvSu"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Lateral Raises",
+      "exerciseId": "lateral-raise",
+      "exerciseNameSnapshot": "Lateral Raise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 14,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/FeSipBa6lkZyqmcc6nWE"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Leg Extensions",
+      "exerciseId": "leg-extension",
+      "exerciseNameSnapshot": "Leg Extension",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 9,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/3JWlKeEOm38GC3MpLgaU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/S33uH0LtEPQb5IoagZ1n",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Spi2RMINPzaxyr9odQxm"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Leg Press",
+      "exerciseId": "leg-press",
+      "exerciseNameSnapshot": "Leg Press",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 14,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/3JWlKeEOm38GC3MpLgaU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GOq9xaktQ9SJq7xOTtpm"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Leg Raise Holds",
+      "exerciseId": "leg-raise",
+      "exerciseNameSnapshot": "Leg Raise",
+      "variationId": "hold",
+      "variationNameSnapshot": "Leg Raise Hold",
+      "status": "approved",
+      "occurrenceCount": 2,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Y13nVnyaHWrYySwaiv4H",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ePcjcT8A7winaipNkR8g"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Leg Raises",
+      "exerciseId": "leg-raise",
+      "exerciseNameSnapshot": "Leg Raise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 6,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1Y6EYx8BVtnF8wlh0ajL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Vg5vVtJf68DyMEQkQs8p",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Y13nVnyaHWrYySwaiv4H",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/bRgBzNq62BPvDkA7f77J",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ePcjcT8A7winaipNkR8g"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Lying Hamstring Curls",
+      "exerciseId": "hamstring-curl",
+      "exerciseNameSnapshot": "Hamstring Curl",
+      "variationId": "lying_machine",
+      "variationNameSnapshot": "Lying Hamstring Curl",
+      "status": "approved",
+      "occurrenceCount": 12,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/3JWlKeEOm38GC3MpLgaU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GOq9xaktQ9SJq7xOTtpm"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Machine Overhead Shoulder Press",
+      "exerciseId": "overhead-press",
+      "exerciseNameSnapshot": "Overhead Press",
+      "variationId": "machine",
+      "variationNameSnapshot": "Machine Overhead Shoulder Press",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/GeNyNCqdLuXGVCVvSirF"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Machine Preacher Curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": "machine_preacher",
+      "variationNameSnapshot": "Machine Preacher Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/GeNyNCqdLuXGVCVvSirF"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Muscle Ups",
+      "exerciseId": "muscle-up",
+      "exerciseNameSnapshot": "Muscle Up",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 20,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/FeSipBa6lkZyqmcc6nWE"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Nshevev",
+      "exerciseId": "test-exercise",
+      "exerciseNameSnapshot": "Test Exercise",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 2,
+      "samplePaths": [
+        "users/gl3HmvGkC4a02G8Oo2GKAklAlJz1/workouts/1WW0qxmbc0awGKcqnOfo",
+        "users/gl3HmvGkC4a02G8Oo2GKAklAlJz1/workouts/62yzNxhvnUp4L1ltu1dZ"
+      ],
+      "reviewNotes": "Mapped to test-exercise per review; preserve now, delete later."
+    },
+    {
+      "legacyName": "One-Arm Pushup",
+      "exerciseId": "push-up",
+      "exerciseNameSnapshot": "Push-Up",
+      "variationId": "one_arm",
+      "variationNameSnapshot": "One-Arm Push-Up",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/IQj7OOCmRH5Xb7w1qqVY"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Overhead Shoulder Press",
+      "exerciseId": "overhead-press",
+      "exerciseNameSnapshot": "Overhead Press",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/GeNyNCqdLuXGVCVvSirF"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Overhead Tricep",
+      "exerciseId": "triceps-extension",
+      "exerciseNameSnapshot": "Triceps Extension",
+      "variationId": "overhead",
+      "variationNameSnapshot": "Overhead Triceps Extension",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/p4UjOApAwTuAWWAlA3pv"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Overhead Tricep Extensions",
+      "exerciseId": "triceps-extension",
+      "exerciseNameSnapshot": "Triceps Extension",
+      "variationId": "overhead",
+      "variationNameSnapshot": "Overhead Triceps Extension",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/s32VVWIckHrEA8ojdM9Y"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Pec Flies",
+      "exerciseId": "pec-fly",
+      "exerciseNameSnapshot": "Pec Fly",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 18,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1EN5M9wSn6iK9hbWfrnb",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8LL2LaWXW7BzZAQqI4F7",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AZfpf8cDbn0Shn1KvYGB",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AaJBVfYHEbm20OQG8H5Y",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GLvs9qLXEXcUvUJcP8a5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Pec Fly",
+      "exerciseId": "pec-fly",
+      "exerciseNameSnapshot": "Pec Fly",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/p4UjOApAwTuAWWAlA3pv"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Pendulum Squats",
+      "exerciseId": "pendulum-squat",
+      "exerciseNameSnapshot": "Pendulum Squat",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 5,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/3JWlKeEOm38GC3MpLgaU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GOq9xaktQ9SJq7xOTtpm",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/S33uH0LtEPQb5IoagZ1n",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/vqTvb1fKuJLVyRE6MJjJ"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Pseudo Planche Pushup",
+      "exerciseId": "push-up",
+      "exerciseNameSnapshot": "Push-Up",
+      "variationId": "pseudo_planche",
+      "variationNameSnapshot": "Pseudo Planche Push-Up",
+      "status": "approved",
+      "occurrenceCount": 2,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/IQj7OOCmRH5Xb7w1qqVY",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/xCZastQalR3PhPE6sS5a"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Pull Ups",
+      "exerciseId": "pull-up",
+      "exerciseNameSnapshot": "Pull-Up",
+      "variationId": "weighted",
+      "variationNameSnapshot": "Weighted Pull-Up",
+      "status": "approved",
+      "occurrenceCount": 21,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Rear Delt Flies",
+      "exerciseId": "rear-delt-fly",
+      "exerciseNameSnapshot": "Rear Delt Fly",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 17,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Reverse Cable Forearm Curls",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "cable_reverse",
+      "variationNameSnapshot": "Reverse Cable Forearm Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/UAKqk947OkN2kSruxZ8W"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Roman Chair Holds",
+      "exerciseId": "roman-chair-hold",
+      "exerciseNameSnapshot": "Roman Chair Hold",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Vg5vVtJf68DyMEQkQs8p"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Romanian Deadlift",
+      "exerciseId": "romanian-deadlift",
+      "exerciseNameSnapshot": "Romanian Deadlift",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/sZRUtB31HPeQ7jtWZTadblLg55S2/workouts/h2ya51lvyfZVTld6uji5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Seated Curls",
+      "exerciseId": "bicep-curl",
+      "exerciseNameSnapshot": "Bicep Curl",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/PZbsP3gAr7NvdRIRTIcQnE4fU153/workouts/GeNyNCqdLuXGVCVvSirF"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Seated Lateral Rows",
+      "exerciseId": "row",
+      "exerciseNameSnapshot": "Row",
+      "variationId": "seated_lateral",
+      "variationNameSnapshot": "Seated Lateral Row",
+      "status": "approved",
+      "occurrenceCount": 18,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Side Dumbbell Forearm Curls",
+      "exerciseId": "forearm-curl",
+      "exerciseNameSnapshot": "Forearm Curl",
+      "variationId": "side_dumbbell",
+      "variationNameSnapshot": "Side Dumbbell Forearm Curl",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/UAKqk947OkN2kSruxZ8W"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Single Arm Cable Tricep Pushdowns",
+      "exerciseId": "triceps-extension",
+      "exerciseNameSnapshot": "Triceps Extension",
+      "variationId": "single_arm_cable_pushdown",
+      "variationNameSnapshot": "Single Arm Cable Triceps Pushdown",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/sZQW2biaMpsbkArk9fjh"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Single Arm Lat Pulldowns",
+      "exerciseId": "lat-pulldown",
+      "exerciseNameSnapshot": "Lat Pulldown",
+      "variationId": "single_arm_cable",
+      "variationNameSnapshot": "Single Arm Cable Lat Pulldown",
+      "status": "approved",
+      "occurrenceCount": 19,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/79vhdc29XpiqslRLJ7mL",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ByQp7eQj7Kuel5FVBo86"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Single-Leg Leg Extension",
+      "exerciseId": "leg-extension",
+      "exerciseNameSnapshot": "Leg Extension",
+      "variationId": "single_leg",
+      "variationNameSnapshot": "Single-Leg Leg Extension",
+      "status": "approved",
+      "occurrenceCount": 1,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/VlEhRzvpoEMtv4HfoHH9"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Single-Leg RDLs",
+      "exerciseId": "romanian-deadlift",
+      "exerciseNameSnapshot": "Romanian Deadlift",
+      "variationId": "single_leg",
+      "variationNameSnapshot": "Single-Leg Romanian Deadlift",
+      "status": "approved",
+      "occurrenceCount": 13,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/3JWlKeEOm38GC3MpLgaU",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/7RmjFgvZUBCxZPORkbmV",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8fuyBGuv91hO4RughQBp",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ArJUr6pnK0u0dKSWQSI3",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GOq9xaktQ9SJq7xOTtpm"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Straight Arm Pulldowns",
+      "exerciseId": "straight-arm-pulldown",
+      "exerciseNameSnapshot": "Straight Arm Pulldown",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 4,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/57NmeGnwaUzxFrCPGvuW",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/FeSipBa6lkZyqmcc6nWE",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/Jaj52x25uzBXN3Hw8YvN",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/RyLx0h6XCzWvwEac4hRt"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Straight Arm Pushdowns",
+      "exerciseId": "straight-arm-pulldown",
+      "exerciseNameSnapshot": "Straight Arm Pulldown",
+      "variationId": null,
+      "variationNameSnapshot": null,
+      "status": "approved",
+      "occurrenceCount": 4,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1EN5M9wSn6iK9hbWfrnb",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AZfpf8cDbn0Shn1KvYGB",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/PutypyUTBSbv0IbL3lgP",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/s32VVWIckHrEA8ojdM9Y"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Trap Dips",
+      "exerciseId": "dip",
+      "exerciseNameSnapshot": "Dip",
+      "variationId": "trap_weighted",
+      "variationNameSnapshot": "Weighted Trap Dip",
+      "status": "approved",
+      "occurrenceCount": 4,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/6v3CjP9leEhQXDIbSlsQ",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AFXuDT4pDMfFcMaH7UZs",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/RyLx0h6XCzWvwEac4hRt",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/hTV76MYOj0PWrpybmpg0"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Tricep Push Down",
+      "exerciseId": "triceps-extension",
+      "exerciseNameSnapshot": "Triceps Extension",
+      "variationId": "cable_pushdown",
+      "variationNameSnapshot": "Cable Triceps Pushdown",
+      "status": "approved",
+      "occurrenceCount": 19,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/1EN5M9wSn6iK9hbWfrnb",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8LL2LaWXW7BzZAQqI4F7",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AZfpf8cDbn0Shn1KvYGB",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/AaJBVfYHEbm20OQG8H5Y",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/GLvs9qLXEXcUvUJcP8a5"
+      ],
+      "reviewNotes": ""
+    },
+    {
+      "legacyName": "Upwards Cable Pec Flies",
+      "exerciseId": "pec-fly",
+      "exerciseNameSnapshot": "Pec Fly",
+      "variationId": "upward_cable",
+      "variationNameSnapshot": "Upward Cable Pec Fly",
+      "status": "approved",
+      "occurrenceCount": 4,
+      "samplePaths": [
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/8LL2LaWXW7BzZAQqI4F7",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/ID58XRpt4ATZ8vcpxN5d",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/mRsarmXE2WKpr0BcneGo",
+        "users/CBErOAgQeYUB2TPC0ThE1mrnQOI2/workouts/sZQW2biaMpsbkArk9fjh"
+      ],
+      "reviewNotes": ""
+    }
+  ]
+}
