@@ -1,8 +1,10 @@
-import { Workout, WorkoutCard } from '@/components/workout-card';
+import { WorkoutCard } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
+import { Workout } from '@/types/workout';
+import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,6 +17,7 @@ import {
   limit,
   orderBy,
   query,
+  where,
 } from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -33,7 +36,8 @@ export default function HomeScreen() {
         try {
           // Fetch recent workouts for display (last 7 days) and prediction (top 20)
           const q = query(
-            collection(db, 'users', user.uid, 'workouts'),
+            collection(db, 'workouts'),
+            where('userId', '==', user.uid),
             orderBy('date', 'desc'),
             limit(30)
           );
@@ -47,9 +51,7 @@ export default function HomeScreen() {
           const sevenDaysAgoMs = sevenDaysAgo.getTime();
 
           const last7Days = allFetched.filter((w) => {
-            const ms = w.date instanceof Date
-              ? w.date.getTime()
-              : (w.date as { seconds: number }).seconds * 1000;
+            const ms = toDateObj(w.date).getTime();
             return ms >= sevenDaysAgoMs;
           });
           setRecentWorkouts(last7Days);
@@ -77,11 +79,7 @@ export default function HomeScreen() {
             // All logged workouts that match a split category, sorted oldest → newest
             const splitHistory = allFetched
               .filter((w) => splitNames.includes(w.name))
-              .sort((a, b) => {
-                const aMs = a.date instanceof Date ? a.date.getTime() : (a.date as { seconds: number }).seconds * 1000;
-                const bMs = b.date instanceof Date ? b.date.getTime() : (b.date as { seconds: number }).seconds * 1000;
-                return aMs - bMs;
-              });
+              .sort((a, b) => toDateObj(a.date).getTime() - toDateObj(b.date).getTime());
 
             // Build a transition-frequency map from the user's actual workout sequence:
             // transitions[A][B] = how many times the user did B right after A

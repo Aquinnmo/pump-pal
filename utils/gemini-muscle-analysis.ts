@@ -1,5 +1,6 @@
-import { Workout } from '@/components/workout-card';
 import { GEMINI_API_KEY, GEMINI_MODEL } from '@/constants/gemini-config';
+import { Workout } from '@/types/workout';
+import { exerciseLabel, isDurationExercise, toDateObj } from '@/utils/workout-conversion';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export interface MuscleInsights {
@@ -16,10 +17,7 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
   // Filter to last 30 days
-  const recent = workouts.filter((w) => {
-    const ts = w.date instanceof Date ? w.date.getTime() : w.date.seconds * 1000;
-    return ts >= thirtyDaysAgo;
-  });
+  const recent = workouts.filter((w) => toDateObj(w.date).getTime() >= thirtyDaysAgo);
 
   if (recent.length === 0) {
     return { overTrained: [], underTrained: [] };
@@ -40,9 +38,11 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
 
   recent.forEach((w) => {
     const seenThisWorkout = new Set<string>();
-    w.exercises.forEach((ex) => {
-      const name = ex.name.trim();
+    (w.performedExercises ?? []).forEach((pe) => {
+      const name = exerciseLabel(pe).trim();
       if (!name) return;
+
+      const isDuration = isDurationExercise(pe);
 
       if (!statsMap[name]) {
         statsMap[name] = {
@@ -51,8 +51,8 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
           totalReps: 0,
           weights: new Set(),
           maxDurationSecs: 0,
-          bodyweight: !!ex.bodyweight,
-          isDuration: ex.exerciseType === 'Sets of Duration',
+          bodyweight: pe.sets.some((s) => s.bodyweight),
+          isDuration,
         };
       }
 
@@ -62,14 +62,16 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
         seenThisWorkout.add(name);
       }
 
-      s.totalSets += ex.sets ?? 1;
+      s.totalSets += pe.sets.length;
 
-      if (ex.exerciseType === 'Sets of Duration') {
-        const secs = (ex.durationMinutes ?? 0) * 60 + (ex.durationSeconds ?? 0);
-        s.maxDurationSecs = Math.max(s.maxDurationSecs, secs * (ex.sets ?? 1));
+      if (isDuration) {
+        const totalSecs = pe.sets.reduce((sum, set) => sum + (set.durationSeconds ?? 0), 0);
+        s.maxDurationSecs = Math.max(s.maxDurationSecs, totalSecs);
       } else {
-        s.totalReps += (ex.reps ?? 0) * (ex.sets ?? 1);
-        if (!ex.bodyweight && ex.weight > 0) s.weights.add(ex.weight);
+        pe.sets.forEach((set) => {
+          s.totalReps += set.reps ?? 0;
+          if (!set.bodyweight && (set.weight ?? 0) > 0) s.weights.add(set.weight!);
+        });
       }
     });
   });

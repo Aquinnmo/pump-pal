@@ -11,7 +11,7 @@ Firestore data migration is complete for the current legacy workout snapshot.
 - Latest migration parity: passed
 - Unmapped legacy exercise names: 0
 - Legacy workout subcollections: still present, untouched
-- Top-level `workouts` includes 1 non-migrated doc, likely old placeholder `workouts/1`
+- App cutover: complete — all reads/writes go through the top-level `workouts`/`exercises` collections
 
 No legacy user workout data was deleted during migration.
 
@@ -356,46 +356,18 @@ Keep legacy data until app cutover, export, analytics, and account-delete behavi
 
 ## Remaining Work
 
-### App Cutover
+App cutover shipped: all reads/writes go through top-level `workouts`/`exercises`, filtered by `userId`, with set-by-set `performedExercises[].sets`, a flattened searchable exercise picker, and an `under-review` custom-exercise flow. `app/modal.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/workouts.tsx`, `app/(tabs)/analytics.tsx`, `app/(tabs)/settings.tsx`, `components/workout-card.tsx`, `utils/gemini-muscle-analysis.ts`, and `utils/gemini-workout-suggestions.ts` all consume the canonical shape.
 
-Update app reads and writes to use V2:
+The TPC (pushup-challenge) tab is a live, intentional feature — not migration debt. Its `users/{uid}/pushup-challenge/data` doc and account-delete cleanup are unrelated to the workout schema and stay as-is.
 
-- `app/modal.tsx`
-- `app/(tabs)/index.tsx`
-- `app/(tabs)/workouts.tsx`
-- `app/(tabs)/analytics.tsx`
-- `app/(tabs)/settings.tsx`
-- `components/workout-card.tsx`
-- `utils/gemini-muscle-analysis.ts`
-- `utils/gemini-workout-suggestions.ts`
-
-Required app behavior:
-
-- read top-level `workouts` filtered by `userId`
-- write new workouts only to top-level `workouts`
-- load and cache `exercises`
-- use flattened exercise picker options
-- expand simple aggregate inputs into set rows on save
-- keep UI simple
-
-### Legacy Removal
-
-After app cutover verification:
-
-- remove pushup challenge route/tab
-- remove account-delete cleanup for `users/{uid}/pushup-challenge/data`
-- delete disposable placeholder docs, if still present:
-  - `exercises/nothign`
-  - `workouts/1`
-
-After production confidence:
+Only remaining item, deferred pending explicit approval:
 
 - export backup of legacy `users/{uid}/workouts`
-- delete old workout subcollections only after explicit approval
+- delete old workout subcollections only after that backup and explicit approval
 
 ## Verification Checklist
 
-Before considering refactor complete:
+Verified after app cutover:
 
 - migrated workouts display in app
 - new workout save writes V2 shape only

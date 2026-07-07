@@ -1,8 +1,8 @@
-# Welcome to your Expo app 👋
+# Pump Pal
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Workout tracking app built with Expo Router (TypeScript, React Native), backed by Firebase (auth + Firestore) with Gemini-powered workout insights.
 
-## Get started
+## Setup
 
 1. Install dependencies
 
@@ -10,41 +10,27 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npm install
    ```
 
-2. Start the app
+2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and Gemini API key (`EXPO_PUBLIC_GEMINI_API_KEY`).
+
+3. Start the dev server
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+   Press `a`/`i`/`w` to open Android/iOS/web, or scan the QR code with Expo Go.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Other commands
 
 ```bash
-npm run reset-project
+npm run android      # start + open Android
+npm run ios          # start + open iOS
+npm run web          # start + open web
+npm run lint         # expo lint
+npm run build:web    # static web export to dist/ (used by Vercel, see vercel.json)
+npm run migration:test  # runs the legacy-migration script tests
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Architecture
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+File-based routing via Expo Router, with auth/onboarding gating and the Firestore data model documented in [CLAUDE.md](CLAUDE.md). The Firestore workout/exercise schema (canonical collections, set-by-set data model, exercise catalog) is documented in [docs/firestore-data-refactor.md](docs/firestore-data-refactor.md).
