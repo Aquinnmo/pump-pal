@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "notes": [
+    "Generated from legacy workout inventory.",
+    "Every distinct legacy exercise name needs one approved mapping.",
+    "Use variationId: null when variation is unknown or not important."
+  ],
+  "mappings": [
+    {
+      "legacyName": "DB Bench",
+      "exerciseId": "bench-press",
+      "variationId": "dumbbell_flat",
+      "status": "example_only",
+      "reviewNotes": "Replace examples with generated inventory names."
+    }
+  ]
+}
+

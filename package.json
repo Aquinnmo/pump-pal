@@ -10,9 +10,14 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build:web": "npx expo export -p web",
-    "migration:inventory": "node scripts/build-exercise-inventory.js",
-    "migration:v2": "node scripts/build-v2-migration.js",
-    "migration:write-v2": "node scripts/write-v2-firestore.js"
+    "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js",
+    "migration:inventory": "node scripts/migration/legacy-inventory.js",
+    "migration:firestore:snapshot": "node scripts/migration/firestore-readonly-snapshot.js",
+    "migration:seed:exercises": "node scripts/migration/seed-exercise-catalog.js",
+    "migration:mapping:draft": "node scripts/migration/generate-mapping-draft.js",
+    "migration:mapping:validate": "node scripts/migration/validate-mapping.js",
+    "migration:dry-run": "node scripts/migration/dry-run-conversion.js",
+    "migration:write:workouts": "node scripts/migration/write-migrated-workouts.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
