@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 2,
+  "exercises": [
+    {
+      "id": "bench-press",
+      "name": "Bench Press",
+      "normalizedName": "bench press",
+      "aliases": ["press", "chest press"],
+      "primaryMuscles": ["chest"],
+      "secondaryMuscles": ["front delts", "triceps"],
+      "movementPattern": "horizontal_push",
+      "equipment": ["barbell", "dumbbell", "smith_machine"],
+      "bodyRegion": "upper",
+      "mechanics": "compound",
+      "forceType": "push",
+      "trackingModes": ["reps_weight"],
+      "variations": [
+        {
+          "id": "barbell_flat",
+          "name": "Flat Barbell Bench Press",
+          "aliases": ["barbell bench"],
+          "equipment": "barbell",
+          "angle": "flat"
+        },
+        {
+          "id": "dumbbell_flat",
+          "name": "Flat Dumbbell Bench Press",
+          "aliases": ["db bench", "dumbbell bench"],
+          "equipment": "dumbbell",
+          "angle": "flat"
+        }
+      ]
+    }
+  ]
+}
+

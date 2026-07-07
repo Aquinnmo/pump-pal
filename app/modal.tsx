@@ -496,7 +496,7 @@ export default function AddWorkoutModal() {
               <View style={[styles.checkbox, isToday && styles.checkboxChecked]}>
                 {isToday && <Ionicons name="checkmark" size={16} color="#fff" />}
               </View>
-              <Text style={styles.checkboxLabel}>Today's Workout</Text>
+              <Text style={styles.checkboxLabel}>Today&apos;s Workout</Text>
             </TouchableOpacity>
 
             {!isToday && (
