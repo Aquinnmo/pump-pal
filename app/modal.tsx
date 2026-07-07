@@ -600,14 +600,6 @@ export default function AddWorkoutModal() {
 
             {ex.sets.map((set, si) => (
               <View key={si} style={styles.setRow}>
-                <View style={styles.setHeaderRow}>
-                  <Text style={styles.setLabel}>Set {si + 1}</Text>
-                  {ex.sets.length > 1 && (
-                    <TouchableOpacity onPress={() => removeSet(i, si)} hitSlop={12}>
-                      <Ionicons name="close-circle" size={26} color="#888" />
-                    </TouchableOpacity>
-                  )}
-                </View>
                 <View style={styles.row}>
                   {ex.exerciseType === 'Sets of Duration' ? (
                     <>
@@ -667,6 +659,14 @@ export default function AddWorkoutModal() {
                         </View>
                       )}
                     </>
+                  )}
+                  {ex.sets.length > 1 && (
+                    <View style={styles.deleteSetButton}>
+                      <Text style={styles.deleteSetSpacer}> </Text>
+                      <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => removeSet(i, si)} hitSlop={12}>
+                        <Ionicons name="close-circle" size={26} color="#888" />
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               </View>
@@ -933,17 +933,18 @@ const styles = StyleSheet.create({
   setRow: {
     marginBottom: 10,
   },
-  setHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  deleteSetButton: {
     alignItems: 'center',
-    marginBottom: 4,
   },
-  setLabel: {
+  deleteSetSpacer: {
     fontSize: 11,
-    color: '#666',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginBottom: 4,
+    color: 'transparent',
+  },
+  deleteSetIconWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addSetButton: {
     flexDirection: 'row',
