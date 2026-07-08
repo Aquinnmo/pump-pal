@@ -686,7 +686,7 @@ export default function AddWorkoutModal() {
         ))}
 
         <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
-          <Ionicons name="add-circle-outline" size={20} color="#fff" />
+          <Ionicons name="add-circle-outline" size={18} color="#e54242" />
           <Text style={styles.addExText}>Add Exercise</Text>
         </TouchableOpacity>
 
@@ -996,21 +996,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    backgroundColor: '#e54242',
-    borderRadius: 14,
+    paddingVertical: 12,
+    backgroundColor: '#271515',
+    borderWidth: 1,
+    borderColor: '#e54242',
+    borderRadius: 10,
     marginBottom: 16,
-    gap: 8,
-    shadowColor: '#e54242',
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
+    gap: 6,
   },
   addExText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 17,
+    color: '#e54242',
+    fontWeight: '700',
+    fontSize: 14,
     letterSpacing: 0.2,
   },
   bigSaveButton: {
