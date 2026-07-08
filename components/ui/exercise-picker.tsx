@@ -37,6 +37,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 
+const compareExerciseLabels = <T extends { label: string }>(a: T, b: T) => {
+  const aLabel = a.label.toLowerCase();
+  const bLabel = b.label.toLowerCase();
+  return aLabel.localeCompare(bLabel) || a.label.localeCompare(b.label);
+};
+
 export type ExercisePickerSelection = ExerciseRef;
 
 export type SheetHandle = {
@@ -148,8 +154,13 @@ const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
         <Animated.View style={[styles.modalOverlay, isDialog && styles.dialogOverlay, overlayAnimatedStyle]}>
           <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => close()} />
           {isDialog ? (
-            <Animated.View style={[styles.dialogContent, cardAnimatedStyle, { paddingBottom: Math.max(16, insets.bottom) }]}>
-              <View style={styles.modalHeader}>
+            <Animated.View
+              style={[
+                styles.dialogContent,
+                cardAnimatedStyle,
+                { marginTop: insets.top + 16, paddingBottom: Math.max(16, insets.bottom) },
+              ]}>
+              <View style={[styles.modalHeader, styles.dialogHeader]}>
                 {header}
                 {headerExtra}
               </View>
@@ -180,9 +191,7 @@ const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
 interface ExercisePickerProps {
   options: ExerciseSearchOption[];
   value: string | null;
-  recentLabels?: string[];
   recentExercises?: ExerciseRef[];
-  workoutName?: string;
   onSelect: (selection: ExercisePickerSelection) => void;
   onCreateNew?: (name: string) => Promise<ExercisePickerSelection | null>;
   placeholder?: string;
@@ -192,9 +201,7 @@ interface ExercisePickerProps {
 export function ExercisePicker({
   options,
   value,
-  recentLabels = [],
   recentExercises = [],
-  workoutName,
   onSelect,
   onCreateNew,
   placeholder = 'Select exercise',
@@ -222,9 +229,14 @@ export function ExercisePicker({
     setSearchVisible(true);
   }, []);
 
+  const alphabeticalRecents = useMemo(
+    () => [...recentExercises].sort(compareExerciseLabels),
+    [recentExercises]
+  );
+
   const ranked = useMemo(
-    () => rankSearchOptions(options, query, recentLabels),
-    [options, query, recentLabels]
+    () => rankSearchOptions(options, query, []).sort(compareExerciseLabels),
+    [options, query]
   );
 
   const trimmedQuery = query.trim();
@@ -288,14 +300,9 @@ export function ExercisePicker({
         onDismiss={() => setRecentsVisible(false)}>
         <FlatList
           style={styles.optionsList}
-          data={recentExercises}
+          data={alphabeticalRecents}
           keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
           keyboardShouldPersistTaps="handled"
-          ListHeaderComponent={
-            <Text style={styles.sectionHeaderText}>
-              {workoutName ? `RECENT FOR ${workoutName.toUpperCase()}` : 'RECENT'}
-            </Text>
-          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
@@ -404,7 +411,7 @@ const styles = StyleSheet.create({
   },
   dialogContent: {
     width: '94%',
-    height: '90%',
+    height: '84%',
     backgroundColor: '#1c1c1c',
     borderRadius: 24,
     overflow: 'hidden',
@@ -442,6 +449,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#2a2a2a',
   },
+  dialogHeader: {
+    paddingTop: 20,
+  },
   modalHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -466,14 +476,6 @@ const styles = StyleSheet.create({
   optionsList: {
     paddingHorizontal: 10,
     paddingTop: 10,
-  },
-  sectionHeaderText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#666',
-    letterSpacing: 0.5,
-    paddingHorizontal: 14,
-    paddingBottom: 8,
   },
   optionRow: {
     flexDirection: 'row',

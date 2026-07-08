@@ -1,12 +1,12 @@
 # Graph Report - pump-pal  (2026-07-07)
 
 ## Corpus Check
-- 94 files · ~162,852 words
+- 94 files · ~162,677 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 651 nodes · 1014 edges · 80 communities (28 shown, 52 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.59)
+- 651 nodes · 1015 edges · 80 communities (28 shown, 52 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 36 edges (avg confidence: 0.58)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -198,7 +198,7 @@ Cohesion: 0.29
 Nodes (6): Beads Issue Tracker, graphify, Quick Reference, Rules, Session Completion, User workflow override
 
 ## Knowledge Gaps
-- **309 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+304 more)
+- **308 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+303 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **52 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -214,8 +214,8 @@ _Questions this graph is uniquely positioned to answer:_
 - **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
   _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _310 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _309 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App Screens & Workout Data` be split into smaller, more focused modules?**
-  _Cohesion score 0.0691333982473223 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0694579681921454 - nodes in this community are weakly interconnected._
 - **Should `Auth Flow & Firebase Config` be split into smaller, more focused modules?**
   _Cohesion score 0.08734693877551021 - nodes in this community are weakly interconnected._

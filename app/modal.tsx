@@ -239,7 +239,6 @@ export default function AddWorkoutModal() {
     () => recentExercisesForDay(workoutHistory, effectiveWorkoutName),
     [workoutHistory, effectiveWorkoutName]
   );
-  const recentLabels = useMemo(() => recentExercises.map((r) => r.label), [recentExercises]);
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -558,9 +557,7 @@ export default function AddWorkoutModal() {
             <ExercisePicker
               options={catalogOptions}
               value={ex.label || null}
-              recentLabels={recentLabels}
               recentExercises={recentExercises}
-              workoutName={effectiveWorkoutName}
               onSelect={(selection) => selectExercise(i, selection)}
               onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
               placeholder="Select exercise"
