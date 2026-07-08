@@ -780,14 +780,14 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "app_tabs_index_homescreen",
-      "community": 0,
+      "community": 1,
       "norm_label": "homescreen()"
     },
     {
       "label": "styles",
       "file_type": "code",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L170",
+      "source_location": "L180",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
       "community": 1,
@@ -1067,7 +1067,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "app/modal.tsx",
-      "source_location": "L772",
+      "source_location": "L770",
       "_origin": "ast",
       "id": "app_modal_styles",
       "community": 0,
@@ -1494,10 +1494,20 @@
       "norm_label": "exercise-picker.tsx"
     },
     {
-      "label": "ExercisePickerSelection",
+      "label": "compareExerciseLabels()",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
       "source_location": "L40",
+      "_origin": "ast",
+      "id": "components_ui_exercise_picker_compareexerciselabels",
+      "community": 0,
+      "norm_label": "compareexerciselabels()"
+    },
+    {
+      "label": "ExercisePickerSelection",
+      "file_type": "code",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L46",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerselection",
       "community": 0,
@@ -1507,7 +1517,7 @@
       "label": "SheetHandle",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L42",
+      "source_location": "L48",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheethandle",
       "community": 0,
@@ -1517,7 +1527,7 @@
       "label": "SheetProps",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L48",
+      "source_location": "L54",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheetprops",
       "community": 0,
@@ -1527,7 +1537,7 @@
       "label": "Sheet",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L62",
+      "source_location": "L68",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheet",
       "community": 0,
@@ -1537,7 +1547,7 @@
       "label": "ExercisePickerProps",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L185",
+      "source_location": "L191",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerprops",
       "community": 0,
@@ -1547,7 +1557,7 @@
       "label": "ExercisePicker()",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L196",
+      "source_location": "L201",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepicker",
       "community": 0,
@@ -1557,7 +1567,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L373",
+      "source_location": "L382",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_styles",
       "community": 0,
@@ -1740,7 +1750,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "config_firebase_auth",
-      "community": 14,
+      "community": 1,
       "norm_label": "auth"
     },
     {
@@ -2020,7 +2030,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "package",
-      "community": 4,
+      "community": 8,
       "norm_label": "package.json"
     },
     {
@@ -2030,7 +2040,7 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "package_name",
-      "community": 4,
+      "community": 8,
       "norm_label": "name"
     },
     {
@@ -2040,7 +2050,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "package_main",
-      "community": 4,
+      "community": 8,
       "norm_label": "main"
     },
     {
@@ -2050,7 +2060,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "package_version",
-      "community": 4,
+      "community": 8,
       "norm_label": "version"
     },
     {
@@ -2480,7 +2490,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "package_dependencies_firebase",
-      "community": 1,
+      "community": 4,
       "norm_label": "firebase"
     },
     {
@@ -2620,7 +2630,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "package_devdependencies",
-      "community": 4,
+      "community": 8,
       "norm_label": "devdependencies"
     },
     {
@@ -2630,7 +2640,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "package_devdependencies_types_react",
-      "community": 4,
+      "community": 8,
       "norm_label": "@types/react"
     },
     {
@@ -2640,7 +2650,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "package_devdependencies_eslint",
-      "community": 4,
+      "community": 8,
       "norm_label": "eslint"
     },
     {
@@ -2650,7 +2660,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_config_expo",
-      "community": 4,
+      "community": 8,
       "norm_label": "eslint-config-expo"
     },
     {
@@ -2660,7 +2670,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "package_devdependencies_typescript",
-      "community": 4,
+      "community": 8,
       "norm_label": "typescript"
     },
     {
@@ -2670,7 +2680,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "package_private",
-      "community": 4,
+      "community": 8,
       "norm_label": "private"
     },
     {
@@ -3350,7 +3360,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_variation",
-      "community": 1,
+      "community": 5,
       "norm_label": "variation()"
     },
     {
@@ -7734,7 +7744,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L170",
+      "source_location": "L180",
       "weight": 1.0,
       "source": "app_tabs_index",
       "target": "app_tabs_index_styles",
@@ -8822,7 +8832,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L772",
+      "source_location": "L770",
       "weight": 1.0,
       "source": "app_modal",
       "target": "app_modal_styles",
@@ -9285,7 +9295,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L502",
+      "source_location": "L501",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "package_dependencies_react"
@@ -9307,7 +9317,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L564",
+      "source_location": "L562",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_create_pending_exercise_creatependingexercise"
@@ -9318,7 +9328,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "app/modal.tsx",
-      "source_location": "L331",
+      "source_location": "L330",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_daily_name_todayutc"
@@ -9329,7 +9339,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L340",
+      "source_location": "L339",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_exercise_catalog_ranksearchoptions"
@@ -9340,7 +9350,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L343",
+      "source_location": "L342",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_exercise_catalog_slugify"
@@ -9362,7 +9372,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L318",
+      "source_location": "L317",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_gemini_workout_suggestions_suggestworkoutcompletion"
@@ -9384,7 +9394,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L389",
+      "source_location": "L388",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_workout_conversion_buildperformedexercise"
@@ -10232,7 +10242,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L196",
+      "source_location": "L40",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker",
+      "target": "components_ui_exercise_picker_compareexerciselabels",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L201",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_exercisepicker",
@@ -10242,7 +10262,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L185",
+      "source_location": "L191",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_exercisepickerprops",
@@ -10252,7 +10272,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L40",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_exercisepickerselection",
@@ -10262,7 +10282,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L62",
+      "source_location": "L68",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_sheet",
@@ -10272,7 +10292,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L42",
+      "source_location": "L48",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_sheethandle",
@@ -10282,7 +10302,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L48",
+      "source_location": "L54",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_sheetprops",
@@ -10292,7 +10312,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L373",
+      "source_location": "L382",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_styles",
@@ -10365,12 +10385,23 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L233",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker_exercisepicker",
+      "target": "components_ui_exercise_picker_compareexerciselabels",
+      "confidence_score": 0.5
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L229",
+      "source_location": "L238",
       "weight": 1.0,
       "source": "components_ui_exercise_picker_exercisepicker",
       "target": "utils_exercise_catalog_ranksearchoptions"
@@ -10381,7 +10412,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L256",
+      "source_location": "L265",
       "weight": 1.0,
       "source": "components_ui_exercise_picker_exercisepicker",
       "target": "utils_exercise_catalog_slugify"

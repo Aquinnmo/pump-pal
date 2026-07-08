@@ -55,8 +55,8 @@
     "semantic_hash": "0413bb8c88c55ce6993b39498aa9d895"
   },
   "app/(tabs)/index.tsx": {
-    "mtime": 1783460844.111546,
-    "ast_hash": "a205af827e92e040cbdb11d828cde099",
+    "mtime": 1783477961.8429117,
+    "ast_hash": "4fe28a67aa3b5008eca3de2276ca513e",
     "semantic_hash": ""
   },
   "app/(tabs)/pushup-challenge.tsx": {
@@ -80,8 +80,8 @@
     "semantic_hash": "77cc77ce64c2f5e86d373d769a0228bb"
   },
   "app/modal.tsx": {
-    "mtime": 1783477059.3549197,
-    "ast_hash": "2627ed36daea83d4ea04a7cce0a3f164",
+    "mtime": 1783477248.7748532,
+    "ast_hash": "3b9656e2db3ebceed46cf7f119a63528",
     "semantic_hash": ""
   },
   "app/set-split.tsx": {
@@ -140,8 +140,8 @@
     "semantic_hash": "477901915740881e631b1f3bb2f3719f"
   },
   "components/ui/exercise-picker.tsx": {
-    "mtime": 1783477051.8453076,
-    "ast_hash": "92d9ec194b04b8f1ccb9265417a1d7a0",
+    "mtime": 1783477240.134635,
+    "ast_hash": "b7f138e2a83bab5a51680782bd0888e7",
     "semantic_hash": ""
   },
   "components/ui/icon-symbol.ios.tsx": {
@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   ".beads/export-state.json": {
-    "mtime": 1783476995.6909297,
-    "ast_hash": "79a657d87d019ea9021472b7ace656c0",
+    "mtime": 1783477939.2614894,
+    "ast_hash": "0c8dc30782f68d4ebb83373547a54346",
     "semantic_hash": ""
   },
   ".beads/hooks/post-checkout": {

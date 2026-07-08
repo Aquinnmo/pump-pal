@@ -115,12 +115,42 @@ export default function HomeScreen() {
           style={styles.nextWorkoutCard}
           onPress={() => router.push({ pathname: '/modal', params: { suggestion: nextWorkout } })}
           activeOpacity={0.85}>
-          <View style={styles.nextWorkoutLeft}>
-            <Text style={styles.nextWorkoutLabel}>Up Next:</Text>
-            <Text style={styles.nextWorkoutName}>{nextWorkout}</Text>
-          </View>
-          <View style={styles.nextWorkoutIcon}>
-            <Ionicons name="barbell-outline" size={32} color="#e54242" />
+          <LinearGradient
+            colors={['rgba(255, 77, 77, 0.16)', 'rgba(255, 77, 77, 0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.nextWorkoutGlowTop}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(255, 77, 77, 0.16)', 'rgba(255, 77, 77, 0)']}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 0, y: 0 }}
+            style={styles.nextWorkoutGlowBottom}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(255, 77, 77, 0.10)', 'rgba(255, 77, 77, 0)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.nextWorkoutGlowLeft}
+            pointerEvents="none"
+          />
+          <LinearGradient
+            colors={['rgba(255, 77, 77, 0.10)', 'rgba(255, 77, 77, 0)']}
+            start={{ x: 1, y: 0 }}
+            end={{ x: 0, y: 0 }}
+            style={styles.nextWorkoutGlowRight}
+            pointerEvents="none"
+          />
+          <View style={styles.nextWorkoutContent}>
+            <View style={styles.nextWorkoutLeft}>
+              <Text style={styles.nextWorkoutLabel}>Up Next:</Text>
+              <Text style={styles.nextWorkoutName}>{nextWorkout}</Text>
+            </View>
+            <View style={styles.nextWorkoutIcon}>
+              <Ionicons name="barbell-outline" size={32} color="#ff4d4d" />
+            </View>
           </View>
         </TouchableOpacity>
       )}
@@ -267,16 +297,48 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   nextWorkoutCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1c1c1c',
+    position: 'relative',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#2a2a2a',
+    marginBottom: 20,
+    overflow: 'hidden',
+    backgroundColor: '#1c1c1c',
+  },
+  nextWorkoutGlowTop: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    left: 0,
+    height: 20,
+  },
+  nextWorkoutGlowBottom: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    left: 0,
+    height: 22,
+  },
+  nextWorkoutGlowLeft: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: 20,
+  },
+  nextWorkoutGlowRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 22,
+  },
+  nextWorkoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    marginBottom: 20,
   },
   nextWorkoutLeft: {
     gap: 4,
@@ -284,7 +346,7 @@ const styles = StyleSheet.create({
   nextWorkoutLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#e54242',
+    color: '#ff8f8f',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
   },
@@ -297,7 +359,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#2a1010',
+    backgroundColor: 'rgba(0, 0, 0, 0.32)',
     justifyContent: 'center',
     alignItems: 'center',
   },

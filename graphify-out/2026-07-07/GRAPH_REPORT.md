@@ -1,12 +1,12 @@
 # Graph Report - pump-pal  (2026-07-07)
 
 ## Corpus Check
-- 94 files · ~162,657 words
+- 94 files · ~162,729 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 650 nodes · 1013 edges · 80 communities (28 shown, 52 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.59)
+- 651 nodes · 1015 edges · 80 communities (28 shown, 52 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 36 edges (avg confidence: 0.58)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -115,10 +115,10 @@
 
 ### Community 0 - "App Screens & Workout Data"
 Cohesion: 0.07
-Nodes (66): AddWorkoutModal(), styles, AnalyticsScreen(), styles, HomeScreen(), InsightsCache, MuscleInsightCards(), Props (+58 more)
+Nodes (66): AddWorkoutModal(), styles, AnalyticsScreen(), styles, InsightsCache, MuscleInsightCards(), Props, RefreshCache (+58 more)
 
 ### Community 1 - "Auth Flow & Firebase Config"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (34): SignInScreen(), styles, SignUpScreen(), styles, RootLayoutNav(), unstable_settings, SetSplitScreen(), styles (+26 more)
 
 ### Community 2 - "Firestore Migration Write Scripts"
@@ -130,12 +130,12 @@ Cohesion: 0.05
 Nodes (38): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, predictiveBackGestureEnabled (+30 more)
 
 ### Community 4 - "NPM Dependencies"
-Cohesion: 0.04
-Nodes (47): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+39 more)
+Cohesion: 0.05
+Nodes (39): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+31 more)
 
 ### Community 5 - "Legacy Data Inventory & Mapping"
 Cohesion: 0.06
-Nodes (38): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+30 more)
+Nodes (39): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+31 more)
 
 ### Community 6 - "V2 Migration Builder"
 Cohesion: 0.12
@@ -146,8 +146,8 @@ Cohesion: 0.13
 Nodes (26): buildInventory(), buildMapping(), buildReviewWarnings(), compactCounts(), csvCell(), documentIdFromPath(), EXPORT_FILE, fs (+18 more)
 
 ### Community 8 - "NPM Scripts & Package Meta"
-Cohesion: 0.12
-Nodes (16): scripts, android, build:web, ios, lint, migration:dry-run, migration:firestore:snapshot, migration:inventory (+8 more)
+Cohesion: 0.08
+Nodes (25): devDependencies, eslint, eslint-config-expo, @types/react, typescript, main, name, private (+17 more)
 
 ### Community 9 - "Firestore Refactor Docs"
 Cohesion: 0.05
@@ -170,8 +170,8 @@ Cohesion: 0.15
 Nodes (16): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+8 more)
 
 ### Community 14 - "Migration File Review Builder"
-Cohesion: 0.21
-Nodes (9): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, FirebaseRecaptchaVerifierModal, FirebaseRecaptchaVerifierModalRef, Props, styles (+1 more)
+Cohesion: 0.24
+Nodes (8): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, FirebaseRecaptchaVerifierModal, FirebaseRecaptchaVerifierModalRef, Props, styles
 
 ### Community 15 - "Project Reset Script"
 Cohesion: 0.22
@@ -205,11 +205,11 @@ Nodes (6): Beads Issue Tracker, graphify, Quick Reference, Rules, Session Comple
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SettingsScreen()` connect `Auth Flow & Firebase Config` to `App Screens & Workout Data`, `Expo App Config`?**
+- **Why does `SettingsScreen()` connect `Auth Flow & Firebase Config` to `App Screens & Workout Data`, `Expo App Config`, `Legacy Data Inventory & Mapping`?**
   _High betweenness centrality (0.267) - this node is a cross-community bridge._
 - **Why does `exercise()` connect `Legacy Data Inventory & Mapping` to `Firestore Migration Write Scripts`, `Legacy Workout Conversion Scripts`, `V2 Migration Builder`?**
   _High betweenness centrality (0.255) - this node is a cross-community bridge._
-- **Why does `variation()` connect `Auth Flow & Firebase Config` to `Legacy Data Inventory & Mapping`?**
+- **Why does `variation()` connect `Legacy Data Inventory & Mapping` to `Auth Flow & Firebase Config`?**
   _High betweenness centrality (0.225) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
   _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
@@ -218,4 +218,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `App Screens & Workout Data` be split into smaller, more focused modules?**
   _Cohesion score 0.0694579681921454 - nodes in this community are weakly interconnected._
 - **Should `Auth Flow & Firebase Config` be split into smaller, more focused modules?**
-  _Cohesion score 0.08408163265306122 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08734693877551021 - nodes in this community are weakly interconnected._
