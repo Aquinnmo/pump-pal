@@ -555,13 +555,6 @@ export default function AddWorkoutModal() {
 
         {exercises.map((ex, i) => (
           <View key={i} style={styles.exerciseCard}>
-            {exercises.length > 1 && (
-              <View style={styles.exerciseHeader}>
-                <TouchableOpacity onPress={() => removeExercise(i)} hitSlop={8}>
-                  <Ionicons name="trash-outline" size={16} color="#666" />
-                </TouchableOpacity>
-              </View>
-            )}
             <ExercisePicker
               options={catalogOptions}
               value={ex.label || null}
@@ -661,23 +654,39 @@ export default function AddWorkoutModal() {
               <Text style={styles.addSetText}>Add Set</Text>
             </TouchableOpacity>
 
-            {ex.exerciseType === 'Sets of Reps' && (
-              <TouchableOpacity
-                style={styles.bodyweightRow}
-                onPress={() => toggleBodyweight(i)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-                  {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-                </View>
-                <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-              </TouchableOpacity>
+            {(ex.exerciseType === 'Sets of Reps' || exercises.length > 1) && (
+              <View style={styles.exerciseFooter}>
+                {ex.exerciseType === 'Sets of Reps' ? (
+                  <TouchableOpacity
+                    style={styles.bodyweightRow}
+                    onPress={() => toggleBodyweight(i)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
+                      {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                    <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.exerciseFooterSpacer} />
+                )}
+
+                {exercises.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeExerciseButton}
+                    onPress={() => removeExercise(i)}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </View>
         ))}
 
         <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
-          <Ionicons name="add-circle-outline" size={18} color="#e54242" />
+          <Ionicons name="add-circle-outline" size={20} color="#fff" />
           <Text style={styles.addExText}>Add Exercise</Text>
         </TouchableOpacity>
 
@@ -856,7 +865,7 @@ const styles = StyleSheet.create({
   bodyweightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    flexShrink: 1,
   },
   bodyweightLabel: {
     color: '#888',
@@ -881,11 +890,25 @@ const styles = StyleSheet.create({
     borderColor: '#222',
     marginBottom: 10,
   },
-  exerciseHeader: {
+  exerciseFooter: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 12,
+  },
+  exerciseFooterSpacer: {
+    flex: 1,
+  },
+  removeExerciseButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#241414',
+    borderWidth: 1,
+    borderColor: '#3a1f1f',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -973,18 +996,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 10,
-    borderStyle: 'dashed',
+    paddingVertical: 16,
+    backgroundColor: '#e54242',
+    borderRadius: 14,
     marginBottom: 16,
-    gap: 6,
+    gap: 8,
+    shadowColor: '#e54242',
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   addExText: {
-    color: '#e54242',
-    fontWeight: '600',
-    fontSize: 14,
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 17,
+    letterSpacing: 0.2,
   },
   bigSaveButton: {
     backgroundColor: '#e54242',
