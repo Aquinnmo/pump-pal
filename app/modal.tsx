@@ -7,10 +7,11 @@ import { useAuth } from '@/context/auth-context';
 import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
+import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
 import { predictNextWorkoutName } from '@/utils/predict-next-workout';
-import { buildPerformedExercise, collapseSetsToDraft, exerciseLabel, toDateObj } from '@/utils/workout-conversion';
+import { buildPerformedExercise, collapseSetsToDraft, recentExercisesForDay, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -230,31 +231,14 @@ export default function AddWorkoutModal() {
     );
   };
 
-  // Recently-used exercise labels for this workout name float to the top of the picker.
-  const recentLabels = useMemo(() => {
-    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
-    const seen = new Set<string>();
-    const sameName: string[] = [];
-    workoutHistory.forEach((w) => {
-      if (w.name !== effectiveWorkoutName) return;
-      (w.performedExercises ?? []).forEach((pe) => {
-        const label = exerciseLabel(pe);
-        if (!label || seen.has(label)) return;
-        seen.add(label);
-        sameName.push(label);
-      });
-    });
-    const other: string[] = [];
-    workoutHistory.forEach((w) => {
-      (w.performedExercises ?? []).forEach((pe) => {
-        const label = exerciseLabel(pe);
-        if (!label || seen.has(label)) return;
-        seen.add(label);
-        other.push(label);
-      });
-    });
-    return [...sameName, ...other];
-  }, [workoutHistory, workoutName, isCustomWorkoutName, customWorkoutName]);
+  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+
+  // Exercises performed for this same split-day (workout name) in the last 30 days
+  // float to the top of the picker, and seed a dedicated "recent" stage in the sheet.
+  const recentExercises = useMemo(
+    () => recentExercisesForDay(workoutHistory, effectiveWorkoutName),
+    [workoutHistory, effectiveWorkoutName]
+  );
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -568,28 +552,18 @@ export default function AddWorkoutModal() {
             )}
           </View>
 
-        <Text style={styles.sectionLabel}>Exercises</Text>
-
         {exercises.map((ex, i) => (
           <View key={i} style={styles.exerciseCard}>
-            <View style={styles.exerciseHeader}>
-              <Text style={styles.exerciseIndex}>Exercise {i + 1}</Text>
-              {exercises.length > 1 && (
-                <TouchableOpacity onPress={() => removeExercise(i)} hitSlop={8}>
-                  <Ionicons name="trash-outline" size={16} color="#666" />
-                </TouchableOpacity>
-              )}
-            </View>
             <ExercisePicker
               options={catalogOptions}
               value={ex.label || null}
-              recentLabels={recentLabels}
+              recentExercises={recentExercises}
               onSelect={(selection) => selectExercise(i, selection)}
+              onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
               placeholder="Select exercise"
               style={styles.exerciseNameDropdown}
             />
 
-            <Text style={styles.exerciseTypeLabel}>Type of Exercise</Text>
             <Dropdown
               options={EXERCISE_TYPES}
               value={ex.exerciseType}
@@ -677,17 +651,33 @@ export default function AddWorkoutModal() {
               <Text style={styles.addSetText}>Add Set</Text>
             </TouchableOpacity>
 
-            {ex.exerciseType === 'Sets of Reps' && (
-              <TouchableOpacity
-                style={styles.bodyweightRow}
-                onPress={() => toggleBodyweight(i)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-                  {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-                </View>
-                <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-              </TouchableOpacity>
+            {(ex.exerciseType === 'Sets of Reps' || exercises.length > 1) && (
+              <View style={styles.exerciseFooter}>
+                {ex.exerciseType === 'Sets of Reps' ? (
+                  <TouchableOpacity
+                    style={styles.bodyweightRow}
+                    onPress={() => toggleBodyweight(i)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
+                      {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                    <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <View style={styles.exerciseFooterSpacer} />
+                )}
+
+                {exercises.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.removeExerciseButton}
+                    onPress={() => removeExercise(i)}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
           </View>
         ))}
@@ -866,20 +856,13 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
   },
-  exerciseTypeLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 5,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
   exerciseTypeDropdown: {
     marginBottom: 12,
   },
   bodyweightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
+    flexShrink: 1,
   },
   bodyweightLabel: {
     color: '#888',
@@ -896,15 +879,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    marginTop: 4,
-  },
   exerciseCard: {
     backgroundColor: '#141414',
     borderRadius: 12,
@@ -913,18 +887,25 @@ const styles = StyleSheet.create({
     borderColor: '#222',
     marginBottom: 10,
   },
-  exerciseHeader: {
+  exerciseFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginTop: 10,
+    gap: 12,
   },
-  exerciseIndex: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  exerciseFooterSpacer: {
+    flex: 1,
+  },
+  removeExerciseButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#241414',
+    borderWidth: 1,
+    borderColor: '#3a1f1f',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
@@ -1013,17 +994,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 12,
+    backgroundColor: '#271515',
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#e54242',
     borderRadius: 10,
-    borderStyle: 'dashed',
     marginBottom: 16,
     gap: 6,
   },
   addExText: {
     color: '#e54242',
-    fontWeight: '600',
+    fontWeight: '700',
     fontSize: 14,
+    letterSpacing: 0.2,
   },
   bigSaveButton: {
     backgroundColor: '#e54242',

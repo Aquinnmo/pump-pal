@@ -55,8 +55,8 @@
     "semantic_hash": "0413bb8c88c55ce6993b39498aa9d895"
   },
   "app/(tabs)/index.tsx": {
-    "mtime": 1783478267.400776,
-    "ast_hash": "d5508328a47d0e72b5de7da45b5ee75b",
+    "mtime": 1783477961.8429117,
+    "ast_hash": "4fe28a67aa3b5008eca3de2276ca513e",
     "semantic_hash": ""
   },
   "app/(tabs)/pushup-challenge.tsx": {
@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   ".beads/export-state.json": {
-    "mtime": 1783478133.9476905,
-    "ast_hash": "1223c1b011da11547badb2a4bfbcd1be",
+    "mtime": 1783477939.2614894,
+    "ast_hash": "0c8dc30782f68d4ebb83373547a54346",
     "semantic_hash": ""
   },
   ".beads/hooks/post-checkout": {

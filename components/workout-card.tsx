@@ -1,5 +1,12 @@
 import { Workout } from '@/types/workout';
-import { exerciseLabel, summarizePerformedExercise, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
+import {
+  exerciseLabel,
+  summarizePerformedExercise,
+  summarizePerformedExerciseSetGroups,
+  toDateObj,
+  workoutTotalReps,
+  workoutVolume,
+} from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -138,9 +145,13 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
                   performedExercises.map((pe, i) => (
                     <View key={i} style={styles.modalExercise}>
                       <Text style={styles.modalExerciseName}>{exerciseLabel(pe)}</Text>
-                      <Text style={styles.modalExerciseDetail}>
-                        {summarizePerformedExercise(pe)}
-                      </Text>
+                      <View style={styles.modalExerciseDetails}>
+                        {summarizePerformedExerciseSetGroups(pe).map((setSummary, setIndex) => (
+                          <Text key={setIndex} style={styles.modalExerciseDetail}>
+                            {setSummary}
+                          </Text>
+                        ))}
+                      </View>
                     </View>
                   ))
                 ) : (
@@ -389,18 +400,30 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   modalExerciseName: {
     fontSize: 15,
     fontWeight: '600',
     color: '#fff',
     flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
+  },
+  modalExerciseDetails: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+    gap: 4,
+    minWidth: 120,
   },
   modalExerciseDetail: {
     fontSize: 13,
     color: '#e54242',
     fontWeight: '500',
+    lineHeight: 18,
+    textAlign: 'right',
   },
   modalEmpty: {
     fontSize: 14,

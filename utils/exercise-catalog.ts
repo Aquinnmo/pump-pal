@@ -35,7 +35,7 @@ export async function loadCatalog(): Promise<CatalogExercise[]> {
     const snap = await getDocs(collection(db, 'exercises'));
     const catalog = snap.docs
       .map((d) => ({ id: d.id, ...d.data() }) as CatalogExercise)
-      .filter((ex) => ex.schemaVersion === 2 && !!ex.name);
+      .filter((ex) => ex.schemaVersion === 2 && !!ex.name && ex.status !== 'pending_review');
 
     if (meta) await writeCache(catalog, meta.version);
     return catalog;

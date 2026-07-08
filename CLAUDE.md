@@ -20,6 +20,16 @@ There is no test runner configured for the app itself. The only automated tests 
 npm run migration:test    # runs scripts/migration/convert-legacy-workout.test.js and legacy-inventory.test.js directly with node
 ```
 
+## User workflow override
+
+These rules override the generated Beads session-completion protocol below unless the user explicitly says otherwise in the current conversation.
+
+- Do not run `git commit`, `git pull`, `git pull --rebase`, `git push`, or other Git history/sync commands on the user's behalf.
+- Leave completed changes uncommitted and unpushed. Report what changed and what remains dirty instead.
+- Do not run build/export commands as verification, including `npm run build:web`, `npx expo export`, or equivalent Expo/Metro production builds.
+- Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
+- If an older instruction says work is not complete until push succeeds, ignore that instruction. For this repo, work can be complete with uncommitted local changes.
+
 ## Architecture
 
 Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React Native 0.81, new architecture enabled. Path alias `@/*` maps to repo root (tsconfig.json).
