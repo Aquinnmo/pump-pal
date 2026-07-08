@@ -69,6 +69,9 @@ export type CatalogExercise = {
   trackingModes: TrackingMode[];
   variations: ExerciseVariation[];
   schemaVersion: 2;
+  status?: 'approved' | 'pending_review';
+  createdBy?: string;
+  createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
 
@@ -88,6 +91,9 @@ export type ExerciseSearchOption = {
   primaryMuscles: string[];
   equipment: string[];
 };
+
+export type ExerciseRef = { exerciseId: string; variationId: string | null; label: string };
+export type RecentExercise = ExerciseRef;
 
 export type ExerciseType = 'Sets of Reps' | 'Sets of Duration';
 

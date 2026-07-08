@@ -7,10 +7,11 @@ import { useAuth } from '@/context/auth-context';
 import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
+import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
 import { predictNextWorkoutName } from '@/utils/predict-next-workout';
-import { buildPerformedExercise, collapseSetsToDraft, exerciseLabel, toDateObj } from '@/utils/workout-conversion';
+import { buildPerformedExercise, collapseSetsToDraft, recentExercisesForDay, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -230,31 +231,15 @@ export default function AddWorkoutModal() {
     );
   };
 
-  // Recently-used exercise labels for this workout name float to the top of the picker.
-  const recentLabels = useMemo(() => {
-    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
-    const seen = new Set<string>();
-    const sameName: string[] = [];
-    workoutHistory.forEach((w) => {
-      if (w.name !== effectiveWorkoutName) return;
-      (w.performedExercises ?? []).forEach((pe) => {
-        const label = exerciseLabel(pe);
-        if (!label || seen.has(label)) return;
-        seen.add(label);
-        sameName.push(label);
-      });
-    });
-    const other: string[] = [];
-    workoutHistory.forEach((w) => {
-      (w.performedExercises ?? []).forEach((pe) => {
-        const label = exerciseLabel(pe);
-        if (!label || seen.has(label)) return;
-        seen.add(label);
-        other.push(label);
-      });
-    });
-    return [...sameName, ...other];
-  }, [workoutHistory, workoutName, isCustomWorkoutName, customWorkoutName]);
+  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
+
+  // Exercises performed for this same split-day (workout name) in the last 30 days
+  // float to the top of the picker, and seed a dedicated "recent" stage in the sheet.
+  const recentExercises = useMemo(
+    () => recentExercisesForDay(workoutHistory, effectiveWorkoutName),
+    [workoutHistory, effectiveWorkoutName]
+  );
+  const recentLabels = useMemo(() => recentExercises.map((r) => r.label), [recentExercises]);
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -584,7 +569,10 @@ export default function AddWorkoutModal() {
               options={catalogOptions}
               value={ex.label || null}
               recentLabels={recentLabels}
+              recentExercises={recentExercises}
+              workoutName={effectiveWorkoutName}
               onSelect={(selection) => selectExercise(i, selection)}
+              onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
               placeholder="Select exercise"
               style={styles.exerciseNameDropdown}
             />

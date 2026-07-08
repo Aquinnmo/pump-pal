@@ -1,4 +1,4 @@
-import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
+import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, RecentExercise, Workout } from '@/types/workout';
 
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
   return row.sets.map((draftSet, index) => {
@@ -137,4 +137,33 @@ export function toDateObj(date: Workout['date']): Date {
     return (date as { toDate: () => Date }).toDate();
   }
   return new Date((date as { seconds: number }).seconds * 1000);
+}
+
+export function recentExercisesForDay(
+  history: Workout[],
+  workoutName: string,
+  now = new Date(),
+  windowDays = 30
+): RecentExercise[] {
+  if (!workoutName) return [];
+
+  const cutoff = now.getTime() - windowDays * 86400000;
+  const seen = new Set<string>();
+  const result: RecentExercise[] = [];
+
+  for (const w of history) {
+    if (w.name !== workoutName) continue;
+    if (toDateObj(w.date).getTime() < cutoff) continue;
+
+    for (const pe of w.performedExercises) {
+      const key = `${pe.exerciseId}:${pe.variationId ?? 'root'}`;
+      if (seen.has(key)) continue;
+      const label = exerciseLabel(pe);
+      if (!label) continue;
+      seen.add(key);
+      result.push({ exerciseId: pe.exerciseId, variationId: pe.variationId, label });
+    }
+  }
+
+  return result;
 }

@@ -1,8 +1,9 @@
-import { ExerciseSearchOption } from '@/types/workout';
+import { ExerciseRef, ExerciseSearchOption } from '@/types/workout';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Modal,
@@ -27,17 +28,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 
-export type ExercisePickerSelection = {
-  exerciseId: string;
-  variationId: string | null;
-  label: string;
-};
+export type ExercisePickerSelection = ExerciseRef;
 
 interface ExercisePickerProps {
   options: ExerciseSearchOption[];
   value: string | null;
   recentLabels?: string[];
+  recentExercises?: ExerciseRef[];
+  workoutName?: string;
   onSelect: (selection: ExercisePickerSelection) => void;
+  onCreateNew?: (name: string) => Promise<ExercisePickerSelection | null>;
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
 }
@@ -46,12 +46,17 @@ export function ExercisePicker({
   options,
   value,
   recentLabels = [],
+  recentExercises = [],
+  workoutName,
   onSelect,
+  onCreateNew,
   placeholder = 'Select exercise',
   style,
 }: ExercisePickerProps) {
   const [visible, setVisible] = useState(false);
   const [query, setQuery] = useState('');
+  const [browseAll, setBrowseAll] = useState(false);
+  const [creating, setCreating] = useState(false);
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(1);
   const insets = useSafeAreaInsets();
@@ -59,12 +64,16 @@ export function ExercisePicker({
   const dismiss = useCallback(() => {
     setVisible(false);
     setQuery('');
+    setBrowseAll(false);
+    setCreating(false);
   }, []);
 
   const handleOpen = useCallback(() => {
     translateY.value = 0;
     overlayOpacity.value = 1;
     setQuery('');
+    setBrowseAll(false);
+    setCreating(false);
     setVisible(true);
   }, [translateY, overlayOpacity]);
 
@@ -111,18 +120,40 @@ export function ExercisePicker({
   const exactMatch = trimmedQuery.length > 0 &&
     ranked.some((o) => o.label.toLowerCase() === trimmedQuery.toLowerCase());
 
+  const showRecents = trimmedQuery === '' && !browseAll && recentExercises.length > 0;
+
   const selectOption = (option: ExerciseSearchOption) => {
     onSelect({ exerciseId: option.exerciseId, variationId: option.variationId, label: option.label });
     handleClose();
   };
 
-  const selectCustom = () => {
-    onSelect({
-      exerciseId: 'under-review',
-      variationId: `ur_${slugify(trimmedQuery)}`,
-      label: trimmedQuery,
-    });
+  const selectRecent = (item: ExerciseRef) => {
+    onSelect(item);
     handleClose();
+  };
+
+  const fallbackSentinel = (): ExercisePickerSelection => ({
+    exerciseId: 'under-review',
+    variationId: `ur_${slugify(trimmedQuery)}`,
+    label: trimmedQuery,
+  });
+
+  const handleCreate = async () => {
+    if (!onCreateNew) {
+      onSelect(fallbackSentinel());
+      handleClose();
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const created = await onCreateNew(trimmedQuery);
+      onSelect(created ?? fallbackSentinel());
+      handleClose();
+    } catch {
+      onSelect(fallbackSentinel());
+      handleClose();
+    }
   };
 
   return (
@@ -163,35 +194,74 @@ export function ExercisePicker({
                 </Animated.View>
               </GestureDetector>
 
-              <FlatList
-                style={styles.optionsList}
-                data={ranked}
-                keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
-                keyboardShouldPersistTaps="handled"
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
-                    onPress={() => selectOption(item)}>
-                    <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
-                      {item.label}
+              {showRecents ? (
+                <FlatList
+                  style={styles.optionsList}
+                  data={recentExercises}
+                  keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
+                  keyboardShouldPersistTaps="handled"
+                  ListHeaderComponent={
+                    <Text style={styles.sectionHeaderText}>
+                      {workoutName ? `RECENT FOR ${workoutName.toUpperCase()}` : 'RECENT'}
                     </Text>
-                    {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
-                  </TouchableOpacity>
-                )}
-                ListEmptyComponent={
-                  trimmedQuery.length === 0 ? (
-                    <Text style={styles.emptyText}>No exercises found.</Text>
-                  ) : null
-                }
-                ListFooterComponent={
-                  trimmedQuery.length > 0 && !exactMatch ? (
-                    <TouchableOpacity style={styles.customRow} onPress={selectCustom}>
-                      <Ionicons name="add-circle-outline" size={20} color="#e54242" />
-                      <Text style={styles.customRowText}>Use &quot;{trimmedQuery}&quot; as new exercise</Text>
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
+                      onPress={() => selectRecent(item)}>
+                      <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
+                        {item.label}
+                      </Text>
+                      {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
                     </TouchableOpacity>
-                  ) : null
-                }
-              />
+                  )}
+                  ListFooterComponent={
+                    <TouchableOpacity style={styles.customRow} onPress={() => setBrowseAll(true)}>
+                      <Ionicons name="search" size={18} color="#e54242" />
+                      <Text style={styles.customRowText}>Other / Search all exercises</Text>
+                    </TouchableOpacity>
+                  }
+                />
+              ) : (
+                <FlatList
+                  style={styles.optionsList}
+                  data={ranked}
+                  keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
+                  keyboardShouldPersistTaps="handled"
+                  ListHeaderComponent={
+                    recentExercises.length > 0 ? <Text style={styles.sectionHeaderText}>ALL EXERCISES</Text> : null
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
+                      onPress={() => selectOption(item)}>
+                      <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
+                        {item.label}
+                      </Text>
+                      {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={
+                    trimmedQuery.length === 0 ? (
+                      <Text style={styles.emptyText}>No exercises found.</Text>
+                    ) : null
+                  }
+                  ListFooterComponent={
+                    trimmedQuery.length > 0 && !exactMatch ? (
+                      <TouchableOpacity style={styles.customRow} onPress={handleCreate} disabled={creating}>
+                        {creating ? (
+                          <ActivityIndicator size="small" color="#e54242" />
+                        ) : (
+                          <Ionicons name="add-circle-outline" size={20} color="#e54242" />
+                        )}
+                        <Text style={styles.customRowText}>
+                          {creating ? 'Adding exercise…' : `Use "${trimmedQuery}" as new exercise`}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null
+                  }
+                />
+              )}
             </Animated.View>
           </Animated.View>
         </GestureHandlerRootView>
@@ -280,6 +350,14 @@ const styles = StyleSheet.create({
   optionsList: {
     paddingHorizontal: 10,
     paddingTop: 10,
+  },
+  sectionHeaderText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#666',
+    letterSpacing: 0.5,
+    paddingHorizontal: 14,
+    paddingBottom: 8,
   },
   optionRow: {
     flexDirection: 'row',
