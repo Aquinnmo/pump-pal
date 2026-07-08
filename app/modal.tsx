@@ -553,18 +553,15 @@ export default function AddWorkoutModal() {
             )}
           </View>
 
-        <Text style={styles.sectionLabel}>Exercises</Text>
-
         {exercises.map((ex, i) => (
           <View key={i} style={styles.exerciseCard}>
-            <View style={styles.exerciseHeader}>
-              <Text style={styles.exerciseIndex}>Exercise {i + 1}</Text>
-              {exercises.length > 1 && (
+            {exercises.length > 1 && (
+              <View style={styles.exerciseHeader}>
                 <TouchableOpacity onPress={() => removeExercise(i)} hitSlop={8}>
                   <Ionicons name="trash-outline" size={16} color="#666" />
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            )}
             <ExercisePicker
               options={catalogOptions}
               value={ex.label || null}
@@ -884,15 +881,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
   },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    marginTop: 4,
-  },
   exerciseCard: {
     backgroundColor: '#141414',
     borderRadius: 12,
@@ -903,16 +891,9 @@ const styles = StyleSheet.create({
   },
   exerciseHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  exerciseIndex: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#888',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   row: {
     flexDirection: 'row',
