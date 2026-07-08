@@ -11,6 +11,16 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
+## User workflow override
+
+These rules override the generated Beads session-completion protocol below unless the user explicitly says otherwise in the current conversation.
+
+- Do not run `git commit`, `git pull`, `git pull --rebase`, `git push`, or other Git history/sync commands on the user's behalf.
+- Leave completed changes uncommitted and unpushed. Report what changed and what remains dirty instead.
+- Do not run build/export commands as verification, including `npm run build:web`, `npx expo export`, or equivalent Expo/Metro production builds.
+- Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
+- If an older instruction says work is not complete until push succeeds, ignore that instruction. For this repo, work can be complete with uncommitted local changes.
+
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:7510c1e2 -->
 ## Beads Issue Tracker
 
