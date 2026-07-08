@@ -1,7 +1,16 @@
 import { ExerciseRef, ExerciseSearchOption } from '@/types/workout';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useMemo, useState } from 'react';
+import {
+  forwardRef,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -28,7 +37,171 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 
+// Snapshot 'window' once at module load (mirrors SCREEN_HEIGHT above) for the
+// dialog's fixed size. Android's soft keyboard fires a live resize event on
+// 'window' (adjustResize, the only mode Expo Go supports) that would squish
+// anything reactively sized off it, but this constant is read once before any
+// keyboard interaction and never re-read, so it stays fixed regardless.
+const SCREEN = Dimensions.get('window');
+
 export type ExercisePickerSelection = ExerciseRef;
+
+export type SheetHandle = {
+  // Plays the slide-down/fade-out animation, then calls onDone (defaults to the
+  // sheet's onDismiss prop) once the animation completes.
+  close: (onDone?: () => void) => void;
+};
+
+interface SheetProps {
+  visible: boolean;
+  title: string;
+  onDismiss: () => void;
+  headerExtra?: ReactNode;
+  children: ReactNode;
+  // 'sheet' (default): bottom sheet, slides up, drag-to-dismiss.
+  // 'dialog': small fixed-size card, centered on screen, fades in, no drag.
+  variant?: 'sheet' | 'dialog';
+}
+
+// Shared chrome (header with title + X, slide/fade animation, pan-to-dismiss
+// for the sheet variant) so the recents popup and the search popup can be two
+// independent <Modal>s without duplicating the animation/gesture wiring.
+const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
+  { visible, title, onDismiss, headerExtra, children, variant = 'sheet' },
+  ref
+) {
+  const translateY = useSharedValue(0);
+  const overlayOpacity = useSharedValue(1);
+  const scale = useSharedValue(1);
+  const insets = useSafeAreaInsets();
+  const isDialog = variant === 'dialog';
+
+  // Fixed pixel size off the module-load 'window' snapshot (stable across
+  // keyboard toggles, confirmed working at top:24/height:0.78). insets.bottom
+  // doesn't reliably reflect the real nav bar clearance on this device, so
+  // use a fixed pixel margin above it instead of insets math.
+  const dialogLayout = useMemo(() => {
+    const width = SCREEN.width * 0.94;
+    const top = 24;
+    const bottomMargin = 80;
+    const height = SCREEN.height - top - bottomMargin;
+    return {
+      width,
+      height,
+      top,
+      left: (SCREEN.width - width) / 2,
+    };
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      translateY.value = 0;
+      overlayOpacity.value = 1;
+      scale.value = 1;
+    }
+  }, [visible, translateY, overlayOpacity, scale]);
+
+  const close = useCallback(
+    (onDone?: () => void) => {
+      if (isDialog) {
+        scale.value = withTiming(0.9, { duration: 200 });
+        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+          runOnJS(onDone ?? onDismiss)();
+        });
+        return;
+      }
+      translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+      overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+        runOnJS(onDone ?? onDismiss)();
+      });
+    },
+    [isDialog, translateY, overlayOpacity, scale, onDismiss]
+  );
+
+  useImperativeHandle(ref, () => ({ close }), [close]);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (e.translationY > 0) {
+        translateY.value = e.translationY;
+        overlayOpacity.value = Math.max(0, 1 - e.translationY / (SCREEN_HEIGHT * 0.4));
+      }
+    })
+    .onEnd((e) => {
+      if (e.translationY > DISMISS_THRESHOLD) {
+        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+          runOnJS(onDismiss)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        overlayOpacity.value = withSpring(1);
+      }
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => {
+    if (isDialog) {
+      return {
+        opacity: overlayOpacity.value,
+        transform: [{ scale: scale.value }],
+      };
+    }
+    return { transform: [{ translateY: translateY.value }] };
+  });
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${0.6 * overlayOpacity.value})`,
+  }));
+
+  const header = (
+    <View style={styles.modalHeaderRow}>
+      <Text style={styles.modalTitle}>{title}</Text>
+      <TouchableOpacity onPress={() => close()} hitSlop={8}>
+        <Ionicons name="close" size={24} color="#888" />
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType={isDialog ? 'fade' : 'slide'}
+      onRequestClose={() => close()}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
+          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => close()} />
+          {isDialog ? (
+            <Animated.View style={[styles.dialogPosition, dialogLayout, cardAnimatedStyle]}>
+              <View style={styles.dialogContent}>
+                <View style={[styles.modalHeader, styles.dialogHeader]}>
+                  {header}
+                  {headerExtra}
+                </View>
+                <View style={styles.dialogBody}>{children}</View>
+              </View>
+            </Animated.View>
+          ) : (
+            <Animated.View style={[styles.modalContent, cardAnimatedStyle, { paddingBottom: Math.max(30, insets.bottom) }]}>
+              <View style={[styles.navBarFill, { height: insets.bottom }]} />
+              <GestureDetector gesture={panGesture}>
+                <Animated.View>
+                  <View style={styles.modalHeader}>
+                    <View style={styles.pill} />
+                    {header}
+                    {headerExtra}
+                  </View>
+                </Animated.View>
+              </GestureDetector>
+
+              {children}
+            </Animated.View>
+          )}
+        </Animated.View>
+      </GestureHandlerRootView>
+    </Modal>
+  );
+});
 
 interface ExercisePickerProps {
   options: ExerciseSearchOption[];
@@ -53,63 +226,27 @@ export function ExercisePicker({
   placeholder = 'Select exercise',
   style,
 }: ExercisePickerProps) {
-  const [visible, setVisible] = useState(false);
+  const [recentsVisible, setRecentsVisible] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
   const [query, setQuery] = useState('');
-  const [browseAll, setBrowseAll] = useState(false);
   const [creating, setCreating] = useState(false);
-  const translateY = useSharedValue(0);
-  const overlayOpacity = useSharedValue(1);
-  const insets = useSafeAreaInsets();
-
-  const dismiss = useCallback(() => {
-    setVisible(false);
-    setQuery('');
-    setBrowseAll(false);
-    setCreating(false);
-  }, []);
+  const recentsSheetRef = useRef<SheetHandle>(null);
+  const searchSheetRef = useRef<SheetHandle>(null);
 
   const handleOpen = useCallback(() => {
-    translateY.value = 0;
-    overlayOpacity.value = 1;
     setQuery('');
-    setBrowseAll(false);
     setCreating(false);
-    setVisible(true);
-  }, [translateY, overlayOpacity]);
+    if (recentExercises.length > 0) {
+      setRecentsVisible(true);
+    } else {
+      setSearchVisible(true);
+    }
+  }, [recentExercises.length]);
 
-  const handleClose = useCallback(() => {
-    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
-    overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
-      runOnJS(dismiss)();
-    });
-  }, [translateY, overlayOpacity, dismiss]);
-
-  const panGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      if (e.translationY > 0) {
-        translateY.value = e.translationY;
-        overlayOpacity.value = Math.max(0, 1 - e.translationY / (SCREEN_HEIGHT * 0.4));
-      }
-    })
-    .onEnd((e) => {
-      if (e.translationY > DISMISS_THRESHOLD) {
-        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
-        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
-          runOnJS(dismiss)();
-        });
-      } else {
-        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
-        overlayOpacity.value = withSpring(1);
-      }
-    });
-
-  const cardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0,0,0,${0.6 * overlayOpacity.value})`,
-  }));
+  const openSearch = useCallback(() => {
+    setQuery('');
+    setSearchVisible(true);
+  }, []);
 
   const ranked = useMemo(
     () => rankSearchOptions(options, query, recentLabels),
@@ -120,16 +257,21 @@ export function ExercisePicker({
   const exactMatch = trimmedQuery.length > 0 &&
     ranked.some((o) => o.label.toLowerCase() === trimmedQuery.toLowerCase());
 
-  const showRecents = trimmedQuery === '' && !browseAll && recentExercises.length > 0;
-
   const selectOption = (option: ExerciseSearchOption) => {
     onSelect({ exerciseId: option.exerciseId, variationId: option.variationId, label: option.label });
-    handleClose();
+    searchSheetRef.current?.close();
   };
 
   const selectRecent = (item: ExerciseRef) => {
     onSelect(item);
-    handleClose();
+    recentsSheetRef.current?.close();
+  };
+
+  const handleOther = () => {
+    recentsSheetRef.current?.close(() => {
+      setRecentsVisible(false);
+      openSearch();
+    });
   };
 
   const fallbackSentinel = (): ExercisePickerSelection => ({
@@ -141,7 +283,7 @@ export function ExercisePicker({
   const handleCreate = async () => {
     if (!onCreateNew) {
       onSelect(fallbackSentinel());
-      handleClose();
+      searchSheetRef.current?.close();
       return;
     }
 
@@ -149,10 +291,10 @@ export function ExercisePicker({
     try {
       const created = await onCreateNew(trimmedQuery);
       onSelect(created ?? fallbackSentinel());
-      handleClose();
+      searchSheetRef.current?.close();
     } catch {
       onSelect(fallbackSentinel());
-      handleClose();
+      searchSheetRef.current?.close();
     }
   };
 
@@ -165,107 +307,93 @@ export function ExercisePicker({
         <Ionicons name="chevron-down" size={18} color="#888" />
       </TouchableOpacity>
 
-      <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
-            <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={handleClose} />
-            <Animated.View style={[styles.modalContent, cardAnimatedStyle, { paddingBottom: Math.max(30, insets.bottom) }]}>
-              <View style={[styles.navBarFill, { height: insets.bottom }]} />
-              <GestureDetector gesture={panGesture}>
-                <Animated.View>
-                  <View style={styles.modalHeader}>
-                    <View style={styles.pill} />
-                    <View style={styles.modalHeaderRow}>
-                      <Text style={styles.modalTitle}>{placeholder}</Text>
-                      <TouchableOpacity onPress={handleClose} hitSlop={8}>
-                        <Ionicons name="close" size={24} color="#888" />
-                      </TouchableOpacity>
-                    </View>
-                    <TextInput
-                      style={styles.searchInput}
-                      placeholder="Search exercises"
-                      placeholderTextColor="#666"
-                      value={query}
-                      onChangeText={setQuery}
-                      autoFocus
-                      autoCorrect={false}
-                    />
-                  </View>
-                </Animated.View>
-              </GestureDetector>
+      <Sheet
+        ref={recentsSheetRef}
+        visible={recentsVisible}
+        title={placeholder}
+        onDismiss={() => setRecentsVisible(false)}>
+        <FlatList
+          style={styles.optionsList}
+          data={recentExercises}
+          keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={
+            <Text style={styles.sectionHeaderText}>
+              {workoutName ? `RECENT FOR ${workoutName.toUpperCase()}` : 'RECENT'}
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
+              onPress={() => selectRecent(item)}>
+              <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
+                {item.label}
+              </Text>
+              {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
+            </TouchableOpacity>
+          )}
+          ListFooterComponent={
+            <TouchableOpacity style={styles.customRow} onPress={handleOther}>
+              <Ionicons name="search" size={18} color="#e54242" />
+              <Text style={styles.customRowText}>Other / Search all exercises</Text>
+            </TouchableOpacity>
+          }
+        />
+      </Sheet>
 
-              {showRecents ? (
-                <FlatList
-                  style={styles.optionsList}
-                  data={recentExercises}
-                  keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
-                  keyboardShouldPersistTaps="handled"
-                  ListHeaderComponent={
-                    <Text style={styles.sectionHeaderText}>
-                      {workoutName ? `RECENT FOR ${workoutName.toUpperCase()}` : 'RECENT'}
-                    </Text>
-                  }
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
-                      onPress={() => selectRecent(item)}>
-                      <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
-                        {item.label}
-                      </Text>
-                      {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
-                    </TouchableOpacity>
-                  )}
-                  ListFooterComponent={
-                    <TouchableOpacity style={styles.customRow} onPress={() => setBrowseAll(true)}>
-                      <Ionicons name="search" size={18} color="#e54242" />
-                      <Text style={styles.customRowText}>Other / Search all exercises</Text>
-                    </TouchableOpacity>
-                  }
-                />
-              ) : (
-                <FlatList
-                  style={styles.optionsList}
-                  data={ranked}
-                  keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
-                  keyboardShouldPersistTaps="handled"
-                  ListHeaderComponent={
-                    recentExercises.length > 0 ? <Text style={styles.sectionHeaderText}>ALL EXERCISES</Text> : null
-                  }
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
-                      onPress={() => selectOption(item)}>
-                      <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
-                        {item.label}
-                      </Text>
-                      {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
-                    </TouchableOpacity>
-                  )}
-                  ListEmptyComponent={
-                    trimmedQuery.length === 0 ? (
-                      <Text style={styles.emptyText}>No exercises found.</Text>
-                    ) : null
-                  }
-                  ListFooterComponent={
-                    trimmedQuery.length > 0 && !exactMatch ? (
-                      <TouchableOpacity style={styles.customRow} onPress={handleCreate} disabled={creating}>
-                        {creating ? (
-                          <ActivityIndicator size="small" color="#e54242" />
-                        ) : (
-                          <Ionicons name="add-circle-outline" size={20} color="#e54242" />
-                        )}
-                        <Text style={styles.customRowText}>
-                          {creating ? 'Adding exercise…' : `Use "${trimmedQuery}" as new exercise`}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null
-                  }
-                />
-              )}
-            </Animated.View>
-          </Animated.View>
-        </GestureHandlerRootView>
-      </Modal>
+      <Sheet
+        ref={searchSheetRef}
+        visible={searchVisible}
+        title={placeholder}
+        variant="dialog"
+        onDismiss={() => { setSearchVisible(false); setQuery(''); setCreating(false); }}
+        headerExtra={
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search exercises"
+            placeholderTextColor="#666"
+            value={query}
+            onChangeText={setQuery}
+            autoFocus
+            autoCorrect={false}
+          />
+        }>
+        <FlatList
+          style={styles.optionsList}
+          data={ranked}
+          keyExtractor={(item) => `${item.exerciseId}:${item.variationId ?? 'root'}`}
+          keyboardShouldPersistTaps="handled"
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.optionRow, value === item.label && styles.optionRowSelected]}
+              onPress={() => selectOption(item)}>
+              <Text style={[styles.optionText, value === item.label && styles.optionTextSelected]}>
+                {item.label}
+              </Text>
+              {value === item.label && <Ionicons name="checkmark" size={20} color="#e54242" />}
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            trimmedQuery.length === 0 ? (
+              <Text style={styles.emptyText}>No exercises found.</Text>
+            ) : null
+          }
+          ListFooterComponent={
+            trimmedQuery.length > 0 && !exactMatch ? (
+              <TouchableOpacity style={styles.customRow} onPress={handleCreate} disabled={creating}>
+                {creating ? (
+                  <ActivityIndicator size="small" color="#e54242" />
+                ) : (
+                  <Ionicons name="add-circle-outline" size={20} color="#e54242" />
+                )}
+                <Text style={styles.customRowText}>
+                  {creating ? 'Adding exercise…' : `Use "${trimmedQuery}" as new exercise`}
+                </Text>
+              </TouchableOpacity>
+            ) : null
+          }
+        />
+      </Sheet>
     </>
   );
 }
@@ -295,6 +423,26 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+  },
+  dialogPosition: {
+    // Bare position/size wrapper — kept separate from the rounded/clipped
+    // inner view below because animating opacity/scale on the same view that
+    // also has borderRadius + overflow:hidden is a known Android artifact
+    // source. Width/height/top/left are supplied per-instance (dialogLayout).
+    position: 'absolute',
+  },
+  dialogContent: {
+    flex: 1,
+    backgroundColor: '#1c1c1c',
+    borderRadius: 24,
+    overflow: 'hidden',
+    paddingBottom: 16,
+  },
+  dialogHeader: {
+    paddingTop: 20,
+  },
+  dialogBody: {
+    flex: 1,
   },
   navBarFill: {
     position: 'absolute',
