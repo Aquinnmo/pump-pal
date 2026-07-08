@@ -1,52 +1,148 @@
 {
   "directed": false,
   "multigraph": false,
-  "graph": {
-    "hyperedges": [
-      {
-        "id": "auth_redirect_gating_flow",
-        "label": "Auth/onboarding redirect gating in app/_layout.tsx",
-        "nodes": [
-          "claude_md_app_layout",
-          "claude_md_authprovider",
-          "claude_md_split_options",
-          "claude_md_asyncstorage_onboarding"
-        ],
-        "relation": "participate_in",
-        "confidence": "EXTRACTED",
-        "confidence_score": 1.0,
-        "source_file": "CLAUDE.md"
-      },
-      {
-        "id": "canonical_firestore_schema",
-        "label": "Canonical Firestore workout/exercise schema",
-        "nodes": [
-          "docs_firestore_data_refactor_workout",
-          "docs_firestore_data_refactor_performedexercise",
-          "docs_firestore_data_refactor_performedset",
-          "docs_firestore_data_refactor_exercise"
-        ],
-        "relation": "form",
-        "confidence": "EXTRACTED",
-        "confidence_score": 1.0,
-        "source_file": "docs/firestore-data-refactor.md"
-      },
-      {
-        "id": "gemini_ai_features_consuming_workout_data",
-        "label": "Gemini AI features consuming canonical workout shape",
-        "nodes": [
-          "claude_md_gemini_muscle_analysis",
-          "claude_md_gemini_workout_suggestions",
-          "claude_md_workout_types"
-        ],
-        "relation": "participate_in",
-        "confidence": "EXTRACTED",
-        "confidence_score": 1.0,
-        "source_file": "CLAUDE.md"
-      }
-    ]
-  },
+  "graph": {},
   "nodes": [
+    {
+      "label": "post-checkout",
+      "file_type": "code",
+      "source_file": ".beads/hooks/post-checkout",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_post_checkout",
+      "community": 43,
+      "norm_label": "post-checkout"
+    },
+    {
+      "label": "post-checkout script",
+      "file_type": "code",
+      "source_file": ".beads/hooks/post-checkout",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_post_checkout__entry",
+      "community": 43,
+      "norm_label": "post-checkout script"
+    },
+    {
+      "label": "post-merge",
+      "file_type": "code",
+      "source_file": ".beads/hooks/post-merge",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_post_merge",
+      "community": 44,
+      "norm_label": "post-merge"
+    },
+    {
+      "label": "post-merge script",
+      "file_type": "code",
+      "source_file": ".beads/hooks/post-merge",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_post_merge__entry",
+      "community": 44,
+      "norm_label": "post-merge script"
+    },
+    {
+      "label": "pre-commit",
+      "file_type": "code",
+      "source_file": ".beads/hooks/pre-commit",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_pre_commit",
+      "community": 45,
+      "norm_label": "pre-commit"
+    },
+    {
+      "label": "pre-commit script",
+      "file_type": "code",
+      "source_file": ".beads/hooks/pre-commit",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_pre_commit__entry",
+      "community": 45,
+      "norm_label": "pre-commit script"
+    },
+    {
+      "label": "pre-push",
+      "file_type": "code",
+      "source_file": ".beads/hooks/pre-push",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_pre_push",
+      "community": 46,
+      "norm_label": "pre-push"
+    },
+    {
+      "label": "pre-push script",
+      "file_type": "code",
+      "source_file": ".beads/hooks/pre-push",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_pre_push__entry",
+      "community": 46,
+      "norm_label": "pre-push script"
+    },
+    {
+      "label": "prepare-commit-msg",
+      "file_type": "code",
+      "source_file": ".beads/hooks/prepare-commit-msg",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_prepare_commit_msg",
+      "community": 47,
+      "norm_label": "prepare-commit-msg"
+    },
+    {
+      "label": "prepare-commit-msg script",
+      "file_type": "code",
+      "source_file": ".beads/hooks/prepare-commit-msg",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "id": "beads_hooks_prepare_commit_msg__entry",
+      "community": 47,
+      "norm_label": "prepare-commit-msg script"
+    },
     {
       "label": "app.json",
       "file_type": "code",
@@ -514,7 +610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_sign_in",
-      "community": 1,
+      "community": 40,
       "norm_label": "sign-in.tsx"
     },
     {
@@ -524,7 +620,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "app_auth_sign_in_signinscreen",
-      "community": 1,
+      "community": 40,
       "norm_label": "signinscreen()"
     },
     {
@@ -534,7 +630,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "app_auth_sign_in_styles",
-      "community": 1,
+      "community": 40,
       "norm_label": "styles"
     },
     {
@@ -544,7 +640,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_sign_up",
-      "community": 1,
+      "community": 40,
       "norm_label": "sign-up.tsx"
     },
     {
@@ -554,7 +650,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "app_auth_sign_up_signupscreen",
-      "community": 1,
+      "community": 40,
       "norm_label": "signupscreen()"
     },
     {
@@ -564,7 +660,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "app_auth_sign_up_styles",
-      "community": 1,
+      "community": 40,
       "norm_label": "styles"
     },
     {
@@ -681,7 +777,7 @@
       "label": "HomeScreen()",
       "file_type": "code",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L25",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "app_tabs_index_homescreen",
       "community": 0,
@@ -691,7 +787,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L209",
+      "source_location": "L170",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
       "community": 0,
@@ -894,7 +990,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_tabs_workouts_workoutsscreen",
-      "community": 1,
+      "community": 0,
       "norm_label": "workoutsscreen()"
     },
     {
@@ -961,7 +1057,7 @@
       "label": "AddWorkoutModal()",
       "file_type": "code",
       "source_file": "app/modal.tsx",
-      "source_location": "L33",
+      "source_location": "L35",
       "_origin": "ast",
       "id": "app_modal_addworkoutmodal",
       "community": 0,
@@ -971,7 +1067,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "app/modal.tsx",
-      "source_location": "L784",
+      "source_location": "L765",
       "_origin": "ast",
       "id": "app_modal_styles",
       "community": 0,
@@ -1374,7 +1470,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdown",
-      "community": 0,
+      "community": 1,
       "norm_label": "dropdown()"
     },
     {
@@ -1398,20 +1494,60 @@
       "norm_label": "exercise-picker.tsx"
     },
     {
+      "label": "SCREEN",
+      "file_type": "code",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "components_ui_exercise_picker_screen",
+      "community": 0,
+      "norm_label": "screen"
+    },
+    {
       "label": "ExercisePickerSelection",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L30",
+      "source_location": "L47",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerselection",
       "community": 0,
       "norm_label": "exercisepickerselection"
     },
     {
+      "label": "SheetHandle",
+      "file_type": "code",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L49",
+      "_origin": "ast",
+      "id": "components_ui_exercise_picker_sheethandle",
+      "community": 0,
+      "norm_label": "sheethandle"
+    },
+    {
+      "label": "SheetProps",
+      "file_type": "code",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L55",
+      "_origin": "ast",
+      "id": "components_ui_exercise_picker_sheetprops",
+      "community": 0,
+      "norm_label": "sheetprops"
+    },
+    {
+      "label": "Sheet",
+      "file_type": "code",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L69",
+      "_origin": "ast",
+      "id": "components_ui_exercise_picker_sheet",
+      "community": 0,
+      "norm_label": "sheet"
+    },
+    {
       "label": "ExercisePickerProps",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L36",
+      "source_location": "L206",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerprops",
       "community": 0,
@@ -1421,7 +1557,7 @@
       "label": "ExercisePicker()",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L45",
+      "source_location": "L218",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepicker",
       "community": 0,
@@ -1431,7 +1567,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L203",
+      "source_location": "L401",
       "_origin": "ast",
       "id": "components_ui_exercise_picker_styles",
       "community": 0,
@@ -1784,7 +1920,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "context_auth_context_useauth",
-      "community": 1,
+      "community": 0,
       "norm_label": "useauth()"
     },
     {
@@ -1894,7 +2030,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "package",
-      "community": 8,
+      "community": 4,
       "norm_label": "package.json"
     },
     {
@@ -1904,7 +2040,7 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "package_name",
-      "community": 8,
+      "community": 4,
       "norm_label": "name"
     },
     {
@@ -1914,7 +2050,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "package_main",
-      "community": 8,
+      "community": 4,
       "norm_label": "main"
     },
     {
@@ -1924,7 +2060,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "package_version",
-      "community": 8,
+      "community": 4,
       "norm_label": "version"
     },
     {
@@ -2494,7 +2630,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "package_devdependencies",
-      "community": 8,
+      "community": 4,
       "norm_label": "devdependencies"
     },
     {
@@ -2504,7 +2640,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "package_devdependencies_types_react",
-      "community": 8,
+      "community": 4,
       "norm_label": "@types/react"
     },
     {
@@ -2514,7 +2650,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "package_devdependencies_eslint",
-      "community": 8,
+      "community": 4,
       "norm_label": "eslint"
     },
     {
@@ -2524,7 +2660,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_config_expo",
-      "community": 8,
+      "community": 4,
       "norm_label": "eslint-config-expo"
     },
     {
@@ -2534,7 +2670,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "package_devdependencies_typescript",
-      "community": 8,
+      "community": 4,
       "norm_label": "typescript"
     },
     {
@@ -2544,7 +2680,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "package_private",
-      "community": 8,
+      "community": 4,
       "norm_label": "private"
     },
     {
@@ -3224,7 +3360,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_variation",
-      "community": 1,
+      "community": 14,
       "norm_label": "variation()"
     },
     {
@@ -4821,7 +4957,7 @@
       "label": "ExerciseCatalogMeta",
       "file_type": "code",
       "source_file": "types/workout.ts",
-      "source_location": "L75",
+      "source_location": "L78",
       "_origin": "ast",
       "id": "types_workout_exercisecatalogmeta",
       "community": 0,
@@ -4831,17 +4967,37 @@
       "label": "ExerciseSearchOption",
       "file_type": "code",
       "source_file": "types/workout.ts",
-      "source_location": "L82",
+      "source_location": "L85",
       "_origin": "ast",
       "id": "types_workout_exercisesearchoption",
       "community": 0,
       "norm_label": "exercisesearchoption"
     },
     {
+      "label": "ExerciseRef",
+      "file_type": "code",
+      "source_file": "types/workout.ts",
+      "source_location": "L95",
+      "_origin": "ast",
+      "id": "types_workout_exerciseref",
+      "community": 0,
+      "norm_label": "exerciseref"
+    },
+    {
+      "label": "RecentExercise",
+      "file_type": "code",
+      "source_file": "types/workout.ts",
+      "source_location": "L96",
+      "_origin": "ast",
+      "id": "types_workout_recentexercise",
+      "community": 0,
+      "norm_label": "recentexercise"
+    },
+    {
       "label": "ExerciseType",
       "file_type": "code",
       "source_file": "types/workout.ts",
-      "source_location": "L92",
+      "source_location": "L98",
       "_origin": "ast",
       "id": "types_workout_exercisetype",
       "community": 0,
@@ -4851,7 +5007,7 @@
       "label": "DraftSet",
       "file_type": "code",
       "source_file": "types/workout.ts",
-      "source_location": "L94",
+      "source_location": "L100",
       "_origin": "ast",
       "id": "types_workout_draftset",
       "community": 0,
@@ -4861,7 +5017,7 @@
       "label": "DraftExerciseRow",
       "file_type": "code",
       "source_file": "types/workout.ts",
-      "source_location": "L105",
+      "source_location": "L111",
       "_origin": "ast",
       "id": "types_workout_draftexerciserow",
       "community": 0,
@@ -4886,6 +5042,36 @@
       "id": "utils_alert_showalert",
       "community": 1,
       "norm_label": "showalert()"
+    },
+    {
+      "label": "create-pending-exercise.ts",
+      "file_type": "code",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "utils_create_pending_exercise",
+      "community": 0,
+      "norm_label": "create-pending-exercise.ts"
+    },
+    {
+      "label": "reserveExerciseId()",
+      "file_type": "code",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L8",
+      "_origin": "ast",
+      "id": "utils_create_pending_exercise_reserveexerciseid",
+      "community": 0,
+      "norm_label": "reserveexerciseid()"
+    },
+    {
+      "label": "createPendingExercise()",
+      "file_type": "code",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L17",
+      "_origin": "ast",
+      "id": "utils_create_pending_exercise_creatependingexercise",
+      "community": 0,
+      "norm_label": "creatependingexercise()"
     },
     {
       "label": "daily-name.ts",
@@ -5014,7 +5200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_firebase_errors",
-      "community": 1,
+      "community": 40,
       "norm_label": "firebase-errors.ts"
     },
     {
@@ -5024,7 +5210,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_firebase_errors_firebase_error_map",
-      "community": 1,
+      "community": 40,
       "norm_label": "firebase_error_map"
     },
     {
@@ -5034,7 +5220,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "utils_firebase_errors_getfriendlyautherror",
-      "community": 1,
+      "community": 40,
       "norm_label": "getfriendlyautherror()"
     },
     {
@@ -5106,6 +5292,26 @@
       "id": "utils_gemini_workout_suggestions_suggestworkoutcompletion",
       "community": 0,
       "norm_label": "suggestworkoutcompletion()"
+    },
+    {
+      "label": "predict-next-workout.ts",
+      "file_type": "code",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "utils_predict_next_workout",
+      "community": 0,
+      "norm_label": "predict-next-workout.ts"
+    },
+    {
+      "label": "predictNextWorkoutName()",
+      "file_type": "code",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L7",
+      "_origin": "ast",
+      "id": "utils_predict_next_workout_predictnextworkoutname",
+      "community": 0,
+      "norm_label": "predictnextworkoutname()"
     },
     {
       "label": "workout-conversion.ts",
@@ -5218,6 +5424,16 @@
       "norm_label": "todateobj()"
     },
     {
+      "label": "recentExercisesForDay()",
+      "file_type": "code",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L142",
+      "_origin": "ast",
+      "id": "utils_workout_conversion_recentexercisesforday",
+      "community": 0,
+      "norm_label": "recentexercisesforday()"
+    },
+    {
       "label": "vercel.json",
       "file_type": "code",
       "source_file": "vercel.json",
@@ -5268,6 +5484,536 @@
       "norm_label": "rewrites"
     },
     {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "beads_readme",
+      "community": 41,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "Beads - AI-Native Issue Tracking",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "beads_readme_beads_ai_native_issue_tracking",
+      "community": 41,
+      "norm_label": "beads - ai-native issue tracking"
+    },
+    {
+      "label": "What is Beads?",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "beads_readme_what_is_beads",
+      "community": 41,
+      "norm_label": "what is beads?"
+    },
+    {
+      "label": "Quick Start",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "beads_readme_quick_start",
+      "community": 41,
+      "norm_label": "quick start"
+    },
+    {
+      "label": "Essential Commands",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L13",
+      "_origin": "ast",
+      "id": "beads_readme_essential_commands",
+      "community": 41,
+      "norm_label": "essential commands"
+    },
+    {
+      "label": "Working with Issues",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L33",
+      "_origin": "ast",
+      "id": "beads_readme_working_with_issues",
+      "community": 41,
+      "norm_label": "working with issues"
+    },
+    {
+      "label": "Why Beads?",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "beads_readme_why_beads",
+      "community": 41,
+      "norm_label": "why beads?"
+    },
+    {
+      "label": "Get Started with Beads",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L58",
+      "_origin": "ast",
+      "id": "beads_readme_get_started_with_beads",
+      "community": 41,
+      "norm_label": "get started with beads"
+    },
+    {
+      "label": "Learn More",
+      "file_type": "document",
+      "source_file": ".beads/README.md",
+      "source_location": "L73",
+      "_origin": "ast",
+      "id": "beads_readme_learn_more",
+      "community": 41,
+      "norm_label": "learn more"
+    },
+    {
+      "label": "AGENTS.md",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "agents",
+      "community": 42,
+      "norm_label": "agents.md"
+    },
+    {
+      "label": "graphify",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "agents_graphify",
+      "community": 42,
+      "norm_label": "graphify"
+    },
+    {
+      "label": "Beads Issue Tracker",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L15",
+      "_origin": "ast",
+      "id": "agents_beads_issue_tracker",
+      "community": 42,
+      "norm_label": "beads issue tracker"
+    },
+    {
+      "label": "Quick Reference",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L19",
+      "_origin": "ast",
+      "id": "agents_quick_reference",
+      "community": 42,
+      "norm_label": "quick reference"
+    },
+    {
+      "label": "Rules",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L28",
+      "_origin": "ast",
+      "id": "agents_rules",
+      "community": 42,
+      "norm_label": "rules"
+    },
+    {
+      "label": "Session Completion",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L36",
+      "_origin": "ast",
+      "id": "agents_session_completion",
+      "community": 42,
+      "norm_label": "session completion"
+    },
+    {
+      "label": "CLAUDE.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude",
+      "community": 9,
+      "norm_label": "claude.md"
+    },
+    {
+      "label": "CLAUDE.md",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "claude_claude_md",
+      "community": 9,
+      "norm_label": "claude.md"
+    },
+    {
+      "label": "Commands",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "claude_commands",
+      "community": 9,
+      "norm_label": "commands"
+    },
+    {
+      "label": "Architecture",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "claude_architecture",
+      "community": 9,
+      "norm_label": "architecture"
+    },
+    {
+      "label": "Navigation / auth gating",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "claude_navigation_auth_gating",
+      "community": 9,
+      "norm_label": "navigation / auth gating"
+    },
+    {
+      "label": "Firebase",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L35",
+      "_origin": "ast",
+      "id": "claude_firebase",
+      "community": 9,
+      "norm_label": "firebase"
+    },
+    {
+      "label": "Migration scripts (`scripts/migration/`, `migration/`)",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L41",
+      "_origin": "ast",
+      "id": "claude_migration_scripts_scripts_migration_migration",
+      "community": 9,
+      "norm_label": "migration scripts (`scripts/migration/`, `migration/`)"
+    },
+    {
+      "label": "AI features",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "claude_ai_features",
+      "community": 9,
+      "norm_label": "ai features"
+    },
+    {
+      "label": "Theming",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L49",
+      "_origin": "ast",
+      "id": "claude_theming",
+      "community": 9,
+      "norm_label": "theming"
+    },
+    {
+      "label": "graphify",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L53",
+      "_origin": "ast",
+      "id": "claude_graphify",
+      "community": 9,
+      "norm_label": "graphify"
+    },
+    {
+      "label": "Beads Issue Tracker",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L65",
+      "_origin": "ast",
+      "id": "claude_beads_issue_tracker",
+      "community": 9,
+      "norm_label": "beads issue tracker"
+    },
+    {
+      "label": "Quick Reference",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L69",
+      "_origin": "ast",
+      "id": "claude_quick_reference",
+      "community": 9,
+      "norm_label": "quick reference"
+    },
+    {
+      "label": "Rules",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L78",
+      "_origin": "ast",
+      "id": "claude_rules",
+      "community": 9,
+      "norm_label": "rules"
+    },
+    {
+      "label": "Session Completion",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L86",
+      "_origin": "ast",
+      "id": "claude_session_completion",
+      "community": 9,
+      "norm_label": "session completion"
+    },
+    {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "readme",
+      "community": 9,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "Pump Pal",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "readme_pump_pal",
+      "community": 9,
+      "norm_label": "pump pal"
+    },
+    {
+      "label": "Setup",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L5",
+      "_origin": "ast",
+      "id": "readme_setup",
+      "community": 9,
+      "norm_label": "setup"
+    },
+    {
+      "label": "Other commands",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L23",
+      "_origin": "ast",
+      "id": "readme_other_commands",
+      "community": 9,
+      "norm_label": "other commands"
+    },
+    {
+      "label": "Architecture",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "readme_architecture",
+      "community": 9,
+      "norm_label": "architecture"
+    },
+    {
+      "label": "firestore-data-refactor.md",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor",
+      "community": 9,
+      "norm_label": "firestore-data-refactor.md"
+    },
+    {
+      "label": "Pump Pal Firestore Data Refactor",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "community": 9,
+      "norm_label": "pump pal firestore data refactor"
+    },
+    {
+      "label": "Current Status",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_current_status",
+      "community": 9,
+      "norm_label": "current status"
+    },
+    {
+      "label": "Refactor Goal",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L18",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_refactor_goal",
+      "community": 9,
+      "norm_label": "refactor goal"
+    },
+    {
+      "label": "Canonical Collections",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L29",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_canonical_collections",
+      "community": 9,
+      "norm_label": "canonical collections"
+    },
+    {
+      "label": "`exercises/{exerciseId}`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_exercises_exerciseid",
+      "community": 9,
+      "norm_label": "`exercises/{exerciseid}`"
+    },
+    {
+      "label": "`ExerciseVariation`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L73",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_exercisevariation",
+      "community": 9,
+      "norm_label": "`exercisevariation`"
+    },
+    {
+      "label": "`exerciseCatalogMeta/current`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L117",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_exercisecatalogmeta_current",
+      "community": 9,
+      "norm_label": "`exercisecatalogmeta/current`"
+    },
+    {
+      "label": "`workouts/{workoutId}`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L137",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_workouts_workoutid",
+      "community": 9,
+      "norm_label": "`workouts/{workoutid}`"
+    },
+    {
+      "label": "`MigrationSource`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L163",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_migrationsource",
+      "community": 9,
+      "norm_label": "`migrationsource`"
+    },
+    {
+      "label": "`PerformedExercise`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L175",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_performedexercise",
+      "community": 9,
+      "norm_label": "`performedexercise`"
+    },
+    {
+      "label": "`PerformedSet`",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L193",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_performedset",
+      "community": 9,
+      "norm_label": "`performedset`"
+    },
+    {
+      "label": "Migration Rules Used",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L210",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_migration_rules_used",
+      "community": 9,
+      "norm_label": "migration rules used"
+    },
+    {
+      "label": "Exercise Picker UX",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L251",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_exercise_picker_ux",
+      "community": 9,
+      "norm_label": "exercise picker ux"
+    },
+    {
+      "label": "Search Ranking",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L291",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_search_ranking",
+      "community": 9,
+      "norm_label": "search ranking"
+    },
+    {
+      "label": "Legacy Data Still Present",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L304",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_legacy_data_still_present",
+      "community": 9,
+      "norm_label": "legacy data still present"
+    },
+    {
+      "label": "Completed Work",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L337",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_completed_work",
+      "community": 9,
+      "norm_label": "completed work"
+    },
+    {
+      "label": "Remaining Work",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L357",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_remaining_work",
+      "community": 9,
+      "norm_label": "remaining work"
+    },
+    {
+      "label": "Verification Checklist",
+      "file_type": "document",
+      "source_file": "docs/firestore-data-refactor.md",
+      "source_location": "L368",
+      "_origin": "ast",
+      "id": "docs_firestore_data_refactor_verification_checklist",
+      "community": 9,
+      "norm_label": "verification checklist"
+    },
+    {
       "label": "CLAUDE.md",
       "file_type": "document",
       "source_file": "CLAUDE.md",
@@ -5276,9 +6022,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md",
       "community": 18,
-      "norm_label": "claude.md"
+      "norm_label": "claude.md",
+      "id": "claude_md"
     },
     {
       "label": "Expo Router (file-based routing)",
@@ -5289,9 +6035,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_expo_router",
-      "community": 18,
-      "norm_label": "expo router (file-based routing)"
+      "community": 51,
+      "norm_label": "expo router (file-based routing)",
+      "id": "claude_md_expo_router"
     },
     {
       "label": "app/_layout.tsx",
@@ -5302,9 +6048,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_app_layout",
       "community": 22,
-      "norm_label": "app/_layout.tsx"
+      "norm_label": "app/_layout.tsx",
+      "id": "claude_md_app_layout"
     },
     {
       "label": "AuthProvider (context/auth-context.tsx)",
@@ -5315,9 +6061,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_authprovider",
-      "community": 22,
-      "norm_label": "authprovider (context/auth-context.tsx)"
+      "community": 49,
+      "norm_label": "authprovider (context/auth-context.tsx)",
+      "id": "claude_md_authprovider"
     },
     {
       "label": "AsyncStorage pumppal_onboarding_seen key",
@@ -5328,9 +6074,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_asyncstorage_onboarding",
-      "community": 22,
-      "norm_label": "asyncstorage pumppal_onboarding_seen key"
+      "community": 48,
+      "norm_label": "asyncstorage pumppal_onboarding_seen key",
+      "id": "claude_md_asyncstorage_onboarding"
     },
     {
       "label": "constants/split-options.ts",
@@ -5341,9 +6087,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_split_options",
-      "community": 22,
-      "norm_label": "constants/split-options.ts"
+      "community": 57,
+      "norm_label": "constants/split-options.ts",
+      "id": "claude_md_split_options"
     },
     {
       "label": "config/firebase.ts",
@@ -5354,9 +6100,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_firebase_config",
       "community": 37,
-      "norm_label": "config/firebase.ts"
+      "norm_label": "config/firebase.ts",
+      "id": "claude_md_firebase_config"
     },
     {
       "label": "workouts/{workoutId} collection",
@@ -5367,9 +6113,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_workouts_collection",
-      "community": 9,
-      "norm_label": "workouts/{workoutid} collection"
+      "community": 63,
+      "norm_label": "workouts/{workoutid} collection",
+      "id": "claude_md_workouts_collection"
     },
     {
       "label": "exercises/{exerciseId} collection",
@@ -5380,9 +6126,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_exercises_collection",
-      "community": 9,
-      "norm_label": "exercises/{exerciseid} collection"
+      "community": 50,
+      "norm_label": "exercises/{exerciseid} collection",
+      "id": "claude_md_exercises_collection"
     },
     {
       "label": "exerciseCatalogMeta/current",
@@ -5393,9 +6139,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_exercisecatalogmeta",
       "community": 36,
-      "norm_label": "exercisecatalogmeta/current"
+      "norm_label": "exercisecatalogmeta/current",
+      "id": "claude_md_exercisecatalogmeta"
     },
     {
       "label": "app/(tabs)/settings.tsx",
@@ -5406,9 +6152,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_settings_screen",
-      "community": 9,
-      "norm_label": "app/(tabs)/settings.tsx"
+      "community": 56,
+      "norm_label": "app/(tabs)/settings.tsx",
+      "id": "claude_md_settings_screen"
     },
     {
       "label": "scripts/migration/ Node scripts",
@@ -5419,9 +6165,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_migration_scripts",
-      "community": 9,
-      "norm_label": "scripts/migration/ node scripts"
+      "community": 55,
+      "norm_label": "scripts/migration/ node scripts",
+      "id": "claude_md_migration_scripts"
     },
     {
       "label": "constants/gemini-config.ts",
@@ -5432,9 +6178,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_gemini_config",
-      "community": 9,
-      "norm_label": "constants/gemini-config.ts"
+      "community": 52,
+      "norm_label": "constants/gemini-config.ts",
+      "id": "claude_md_gemini_config"
     },
     {
       "label": "utils/gemini-muscle-analysis.ts",
@@ -5445,9 +6191,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_gemini_muscle_analysis",
-      "community": 9,
-      "norm_label": "utils/gemini-muscle-analysis.ts"
+      "community": 53,
+      "norm_label": "utils/gemini-muscle-analysis.ts",
+      "id": "claude_md_gemini_muscle_analysis"
     },
     {
       "label": "utils/gemini-workout-suggestions.ts",
@@ -5458,9 +6204,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_gemini_workout_suggestions",
-      "community": 9,
-      "norm_label": "utils/gemini-workout-suggestions.ts"
+      "community": 54,
+      "norm_label": "utils/gemini-workout-suggestions.ts",
+      "id": "claude_md_gemini_workout_suggestions"
     },
     {
       "label": "@/types/workout (performedExercises[].sets shape)",
@@ -5471,9 +6217,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_workout_types",
-      "community": 9,
-      "norm_label": "@/types/workout (performedexercises[].sets shape)"
+      "community": 62,
+      "norm_label": "@/types/workout (performedexercises[].sets shape)",
+      "id": "claude_md_workout_types"
     },
     {
       "label": "constants/theme.ts",
@@ -5484,9 +6230,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_theme_constants",
-      "community": 19,
-      "norm_label": "constants/theme.ts"
+      "community": 58,
+      "norm_label": "constants/theme.ts",
+      "id": "claude_md_theme_constants"
     },
     {
       "label": "hooks/use-color-scheme(.web).ts",
@@ -5497,9 +6243,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_use_color_scheme",
       "community": 38,
-      "norm_label": "hooks/use-color-scheme(.web).ts"
+      "norm_label": "hooks/use-color-scheme(.web).ts",
+      "id": "claude_md_use_color_scheme"
     },
     {
       "label": "hooks/use-theme-color.ts",
@@ -5510,9 +6256,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_use_theme_color",
-      "community": 19,
-      "norm_label": "hooks/use-theme-color.ts"
+      "community": 61,
+      "norm_label": "hooks/use-theme-color.ts",
+      "id": "claude_md_use_theme_color"
     },
     {
       "label": "components/themed-text.tsx",
@@ -5523,9 +6269,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_themed_text",
-      "community": 19,
-      "norm_label": "components/themed-text.tsx"
+      "community": 59,
+      "norm_label": "components/themed-text.tsx",
+      "id": "claude_md_themed_text"
     },
     {
       "label": "components/themed-view.tsx",
@@ -5536,9 +6282,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_themed_view",
-      "community": 19,
-      "norm_label": "components/themed-view.tsx"
+      "community": 60,
+      "norm_label": "components/themed-view.tsx",
+      "id": "claude_md_themed_view"
     },
     {
       "label": "app/(tabs)/_layout.tsx",
@@ -5549,22 +6295,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "claude_md_tabs_layout",
       "community": 19,
-      "norm_label": "app/(tabs)/_layout.tsx"
-    },
-    {
-      "label": "Pump Pal (project)",
-      "file_type": "document",
-      "source_file": "README.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "readme_pump_pal",
-      "community": 18,
-      "norm_label": "pump pal (project)"
+      "norm_label": "app/(tabs)/_layout.tsx",
+      "id": "claude_md_tabs_layout"
     },
     {
       "label": ".env.example",
@@ -5575,9 +6308,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "readme_env_example",
-      "community": 18,
-      "norm_label": ".env.example"
+      "community": 80,
+      "norm_label": ".env.example",
+      "id": "readme_env_example"
     },
     {
       "label": "Firestore Data Refactor doc (canonical schema)",
@@ -5588,9 +6321,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_schema",
-      "community": 18,
-      "norm_label": "firestore data refactor doc (canonical schema)"
+      "community": 74,
+      "norm_label": "firestore data refactor doc (canonical schema)",
+      "id": "docs_firestore_data_refactor_schema"
     },
     {
       "label": "Exercise type (exercises/{exerciseId})",
@@ -5601,22 +6334,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_exercise",
       "community": 24,
-      "norm_label": "exercise type (exercises/{exerciseid})"
-    },
-    {
-      "label": "ExerciseVariation",
-      "file_type": "concept",
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "docs_firestore_data_refactor_exercisevariation",
-      "community": 24,
-      "norm_label": "exercisevariation"
+      "norm_label": "exercise type (exercises/{exerciseid})",
+      "id": "docs_firestore_data_refactor_exercise"
     },
     {
       "label": "ExerciseCatalogMeta (exerciseCatalogMeta/current)",
@@ -5627,9 +6347,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_exercisecatalogmeta",
-      "community": 24,
-      "norm_label": "exercisecatalogmeta (exercisecatalogmeta/current)"
+      "community": 67,
+      "norm_label": "exercisecatalogmeta (exercisecatalogmeta/current)",
+      "id": "docs_firestore_data_refactor_exercisecatalogmeta"
     },
     {
       "label": "Workout type (workouts/{workoutId})",
@@ -5640,48 +6360,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_workout",
-      "community": 9,
-      "norm_label": "workout type (workouts/{workoutid})"
-    },
-    {
-      "label": "MigrationSource type",
-      "file_type": "concept",
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "docs_firestore_data_refactor_migrationsource",
-      "community": 9,
-      "norm_label": "migrationsource type"
-    },
-    {
-      "label": "PerformedExercise type",
-      "file_type": "concept",
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "docs_firestore_data_refactor_performedexercise",
-      "community": 9,
-      "norm_label": "performedexercise type"
-    },
-    {
-      "label": "PerformedSet type",
-      "file_type": "concept",
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "id": "docs_firestore_data_refactor_performedset",
-      "community": 9,
-      "norm_label": "performedset type"
+      "community": 77,
+      "norm_label": "workout type (workouts/{workoutid})",
+      "id": "docs_firestore_data_refactor_workout"
     },
     {
       "label": "LegacyWorkout type (users/{uid}/workouts/{oldWorkoutId})",
@@ -5692,9 +6373,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_legacyworkout",
-      "community": 9,
-      "norm_label": "legacyworkout type (users/{uid}/workouts/{oldworkoutid})"
+      "community": 72,
+      "norm_label": "legacyworkout type (users/{uid}/workouts/{oldworkoutid})",
+      "id": "docs_firestore_data_refactor_legacyworkout"
     },
     {
       "label": "LegacyExercise type",
@@ -5705,9 +6386,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_legacyexercise",
-      "community": 9,
-      "norm_label": "legacyexercise type"
+      "community": 71,
+      "norm_label": "legacyexercise type",
+      "id": "docs_firestore_data_refactor_legacyexercise"
     },
     {
       "label": "Migration rules: aggregate rows expanded to set-by-set",
@@ -5719,37 +6400,9 @@
       "author": null,
       "contributor": null,
       "rationale": "Legacy aggregate rows (sets count + single reps/weight) were expanded into individual per-set rows so analytics can distinguish variation and actual load state (e.g. weighted dips/pull-ups), and duration/hold seconds are preserved per set.",
-      "id": "docs_firestore_data_refactor_migration_rules",
-      "community": 9,
-      "norm_label": "migration rules: aggregate rows expanded to set-by-set"
-    },
-    {
-      "label": "Exercise Picker UX (flattened search, no parent/variation step)",
-      "file_type": "rationale",
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "Schema changes should not add user friction; catalog entries are flattened in memory so the user picks one human label and the app derives exerciseId + variationId behind the scenes.",
-      "id": "docs_firestore_data_refactor_exercise_picker_ux",
-      "community": 40,
-      "norm_label": "exercise picker ux (flattened search, no parent/variation step)"
-    },
-    {
-      "label": "In-memory search ranking (no per-keystroke Firestore query)",
-      "file_type": "rationale",
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "source_url": null,
-      "captured_at": null,
-      "author": null,
-      "contributor": null,
-      "rationale": "Ranking is done in memory (recently used exact label, exact label, starts-with, alias, contains-all-words, muscle/equipment token) specifically to avoid querying Firestore per keystroke.",
-      "id": "docs_firestore_data_refactor_search_ranking",
-      "community": 41,
-      "norm_label": "in-memory search ranking (no per-keystroke firestore query)"
+      "community": 73,
+      "norm_label": "migration rules: aggregate rows expanded to set-by-set",
+      "id": "docs_firestore_data_refactor_migration_rules"
     },
     {
       "label": "App cutover to canonical top-level collections",
@@ -5760,9 +6413,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_app_cutover",
-      "community": 9,
-      "norm_label": "app cutover to canonical top-level collections"
+      "community": 65,
+      "norm_label": "app cutover to canonical top-level collections",
+      "id": "docs_firestore_data_refactor_app_cutover"
     },
     {
       "label": "TPC pushup-challenge feature (users/{uid}/pushup-challenge/data)",
@@ -5773,9 +6426,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_tpc_pushup_challenge",
-      "community": 9,
-      "norm_label": "tpc pushup-challenge feature (users/{uid}/pushup-challenge/data)"
+      "community": 76,
+      "norm_label": "tpc pushup-challenge feature (users/{uid}/pushup-challenge/data)",
+      "id": "docs_firestore_data_refactor_tpc_pushup_challenge"
     },
     {
       "label": "app/modal.tsx",
@@ -5786,9 +6439,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_app_modal",
-      "community": 9,
-      "norm_label": "app/modal.tsx"
+      "community": 66,
+      "norm_label": "app/modal.tsx",
+      "id": "docs_firestore_data_refactor_app_modal"
     },
     {
       "label": "app/(tabs)/index.tsx",
@@ -5799,9 +6452,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_index_tab",
-      "community": 9,
-      "norm_label": "app/(tabs)/index.tsx"
+      "community": 70,
+      "norm_label": "app/(tabs)/index.tsx",
+      "id": "docs_firestore_data_refactor_index_tab"
     },
     {
       "label": "app/(tabs)/workouts.tsx",
@@ -5812,9 +6465,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_workouts_tab",
-      "community": 9,
-      "norm_label": "app/(tabs)/workouts.tsx"
+      "community": 79,
+      "norm_label": "app/(tabs)/workouts.tsx",
+      "id": "docs_firestore_data_refactor_workouts_tab"
     },
     {
       "label": "app/(tabs)/analytics.tsx",
@@ -5825,9 +6478,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_analytics_tab",
-      "community": 9,
-      "norm_label": "app/(tabs)/analytics.tsx"
+      "community": 64,
+      "norm_label": "app/(tabs)/analytics.tsx",
+      "id": "docs_firestore_data_refactor_analytics_tab"
     },
     {
       "label": "app/(tabs)/settings.tsx",
@@ -5838,9 +6491,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_settings_tab",
-      "community": 9,
-      "norm_label": "app/(tabs)/settings.tsx"
+      "community": 75,
+      "norm_label": "app/(tabs)/settings.tsx",
+      "id": "docs_firestore_data_refactor_settings_tab"
     },
     {
       "label": "components/workout-card.tsx",
@@ -5851,9 +6504,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_workout_card",
-      "community": 9,
-      "norm_label": "components/workout-card.tsx"
+      "community": 78,
+      "norm_label": "components/workout-card.tsx",
+      "id": "docs_firestore_data_refactor_workout_card"
     },
     {
       "label": "utils/gemini-muscle-analysis.ts",
@@ -5864,9 +6517,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_gemini_muscle_analysis",
-      "community": 9,
-      "norm_label": "utils/gemini-muscle-analysis.ts"
+      "community": 68,
+      "norm_label": "utils/gemini-muscle-analysis.ts",
+      "id": "docs_firestore_data_refactor_gemini_muscle_analysis"
     },
     {
       "label": "utils/gemini-workout-suggestions.ts",
@@ -5877,9 +6530,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "docs_firestore_data_refactor_gemini_workout_suggestions",
-      "community": 9,
-      "norm_label": "utils/gemini-workout-suggestions.ts"
+      "community": 69,
+      "norm_label": "utils/gemini-workout-suggestions.ts",
+      "id": "docs_firestore_data_refactor_gemini_workout_suggestions"
     },
     {
       "label": "Android Adaptive Icon Background Layer",
@@ -5890,9 +6543,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_android_icon_background_appiconbg",
       "community": 27,
-      "norm_label": "android adaptive icon background layer"
+      "norm_label": "android adaptive icon background layer",
+      "id": "assets_images_android_icon_background_appiconbg"
     },
     {
       "label": "Dumbbell-plate concentric circle motif (light blue, minimalist geometric design)",
@@ -5903,9 +6556,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_android_icon_background_dumbbellmotif",
       "community": 27,
-      "norm_label": "dumbbell-plate concentric circle motif (light blue, minimalist geometric design)"
+      "norm_label": "dumbbell-plate concentric circle motif (light blue, minimalist geometric design)",
+      "id": "assets_images_android_icon_background_dumbbellmotif"
     },
     {
       "label": "Android Adaptive Icon Foreground",
@@ -5916,9 +6569,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_android_icon_foreground",
       "community": 32,
-      "norm_label": "android adaptive icon foreground"
+      "norm_label": "android adaptive icon foreground",
+      "id": "assets_images_android_icon_foreground"
     },
     {
       "label": "Android Adaptive Icon Monochrome Layer",
@@ -5929,9 +6582,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_android_icon_monochrome",
       "community": 33,
-      "norm_label": "android adaptive icon monochrome layer"
+      "norm_label": "android adaptive icon monochrome layer",
+      "id": "assets_images_android_icon_monochrome"
     },
     {
       "label": "favicon.png (Pump Pal web favicon)",
@@ -5942,9 +6595,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_favicon_png",
       "community": 28,
-      "norm_label": "favicon.png (pump pal web favicon)"
+      "norm_label": "favicon.png (pump pal web favicon)",
+      "id": "assets_images_favicon_png"
     },
     {
       "label": "Arm-wrestling shield mascot logo (gym branding art)",
@@ -5955,9 +6608,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "pumppal_arm_wrestling_mascot_logo",
       "community": 28,
-      "norm_label": "arm-wrestling shield mascot logo (gym branding art)"
+      "norm_label": "arm-wrestling shield mascot logo (gym branding art)",
+      "id": "pumppal_arm_wrestling_mascot_logo"
     },
     {
       "label": "App Icon (assets/images/icon.png) - stylized shield emblem with a metallic gray arm-wrestling match between a face-in-profile/dumbbell hybrid figure on the left and a muscular bicep/arm on the right, clasped hands at center, deep purple-magenta glow behind the artwork, dark near-black background",
@@ -5968,9 +6621,9 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_icon",
       "community": 34,
-      "norm_label": "app icon (assets/images/icon.png) - stylized shield emblem with a metallic gray arm-wrestling match between a face-in-profile/dumbbell hybrid figure on the left and a muscular bicep/arm on the right, clasped hands at center, deep purple-magenta glow behind the artwork, dark near-black background"
+      "norm_label": "app icon (assets/images/icon.png) - stylized shield emblem with a metallic gray arm-wrestling match between a face-in-profile/dumbbell hybrid figure on the left and a muscular bicep/arm on the right, clasped hands at center, deep purple-magenta glow behind the artwork, dark near-black background",
+      "id": "assets_images_icon"
     },
     {
       "label": "splash-icon.png",
@@ -5981,12 +6634,62 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "assets_images_splash_icon",
       "community": 35,
-      "norm_label": "splash-icon.png"
+      "norm_label": "splash-icon.png",
+      "id": "assets_images_splash_icon"
     }
   ],
   "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/hooks/post-checkout",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "beads_hooks_post_checkout",
+      "target": "beads_hooks_post_checkout__entry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/hooks/post-merge",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "beads_hooks_post_merge",
+      "target": "beads_hooks_post_merge__entry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/hooks/pre-commit",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "beads_hooks_pre_commit",
+      "target": "beads_hooks_pre_commit__entry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/hooks/pre-push",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "beads_hooks_pre_push",
+      "target": "beads_hooks_pre_push__entry",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/hooks/prepare-commit-msg",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "beads_hooks_prepare_commit_msg",
+      "target": "beads_hooks_prepare_commit_msg__entry",
+      "confidence_score": 1.0
+    },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
@@ -6971,7 +7674,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L25",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "app_tabs_index",
       "target": "app_tabs_index_homescreen",
@@ -6981,7 +7684,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L209",
+      "source_location": "L170",
       "weight": 1.0,
       "source": "app_tabs_index",
       "target": "app_tabs_index_styles",
@@ -7127,7 +7830,7 @@
       "source_location": "L7",
       "weight": 1.0,
       "source": "app_tabs_index",
-      "target": "utils_workout_conversion",
+      "target": "utils_predict_next_workout",
       "confidence_score": 1.0
     },
     {
@@ -7136,6 +7839,28 @@
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/index.tsx",
       "source_location": "L7",
+      "weight": 1.0,
+      "source": "app_tabs_index",
+      "target": "utils_predict_next_workout_predictnextworkoutname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/index.tsx",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "app_tabs_index",
+      "target": "utils_workout_conversion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/index.tsx",
+      "source_location": "L8",
       "weight": 1.0,
       "source": "app_tabs_index",
       "target": "utils_workout_conversion_todateobj",
@@ -7147,7 +7872,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L64",
+      "source_location": "L62",
       "weight": 1.0,
       "source": "app_tabs_index_homescreen",
       "target": "constants_split_options_issplitoption"
@@ -7158,10 +7883,21 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L26",
+      "source_location": "L27",
       "weight": 1.0,
       "source": "app_tabs_index_homescreen",
       "target": "context_auth_context_useauth"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/(tabs)/index.tsx",
+      "source_location": "L72",
+      "weight": 1.0,
+      "source": "app_tabs_index_homescreen",
+      "target": "utils_predict_next_workout_predictnextworkoutname"
     },
     {
       "relation": "calls",
@@ -8026,7 +8762,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L33",
+      "source_location": "L35",
       "weight": 1.0,
       "source": "app_modal",
       "target": "app_modal_addworkoutmodal",
@@ -8036,7 +8772,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L784",
+      "source_location": "L765",
       "weight": 1.0,
       "source": "app_modal",
       "target": "app_modal_styles",
@@ -8303,7 +9039,7 @@
       "source_location": "L10",
       "weight": 1.0,
       "source": "app_modal",
-      "target": "utils_exercise_catalog",
+      "target": "utils_create_pending_exercise",
       "confidence_score": 1.0
     },
     {
@@ -8312,6 +9048,28 @@
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
       "source_location": "L10",
+      "weight": 1.0,
+      "source": "app_modal",
+      "target": "utils_create_pending_exercise_creatependingexercise",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/modal.tsx",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "app_modal",
+      "target": "utils_exercise_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/modal.tsx",
+      "source_location": "L11",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_exercise_catalog_ranksearchoptions",
@@ -8322,7 +9080,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L10",
+      "source_location": "L11",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_exercise_catalog_slugify",
@@ -8333,7 +9091,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_gemini_workout_suggestions",
@@ -8344,7 +9102,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_gemini_workout_suggestions_generatesplitworkoutnames",
@@ -8355,7 +9113,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L11",
+      "source_location": "L12",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_gemini_workout_suggestions_suggestworkoutcompletion",
@@ -8366,7 +9124,29 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L12",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "app_modal",
+      "target": "utils_predict_next_workout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/modal.tsx",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "app_modal",
+      "target": "utils_predict_next_workout_predictnextworkoutname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/modal.tsx",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_workout_conversion",
@@ -8377,7 +9157,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_workout_conversion_buildperformedexercise",
@@ -8388,7 +9168,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_workout_conversion_collapsesetstodraft",
@@ -8399,10 +9179,10 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "app_modal",
-      "target": "utils_workout_conversion_exerciselabel",
+      "target": "utils_workout_conversion_recentexercisesforday",
       "confidence_score": 1.0
     },
     {
@@ -8410,7 +9190,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/modal.tsx",
-      "source_location": "L12",
+      "source_location": "L14",
       "weight": 1.0,
       "source": "app_modal",
       "target": "utils_workout_conversion_todateobj",
@@ -8422,7 +9202,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L90",
+      "source_location": "L92",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "constants_split_options_issplitoption"
@@ -8433,7 +9213,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L34",
+      "source_location": "L36",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "context_auth_context_useauth"
@@ -8444,7 +9224,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L57",
+      "source_location": "L59",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "hooks_use_exercise_catalog_useexercisecatalog"
@@ -8455,7 +9235,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L521",
+      "source_location": "L502",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "package_dependencies_react"
@@ -8466,10 +9246,21 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L164",
+      "source_location": "L161",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_alert_showalert"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/modal.tsx",
+      "source_location": "L572",
+      "weight": 1.0,
+      "source": "app_modal_addworkoutmodal",
+      "target": "utils_create_pending_exercise_creatependingexercise"
     },
     {
       "relation": "indirect_call",
@@ -8477,7 +9268,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "app/modal.tsx",
-      "source_location": "L350",
+      "source_location": "L331",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_daily_name_todayutc"
@@ -8488,7 +9279,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L359",
+      "source_location": "L340",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_exercise_catalog_ranksearchoptions"
@@ -8499,7 +9290,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L362",
+      "source_location": "L343",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_exercise_catalog_slugify"
@@ -8510,7 +9301,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L100",
+      "source_location": "L102",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_gemini_workout_suggestions_generatesplitworkoutnames"
@@ -8521,7 +9312,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L337",
+      "source_location": "L318",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_gemini_workout_suggestions_suggestworkoutcompletion"
@@ -8532,7 +9323,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L408",
+      "source_location": "L140",
+      "weight": 1.0,
+      "source": "app_modal_addworkoutmodal",
+      "target": "utils_predict_next_workout_predictnextworkoutname"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "app/modal.tsx",
+      "source_location": "L389",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_workout_conversion_buildperformedexercise"
@@ -8543,7 +9345,7 @@
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "app/modal.tsx",
-      "source_location": "L183",
+      "source_location": "L180",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_workout_conversion_collapsesetstodraft"
@@ -8554,10 +9356,10 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L245",
+      "source_location": "L239",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
-      "target": "utils_workout_conversion_exerciselabel"
+      "target": "utils_workout_conversion_recentexercisesforday"
     },
     {
       "relation": "calls",
@@ -8565,7 +9367,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/modal.tsx",
-      "source_location": "L171",
+      "source_location": "L168",
       "weight": 1.0,
       "source": "app_modal_addworkoutmodal",
       "target": "utils_workout_conversion_todateobj"
@@ -9380,7 +10182,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L45",
+      "source_location": "L218",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_exercisepicker",
@@ -9390,7 +10192,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L36",
+      "source_location": "L206",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_exercisepickerprops",
@@ -9400,7 +10202,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L30",
+      "source_location": "L47",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_exercisepickerselection",
@@ -9410,7 +10212,47 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L203",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker",
+      "target": "components_ui_exercise_picker_screen",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker",
+      "target": "components_ui_exercise_picker_sheet",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker",
+      "target": "components_ui_exercise_picker_sheethandle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L55",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker",
+      "target": "components_ui_exercise_picker_sheetprops",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L401",
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "components_ui_exercise_picker_styles",
@@ -9425,6 +10267,17 @@
       "weight": 1.0,
       "source": "components_ui_exercise_picker",
       "target": "types_workout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/ui/exercise-picker.tsx",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "components_ui_exercise_picker",
+      "target": "types_workout_exerciseref",
       "confidence_score": 1.0
     },
     {
@@ -9472,23 +10325,12 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "references",
-      "context": "field",
-      "confidence": "EXTRACTED",
-      "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L37",
-      "weight": 1.0,
-      "source": "components_ui_exercise_picker_exercisepickerprops",
-      "target": "types_workout_exercisesearchoption",
-      "confidence_score": 1.0
-    },
-    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L106",
+      "source_location": "L252",
       "weight": 1.0,
       "source": "components_ui_exercise_picker_exercisepicker",
       "target": "utils_exercise_catalog_ranksearchoptions"
@@ -9499,7 +10341,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/ui/exercise-picker.tsx",
-      "source_location": "L122",
+      "source_location": "L279",
       "weight": 1.0,
       "source": "components_ui_exercise_picker_exercisepicker",
       "target": "utils_exercise_catalog_slugify"
@@ -9824,6 +10666,17 @@
       "relation": "imports_from",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "config_firebase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "utils/daily-name.ts",
       "source_location": "L1",
       "weight": 1.0,
@@ -9851,6 +10704,17 @@
       "weight": 1.0,
       "source": "context_auth_context",
       "target": "config_firebase_auth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "config_firebase_db",
       "confidence_score": 1.0
     },
     {
@@ -14678,7 +15542,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "types/workout.ts",
-      "source_location": "L105",
+      "source_location": "L111",
       "weight": 1.0,
       "source": "types_workout",
       "target": "types_workout_draftexerciserow",
@@ -14688,7 +15552,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "types/workout.ts",
-      "source_location": "L94",
+      "source_location": "L100",
       "weight": 1.0,
       "source": "types_workout",
       "target": "types_workout_draftset",
@@ -14698,7 +15562,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "types/workout.ts",
-      "source_location": "L75",
+      "source_location": "L78",
       "weight": 1.0,
       "source": "types_workout",
       "target": "types_workout_exercisecatalogmeta",
@@ -14708,7 +15572,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "types/workout.ts",
-      "source_location": "L82",
+      "source_location": "L95",
+      "weight": 1.0,
+      "source": "types_workout",
+      "target": "types_workout_exerciseref",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "types/workout.ts",
+      "source_location": "L85",
       "weight": 1.0,
       "source": "types_workout",
       "target": "types_workout_exercisesearchoption",
@@ -14718,7 +15592,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "types/workout.ts",
-      "source_location": "L92",
+      "source_location": "L98",
       "weight": 1.0,
       "source": "types_workout",
       "target": "types_workout_exercisetype",
@@ -14768,6 +15642,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "types/workout.ts",
+      "source_location": "L96",
+      "weight": 1.0,
+      "source": "types_workout",
+      "target": "types_workout_recentexercise",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "types/workout.ts",
       "source_location": "L3",
       "weight": 1.0,
       "source": "types_workout",
@@ -14782,6 +15666,17 @@
       "weight": 1.0,
       "source": "types_workout",
       "target": "types_workout_workout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "types_workout",
       "confidence_score": 1.0
     },
     {
@@ -14814,6 +15709,17 @@
       "source_location": "L2",
       "weight": 1.0,
       "source": "utils_gemini_workout_suggestions",
+      "target": "types_workout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "utils_predict_next_workout",
       "target": "types_workout",
       "confidence_score": 1.0
     },
@@ -14876,11 +15782,33 @@
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "utils_predict_next_workout",
+      "target": "types_workout_workout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
       "source_location": "L1",
       "weight": 1.0,
       "source": "utils_workout_conversion",
       "target": "types_workout_workout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "types_workout_catalogexercise",
       "confidence_score": 1.0
     },
     {
@@ -14914,6 +15842,28 @@
       "weight": 1.0,
       "source": "utils_exercise_catalog",
       "target": "types_workout_exercisesearchoption",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "types_workout_exerciseref",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "utils_workout_conversion",
+      "target": "types_workout_recentexercise",
       "confidence_score": 1.0
     },
     {
@@ -14958,6 +15908,70 @@
       "source": "utils_alert",
       "target": "utils_alert_showalert",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "utils_create_pending_exercise_creatependingexercise",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L8",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "utils_create_pending_exercise_reserveexerciseid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "utils_exercise_catalog",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise",
+      "target": "utils_exercise_catalog_slugify",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L22",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise_creatependingexercise",
+      "target": "utils_create_pending_exercise_reserveexerciseid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "utils/create-pending-exercise.ts",
+      "source_location": "L21",
+      "weight": 1.0,
+      "source": "utils_create_pending_exercise_creatependingexercise",
+      "target": "utils_exercise_catalog_slugify"
     },
     {
       "relation": "contains",
@@ -15352,6 +16366,49 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "utils_predict_next_workout",
+      "target": "utils_predict_next_workout_predictnextworkoutname",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "utils_predict_next_workout",
+      "target": "utils_workout_conversion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "utils_predict_next_workout",
+      "target": "utils_workout_conversion_todateobj",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "utils/predict-next-workout.ts",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "utils_predict_next_workout_predictnextworkoutname",
+      "target": "utils_workout_conversion_todateobj"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
       "source_location": "L56",
       "weight": 1.0,
@@ -15413,6 +16470,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
+      "source_location": "L142",
+      "weight": 1.0,
+      "source": "utils_workout_conversion",
+      "target": "utils_workout_conversion_recentexercisesforday",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
       "source_location": "L85",
       "weight": 1.0,
       "source": "utils_workout_conversion",
@@ -15465,6 +16532,17 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
+      "source_location": "L161",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_recentexercisesforday",
+      "target": "utils_workout_conversion_exerciselabel",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
       "source_location": "L93",
       "weight": 1.0,
       "source": "utils_workout_conversion_summarizeperformedexercise",
@@ -15480,6 +16558,17 @@
       "weight": 1.0,
       "source": "utils_workout_conversion_summarizeperformedexercise",
       "target": "utils_workout_conversion_fmtduration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L156",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_recentexercisesforday",
+      "target": "utils_workout_conversion_todateobj",
       "confidence_score": 1.0
     },
     {
@@ -15523,424 +16612,504 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "cites",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
+      "source_file": ".beads/README.md",
+      "source_location": "L1",
       "weight": 1.0,
-      "source": "claude_md",
-      "target": "docs_firestore_data_refactor_schema"
+      "source": "beads_readme",
+      "target": "beads_readme_beads_ai_native_issue_tracking",
+      "confidence_score": 1.0
     },
     {
-      "relation": "cites",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
+      "source_file": ".beads/README.md",
+      "source_location": "L58",
+      "weight": 1.0,
+      "source": "beads_readme_beads_ai_native_issue_tracking",
+      "target": "beads_readme_get_started_with_beads",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/README.md",
+      "source_location": "L73",
+      "weight": 1.0,
+      "source": "beads_readme_beads_ai_native_issue_tracking",
+      "target": "beads_readme_learn_more",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/README.md",
+      "source_location": "L11",
+      "weight": 1.0,
+      "source": "beads_readme_beads_ai_native_issue_tracking",
+      "target": "beads_readme_quick_start",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/README.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "beads_readme_beads_ai_native_issue_tracking",
+      "target": "beads_readme_what_is_beads",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/README.md",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "beads_readme_beads_ai_native_issue_tracking",
+      "target": "beads_readme_why_beads",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/README.md",
+      "source_location": "L13",
+      "weight": 1.0,
+      "source": "beads_readme_quick_start",
+      "target": "beads_readme_essential_commands",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": ".beads/README.md",
+      "source_location": "L33",
+      "weight": 1.0,
+      "source": "beads_readme_quick_start",
+      "target": "beads_readme_working_with_issues",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L15",
+      "weight": 1.0,
+      "source": "agents",
+      "target": "agents_beads_issue_tracker",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "agents",
+      "target": "agents_graphify",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "agents",
+      "target": "agents_session_completion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "source": "agents_beads_issue_tracker",
+      "target": "agents_quick_reference",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L28",
+      "weight": 1.0,
+      "source": "agents_beads_issue_tracker",
+      "target": "agents_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "claude",
+      "target": "claude_claude_md",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": null,
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "readme",
+      "target": "claude",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "claude_claude_md",
+      "target": "claude_architecture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L65",
+      "weight": 1.0,
+      "source": "claude_claude_md",
+      "target": "claude_beads_issue_tracker",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "claude_claude_md",
+      "target": "claude_commands",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L53",
+      "weight": 1.0,
+      "source": "claude_claude_md",
+      "target": "claude_graphify",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L86",
+      "weight": 1.0,
+      "source": "claude_claude_md",
+      "target": "claude_session_completion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L45",
+      "weight": 1.0,
+      "source": "claude_architecture",
+      "target": "claude_ai_features",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "claude_architecture",
+      "target": "claude_firebase",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L41",
+      "weight": 1.0,
+      "source": "claude_architecture",
+      "target": "claude_migration_scripts_scripts_migration_migration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L27",
+      "weight": 1.0,
+      "source": "claude_architecture",
+      "target": "claude_navigation_auth_gating",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L49",
+      "weight": 1.0,
+      "source": "claude_architecture",
+      "target": "claude_theming",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L69",
+      "weight": 1.0,
+      "source": "claude_beads_issue_tracker",
+      "target": "claude_quick_reference",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L78",
+      "weight": 1.0,
+      "source": "claude_beads_issue_tracker",
+      "target": "claude_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L36",
+      "weight": 1.0,
+      "source": "readme",
+      "target": "docs_firestore_data_refactor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "readme",
+      "target": "readme_pump_pal",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L34",
       "weight": 1.0,
       "source": "readme_pump_pal",
-      "target": "claude_md"
+      "target": "readme_architecture",
+      "confidence_score": 1.0
     },
     {
-      "relation": "conceptually_related_to",
-      "confidence": "INFERRED",
-      "confidence_score": 0.85,
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "README.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_expo_router",
-      "target": "readme_pump_pal"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_app_layout",
-      "target": "claude_md_asyncstorage_onboarding"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_app_layout",
-      "target": "claude_md_authprovider"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_app_layout",
-      "target": "claude_md_split_options"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_migration_scripts",
-      "target": "claude_md_workouts_collection"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_settings_screen",
-      "target": "claude_md_workouts_collection"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_migration_scripts",
-      "target": "claude_md_exercises_collection"
-    },
-    {
-      "relation": "references",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_settings_screen",
-      "target": "docs_firestore_data_refactor_settings_tab"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_gemini_muscle_analysis",
-      "target": "claude_md_gemini_config"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_gemini_muscle_analysis",
-      "target": "claude_md_workout_types"
-    },
-    {
-      "relation": "references",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_gemini_muscle_analysis",
-      "target": "docs_firestore_data_refactor_gemini_muscle_analysis"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_gemini_workout_suggestions",
-      "target": "claude_md_workout_types"
-    },
-    {
-      "relation": "references",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_gemini_workout_suggestions",
-      "target": "docs_firestore_data_refactor_gemini_workout_suggestions"
-    },
-    {
-      "relation": "shares_data_with",
-      "confidence": "INFERRED",
-      "confidence_score": 0.95,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_workout_types",
-      "target": "docs_firestore_data_refactor_performedexercise"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_tabs_layout",
-      "target": "claude_md_theme_constants"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_theme_constants",
-      "target": "claude_md_use_theme_color"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_use_theme_color",
-      "target": "claude_md_themed_text"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "claude_md_use_theme_color",
-      "target": "claude_md_themed_view"
-    },
-    {
-      "relation": "cites",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "README.md",
-      "source_location": null,
+      "source_location": "L23",
       "weight": 1.0,
       "source": "readme_pump_pal",
-      "target": "docs_firestore_data_refactor_schema"
+      "target": "readme_other_commands",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": null,
+      "source_location": "L5",
       "weight": 1.0,
       "source": "readme_pump_pal",
-      "target": "readme_env_example"
+      "target": "readme_setup",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L1",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_exercise",
-      "target": "docs_firestore_data_refactor_exercisevariation"
+      "source": "docs_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L29",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_exercisecatalogmeta",
-      "target": "docs_firestore_data_refactor_exercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_canonical_collections",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L337",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_workout",
-      "target": "docs_firestore_data_refactor_migrationsource"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_completed_work",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L3",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_workout",
-      "target": "docs_firestore_data_refactor_performedexercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_current_status",
+      "confidence_score": 1.0
     },
     {
-      "relation": "shares_data_with",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L251",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_gemini_muscle_analysis",
-      "target": "docs_firestore_data_refactor_performedexercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_exercise_picker_ux",
+      "confidence_score": 1.0
     },
     {
-      "relation": "shares_data_with",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L304",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_gemini_workout_suggestions",
-      "target": "docs_firestore_data_refactor_performedexercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_legacy_data_still_present",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L210",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_performedexercise",
-      "target": "docs_firestore_data_refactor_performedset"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_migration_rules_used",
+      "confidence_score": 1.0
     },
     {
-      "relation": "shares_data_with",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L18",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_workout_card",
-      "target": "docs_firestore_data_refactor_performedexercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_refactor_goal",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L357",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_migration_rules",
-      "target": "docs_firestore_data_refactor_performedset"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_remaining_work",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L291",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_legacyworkout",
-      "target": "docs_firestore_data_refactor_legacyexercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_search_ranking",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L368",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_migration_rules",
-      "target": "docs_firestore_data_refactor_legacyexercise"
+      "source": "docs_firestore_data_refactor_pump_pal_firestore_data_refactor",
+      "target": "docs_firestore_data_refactor_verification_checklist",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L117",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_analytics_tab"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_exercisecatalogmeta_current",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L31",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_app_modal"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_exercises_exerciseid",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L73",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_gemini_muscle_analysis"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_exercisevariation",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L163",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_gemini_workout_suggestions"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_migrationsource",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L175",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_index_tab"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_performedexercise",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L193",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_settings_tab"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_performedset",
+      "confidence_score": 1.0
     },
     {
-      "relation": "references",
+      "relation": "contains",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
+      "source_location": "L137",
       "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_workout_card"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "docs_firestore_data_refactor_app_cutover",
-      "target": "docs_firestore_data_refactor_workouts_tab"
-    },
-    {
-      "relation": "references",
-      "confidence": "AMBIGUOUS",
-      "confidence_score": 0.2,
-      "source_file": "docs/firestore-data-refactor.md",
-      "source_location": null,
-      "weight": 1.0,
-      "source": "docs_firestore_data_refactor_tpc_pushup_challenge",
-      "target": "docs_firestore_data_refactor_app_cutover"
+      "source": "docs_firestore_data_refactor_canonical_collections",
+      "target": "docs_firestore_data_refactor_workouts_workoutid",
+      "confidence_score": 1.0
     },
     {
       "relation": "conceptually_related_to",
@@ -15963,48 +17132,5 @@
       "target": "pumppal_arm_wrestling_mascot_logo"
     }
   ],
-  "hyperedges": [
-    {
-      "id": "auth_redirect_gating_flow",
-      "label": "Auth/onboarding redirect gating in app/_layout.tsx",
-      "nodes": [
-        "claude_md_app_layout",
-        "claude_md_authprovider",
-        "claude_md_split_options",
-        "claude_md_asyncstorage_onboarding"
-      ],
-      "relation": "participate_in",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md"
-    },
-    {
-      "id": "canonical_firestore_schema",
-      "label": "Canonical Firestore workout/exercise schema",
-      "nodes": [
-        "docs_firestore_data_refactor_workout",
-        "docs_firestore_data_refactor_performedexercise",
-        "docs_firestore_data_refactor_performedset",
-        "docs_firestore_data_refactor_exercise"
-      ],
-      "relation": "form",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/firestore-data-refactor.md"
-    },
-    {
-      "id": "gemini_ai_features_consuming_workout_data",
-      "label": "Gemini AI features consuming canonical workout shape",
-      "nodes": [
-        "claude_md_gemini_muscle_analysis",
-        "claude_md_gemini_workout_suggestions",
-        "claude_md_workout_types"
-      ],
-      "relation": "participate_in",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CLAUDE.md"
-    }
-  ],
-  "built_at_commit": "f6e085813b1fe4914cc13b7d853d9eaf5e20a8ea"
+  "hyperedges": []
 }

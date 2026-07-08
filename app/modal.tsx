@@ -574,7 +574,6 @@ export default function AddWorkoutModal() {
               style={styles.exerciseNameDropdown}
             />
 
-            <Text style={styles.exerciseTypeLabel}>Type of Exercise</Text>
             <Dropdown
               options={EXERCISE_TYPES}
               value={ex.exerciseType}
@@ -850,13 +849,6 @@ const styles = StyleSheet.create({
   dateLabel: {
     color: '#fff',
     fontSize: 15,
-  },
-  exerciseTypeLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 5,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   exerciseTypeDropdown: {
     marginBottom: 12,
