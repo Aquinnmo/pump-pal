@@ -1,12 +1,12 @@
 # Graph Report - pump-pal  (2026-07-07)
 
 ## Corpus Check
-- 94 files · ~162,452 words
+- 94 files · ~162,852 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 645 nodes · 999 edges · 81 communities (29 shown, 52 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.59)
+- 651 nodes · 1014 edges · 80 communities (28 shown, 52 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 35 edges (avg confidence: 0.59)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -43,7 +43,6 @@
 - [[_COMMUNITY_ExerciseCatalogMeta Doc Note|ExerciseCatalogMeta Doc Note]]
 - [[_COMMUNITY_Firebase Config Doc Note|Firebase Config Doc Note]]
 - [[_COMMUNITY_Color Scheme Doc Note|Color Scheme Doc Note]]
-- [[_COMMUNITY_Exercise Picker UX Rationale|Exercise Picker UX Rationale]]
 - [[_COMMUNITY_Search Ranking Rationale|Search Ranking Rationale]]
 - [[_COMMUNITY_AGENTS|AGENTS.md]]
 - [[_COMMUNITY_post-checkout|post-checkout]]
@@ -106,21 +105,21 @@
   app/modal.tsx → utils/daily-name.ts
 - `SettingsScreen()` --references--> `updates`  [EXTRACTED]
   app/(tabs)/settings.tsx → app.json
-- `SignInScreen()` --calls--> `useAuth()`  [EXTRACTED]
-  app/(auth)/sign-in.tsx → context/auth-context.tsx
+- `TabLayout()` --indirect_call--> `HapticTab()`  [INFERRED]
+  app/(tabs)/_layout.tsx → components/haptic-tab.tsx
 
 ## Import Cycles
 - None detected.
 
-## Communities (81 total, 52 thin omitted)
+## Communities (80 total, 52 thin omitted)
 
 ### Community 0 - "App Screens & Workout Data"
 Cohesion: 0.07
-Nodes (70): AddWorkoutModal(), styles, AnalyticsScreen(), styles, HomeScreen(), styles, styles, WorkoutsScreen() (+62 more)
+Nodes (66): AddWorkoutModal(), styles, AnalyticsScreen(), styles, InsightsCache, MuscleInsightCards(), Props, RefreshCache (+58 more)
 
 ### Community 1 - "Auth Flow & Firebase Config"
-Cohesion: 0.08
-Nodes (30): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, RootLayoutNav(), unstable_settings, SetSplitScreen(), styles (+22 more)
+Cohesion: 0.09
+Nodes (34): SignInScreen(), styles, SignUpScreen(), styles, RootLayoutNav(), unstable_settings, SetSplitScreen(), styles (+26 more)
 
 ### Community 2 - "Firestore Migration Write Scripts"
 Cohesion: 0.07
@@ -131,12 +130,12 @@ Cohesion: 0.05
 Nodes (38): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, predictiveBackGestureEnabled (+30 more)
 
 ### Community 4 - "NPM Dependencies"
-Cohesion: 0.04
-Nodes (47): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+39 more)
+Cohesion: 0.05
+Nodes (39): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+31 more)
 
 ### Community 5 - "Legacy Data Inventory & Mapping"
-Cohesion: 0.09
-Nodes (30): exercise(), fs, generateMappingDraft(), guessExerciseId(), path, run(), slugify(), addToMapSet() (+22 more)
+Cohesion: 0.06
+Nodes (39): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+31 more)
 
 ### Community 6 - "V2 Migration Builder"
 Cohesion: 0.12
@@ -147,12 +146,12 @@ Cohesion: 0.13
 Nodes (26): buildInventory(), buildMapping(), buildReviewWarnings(), compactCounts(), csvCell(), documentIdFromPath(), EXPORT_FILE, fs (+18 more)
 
 ### Community 8 - "NPM Scripts & Package Meta"
-Cohesion: 0.12
-Nodes (16): scripts, android, build:web, ios, lint, migration:dry-run, migration:firestore:snapshot, migration:inventory (+8 more)
+Cohesion: 0.08
+Nodes (25): devDependencies, eslint, eslint-config-expo, @types/react, typescript, main, name, private (+17 more)
 
 ### Community 9 - "Firestore Refactor Docs"
 Cohesion: 0.05
-Nodes (34): AI features, Architecture, Beads Issue Tracker, Commands, Firebase, graphify, Migration scripts (`scripts/migration/`, `migration/`), Navigation / auth gating (+26 more)
+Nodes (35): AI features, Architecture, Beads Issue Tracker, Commands, Firebase, graphify, Migration scripts (`scripts/migration/`, `migration/`), Navigation / auth gating (+27 more)
 
 ### Community 10 - "Theming & UI Primitives"
 Cohesion: 0.14
@@ -167,12 +166,12 @@ Cohesion: 0.15
 Nodes (18): convertLegacyExercise(), convertLegacyWorkout(), durationSeconds(), assert, { convertedWorkout, report }, { convertLegacyWorkout }, mappingsByLegacyName, compareTotals() (+10 more)
 
 ### Community 13 - "Pushup Challenge Feature"
-Cohesion: 0.18
-Nodes (15): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+7 more)
+Cohesion: 0.15
+Nodes (16): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+8 more)
 
 ### Community 14 - "Migration File Review Builder"
-Cohesion: 0.15
-Nodes (9): byName, catalog, catalogSeed, decisions, fs, inventory, mapping, path (+1 more)
+Cohesion: 0.24
+Nodes (8): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, FirebaseRecaptchaVerifierModal, FirebaseRecaptchaVerifierModalRef, Props, styles
 
 ### Community 15 - "Project Reset Script"
 Cohesion: 0.22
@@ -190,37 +189,33 @@ Nodes (3): Slide, SLIDES, styles
 Cohesion: 0.40
 Nodes (4): buildCommand, cleanUrls, outputDirectory, rewrites
 
-### Community 40 - "Exercise Picker UX Rationale"
-Cohesion: 0.33
-Nodes (6): SignInScreen(), styles, SignUpScreen(), styles, FIREBASE_ERROR_MAP, getFriendlyAuthError()
-
 ### Community 41 - "Search Ranking Rationale"
 Cohesion: 0.22
 Nodes (8): Beads - AI-Native Issue Tracking, Essential Commands, Get Started with Beads, Learn More, Quick Start, What is Beads?, Why Beads?, Working with Issues
 
 ### Community 42 - "AGENTS.md"
-Cohesion: 0.33
-Nodes (5): Beads Issue Tracker, graphify, Quick Reference, Rules, Session Completion
+Cohesion: 0.29
+Nodes (6): Beads Issue Tracker, graphify, Quick Reference, Rules, Session Completion, User workflow override
 
 ## Knowledge Gaps
-- **307 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+302 more)
+- **309 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+304 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **52 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SettingsScreen()` connect `Auth Flow & Firebase Config` to `App Screens & Workout Data`, `Expo App Config`, `Migration File Review Builder`?**
-  _High betweenness centrality (0.268) - this node is a cross-community bridge._
-- **Why does `exercise()` connect `Legacy Data Inventory & Mapping` to `Firestore Migration Write Scripts`, `Legacy Workout Conversion Scripts`, `V2 Migration Builder`, `Migration File Review Builder`?**
-  _High betweenness centrality (0.256) - this node is a cross-community bridge._
-- **Why does `variation()` connect `Migration File Review Builder` to `Auth Flow & Firebase Config`?**
-  _High betweenness centrality (0.226) - this node is a cross-community bridge._
+- **Why does `SettingsScreen()` connect `Auth Flow & Firebase Config` to `App Screens & Workout Data`, `Expo App Config`, `Legacy Data Inventory & Mapping`?**
+  _High betweenness centrality (0.267) - this node is a cross-community bridge._
+- **Why does `exercise()` connect `Legacy Data Inventory & Mapping` to `Firestore Migration Write Scripts`, `Legacy Workout Conversion Scripts`, `V2 Migration Builder`?**
+  _High betweenness centrality (0.255) - this node is a cross-community bridge._
+- **Why does `variation()` connect `Legacy Data Inventory & Mapping` to `Auth Flow & Firebase Config`?**
+  _High betweenness centrality (0.225) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
   _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _308 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _310 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App Screens & Workout Data` be split into smaller, more focused modules?**
-  _Cohesion score 0.06575781876503609 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0691333982473223 - nodes in this community are weakly interconnected._
 - **Should `Auth Flow & Firebase Config` be split into smaller, more focused modules?**
-  _Cohesion score 0.07973421926910298 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.08734693877551021 - nodes in this community are weakly interconnected._

@@ -37,13 +37,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 
-// Snapshot 'window' once at module load (mirrors SCREEN_HEIGHT above) for the
-// dialog's fixed size. Android's soft keyboard fires a live resize event on
-// 'window' (adjustResize, the only mode Expo Go supports) that would squish
-// anything reactively sized off it, but this constant is read once before any
-// keyboard interaction and never re-read, so it stays fixed regardless.
-const SCREEN = Dimensions.get('window');
-
 export type ExercisePickerSelection = ExerciseRef;
 
 export type SheetHandle = {
@@ -75,23 +68,6 @@ const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
   const scale = useSharedValue(1);
   const insets = useSafeAreaInsets();
   const isDialog = variant === 'dialog';
-
-  // Fixed pixel size off the module-load 'window' snapshot (stable across
-  // keyboard toggles, confirmed working at top:24/height:0.78). insets.bottom
-  // doesn't reliably reflect the real nav bar clearance on this device, so
-  // use a fixed pixel margin above it instead of insets math.
-  const dialogLayout = useMemo(() => {
-    const width = SCREEN.width * 0.94;
-    const top = 24;
-    const bottomMargin = 80;
-    const height = SCREEN.height - top - bottomMargin;
-    return {
-      width,
-      height,
-      top,
-      left: (SCREEN.width - width) / 2,
-    };
-  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -169,17 +145,15 @@ const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
       animationType={isDialog ? 'fade' : 'slide'}
       onRequestClose={() => close()}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
+        <Animated.View style={[styles.modalOverlay, isDialog && styles.dialogOverlay, overlayAnimatedStyle]}>
           <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => close()} />
           {isDialog ? (
-            <Animated.View style={[styles.dialogPosition, dialogLayout, cardAnimatedStyle]}>
-              <View style={styles.dialogContent}>
-                <View style={[styles.modalHeader, styles.dialogHeader]}>
-                  {header}
-                  {headerExtra}
-                </View>
-                <View style={styles.dialogBody}>{children}</View>
+            <Animated.View style={[styles.dialogContent, cardAnimatedStyle, { paddingBottom: Math.max(16, insets.bottom) }]}>
+              <View style={styles.modalHeader}>
+                {header}
+                {headerExtra}
               </View>
+              <View style={styles.dialogBody}>{children}</View>
             </Animated.View>
           ) : (
             <Animated.View style={[styles.modalContent, cardAnimatedStyle, { paddingBottom: Math.max(30, insets.bottom) }]}>
@@ -424,22 +398,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
   },
-  dialogPosition: {
-    // Bare position/size wrapper — kept separate from the rounded/clipped
-    // inner view below because animating opacity/scale on the same view that
-    // also has borderRadius + overflow:hidden is a known Android artifact
-    // source. Width/height/top/left are supplied per-instance (dialogLayout).
-    position: 'absolute',
+  dialogOverlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   dialogContent: {
-    flex: 1,
+    width: '94%',
+    height: '90%',
     backgroundColor: '#1c1c1c',
     borderRadius: 24,
     overflow: 'hidden',
-    paddingBottom: 16,
-  },
-  dialogHeader: {
-    paddingTop: 20,
   },
   dialogBody: {
     flex: 1,

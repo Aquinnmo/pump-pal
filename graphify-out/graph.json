@@ -560,7 +560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_phone_auth",
-      "community": 1,
+      "community": 14,
       "norm_label": "phone-auth.tsx"
     },
     {
@@ -570,7 +570,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "app_auth_phone_auth_region_to_calling_code",
-      "community": 1,
+      "community": 14,
       "norm_label": "region_to_calling_code"
     },
     {
@@ -580,7 +580,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "app_auth_phone_auth_getcallingcode",
-      "community": 1,
+      "community": 14,
       "norm_label": "getcallingcode()"
     },
     {
@@ -590,7 +590,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "app_auth_phone_auth_phoneauthscreen",
-      "community": 1,
+      "community": 14,
       "norm_label": "phoneauthscreen()"
     },
     {
@@ -600,7 +600,7 @@
       "source_location": "L206",
       "_origin": "ast",
       "id": "app_auth_phone_auth_styles",
-      "community": 1,
+      "community": 14,
       "norm_label": "styles"
     },
     {
@@ -610,7 +610,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_sign_in",
-      "community": 40,
+      "community": 1,
       "norm_label": "sign-in.tsx"
     },
     {
@@ -620,7 +620,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "app_auth_sign_in_signinscreen",
-      "community": 40,
+      "community": 1,
       "norm_label": "signinscreen()"
     },
     {
@@ -630,7 +630,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "app_auth_sign_in_styles",
-      "community": 40,
+      "community": 1,
       "norm_label": "styles"
     },
     {
@@ -640,7 +640,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_sign_up",
-      "community": 40,
+      "community": 1,
       "norm_label": "sign-up.tsx"
     },
     {
@@ -650,7 +650,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "app_auth_sign_up_signupscreen",
-      "community": 40,
+      "community": 1,
       "norm_label": "signupscreen()"
     },
     {
@@ -660,7 +660,7 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "app_auth_sign_up_styles",
-      "community": 40,
+      "community": 1,
       "norm_label": "styles"
     },
     {
@@ -770,7 +770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_index",
-      "community": 0,
+      "community": 1,
       "norm_label": "index.tsx"
     },
     {
@@ -780,7 +780,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "app_tabs_index_homescreen",
-      "community": 0,
+      "community": 1,
       "norm_label": "homescreen()"
     },
     {
@@ -790,7 +790,7 @@
       "source_location": "L170",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
-      "community": 0,
+      "community": 1,
       "norm_label": "styles"
     },
     {
@@ -980,7 +980,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_workouts",
-      "community": 0,
+      "community": 1,
       "norm_label": "workouts.tsx"
     },
     {
@@ -990,7 +990,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_tabs_workouts_workoutsscreen",
-      "community": 0,
+      "community": 1,
       "norm_label": "workoutsscreen()"
     },
     {
@@ -1000,7 +1000,7 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "app_tabs_workouts_styles",
-      "community": 0,
+      "community": 1,
       "norm_label": "styles"
     },
     {
@@ -1140,7 +1140,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal",
-      "community": 1,
+      "community": 14,
       "norm_label": "firebase-recaptcha-modal.tsx"
     },
     {
@@ -1150,7 +1150,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_firebaserecaptchaverifiermodalref",
-      "community": 1,
+      "community": 14,
       "norm_label": "firebaserecaptchaverifiermodalref"
     },
     {
@@ -1160,7 +1160,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_props",
-      "community": 1,
+      "community": 14,
       "norm_label": "props"
     },
     {
@@ -1170,7 +1170,7 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_buildhtml",
-      "community": 1,
+      "community": 14,
       "norm_label": "buildhtml()"
     },
     {
@@ -1180,7 +1180,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_firebaserecaptchaverifiermodal",
-      "community": 1,
+      "community": 14,
       "norm_label": "firebaserecaptchaverifiermodal"
     },
     {
@@ -1190,7 +1190,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_styles",
-      "community": 1,
+      "community": 14,
       "norm_label": "styles"
     },
     {
@@ -1697,7 +1697,7 @@
       "label": "WorkoutCardProps",
       "file_type": "code",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L18",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "components_workout_card_workoutcardprops",
       "community": 0,
@@ -1707,7 +1707,7 @@
       "label": "WorkoutCard()",
       "file_type": "code",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L24",
+      "source_location": "L31",
       "_origin": "ast",
       "id": "components_workout_card_workoutcard",
       "community": 0,
@@ -1717,7 +1717,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L224",
+      "source_location": "L235",
       "_origin": "ast",
       "id": "components_workout_card_styles",
       "community": 0,
@@ -1760,7 +1760,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "config_firebase_db",
-      "community": 0,
+      "community": 1,
       "norm_label": "db"
     },
     {
@@ -1770,7 +1770,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_gemini_config",
-      "community": 0,
+      "community": 13,
       "norm_label": "gemini-config.ts"
     },
     {
@@ -1830,7 +1830,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_workout_names",
-      "community": 0,
+      "community": 1,
       "norm_label": "split-workout-names.ts"
     },
     {
@@ -1840,7 +1840,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "constants_split_workout_names_split_workout_names",
-      "community": 0,
+      "community": 1,
       "norm_label": "split_workout_names"
     },
     {
@@ -1920,7 +1920,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "context_auth_context_useauth",
-      "community": 0,
+      "community": 1,
       "norm_label": "useauth()"
     },
     {
@@ -2030,7 +2030,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "package",
-      "community": 4,
+      "community": 8,
       "norm_label": "package.json"
     },
     {
@@ -2040,7 +2040,7 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "package_name",
-      "community": 4,
+      "community": 8,
       "norm_label": "name"
     },
     {
@@ -2050,7 +2050,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "package_main",
-      "community": 4,
+      "community": 8,
       "norm_label": "main"
     },
     {
@@ -2060,7 +2060,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "package_version",
-      "community": 4,
+      "community": 8,
       "norm_label": "version"
     },
     {
@@ -2250,7 +2250,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "package_dependencies_google_generative_ai",
-      "community": 0,
+      "community": 13,
       "norm_label": "@google/generative-ai"
     },
     {
@@ -2490,7 +2490,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "package_dependencies_firebase",
-      "community": 1,
+      "community": 4,
       "norm_label": "firebase"
     },
     {
@@ -2630,7 +2630,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "package_devdependencies",
-      "community": 4,
+      "community": 8,
       "norm_label": "devdependencies"
     },
     {
@@ -2640,7 +2640,7 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "package_devdependencies_types_react",
-      "community": 4,
+      "community": 8,
       "norm_label": "@types/react"
     },
     {
@@ -2650,7 +2650,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "package_devdependencies_eslint",
-      "community": 4,
+      "community": 8,
       "norm_label": "eslint"
     },
     {
@@ -2660,7 +2660,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "package_devdependencies_eslint_config_expo",
-      "community": 4,
+      "community": 8,
       "norm_label": "eslint-config-expo"
     },
     {
@@ -2670,7 +2670,7 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "package_devdependencies_typescript",
-      "community": 4,
+      "community": 8,
       "norm_label": "typescript"
     },
     {
@@ -2680,7 +2680,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "package_private",
-      "community": 4,
+      "community": 8,
       "norm_label": "private"
     },
     {
@@ -3270,7 +3270,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files",
-      "community": 14,
+      "community": 5,
       "norm_label": "build-reviewed-migration-files.js"
     },
     {
@@ -3280,7 +3280,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_fs",
-      "community": 14,
+      "community": 5,
       "norm_label": "fs"
     },
     {
@@ -3290,7 +3290,7 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_path",
-      "community": 14,
+      "community": 5,
       "norm_label": "path"
     },
     {
@@ -3300,7 +3300,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_inventory",
-      "community": 14,
+      "community": 5,
       "norm_label": "inventory"
     },
     {
@@ -3310,7 +3310,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_byname",
-      "community": 14,
+      "community": 5,
       "norm_label": "byname"
     },
     {
@@ -3320,7 +3320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_catalog",
-      "community": 14,
+      "community": 5,
       "norm_label": "catalog"
     },
     {
@@ -3330,7 +3330,7 @@
       "source_location": "L110",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_decisions",
-      "community": 14,
+      "community": 5,
       "norm_label": "decisions"
     },
     {
@@ -3340,7 +3340,7 @@
       "source_location": "L182",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_map",
-      "community": 14,
+      "community": 5,
       "norm_label": "map()"
     },
     {
@@ -3360,7 +3360,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_variation",
-      "community": 14,
+      "community": 5,
       "norm_label": "variation()"
     },
     {
@@ -3370,7 +3370,7 @@
       "source_location": "L213",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_findexercise",
-      "community": 14,
+      "community": 5,
       "norm_label": "findexercise()"
     },
     {
@@ -3380,7 +3380,7 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_findvariation",
-      "community": 14,
+      "community": 5,
       "norm_label": "findvariation()"
     },
     {
@@ -3390,7 +3390,7 @@
       "source_location": "L226",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_mapping",
-      "community": 14,
+      "community": 5,
       "norm_label": "mapping"
     },
     {
@@ -3400,7 +3400,7 @@
       "source_location": "L255",
       "_origin": "ast",
       "id": "scripts_migration_build_reviewed_migration_files_catalogseed",
-      "community": 14,
+      "community": 5,
       "norm_label": "catalogseed"
     },
     {
@@ -5200,7 +5200,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_firebase_errors",
-      "community": 40,
+      "community": 1,
       "norm_label": "firebase-errors.ts"
     },
     {
@@ -5210,7 +5210,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_firebase_errors_firebase_error_map",
-      "community": 40,
+      "community": 1,
       "norm_label": "firebase_error_map"
     },
     {
@@ -5220,7 +5220,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "utils_firebase_errors_getfriendlyautherror",
-      "community": 40,
+      "community": 1,
       "norm_label": "getfriendlyautherror()"
     },
     {
@@ -5384,10 +5384,50 @@
       "norm_label": "fmtduration()"
     },
     {
-      "label": "summarizePerformedExercise()",
+      "label": "holdSuffix()",
       "file_type": "code",
       "source_file": "utils/workout-conversion.ts",
       "source_location": "L85",
+      "_origin": "ast",
+      "id": "utils_workout_conversion_holdsuffix",
+      "community": 0,
+      "norm_label": "holdsuffix()"
+    },
+    {
+      "label": "weightSuffix()",
+      "file_type": "code",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L89",
+      "_origin": "ast",
+      "id": "utils_workout_conversion_weightsuffix",
+      "community": 0,
+      "norm_label": "weightsuffix()"
+    },
+    {
+      "label": "sameDisplayedSet()",
+      "file_type": "code",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L93",
+      "_origin": "ast",
+      "id": "utils_workout_conversion_samedisplayedset",
+      "community": 0,
+      "norm_label": "samedisplayedset()"
+    },
+    {
+      "label": "summarizePerformedExerciseSetGroups()",
+      "file_type": "code",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L103",
+      "_origin": "ast",
+      "id": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "community": 0,
+      "norm_label": "summarizeperformedexercisesetgroups()"
+    },
+    {
+      "label": "summarizePerformedExercise()",
+      "file_type": "code",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L126",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercise",
       "community": 0,
@@ -5397,7 +5437,7 @@
       "label": "workoutVolume()",
       "file_type": "code",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L119",
+      "source_location": "L158",
       "_origin": "ast",
       "id": "utils_workout_conversion_workoutvolume",
       "community": 0,
@@ -5407,7 +5447,7 @@
       "label": "workoutTotalReps()",
       "file_type": "code",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L128",
+      "source_location": "L167",
       "_origin": "ast",
       "id": "utils_workout_conversion_workouttotalreps",
       "community": 0,
@@ -5417,7 +5457,7 @@
       "label": "toDateObj()",
       "file_type": "code",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L134",
+      "source_location": "L173",
       "_origin": "ast",
       "id": "utils_workout_conversion_todateobj",
       "community": 0,
@@ -5427,7 +5467,7 @@
       "label": "recentExercisesForDay()",
       "file_type": "code",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L142",
+      "source_location": "L181",
       "_origin": "ast",
       "id": "utils_workout_conversion_recentexercisesforday",
       "community": 0,
@@ -5594,10 +5634,20 @@
       "norm_label": "graphify"
     },
     {
+      "label": "User workflow override",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "agents_user_workflow_override",
+      "community": 42,
+      "norm_label": "user workflow override"
+    },
+    {
       "label": "Beads Issue Tracker",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L15",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "agents_beads_issue_tracker",
       "community": 42,
@@ -5607,7 +5657,7 @@
       "label": "Quick Reference",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L19",
+      "source_location": "L29",
       "_origin": "ast",
       "id": "agents_quick_reference",
       "community": 42,
@@ -5617,7 +5667,7 @@
       "label": "Rules",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L28",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "agents_rules",
       "community": 42,
@@ -5627,7 +5677,7 @@
       "label": "Session Completion",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L36",
+      "source_location": "L46",
       "_origin": "ast",
       "id": "agents_session_completion",
       "community": 42,
@@ -5664,10 +5714,20 @@
       "norm_label": "commands"
     },
     {
-      "label": "Architecture",
+      "label": "User workflow override",
       "file_type": "document",
       "source_file": "CLAUDE.md",
       "source_location": "L23",
+      "_origin": "ast",
+      "id": "claude_user_workflow_override",
+      "community": 9,
+      "norm_label": "user workflow override"
+    },
+    {
+      "label": "Architecture",
+      "file_type": "document",
+      "source_file": "CLAUDE.md",
+      "source_location": "L33",
       "_origin": "ast",
       "id": "claude_architecture",
       "community": 9,
@@ -5677,7 +5737,7 @@
       "label": "Navigation / auth gating",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L27",
+      "source_location": "L37",
       "_origin": "ast",
       "id": "claude_navigation_auth_gating",
       "community": 9,
@@ -5687,7 +5747,7 @@
       "label": "Firebase",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L35",
+      "source_location": "L45",
       "_origin": "ast",
       "id": "claude_firebase",
       "community": 9,
@@ -5697,7 +5757,7 @@
       "label": "Migration scripts (`scripts/migration/`, `migration/`)",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L41",
+      "source_location": "L51",
       "_origin": "ast",
       "id": "claude_migration_scripts_scripts_migration_migration",
       "community": 9,
@@ -5707,7 +5767,7 @@
       "label": "AI features",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L45",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "claude_ai_features",
       "community": 9,
@@ -5717,7 +5777,7 @@
       "label": "Theming",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L49",
+      "source_location": "L59",
       "_origin": "ast",
       "id": "claude_theming",
       "community": 9,
@@ -5727,7 +5787,7 @@
       "label": "graphify",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L53",
+      "source_location": "L63",
       "_origin": "ast",
       "id": "claude_graphify",
       "community": 9,
@@ -5737,7 +5797,7 @@
       "label": "Beads Issue Tracker",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L65",
+      "source_location": "L75",
       "_origin": "ast",
       "id": "claude_beads_issue_tracker",
       "community": 9,
@@ -5747,7 +5807,7 @@
       "label": "Quick Reference",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L69",
+      "source_location": "L79",
       "_origin": "ast",
       "id": "claude_quick_reference",
       "community": 9,
@@ -5757,7 +5817,7 @@
       "label": "Rules",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L78",
+      "source_location": "L88",
       "_origin": "ast",
       "id": "claude_rules",
       "community": 9,
@@ -5767,7 +5827,7 @@
       "label": "Session Completion",
       "file_type": "document",
       "source_file": "CLAUDE.md",
-      "source_location": "L86",
+      "source_location": "L96",
       "_origin": "ast",
       "id": "claude_session_completion",
       "community": 9,
@@ -10430,7 +10490,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L224",
+      "source_location": "L235",
       "weight": 1.0,
       "source": "components_workout_card",
       "target": "components_workout_card_styles",
@@ -10440,7 +10500,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L24",
+      "source_location": "L31",
       "weight": 1.0,
       "source": "components_workout_card",
       "target": "components_workout_card_workoutcard",
@@ -10450,7 +10510,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L18",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "components_workout_card",
       "target": "components_workout_card_workoutcardprops",
@@ -10461,7 +10521,7 @@
       "context": "export",
       "confidence": "EXTRACTED",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L16",
+      "source_location": "L23",
       "weight": 1.0,
       "source": "components_workout_card",
       "target": "types_workout",
@@ -10519,6 +10579,17 @@
       "source_location": "L2",
       "weight": 1.0,
       "source": "components_workout_card",
+      "target": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "components/workout-card.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "components_workout_card",
       "target": "utils_workout_conversion_todateobj",
       "confidence_score": 1.0
     },
@@ -10549,7 +10620,7 @@
       "context": "field",
       "confidence": "EXTRACTED",
       "source_file": "components/workout-card.tsx",
-      "source_location": "L19",
+      "source_location": "L26",
       "weight": 1.0,
       "source": "components_workout_card_workoutcardprops",
       "target": "types_workout_workout",
@@ -10561,7 +10632,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/workout-card.tsx",
-      "source_location": "L87",
+      "source_location": "L94",
       "weight": 1.0,
       "source": "components_workout_card_workoutcard",
       "target": "utils_workout_conversion_exerciselabel"
@@ -10572,7 +10643,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/workout-card.tsx",
-      "source_location": "L87",
+      "source_location": "L94",
       "weight": 1.0,
       "source": "components_workout_card_workoutcard",
       "target": "utils_workout_conversion_summarizeperformedexercise"
@@ -10583,7 +10654,18 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/workout-card.tsx",
-      "source_location": "L27",
+      "source_location": "L149",
+      "weight": 1.0,
+      "source": "components_workout_card_workoutcard",
+      "target": "utils_workout_conversion_summarizeperformedexercisesetgroups"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "components/workout-card.tsx",
+      "source_location": "L34",
       "weight": 1.0,
       "source": "components_workout_card_workoutcard",
       "target": "utils_workout_conversion_todateobj"
@@ -10594,7 +10676,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/workout-card.tsx",
-      "source_location": "L80",
+      "source_location": "L87",
       "weight": 1.0,
       "source": "components_workout_card_workoutcard",
       "target": "utils_workout_conversion_workouttotalreps"
@@ -10605,7 +10687,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/workout-card.tsx",
-      "source_location": "L79",
+      "source_location": "L86",
       "weight": 1.0,
       "source": "components_workout_card_workoutcard",
       "target": "utils_workout_conversion_workoutvolume"
@@ -16460,6 +16542,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "source": "utils_workout_conversion",
+      "target": "utils_workout_conversion_holdsuffix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
       "source_location": "L74",
       "weight": 1.0,
       "source": "utils_workout_conversion",
@@ -16470,7 +16562,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L142",
+      "source_location": "L181",
       "weight": 1.0,
       "source": "utils_workout_conversion",
       "target": "utils_workout_conversion_recentexercisesforday",
@@ -16480,7 +16572,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L85",
+      "source_location": "L93",
+      "weight": 1.0,
+      "source": "utils_workout_conversion",
+      "target": "utils_workout_conversion_samedisplayedset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L126",
       "weight": 1.0,
       "source": "utils_workout_conversion",
       "target": "utils_workout_conversion_summarizeperformedexercise",
@@ -16490,7 +16592,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L134",
+      "source_location": "L103",
+      "weight": 1.0,
+      "source": "utils_workout_conversion",
+      "target": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L173",
       "weight": 1.0,
       "source": "utils_workout_conversion",
       "target": "utils_workout_conversion_todateobj",
@@ -16500,7 +16612,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L128",
+      "source_location": "L89",
+      "weight": 1.0,
+      "source": "utils_workout_conversion",
+      "target": "utils_workout_conversion_weightsuffix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L167",
       "weight": 1.0,
       "source": "utils_workout_conversion",
       "target": "utils_workout_conversion_workouttotalreps",
@@ -16510,7 +16632,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L119",
+      "source_location": "L158",
       "weight": 1.0,
       "source": "utils_workout_conversion",
       "target": "utils_workout_conversion_workoutvolume",
@@ -16532,7 +16654,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L161",
+      "source_location": "L200",
       "weight": 1.0,
       "source": "utils_workout_conversion_recentexercisesforday",
       "target": "utils_workout_conversion_exerciselabel",
@@ -16543,7 +16665,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L93",
+      "source_location": "L133",
       "weight": 1.0,
       "source": "utils_workout_conversion_summarizeperformedexercise",
       "target": "utils_workout_conversion_isdurationexercise",
@@ -16554,7 +16676,18 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L97",
+      "source_location": "L117",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "target": "utils_workout_conversion_isdurationexercise",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L137",
       "weight": 1.0,
       "source": "utils_workout_conversion_summarizeperformedexercise",
       "target": "utils_workout_conversion_fmtduration",
@@ -16565,7 +16698,73 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "utils/workout-conversion.ts",
-      "source_location": "L156",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "target": "utils_workout_conversion_fmtduration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L138",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercise",
+      "target": "utils_workout_conversion_holdsuffix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L118",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "target": "utils_workout_conversion_holdsuffix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L145",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercise",
+      "target": "utils_workout_conversion_weightsuffix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L122",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "target": "utils_workout_conversion_weightsuffix",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L108",
+      "weight": 1.0,
+      "source": "utils_workout_conversion_summarizeperformedexercisesetgroups",
+      "target": "utils_workout_conversion_samedisplayedset",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "utils/workout-conversion.ts",
+      "source_location": "L195",
       "weight": 1.0,
       "source": "utils_workout_conversion_recentexercisesforday",
       "target": "utils_workout_conversion_todateobj",
@@ -16695,7 +16894,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L15",
+      "source_location": "L25",
       "weight": 1.0,
       "source": "agents",
       "target": "agents_beads_issue_tracker",
@@ -16715,7 +16914,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L36",
+      "source_location": "L46",
       "weight": 1.0,
       "source": "agents",
       "target": "agents_session_completion",
@@ -16725,7 +16924,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L19",
+      "source_location": "L14",
+      "weight": 1.0,
+      "source": "agents",
+      "target": "agents_user_workflow_override",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L29",
       "weight": 1.0,
       "source": "agents_beads_issue_tracker",
       "target": "agents_quick_reference",
@@ -16735,7 +16944,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L28",
+      "source_location": "L38",
       "weight": 1.0,
       "source": "agents_beads_issue_tracker",
       "target": "agents_rules",
@@ -16765,7 +16974,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L23",
+      "source_location": "L33",
       "weight": 1.0,
       "source": "claude_claude_md",
       "target": "claude_architecture",
@@ -16775,7 +16984,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L65",
+      "source_location": "L75",
       "weight": 1.0,
       "source": "claude_claude_md",
       "target": "claude_beads_issue_tracker",
@@ -16795,7 +17004,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L53",
+      "source_location": "L63",
       "weight": 1.0,
       "source": "claude_claude_md",
       "target": "claude_graphify",
@@ -16805,7 +17014,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L86",
+      "source_location": "L96",
       "weight": 1.0,
       "source": "claude_claude_md",
       "target": "claude_session_completion",
@@ -16815,7 +17024,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L45",
+      "source_location": "L23",
+      "weight": 1.0,
+      "source": "claude_claude_md",
+      "target": "claude_user_workflow_override",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "CLAUDE.md",
+      "source_location": "L55",
       "weight": 1.0,
       "source": "claude_architecture",
       "target": "claude_ai_features",
@@ -16825,7 +17044,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L35",
+      "source_location": "L45",
       "weight": 1.0,
       "source": "claude_architecture",
       "target": "claude_firebase",
@@ -16835,7 +17054,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L41",
+      "source_location": "L51",
       "weight": 1.0,
       "source": "claude_architecture",
       "target": "claude_migration_scripts_scripts_migration_migration",
@@ -16845,7 +17064,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L27",
+      "source_location": "L37",
       "weight": 1.0,
       "source": "claude_architecture",
       "target": "claude_navigation_auth_gating",
@@ -16855,7 +17074,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L49",
+      "source_location": "L59",
       "weight": 1.0,
       "source": "claude_architecture",
       "target": "claude_theming",
@@ -16865,7 +17084,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L69",
+      "source_location": "L79",
       "weight": 1.0,
       "source": "claude_beads_issue_tracker",
       "target": "claude_quick_reference",
@@ -16875,7 +17094,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "CLAUDE.md",
-      "source_location": "L78",
+      "source_location": "L88",
       "weight": 1.0,
       "source": "claude_beads_issue_tracker",
       "target": "claude_rules",

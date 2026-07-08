@@ -82,11 +82,51 @@ function fmtDuration(totalSeconds: number): string {
   return `${minutes ? `${minutes}m ` : ''}${seconds}s`;
 }
 
+function holdSuffix(s?: PerformedSet): string {
+  return s?.holdSeconds !== undefined ? ` + ${s.holdSeconds}s hold` : '';
+}
+
+function weightSuffix(s?: PerformedSet): string {
+  return s?.bodyweight ? '' : ` @ ${s?.weight ?? 0} lbs`;
+}
+
+function sameDisplayedSet(a: PerformedSet, b: PerformedSet): boolean {
+  return (
+    (a.reps ?? 0) === (b.reps ?? 0) &&
+    (a.weight ?? 0) === (b.weight ?? 0) &&
+    Boolean(a.bodyweight) === Boolean(b.bodyweight) &&
+    (a.durationSeconds ?? 0) === (b.durationSeconds ?? 0) &&
+    a.holdSeconds === b.holdSeconds
+  );
+}
+
+export function summarizePerformedExerciseSetGroups(pe: PerformedExercise): string[] {
+  const groups: { set: PerformedSet; count: number }[] = [];
+
+  pe.sets.forEach((set) => {
+    const lastGroup = groups[groups.length - 1];
+    if (lastGroup && sameDisplayedSet(lastGroup.set, set)) {
+      lastGroup.count += 1;
+      return;
+    }
+    groups.push({ set, count: 1 });
+  });
+
+  return groups.map(({ set, count }) => {
+    const countPrefix = count > 1 ? `${count} x ` : '';
+    if (isDurationExercise(pe)) {
+      return `${countPrefix}${fmtDuration(set.durationSeconds ?? 0)}${holdSuffix(set)}`;
+    }
+
+    const reps = set.reps ?? 0;
+    return `${countPrefix}${reps} rep${reps !== 1 ? 's' : ''}${weightSuffix(set)}${holdSuffix(set)}`;
+  });
+}
+
 export function summarizePerformedExercise(pe: PerformedExercise): string {
   const sets = pe.sets;
   const setCount = sets.length;
   const first = sets[0];
-  const holdSuffix = (s?: PerformedSet) => (s?.holdSeconds !== undefined ? ` + ${s.holdSeconds}s hold` : '');
   const holdUniform = sets.every((s) => s.holdSeconds === first?.holdSeconds);
 
   let base: string;
@@ -100,7 +140,6 @@ export function summarizePerformedExercise(pe: PerformedExercise): string {
     const uniform =
       sets.every((s) => s.reps === first?.reps && s.weight === first?.weight && s.bodyweight === first?.bodyweight) &&
       holdUniform;
-    const weightSuffix = (s?: PerformedSet) => (s?.bodyweight ? '' : ` @ ${s?.weight ?? 0} lbs`);
     if (uniform) {
       const reps = first?.reps ?? 0;
       base = `${setCount} × ${reps} rep${reps !== 1 ? 's' : ''}${weightSuffix(first)}`;
