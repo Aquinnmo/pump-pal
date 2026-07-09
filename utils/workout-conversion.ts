@@ -10,6 +10,9 @@ export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
       if (row.holdSeconds !== undefined) {
         set.holdSeconds = row.holdSeconds;
       }
+      if (draftSet.completed !== undefined) {
+        set.completed = draftSet.completed;
+      }
       return set;
     }
     const set: PerformedSet = {
@@ -20,6 +23,9 @@ export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
     };
     if (row.holdSeconds !== undefined) {
       set.holdSeconds = row.holdSeconds;
+    }
+    if (draftSet.completed !== undefined) {
+      set.completed = draftSet.completed;
     }
     return set;
   });
@@ -37,6 +43,7 @@ export function collapseSetsToDraft(pe: PerformedExercise): DraftExerciseRow {
       weight: duration || s?.bodyweight ? '' : String(s?.weight ?? ''),
       durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
       durationSeconds: duration ? totalSeconds % 60 : 0,
+      completed: s?.completed,
     };
   });
 

@@ -74,6 +74,8 @@ function RootLayoutNav() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="set-split" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="planned-workouts" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="active-workout" options={{ headerShown: false, gestureEnabled: false }} />
       </Stack>
       <StatusBar style="light" />
     </>

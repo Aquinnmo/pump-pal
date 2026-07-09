@@ -14,6 +14,7 @@ export type PerformedSet = {
   calories?: number;
   rpe?: number;
   notes?: string;
+  completed?: boolean;
 };
 
 export type PerformedExercise = {
@@ -34,6 +35,11 @@ export type MigrationSource = {
   oldWorkoutId: string;
 };
 
+// status is absent on all legacy/completed docs prior to this feature —
+// treat missing status as 'completed'. planned/in_progress docs omit `date`
+// entirely so every existing orderBy('date') query excludes them for free.
+export type WorkoutStatus = 'planned' | 'in_progress' | 'completed';
+
 export type Workout = {
   id: string;
   userId: string;
@@ -45,6 +51,9 @@ export type Workout = {
   source?: MigrationSource;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  status?: WorkoutStatus;
+  queueOrder?: number;
+  startedAt?: Timestamp;
 };
 
 export type ExerciseVariation = {
@@ -110,6 +119,7 @@ export type DraftSet = {
   weight: string;
   durationMinutes: number;
   durationSeconds: number;
+  completed?: boolean;
 };
 
 // Modal's per-set editing shape — one row per exercise, expanded to

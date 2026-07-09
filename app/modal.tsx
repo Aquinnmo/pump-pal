@@ -5,7 +5,7 @@ import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
-import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
+import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout, WorkoutStatus } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -34,7 +34,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddWorkoutModal() {
   const { user } = useAuth();
-  const { id, suggestion } = useLocalSearchParams<{ id: string; suggestion: string }>();
+  const { id, suggestion, mode } = useLocalSearchParams<{ id: string; suggestion: string; mode: string }>();
   const insets = useSafeAreaInsets();
   const [workoutName, setWorkoutName] = useState('');
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
@@ -67,6 +67,9 @@ export default function AddWorkoutModal() {
   const [isToday, setIsToday] = useState(true);
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [docStatus, setDocStatus] = useState<WorkoutStatus | undefined>(undefined);
+
+  const isPlanMode = mode === 'plan' || docStatus === 'planned';
 
   // Fetch user's split + names used in past workouts to build the name dropdown
   // Also loads today's AI suggestion usage count from Firestore (shared across platforms,
@@ -164,6 +167,7 @@ export default function AddWorkoutModal() {
           }
           setWorkoutName(data.name || '');
           setNotes(data.notes || '');
+          setDocStatus(data.status);
           if (data.date) {
             const date = toDateObj(data.date);
             setWorkoutDate(date);
@@ -387,27 +391,63 @@ export default function AddWorkoutModal() {
         .filter((ex) => ex.label.trim() !== '')
         .map((ex, order) => buildPerformedExercise(ex, order));
 
-      const finalDate = isToday ? new Date() : workoutDate;
-
-      if (id) {
-        await updateDoc(doc(db, 'workouts', id), {
-          name: finalName,
-          date: Timestamp.fromDate(finalDate),
-          performedExercises,
-          notes: notes.trim(),
-          updatedAt: serverTimestamp(),
-        });
+      if (isPlanMode) {
+        if (id) {
+          await updateDoc(doc(db, 'workouts', id), {
+            name: finalName,
+            performedExercises,
+            notes: notes.trim(),
+            status: 'planned',
+            updatedAt: serverTimestamp(),
+          });
+        } else {
+          const lastQueued = await getDocs(
+            query(
+              collection(db, 'workouts'),
+              where('userId', '==', user.uid),
+              where('status', '==', 'planned'),
+              orderBy('queueOrder', 'desc'),
+              limit(1)
+            )
+          );
+          const nextQueueOrder = (lastQueued.docs[0]?.data().queueOrder ?? -1) + 1;
+          await addDoc(collection(db, 'workouts'), {
+            userId: user.uid,
+            name: finalName,
+            performedExercises,
+            notes: notes.trim(),
+            schemaVersion: 2,
+            status: 'planned',
+            queueOrder: nextQueueOrder,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
       } else {
-        await addDoc(collection(db, 'workouts'), {
-          userId: user.uid,
-          name: finalName,
-          date: Timestamp.fromDate(finalDate),
-          performedExercises,
-          notes: notes.trim(),
-          schemaVersion: 2,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+        const finalDate = isToday ? new Date() : workoutDate;
+
+        if (id) {
+          await updateDoc(doc(db, 'workouts', id), {
+            name: finalName,
+            date: Timestamp.fromDate(finalDate),
+            performedExercises,
+            notes: notes.trim(),
+            status: 'completed',
+            updatedAt: serverTimestamp(),
+          });
+        } else {
+          await addDoc(collection(db, 'workouts'), {
+            userId: user.uid,
+            name: finalName,
+            date: Timestamp.fromDate(finalDate),
+            performedExercises,
+            notes: notes.trim(),
+            schemaVersion: 2,
+            status: 'completed',
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
       }
       router.back();
     } catch (err: any) {
@@ -425,7 +465,9 @@ export default function AddWorkoutModal() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
           <Ionicons name="close" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{id ? 'Edit Workout' : 'Log Workout'}</Text>
+        <Text style={styles.headerTitle}>
+          {isPlanMode ? (id ? 'Edit Plan' : 'Plan Workout') : (id ? 'Edit Workout' : 'Log Workout')}
+        </Text>
         <TouchableOpacity onPress={handleSave} disabled={saving || loading}>
           {saving ? (
             <ActivityIndicator color="#e54242" />
@@ -482,9 +524,10 @@ export default function AddWorkoutModal() {
             />
           )}
 
-          <View style={styles.dateSection}>
-            <TouchableOpacity 
-              style={styles.checkboxRow} 
+          <View style={isPlanMode ? undefined : styles.dateSection}>
+            {!isPlanMode && (
+            <TouchableOpacity
+              style={styles.checkboxRow}
               onPress={() => setIsToday(!isToday)}
               activeOpacity={0.7}
             >
@@ -493,8 +536,9 @@ export default function AddWorkoutModal() {
               </View>
               <Text style={styles.checkboxLabel}>Today&apos;s Workout</Text>
             </TouchableOpacity>
+            )}
 
-            {!isToday && (
+            {!isPlanMode && !isToday && (
               <View style={styles.datePickerContainer}>
                 <Text style={styles.dateLabel}>Workout Date:</Text>
                 {Platform.OS === 'web' ? (
@@ -718,8 +762,12 @@ export default function AddWorkoutModal() {
           <Modal visible={showDeleteConfirm} transparent animationType="fade">
             <View style={styles.deleteModalOverlay}>
               <View style={styles.deleteModalCard}>
-                <Text style={styles.deleteModalTitle}>Delete Workout</Text>
-                <Text style={styles.deleteModalMessage}>Are you sure you want to delete this workout? This cannot be undone.</Text>
+                <Text style={styles.deleteModalTitle}>{isPlanMode ? 'Delete Plan' : 'Delete Workout'}</Text>
+                <Text style={styles.deleteModalMessage}>
+                  {isPlanMode
+                    ? 'Are you sure you want to delete this planned workout? This cannot be undone.'
+                    : 'Are you sure you want to delete this workout? This cannot be undone.'}
+                </Text>
                 <View style={styles.deleteModalActions}>
                   <TouchableOpacity
                     style={styles.deleteModalCancelButton}
@@ -749,7 +797,9 @@ export default function AddWorkoutModal() {
             {saving ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.bigSaveButtonText}>{id ? 'Save Changes' : 'Save Workout'}</Text>
+              <Text style={styles.bigSaveButtonText}>
+                {isPlanMode ? 'Save Plan' : (id ? 'Save Changes' : 'Save Workout')}
+              </Text>
             )}
           </TouchableOpacity>
           {id && (

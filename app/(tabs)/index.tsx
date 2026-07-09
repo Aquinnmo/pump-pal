@@ -28,6 +28,8 @@ export default function HomeScreen() {
   const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextWorkout, setNextWorkout] = useState<string | null>(null);
+  const [nextPlan, setNextPlan] = useState<Workout | null>(null);
+  const [inProgress, setInProgress] = useState<Workout | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,6 +72,32 @@ export default function HomeScreen() {
           }
 
           setNextWorkout(predictNextWorkoutName(splitNames, allFetched));
+
+          // An in-progress workout (crashed/backgrounded mid-session) takes priority over
+          // everything else — Up Next becomes "Resume".
+          const inProgressSnap = await getDocs(
+            query(
+              collection(db, 'workouts'),
+              where('userId', '==', user.uid),
+              where('status', '==', 'in_progress'),
+              limit(1)
+            )
+          );
+          setInProgress(
+            inProgressSnap.empty ? null : ({ id: inProgressSnap.docs[0].id, ...inProgressSnap.docs[0].data() } as Workout)
+          );
+
+          // Head of the planned queue, if any — takes priority over the predicted name
+          const planSnap = await getDocs(
+            query(
+              collection(db, 'workouts'),
+              where('userId', '==', user.uid),
+              where('status', '==', 'planned'),
+              orderBy('queueOrder'),
+              limit(1)
+            )
+          );
+          setNextPlan(planSnap.empty ? null : ({ id: planSnap.docs[0].id, ...planSnap.docs[0].data() } as Workout));
         } catch (err) {
           console.error(err);
         } finally {
@@ -110,10 +138,18 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {nextWorkout && (
+      {(inProgress || nextPlan || nextWorkout) && (
         <TouchableOpacity
           style={styles.nextWorkoutCard}
-          onPress={() => router.push({ pathname: '/modal', params: { suggestion: nextWorkout } })}
+          onPress={() => {
+            if (inProgress) {
+              router.push({ pathname: '/active-workout', params: { id: inProgress.id } });
+            } else if (nextPlan) {
+              router.push({ pathname: '/active-workout', params: { id: nextPlan.id } });
+            } else {
+              router.push({ pathname: '/active-workout', params: { suggestion: nextWorkout ?? '' } });
+            }
+          }}
           activeOpacity={0.85}>
           <LinearGradient
             colors={['rgba(255, 77, 77, 0.16)', 'rgba(255, 77, 77, 0)']}
@@ -145,8 +181,10 @@ export default function HomeScreen() {
           />
           <View style={styles.nextWorkoutContent}>
             <View style={styles.nextWorkoutLeft}>
-              <Text style={styles.nextWorkoutLabel}>Up Next:</Text>
-              <Text style={styles.nextWorkoutName}>{nextWorkout}</Text>
+              <Text style={styles.nextWorkoutLabel}>{inProgress ? 'Resume:' : 'Up Next:'}</Text>
+              <Text style={styles.nextWorkoutName}>
+                {inProgress ? inProgress.name : nextPlan ? nextPlan.name : nextWorkout}
+              </Text>
             </View>
             <View style={styles.nextWorkoutIcon}>
               <Ionicons name="barbell-outline" size={32} color="#ff4d4d" />
@@ -154,6 +192,23 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
       )}
+
+      <TouchableOpacity
+        style={styles.planCard}
+        onPress={() => router.push('/planned-workouts')}
+        activeOpacity={0.85}>
+        <View style={styles.planCardContent}>
+          <View style={styles.nextWorkoutLeft}>
+            <Text style={styles.planCardLabel}>Plan Workouts</Text>
+            <Text style={styles.planCardSubtitle}>
+              {nextPlan ? 'Queue and reorder your upcoming sessions' : 'Optional — queue up workouts ahead of time'}
+            </Text>
+          </View>
+          <View style={styles.planCardIcon}>
+            <Ionicons name="calendar-outline" size={26} color="#888" />
+          </View>
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent Workouts</Text>
@@ -360,6 +415,38 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 22,
     backgroundColor: 'rgba(0, 0, 0, 0.32)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  planCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    marginBottom: 24,
+    backgroundColor: '#161616',
+  },
+  planCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  planCardLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  planCardSubtitle: {
+    fontSize: 12,
+    color: '#777',
+    marginTop: 2,
+  },
+  planCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     justifyContent: 'center',
     alignItems: 'center',
   },
