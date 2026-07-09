@@ -4,7 +4,8 @@ import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
-import { predictNextWorkoutName } from '@/utils/predict-next-workout';
+import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
+import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [nextWorkout, setNextWorkout] = useState<string | null>(null);
+  const [nextWorkoutToPlan, setNextWorkoutToPlan] = useState<string | null>(null);
   const [nextPlan, setNextPlan] = useState<Workout | null>(null);
   const [inProgress, setInProgress] = useState<Workout | null>(null);
 
@@ -68,6 +70,14 @@ export default function HomeScreen() {
             const cached = await AsyncStorage.getItem(cacheKey);
             if (cached) {
               try { splitNames = JSON.parse(cached); } catch { /* ignore */ }
+            } else {
+              try {
+                const generated = await generateSplitWorkoutNames(customSplitDesc);
+                if (generated.length > 0) {
+                  splitNames = generated;
+                  await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
+                }
+              } catch { /* keep the card usable with its fallback label */ }
             }
           }
 
@@ -93,11 +103,14 @@ export default function HomeScreen() {
               collection(db, 'workouts'),
               where('userId', '==', user.uid),
               where('status', '==', 'planned'),
-              orderBy('queueOrder'),
-              limit(1)
+              orderBy('queueOrder')
             )
           );
-          setNextPlan(planSnap.empty ? null : ({ id: planSnap.docs[0].id, ...planSnap.docs[0].data() } as Workout));
+          const plannedQueue = planSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+          setNextPlan(plannedQueue[0] ?? null);
+          setNextWorkoutToPlan(
+            predictWorkoutAfterName(splitNames, allFetched, plannedQueue[plannedQueue.length - 1]?.name)
+          );
         } catch (err) {
           console.error(err);
         } finally {
@@ -197,15 +210,41 @@ export default function HomeScreen() {
         style={styles.planCard}
         onPress={() => router.push('/planned-workouts')}
         activeOpacity={0.85}>
+        <LinearGradient
+          colors={['rgba(78, 168, 222, 0.16)', 'rgba(78, 168, 222, 0)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.nextWorkoutGlowTop}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={['rgba(78, 168, 222, 0.16)', 'rgba(78, 168, 222, 0)']}
+          start={{ x: 0, y: 1 }}
+          end={{ x: 0, y: 0 }}
+          style={styles.nextWorkoutGlowBottom}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={['rgba(78, 168, 222, 0.10)', 'rgba(78, 168, 222, 0)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.nextWorkoutGlowLeft}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={['rgba(78, 168, 222, 0.10)', 'rgba(78, 168, 222, 0)']}
+          start={{ x: 1, y: 0 }}
+          end={{ x: 0, y: 0 }}
+          style={styles.nextWorkoutGlowRight}
+          pointerEvents="none"
+        />
         <View style={styles.planCardContent}>
           <View style={styles.nextWorkoutLeft}>
-            <Text style={styles.planCardLabel}>Plan Workouts</Text>
-            <Text style={styles.planCardSubtitle}>
-              {nextPlan ? 'Queue and reorder your upcoming sessions' : 'Optional — queue up workouts ahead of time'}
-            </Text>
+            <Text style={styles.planCardLabel}>Plan Workout:</Text>
+            <Text style={styles.nextWorkoutName}>{nextWorkoutToPlan ?? 'Choose Workout'}</Text>
           </View>
           <View style={styles.planCardIcon}>
-            <Ionicons name="calendar-outline" size={26} color="#888" />
+            <Ionicons name="calendar-outline" size={30} color="#4ea8de" />
           </View>
         </View>
       </TouchableOpacity>
@@ -419,11 +458,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   planCard: {
+    position: 'relative',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: '#2a2a2a',
     marginBottom: 24,
-    backgroundColor: '#161616',
+    overflow: 'hidden',
+    backgroundColor: '#1c1c1c',
   },
   planCardContent: {
     flexDirection: 'row',
@@ -433,20 +474,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   planCardLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  planCardSubtitle: {
-    fontSize: 12,
-    color: '#777',
-    marginTop: 2,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#8fd0f7',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   planCardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.32)',
     justifyContent: 'center',
     alignItems: 'center',
   },

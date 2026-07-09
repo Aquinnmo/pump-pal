@@ -1,21 +1,28 @@
 import { db } from '@/config/firebase';
+import { isSplitOption } from '@/constants/split-options';
+import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
+import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
+import { predictWorkoutAfterName } from '@/utils/predict-next-workout';
 import { exerciseLabel, summarizePerformedExercise } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
+  limit,
   orderBy,
   query,
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,6 +30,8 @@ export default function PlannedWorkoutsScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [plans, setPlans] = useState<Workout[]>([]);
+  const [splitNames, setSplitNames] = useState<string[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
@@ -30,15 +39,51 @@ export default function PlannedWorkoutsScreen() {
     if (!user) return;
     setLoading(true);
     try {
-      const snapshot = await getDocs(
-        query(
-          collection(db, 'workouts'),
-          where('userId', '==', user.uid),
-          where('status', '==', 'planned'),
-          orderBy('queueOrder')
-        )
-      );
-      setPlans(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout)));
+      const [snapshot, userSnap, historySnap] = await Promise.all([
+        getDocs(
+          query(
+            collection(db, 'workouts'),
+            where('userId', '==', user.uid),
+            where('status', '==', 'planned'),
+            orderBy('queueOrder')
+          )
+        ),
+        getDoc(doc(db, 'users', user.uid)),
+        getDocs(
+          query(
+            collection(db, 'workouts'),
+            where('userId', '==', user.uid),
+            orderBy('date', 'desc'),
+            limit(30)
+          )
+        ),
+      ]);
+
+      const loadedPlans = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      const history = historySnap.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      const splitType = userSnap.data()?.workoutSplit?.type;
+      const customSplitDesc: string = userSnap.data()?.workoutSplit?.custom ?? '';
+      let loadedSplitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
+
+      if (splitType === 'Other' && customSplitDesc) {
+        const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
+        const cached = await AsyncStorage.getItem(cacheKey);
+        if (cached) {
+          try { loadedSplitNames = JSON.parse(cached); } catch { /* ignore */ }
+        } else {
+          try {
+            const generated = await generateSplitWorkoutNames(customSplitDesc);
+            if (generated.length > 0) {
+              loadedSplitNames = generated;
+              await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
+            }
+          } catch { /* modal still allows a custom workout name */ }
+        }
+      }
+
+      setPlans(loadedPlans);
+      setSplitNames(loadedSplitNames);
+      setWorkoutHistory(history);
     } catch (err) {
       console.error(err);
     } finally {
@@ -50,6 +95,11 @@ export default function PlannedWorkoutsScreen() {
     useCallback(() => {
       loadPlans();
     }, [loadPlans])
+  );
+
+  const nextWorkoutToPlan = useMemo(
+    () => predictWorkoutAfterName(splitNames, workoutHistory, plans[plans.length - 1]?.name),
+    [plans, splitNames, workoutHistory]
   );
 
   const move = async (index: number, direction: -1 | 1) => {
@@ -83,6 +133,13 @@ export default function PlannedWorkoutsScreen() {
     }
   };
 
+  const openNewPlan = () => {
+    router.push({
+      pathname: '/modal',
+      params: { mode: 'plan', ...(nextWorkoutToPlan ? { suggestion: nextWorkoutToPlan } : {}) },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
@@ -106,7 +163,7 @@ export default function PlannedWorkoutsScreen() {
           </Text>
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => router.push({ pathname: '/modal', params: { mode: 'plan' } })}
+            onPress={openNewPlan}
             activeOpacity={0.85}>
             <Ionicons name="add-circle-outline" size={18} color="#e54242" />
             <Text style={styles.addButtonText}>Plan a Workout</Text>
@@ -167,7 +224,7 @@ export default function PlannedWorkoutsScreen() {
 
           <TouchableOpacity
             style={styles.addExButton}
-            onPress={() => router.push({ pathname: '/modal', params: { mode: 'plan' } })}
+            onPress={openNewPlan}
             activeOpacity={0.85}>
             <Ionicons name="add-circle-outline" size={18} color="#e54242" />
             <Text style={styles.addExText}>Plan a Workout</Text>

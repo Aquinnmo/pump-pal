@@ -132,16 +132,31 @@ export default function AddWorkoutModal() {
 
         // Auto-select workout name for new workouts only
         if (!id) {
+          let initialWorkoutName: string | null = null;
           if (suggestion && merged.includes(suggestion)) {
             // Use the suggestion passed from the home screen (pattern-based prediction)
-            setWorkoutName(suggestion);
+            initialWorkoutName = suggestion;
           } else if (suggestion) {
             // Suggestion isn't in the merged list yet — still honour it
-            setWorkoutName(suggestion);
+            initialWorkoutName = suggestion;
           } else {
             // Fallback if opened without a suggestion — same prediction logic as "Up Next"
-            const predicted = predictNextWorkoutName(splitNames, historyData);
-            if (predicted) setWorkoutName(predicted);
+            initialWorkoutName = predictNextWorkoutName(splitNames, historyData);
+          }
+
+          if (initialWorkoutName) {
+            setWorkoutName(initialWorkoutName);
+
+            if (mode === 'plan') {
+              const lastMatchingWorkout = historyData.find(
+                (workout) =>
+                  (!workout.status || workout.status === 'completed') &&
+                  workout.name === initialWorkoutName
+              );
+              if ((lastMatchingWorkout?.performedExercises ?? []).length > 0) {
+                setExercises(lastMatchingWorkout.performedExercises.map(collapseSetsToDraft));
+              }
+            }
           }
         }
       } catch {
@@ -149,7 +164,7 @@ export default function AddWorkoutModal() {
       }
     };
     loadNameOptions();
-  }, [user]);
+  }, [id, mode, suggestion, user]);
 
   useEffect(() => {
     if (!id || !user) return;
