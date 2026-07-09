@@ -1,4 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
+import { MuscleId } from '@/constants/muscles';
 
 export type TrackingMode = 'reps' | 'duration' | 'distance' | 'calories';
 
@@ -50,8 +51,15 @@ export type ExerciseVariation = {
   id: string;
   name: string;
   aliases: string[];
-  equipment: string;
+  primaryMuscles: MuscleId[];
+  secondaryMuscles: MuscleId[];
+  equipment?: string;
   angle?: string;
+  grip?: string;
+  stance?: string;
+  side?: string;
+  loadType?: string;
+  mechanics?: string;
 };
 
 export type CatalogExercise = {
@@ -59,8 +67,8 @@ export type CatalogExercise = {
   name: string;
   normalizedName: string;
   aliases: string[];
-  primaryMuscles: string[];
-  secondaryMuscles: string[];
+  primaryMuscles: MuscleId[];
+  secondaryMuscles: MuscleId[];
   movementPattern: string;
   equipment: string[];
   bodyRegion: 'upper' | 'lower' | 'core' | 'full_body';
@@ -88,7 +96,7 @@ export type ExerciseSearchOption = {
   variationId: string | null;
   tokens: string[];
   aliases: string[];
-  primaryMuscles: string[];
+  primaryMuscles: MuscleId[];
   equipment: string[];
 };
 

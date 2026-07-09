@@ -1,5 +1,10 @@
 # Pump Pal Firestore Data Refactor
 
+> **This is the migration history, not the current schema reference.** For
+> the live, maintained data model, see [`docs/data-model/`](./data-model/README.md).
+> This doc is kept as a record of what changed and why during the
+> legacy-to-canonical cutover.
+
 ## Current Status
 
 Firestore data migration is complete for the current legacy workout snapshot.

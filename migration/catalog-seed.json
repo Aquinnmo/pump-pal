@@ -29,13 +29,27 @@
           "id": "incline",
           "name": "Incline Bench Press",
           "aliases": [],
-          "angle": "incline"
+          "angle": "incline",
+          "primaryMuscles": [
+            "chest",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         },
         {
           "id": "decline",
           "name": "Decline Bench Press",
           "aliases": [],
-          "angle": "decline"
+          "angle": "decline",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts",
+            "triceps"
+          ]
         },
         {
           "id": "dumbbell_flat",
@@ -45,20 +59,41 @@
             "dumbbell bench"
           ],
           "equipment": "dumbbell",
-          "angle": "flat"
+          "angle": "flat",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts",
+            "triceps"
+          ]
         },
         {
           "id": "dumbbell_incline",
           "name": "Incline Dumbbell Bench Press",
           "aliases": [],
           "equipment": "dumbbell",
-          "angle": "incline"
+          "angle": "incline",
+          "primaryMuscles": [
+            "chest",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         },
         {
           "id": "smith",
           "name": "Smith Machine Bench Press",
           "aliases": [],
-          "equipment": "smith machine"
+          "equipment": "smith machine",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts",
+            "triceps"
+          ]
         }
       ]
     },
@@ -92,14 +127,28 @@
           "name": "Incline Machine Chest Press",
           "aliases": [],
           "equipment": "machine",
-          "angle": "incline"
+          "angle": "incline",
+          "primaryMuscles": [
+            "chest",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         },
         {
           "id": "decline",
           "name": "Decline Machine Chest Press",
           "aliases": [],
           "equipment": "machine",
-          "angle": "decline"
+          "angle": "decline",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts",
+            "triceps"
+          ]
         }
       ]
     },
@@ -135,25 +184,49 @@
           "name": "Upward Cable Pec Fly",
           "aliases": [],
           "equipment": "cable",
-          "angle": "upward"
+          "angle": "upward",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "cable",
           "name": "Cable Pec Fly",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Pec Deck",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Pec Fly",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         }
       ]
     },
@@ -184,20 +257,38 @@
           "name": "High-to-Low Cable Crossover",
           "aliases": [],
           "equipment": "cable",
-          "angle": "high"
+          "angle": "high",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "low",
           "name": "Low-to-High Cable Crossover",
           "aliases": [],
           "equipment": "cable",
-          "angle": "low"
+          "angle": "low",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "mid",
           "name": "Mid Cable Crossover",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         }
       ]
     },
@@ -211,7 +302,8 @@
       ],
       "secondaryMuscles": [
         "triceps",
-        "front delts"
+        "front delts",
+        "serratus anterior"
       ],
       "movementPattern": "",
       "equipment": [],
@@ -226,36 +318,84 @@
           "id": "one_arm",
           "name": "One-Arm Push-Up",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "triceps",
+            "front delts",
+            "serratus anterior"
+          ]
         },
         {
           "id": "pseudo_planche",
           "name": "Pseudo Planche Push-Up",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "chest",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "triceps",
+            "serratus anterior"
+          ]
         },
         {
           "id": "incline",
           "name": "Incline Push-Up",
           "aliases": [],
-          "angle": "incline"
+          "angle": "incline",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "triceps",
+            "front delts",
+            "serratus anterior"
+          ]
         },
         {
           "id": "decline",
           "name": "Decline Push-Up",
           "aliases": [],
-          "angle": "decline"
+          "angle": "decline",
+          "primaryMuscles": [
+            "chest",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "triceps",
+            "serratus anterior"
+          ]
         },
         {
           "id": "diamond",
           "name": "Diamond Push-Up",
           "aliases": [],
-          "grip": "narrow"
+          "grip": "narrow",
+          "primaryMuscles": [
+            "chest",
+            "triceps"
+          ],
+          "secondaryMuscles": [
+            "front delts",
+            "serratus anterior"
+          ]
         },
         {
           "id": "wide",
           "name": "Wide Push-Up",
           "aliases": [],
-          "grip": "wide"
+          "grip": "wide",
+          "primaryMuscles": [
+            "chest"
+          ],
+          "secondaryMuscles": [
+            "triceps",
+            "front delts",
+            "serratus anterior"
+          ]
         }
       ]
     },
@@ -285,20 +425,41 @@
           "id": "weighted",
           "name": "Weighted Dip",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "chest",
+            "triceps"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "trap_weighted",
           "name": "Weighted Trap Dip",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "chest",
+            "triceps"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         },
         {
           "id": "machine_assisted",
           "name": "Machine Assisted Dip",
           "aliases": [],
           "equipment": "machine",
-          "loadType": "assisted"
+          "loadType": "assisted",
+          "primaryMuscles": [
+            "chest",
+            "triceps"
+          ],
+          "secondaryMuscles": [
+            "front delts"
+          ]
         }
       ]
     },
@@ -309,9 +470,10 @@
       "aliases": [],
       "primaryMuscles": [
         "chest",
-        "shoulders"
+        "front delts"
       ],
       "secondaryMuscles": [
+        "side delts",
         "triceps"
       ],
       "movementPattern": "",
@@ -328,7 +490,15 @@
         {
           "id": "kneeling",
           "name": "Kneeling Landmine Press",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "chest",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "side delts",
+            "triceps"
+          ]
         }
       ]
     },
@@ -347,7 +517,7 @@
       "secondaryMuscles": [
         "quads",
         "upper back",
-        "forearms"
+        "forearm flexors"
       ],
       "movementPattern": "",
       "equipment": [
@@ -364,29 +534,80 @@
           "id": "sumo",
           "name": "Sumo Deadlift",
           "aliases": [],
-          "stance": "sumo"
+          "stance": "sumo",
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes",
+            "lower back",
+            "quads",
+            "adductors"
+          ],
+          "secondaryMuscles": [
+            "upper back",
+            "forearm flexors"
+          ]
         },
         {
           "id": "trap_bar",
           "name": "Trap Bar Deadlift",
           "aliases": [],
-          "equipment": "trap bar"
+          "equipment": "trap bar",
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes",
+            "lower back",
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "upper back",
+            "forearm flexors"
+          ]
         },
         {
           "id": "deficit",
           "name": "Deficit Deadlift",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes",
+            "lower back"
+          ],
+          "secondaryMuscles": [
+            "quads",
+            "upper back",
+            "forearm flexors"
+          ]
         },
         {
           "id": "rack_pull",
           "name": "Rack Pull",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes",
+            "lower back"
+          ],
+          "secondaryMuscles": [
+            "quads",
+            "upper back",
+            "forearm flexors"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Deadlift",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes",
+            "lower back"
+          ],
+          "secondaryMuscles": [
+            "quads",
+            "upper back",
+            "forearm flexors"
+          ]
         }
       ]
     },
@@ -417,13 +638,28 @@
           "id": "single_leg",
           "name": "Single-Leg Romanian Deadlift",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "lower back",
+            "glute medius"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Romanian Deadlift",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "hamstrings",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "lower back"
+          ]
         }
       ]
     },
@@ -438,7 +674,8 @@
       ],
       "secondaryMuscles": [
         "biceps",
-        "rear delts"
+        "rear delts",
+        "mid traps"
       ],
       "movementPattern": "",
       "equipment": [
@@ -456,29 +693,74 @@
           "id": "cable",
           "name": "Seated Cable Row",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "rear delts",
+            "mid traps"
+          ]
         },
         {
           "id": "chest_supported",
           "name": "Chest Supported Row",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "rear delts",
+            "mid traps"
+          ]
         },
         {
           "id": "dumbbell_bent_over",
           "name": "Dumbbell Bent Over Row",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "rear delts",
+            "mid traps"
+          ]
         },
         {
           "id": "seated_lateral",
           "name": "Seated Lateral Row",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "rear delts",
+            "mid traps"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Row",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "rear delts",
+            "mid traps"
+          ]
         }
       ]
     },
@@ -496,7 +778,8 @@
       ],
       "secondaryMuscles": [
         "biceps",
-        "rear delts"
+        "rear delts",
+        "mid traps"
       ],
       "movementPattern": "",
       "equipment": [
@@ -512,18 +795,45 @@
         {
           "id": "pendlay",
           "name": "Pendlay Row",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "rear delts",
+            "mid traps"
+          ]
         },
         {
           "id": "underhand",
           "name": "Underhand Barbell Row",
           "aliases": [],
-          "grip": "supinated"
+          "grip": "supinated",
+          "primaryMuscles": [
+            "upper back",
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "rear delts",
+            "mid traps"
+          ]
         },
         {
           "id": "yates",
           "name": "Yates Row",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper back",
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "rear delts",
+            "mid traps"
+          ]
         }
       ]
     },
@@ -537,7 +847,8 @@
         "lats"
       ],
       "secondaryMuscles": [
-        "biceps"
+        "biceps",
+        "mid traps"
       ],
       "movementPattern": "",
       "equipment": [
@@ -553,13 +864,29 @@
         {
           "id": "chest_supported",
           "name": "Chest Supported T-Bar Row",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "mid traps"
+          ]
         },
         {
           "id": "wide_grip",
           "name": "Wide Grip T-Bar Row",
           "aliases": [],
-          "grip": "wide"
+          "grip": "wide",
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "mid traps"
+          ]
         }
       ]
     },
@@ -591,35 +918,70 @@
           "name": "Single Arm Cable Lat Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "upper back"
+          ]
         },
         {
           "id": "wide_grip",
           "name": "Wide Grip Lat Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "wide"
+          "grip": "wide",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "upper back"
+          ]
         },
         {
           "id": "close_grip",
           "name": "Close Grip Lat Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "narrow"
+          "grip": "narrow",
+          "primaryMuscles": [
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "neutral_grip",
           "name": "Neutral Grip Lat Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "neutral"
+          "grip": "neutral",
+          "primaryMuscles": [
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "reverse_grip",
           "name": "Reverse Grip Lat Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "reverse"
+          "grip": "reverse",
+          "primaryMuscles": [
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         }
       ]
     },
@@ -649,32 +1011,67 @@
           "id": "weighted",
           "name": "Weighted Pull-Up",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "upper back"
+          ]
         },
         {
           "id": "chin_up",
           "name": "Chin-Up",
           "aliases": [],
-          "grip": "supinated"
+          "grip": "supinated",
+          "primaryMuscles": [
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "neutral_grip",
           "name": "Neutral Grip Pull-Up",
           "aliases": [],
-          "grip": "neutral"
+          "grip": "neutral",
+          "primaryMuscles": [
+            "lats",
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "wide_grip",
           "name": "Wide Grip Pull-Up",
           "aliases": [],
-          "grip": "wide"
+          "grip": "wide",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "upper back"
+          ]
         },
         {
           "id": "assisted",
           "name": "Assisted Pull-Up",
           "aliases": [],
           "equipment": "machine",
-          "loadType": "assisted"
+          "loadType": "assisted",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "upper back"
+          ]
         }
       ]
     },
@@ -688,7 +1085,8 @@
         "lats"
       ],
       "secondaryMuscles": [
-        "biceps"
+        "biceps",
+        "mid traps"
       ],
       "movementPattern": "",
       "equipment": [],
@@ -702,13 +1100,29 @@
         {
           "id": "feet_elevated",
           "name": "Feet Elevated Inverted Row",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "mid traps"
+          ]
         },
         {
           "id": "weighted",
           "name": "Weighted Inverted Row",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "upper back",
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "biceps",
+            "mid traps"
+          ]
         }
       ]
     },
@@ -762,14 +1176,26 @@
           "name": "Rope Straight Arm Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "rope"
+          "grip": "rope",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         },
         {
           "id": "bar",
           "name": "Bar Straight Arm Pulldown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "straight bar"
+          "grip": "straight bar",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         }
       ]
     },
@@ -802,19 +1228,40 @@
           "id": "dumbbell",
           "name": "Dumbbell Pullover",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "chest",
+            "triceps"
+          ]
         },
         {
           "id": "cable",
           "name": "Cable Pullover",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "chest",
+            "triceps"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Pullover",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "lats"
+          ],
+          "secondaryMuscles": [
+            "chest",
+            "triceps"
+          ]
         }
       ]
     },
@@ -828,7 +1275,8 @@
         "upper back"
       ],
       "secondaryMuscles": [
-        "traps"
+        "lower traps",
+        "rotator cuff"
       ],
       "movementPattern": "",
       "equipment": [
@@ -846,13 +1294,29 @@
           "name": "Rope Face Pull",
           "aliases": [],
           "equipment": "cable",
-          "grip": "rope"
+          "grip": "rope",
+          "primaryMuscles": [
+            "rear delts",
+            "upper back"
+          ],
+          "secondaryMuscles": [
+            "lower traps",
+            "rotator cuff"
+          ]
         },
         {
           "id": "seated",
           "name": "Seated Face Pull",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "rear delts",
+            "upper back"
+          ],
+          "secondaryMuscles": [
+            "lower traps",
+            "rotator cuff"
+          ]
         }
       ]
     },
@@ -862,7 +1326,7 @@
       "normalizedName": "shrug",
       "aliases": [],
       "primaryMuscles": [
-        "traps"
+        "upper traps"
       ],
       "secondaryMuscles": [
         "upper back"
@@ -883,31 +1347,61 @@
           "id": "barbell",
           "name": "Barbell Shrug",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Shrug",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "cable",
           "name": "Cable Shrug",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "smith",
           "name": "Smith Machine Shrug",
           "aliases": [],
-          "equipment": "smith machine"
+          "equipment": "smith machine",
+          "primaryMuscles": [
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Shrug",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         }
       ]
     },
@@ -938,7 +1432,14 @@
           "id": "seated",
           "name": "Seated Good Morning",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "hamstrings",
+            "lower back"
+          ],
+          "secondaryMuscles": [
+            "glutes"
+          ]
         }
       ]
     },
@@ -968,13 +1469,25 @@
           "id": "45_degree",
           "name": "45 Degree Back Extension",
           "aliases": [],
-          "equipment": "bodyweight"
+          "equipment": "bodyweight",
+          "primaryMuscles": [
+            "lower back",
+            "glutes",
+            "hamstrings"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "weighted",
           "name": "Weighted Back Extension",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "lower back",
+            "glutes",
+            "hamstrings"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -988,9 +1501,10 @@
         "military press"
       ],
       "primaryMuscles": [
-        "shoulders"
+        "front delts"
       ],
       "secondaryMuscles": [
+        "side delts",
         "triceps"
       ],
       "movementPattern": "",
@@ -1009,31 +1523,66 @@
           "id": "arnold_dumbbell",
           "name": "Arnold Press",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "front delts",
+            "side delts"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Overhead Shoulder Press",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "side delts",
+            "triceps"
+          ]
         },
         {
           "id": "barbell",
           "name": "Barbell Overhead Press",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "side delts",
+            "triceps"
+          ]
         },
         {
           "id": "seated_dumbbell",
           "name": "Seated Dumbbell Shoulder Press",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "side delts",
+            "triceps"
+          ]
         },
         {
           "id": "push_press",
           "name": "Push Press",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "side delts",
+            "triceps"
+          ]
         }
       ]
     },
@@ -1062,19 +1611,31 @@
           "id": "cable",
           "name": "Cable Lateral Raise",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "side delts"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Lateral Raise",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "side delts"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "machine",
           "name": "Machine Lateral Raise",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "side delts"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1103,24 +1664,40 @@
           "id": "dumbbell",
           "name": "Dumbbell Front Raise",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "cable",
           "name": "Cable Front Raise",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "barbell",
           "name": "Barbell Front Raise",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "plate",
           "name": "Plate Front Raise",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "front delts"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1150,19 +1727,37 @@
           "id": "cable",
           "name": "Cable Rear Delt Fly",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "rear delts"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Rear Delt Fly",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "rear delts"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Rear Delt Fly",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "rear delts"
+          ],
+          "secondaryMuscles": [
+            "upper back"
+          ]
         }
       ]
     },
@@ -1173,7 +1768,7 @@
       "aliases": [],
       "primaryMuscles": [
         "side delts",
-        "traps"
+        "upper traps"
       ],
       "secondaryMuscles": [
         "biceps"
@@ -1194,19 +1789,40 @@
           "id": "barbell",
           "name": "Barbell Upright Row",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "side delts",
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "biceps"
+          ]
         },
         {
           "id": "cable",
           "name": "Cable Upright Row",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "side delts",
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "biceps"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Upright Row",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "side delts",
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "biceps"
+          ]
         }
       ]
     },
@@ -1219,7 +1835,7 @@
         "biceps"
       ],
       "secondaryMuscles": [
-        "forearms"
+        "forearm flexors"
       ],
       "movementPattern": "",
       "equipment": [
@@ -1239,63 +1855,121 @@
           "id": "cable",
           "name": "Cable Bicep Curl",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "cable_hammer",
           "name": "Cable Hammer Curl",
           "aliases": [],
           "equipment": "cable",
-          "grip": "neutral"
+          "grip": "neutral",
+          "primaryMuscles": [
+            "biceps",
+            "forearm flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "hammer",
           "name": "Hammer Curl",
           "aliases": [],
-          "grip": "neutral"
+          "grip": "neutral",
+          "primaryMuscles": [
+            "biceps",
+            "forearm flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "machine_preacher",
           "name": "Machine Preacher Curl",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "barbell",
           "name": "Barbell Curl",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Curl",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "ez_bar",
           "name": "EZ Bar Curl",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "incline",
           "name": "Incline Dumbbell Curl",
           "aliases": [],
           "equipment": "dumbbell",
-          "angle": "incline"
+          "angle": "incline",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "concentration",
           "name": "Concentration Curl",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "spider",
           "name": "Spider Curl",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         }
       ]
     },
@@ -1308,7 +1982,7 @@
         "biceps"
       ],
       "secondaryMuscles": [
-        "forearms"
+        "forearm flexors"
       ],
       "movementPattern": "",
       "equipment": [
@@ -1326,25 +2000,49 @@
           "id": "ez_bar",
           "name": "EZ Bar Preacher Curl",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Preacher Curl",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Preacher Curl",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         },
         {
           "id": "single_arm",
           "name": "Single Arm Preacher Curl",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "biceps"
+          ],
+          "secondaryMuscles": [
+            "forearm flexors"
+          ]
         }
       ]
     },
@@ -1374,72 +2072,116 @@
         {
           "id": "overhead",
           "name": "Overhead Triceps Extension",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "cable_pushdown",
           "name": "Cable Triceps Pushdown",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "single_arm_cable_pushdown",
           "name": "Single Arm Cable Triceps Pushdown",
           "aliases": [],
           "equipment": "cable",
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "rope_pushdown",
           "name": "Rope Triceps Pushdown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "rope"
+          "grip": "rope",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "straight_bar_pushdown",
           "name": "Straight Bar Triceps Pushdown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "straight bar"
+          "grip": "straight bar",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "v_bar_pushdown",
           "name": "V-Bar Triceps Pushdown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "v-bar"
+          "grip": "v-bar",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "reverse_grip_pushdown",
           "name": "Reverse Grip Triceps Pushdown",
           "aliases": [],
           "equipment": "cable",
-          "grip": "reverse"
+          "grip": "reverse",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "overhead_cable",
           "name": "Overhead Cable Triceps Extension",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "dumbbell_overhead",
           "name": "Dumbbell Overhead Triceps Extension",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "skullcrusher",
           "name": "Skull Crusher",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "kickback",
           "name": "Triceps Kickback",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1470,7 +2212,14 @@
           "id": "smith",
           "name": "Smith Machine Close Grip Bench Press",
           "aliases": [],
-          "equipment": "smith machine"
+          "equipment": "smith machine",
+          "primaryMuscles": [
+            "triceps"
+          ],
+          "secondaryMuscles": [
+            "chest",
+            "front delts"
+          ]
         }
       ]
     },
@@ -1482,7 +2231,7 @@
         "wrist curl"
       ],
       "primaryMuscles": [
-        "forearms"
+        "forearm flexors"
       ],
       "secondaryMuscles": [],
       "movementPattern": "",
@@ -1502,45 +2251,73 @@
           "id": "barbell",
           "name": "Barbell Forearm Curl",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "forearm flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "barbell_reverse",
           "name": "Barbell Reverse Forearm Curl",
           "aliases": [],
           "equipment": "barbell",
-          "grip": "reverse"
+          "grip": "reverse",
+          "primaryMuscles": [
+            "forearm extensors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "cable",
           "name": "Cable Forearm Curl",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "forearm flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "cable_reverse",
           "name": "Reverse Cable Forearm Curl",
           "aliases": [],
           "equipment": "cable",
-          "grip": "reverse"
+          "grip": "reverse",
+          "primaryMuscles": [
+            "forearm extensors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Forearm Curl",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "forearm flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "dumbbell_extension",
           "name": "Dumbbell Forearm Extension",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "forearm extensors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "side_dumbbell",
           "name": "Side Dumbbell Forearm Curl",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "forearm flexors"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1572,37 +2349,79 @@
           "id": "barbell_back",
           "name": "Barbell Back Squat",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "goblet",
           "name": "Goblet Squat",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "front",
           "name": "Front Squat",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "hamstrings"
+          ]
         },
         {
           "id": "smith",
           "name": "Smith Machine Squat",
           "aliases": [],
-          "equipment": "smith machine"
+          "equipment": "smith machine",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "pause",
           "name": "Pause Squat",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "box",
           "name": "Box Squat",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         }
       ]
     },
@@ -1634,21 +2453,43 @@
           "name": "Single-Leg Leg Press",
           "aliases": [],
           "equipment": "machine",
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "hamstrings"
+          ]
         },
         {
           "id": "narrow",
           "name": "Narrow Stance Leg Press",
           "aliases": [],
           "equipment": "machine",
-          "stance": "narrow"
+          "stance": "narrow",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "hamstrings"
+          ]
         },
         {
           "id": "wide",
           "name": "Wide Stance Leg Press",
           "aliases": [],
           "equipment": "machine",
-          "stance": "wide"
+          "stance": "wide",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "adductors"
+          ]
         }
       ]
     },
@@ -1678,7 +2519,14 @@
           "id": "reverse",
           "name": "Reverse Hack Squat",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         }
       ]
     },
@@ -1730,7 +2578,11 @@
           "name": "Single-Leg Leg Extension",
           "aliases": [],
           "equipment": "machine",
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1761,29 +2613,66 @@
         {
           "id": "walking",
           "name": "Walking Lunge",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "reverse",
           "name": "Reverse Lunge",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Lunge",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "barbell",
           "name": "Barbell Lunge",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "curtsy",
           "name": "Curtsy Lunge",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "glute medius",
+            "adductors"
+          ]
         }
       ]
     },
@@ -1816,19 +2705,40 @@
           "id": "dumbbell",
           "name": "Dumbbell Bulgarian Split Squat",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "barbell",
           "name": "Barbell Bulgarian Split Squat",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "smith",
           "name": "Smith Machine Bulgarian Split Squat",
           "aliases": [],
-          "equipment": "smith machine"
+          "equipment": "smith machine",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         }
       ]
     },
@@ -1859,13 +2769,27 @@
           "id": "dumbbell",
           "name": "Dumbbell Step-Up",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "barbell",
           "name": "Barbell Step-Up",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         }
       ]
     },
@@ -1892,13 +2816,21 @@
           "id": "assisted",
           "name": "Assisted Sissy Squat",
           "aliases": [],
-          "loadType": "assisted"
+          "loadType": "assisted",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "weighted",
           "name": "Weighted Sissy Squat",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1928,13 +2860,21 @@
           "id": "lying_machine",
           "name": "Lying Hamstring Curl",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "hamstrings"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "seated_machine",
           "name": "Seated Hamstring Curl",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "hamstrings"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1962,13 +2902,21 @@
           "id": "assisted",
           "name": "Assisted Nordic Curl",
           "aliases": [],
-          "loadType": "assisted"
+          "loadType": "assisted",
+          "primaryMuscles": [
+            "hamstrings"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "weighted",
           "name": "Weighted Nordic Curl",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "hamstrings"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -1998,19 +2946,38 @@
           "id": "barbell",
           "name": "Barbell Hip Thrust",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Hip Thrust",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "single_leg",
           "name": "Single-Leg Hip Thrust",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "glute medius"
+          ]
         }
       ]
     },
@@ -2039,18 +3006,38 @@
           "id": "barbell",
           "name": "Barbell Glute Bridge",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "single_leg",
           "name": "Single-Leg Glute Bridge",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "glute medius"
+          ]
         },
         {
           "id": "banded",
           "name": "Banded Glute Bridge",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "glute medius"
+          ]
         }
       ]
     },
@@ -2081,7 +3068,13 @@
           "name": "Rope Cable Pull-Through",
           "aliases": [],
           "equipment": "cable",
-          "grip": "rope"
+          "grip": "rope",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         }
       ]
     },
@@ -2112,18 +3105,36 @@
           "id": "cable",
           "name": "Cable Glute Kickback",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "machine",
           "name": "Machine Glute Kickback",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         },
         {
           "id": "banded",
           "name": "Banded Glute Kickback",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "glutes"
+          ],
+          "secondaryMuscles": [
+            "hamstrings"
+          ]
         }
       ]
     },
@@ -2153,13 +3164,25 @@
           "id": "machine",
           "name": "Hip Abductor Machine",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "glute medius"
+          ],
+          "secondaryMuscles": [
+            "glutes"
+          ]
         },
         {
           "id": "cable",
           "name": "Cable Hip Abduction",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "glute medius"
+          ],
+          "secondaryMuscles": [
+            "glutes"
+          ]
         }
       ]
     },
@@ -2187,13 +3210,21 @@
           "id": "machine",
           "name": "Hip Adductor Machine",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "adductors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "cable",
           "name": "Cable Hip Adduction",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "adductors"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -2203,7 +3234,7 @@
       "normalizedName": "calf raise",
       "aliases": [],
       "primaryMuscles": [
-        "calves"
+        "gastrocnemius"
       ],
       "secondaryMuscles": [],
       "movementPattern": "",
@@ -2219,31 +3250,51 @@
           "id": "standing",
           "name": "Standing Calf Raise",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "seated",
           "name": "Seated Calf Raise",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "soleus"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "leg_press",
           "name": "Leg Press Calf Raise",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "smith",
           "name": "Smith Machine Calf Raise",
           "aliases": [],
-          "equipment": "smith machine"
+          "equipment": "smith machine",
+          "primaryMuscles": [
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "single_leg",
           "name": "Single-Leg Calf Raise",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -2253,7 +3304,7 @@
       "normalizedName": "ab crunch",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "upper abs"
       ],
       "secondaryMuscles": [],
       "movementPattern": "",
@@ -2271,24 +3322,42 @@
           "id": "machine",
           "name": "Machine Ab Crunch",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "cable",
           "name": "Cable Crunch",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "bicycle",
           "name": "Bicycle Crunch",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": [
+            "obliques"
+          ]
         },
         {
           "id": "weighted",
           "name": "Weighted Crunch",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -2298,7 +3367,7 @@
       "normalizedName": "sit-up",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "upper abs"
       ],
       "secondaryMuscles": [
         "hip flexors"
@@ -2317,18 +3386,37 @@
           "id": "weighted",
           "name": "Weighted Sit-Up",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": [
+            "hip flexors"
+          ]
         },
         {
           "id": "decline",
           "name": "Decline Sit-Up",
           "aliases": [],
-          "angle": "decline"
+          "angle": "decline",
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": [
+            "hip flexors"
+          ]
         },
         {
           "id": "twisting",
           "name": "Twisting Sit-Up",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper abs"
+          ],
+          "secondaryMuscles": [
+            "hip flexors",
+            "obliques"
+          ]
         }
       ]
     },
@@ -2338,7 +3426,7 @@
       "normalizedName": "leg raise",
       "aliases": [],
       "primaryMuscles": [
-        "abs",
+        "lower abs",
         "hip flexors"
       ],
       "secondaryMuscles": [],
@@ -2356,25 +3444,45 @@
           "id": "hold",
           "name": "Leg Raise Hold",
           "aliases": [],
-          "mechanics": "static"
+          "mechanics": "static",
+          "primaryMuscles": [
+            "lower abs",
+            "hip flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "hanging",
           "name": "Hanging Leg Raise",
           "aliases": [],
-          "loadType": "bodyweight"
+          "loadType": "bodyweight",
+          "primaryMuscles": [
+            "lower abs",
+            "hip flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "hanging_knee",
           "name": "Hanging Knee Raise",
           "aliases": [],
-          "loadType": "bodyweight"
+          "loadType": "bodyweight",
+          "primaryMuscles": [
+            "lower abs",
+            "hip flexors"
+          ],
+          "secondaryMuscles": []
         },
         {
           "id": "captains_chair",
           "name": "Captain's Chair Leg Raise",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "lower abs",
+            "hip flexors"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -2384,7 +3492,8 @@
       "normalizedName": "plank",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "upper abs",
+        "lower abs"
       ],
       "secondaryMuscles": [
         "obliques"
@@ -2401,18 +3510,39 @@
         {
           "id": "side",
           "name": "Side Plank",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs",
+            "lower abs"
+          ]
         },
         {
           "id": "forearm",
           "name": "Forearm Plank",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper abs",
+            "lower abs"
+          ],
+          "secondaryMuscles": [
+            "obliques"
+          ]
         },
         {
           "id": "weighted",
           "name": "Weighted Plank",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "upper abs",
+            "lower abs"
+          ],
+          "secondaryMuscles": [
+            "obliques"
+          ]
         }
       ]
     },
@@ -2422,7 +3552,8 @@
       "normalizedName": "ab wheel rollout",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "upper abs",
+        "lower abs"
       ],
       "secondaryMuscles": [
         "obliques"
@@ -2439,12 +3570,26 @@
         {
           "id": "kneeling",
           "name": "Kneeling Ab Wheel Rollout",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper abs",
+            "lower abs"
+          ],
+          "secondaryMuscles": [
+            "obliques"
+          ]
         },
         {
           "id": "standing",
           "name": "Standing Ab Wheel Rollout",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "upper abs",
+            "lower abs"
+          ],
+          "secondaryMuscles": [
+            "obliques"
+          ]
         }
       ]
     },
@@ -2457,7 +3602,7 @@
         "obliques"
       ],
       "secondaryMuscles": [
-        "abs"
+        "upper abs"
       ],
       "movementPattern": "",
       "equipment": [],
@@ -2473,12 +3618,24 @@
           "id": "weighted",
           "name": "Weighted Russian Twist",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         },
         {
           "id": "feet_elevated",
           "name": "Feet Elevated Russian Twist",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         }
       ]
     },
@@ -2491,7 +3648,7 @@
         "obliques"
       ],
       "secondaryMuscles": [
-        "abs"
+        "upper abs"
       ],
       "movementPattern": "",
       "equipment": [
@@ -2508,21 +3665,39 @@
           "id": "cable",
           "name": "Cable Trunk Rotation",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         },
         {
           "id": "woodchop_high",
           "name": "High Cable Woodchop",
           "aliases": [],
           "equipment": "cable",
-          "angle": "high"
+          "angle": "high",
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         },
         {
           "id": "woodchop_low",
           "name": "Low Cable Woodchop",
           "aliases": [],
           "equipment": "cable",
-          "angle": "low"
+          "angle": "low",
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         }
       ]
     },
@@ -2535,7 +3710,7 @@
         "obliques"
       ],
       "secondaryMuscles": [
-        "abs"
+        "upper abs"
       ],
       "movementPattern": "",
       "equipment": [
@@ -2552,13 +3727,25 @@
           "id": "half_kneeling",
           "name": "Half-Kneeling Pallof Press",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         },
         {
           "id": "standing",
           "name": "Standing Pallof Press",
           "aliases": [],
-          "equipment": "cable"
+          "equipment": "cable",
+          "primaryMuscles": [
+            "obliques"
+          ],
+          "secondaryMuscles": [
+            "upper abs"
+          ]
         }
       ]
     },
@@ -2568,7 +3755,8 @@
       "normalizedName": "dead bug",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "upper abs",
+        "lower abs"
       ],
       "secondaryMuscles": [],
       "movementPattern": "",
@@ -2584,7 +3772,12 @@
           "id": "weighted",
           "name": "Weighted Dead Bug",
           "aliases": [],
-          "loadType": "free_weight"
+          "loadType": "free_weight",
+          "primaryMuscles": [
+            "upper abs",
+            "lower abs"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -2594,7 +3787,7 @@
       "normalizedName": "mountain climber",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "lower abs"
       ],
       "secondaryMuscles": [
         "hip flexors"
@@ -2618,7 +3811,8 @@
         "hollow hold"
       ],
       "primaryMuscles": [
-        "abs"
+        "upper abs",
+        "lower abs"
       ],
       "secondaryMuscles": [],
       "movementPattern": "",
@@ -2637,7 +3831,7 @@
       "normalizedName": "l-sit",
       "aliases": [],
       "primaryMuscles": [
-        "abs",
+        "lower abs",
         "hip flexors"
       ],
       "secondaryMuscles": [
@@ -2656,7 +3850,14 @@
           "id": "hanging",
           "name": "Hanging L-Sit",
           "aliases": [],
-          "loadType": "bodyweight"
+          "loadType": "bodyweight",
+          "primaryMuscles": [
+            "lower abs",
+            "hip flexors"
+          ],
+          "secondaryMuscles": [
+            "triceps"
+          ]
         }
       ]
     },
@@ -2666,7 +3867,7 @@
       "normalizedName": "roman chair hold",
       "aliases": [],
       "primaryMuscles": [
-        "abs"
+        "lower abs"
       ],
       "secondaryMuscles": [
         "hip flexors"
@@ -2689,13 +3890,14 @@
         "farmer's walk"
       ],
       "primaryMuscles": [
-        "forearms",
-        "traps"
+        "forearm flexors",
+        "upper traps"
       ],
       "secondaryMuscles": [
         "glutes",
         "quads",
-        "abs"
+        "upper abs",
+        "lower abs"
       ],
       "movementPattern": "",
       "equipment": [
@@ -2713,13 +3915,33 @@
           "id": "dumbbell",
           "name": "Dumbbell Farmer Carry",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "forearm flexors",
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "quads",
+            "upper abs",
+            "lower abs"
+          ]
         },
         {
           "id": "trap_bar",
           "name": "Trap Bar Farmer Carry",
           "aliases": [],
-          "equipment": "trap bar"
+          "equipment": "trap bar",
+          "primaryMuscles": [
+            "forearm flexors",
+            "upper traps"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "quads",
+            "upper abs",
+            "lower abs"
+          ]
         }
       ]
     },
@@ -2733,7 +3955,7 @@
         "hamstrings"
       ],
       "secondaryMuscles": [
-        "shoulders",
+        "rear delts",
         "lower back"
       ],
       "movementPattern": "",
@@ -2751,7 +3973,16 @@
           "id": "single_arm",
           "name": "Single Arm Kettlebell Swing",
           "aliases": [],
-          "side": "unilateral"
+          "side": "unilateral",
+          "primaryMuscles": [
+            "glutes",
+            "hamstrings"
+          ],
+          "secondaryMuscles": [
+            "rear delts",
+            "lower back",
+            "obliques"
+          ]
         }
       ]
     },
@@ -2762,11 +3993,12 @@
       "aliases": [],
       "primaryMuscles": [
         "quads",
-        "shoulders"
+        "front delts"
       ],
       "secondaryMuscles": [
         "glutes",
-        "triceps"
+        "triceps",
+        "side delts"
       ],
       "movementPattern": "",
       "equipment": [
@@ -2784,13 +4016,31 @@
           "id": "barbell",
           "name": "Barbell Thruster",
           "aliases": [],
-          "equipment": "barbell"
+          "equipment": "barbell",
+          "primaryMuscles": [
+            "quads",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "triceps",
+            "side delts"
+          ]
         },
         {
           "id": "dumbbell",
           "name": "Dumbbell Thruster",
           "aliases": [],
-          "equipment": "dumbbell"
+          "equipment": "dumbbell",
+          "primaryMuscles": [
+            "quads",
+            "front delts"
+          ],
+          "secondaryMuscles": [
+            "glutes",
+            "triceps",
+            "side delts"
+          ]
         }
       ]
     },
@@ -2804,7 +4054,7 @@
         "glutes"
       ],
       "secondaryMuscles": [
-        "calves"
+        "gastrocnemius"
       ],
       "movementPattern": "",
       "equipment": [],
@@ -2826,8 +4076,8 @@
         "quads"
       ],
       "secondaryMuscles": [
-        "shoulders",
-        "abs"
+        "front delts",
+        "upper abs"
       ],
       "movementPattern": "",
       "equipment": [],
@@ -2851,7 +4101,7 @@
       "primaryMuscles": [
         "quads",
         "hamstrings",
-        "calves"
+        "gastrocnemius"
       ],
       "secondaryMuscles": [
         "glutes"
@@ -2870,24 +4120,55 @@
           "id": "treadmill",
           "name": "Treadmill Run",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "quads",
+            "hamstrings",
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": [
+            "glutes"
+          ]
         },
         {
           "id": "outdoor",
           "name": "Outdoor Run",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "quads",
+            "hamstrings",
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": [
+            "glutes"
+          ]
         },
         {
           "id": "sprints",
           "name": "Sprints",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "quads",
+            "hamstrings",
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": [
+            "glutes"
+          ]
         },
         {
           "id": "incline",
           "name": "Incline Treadmill Walk",
           "aliases": [],
           "equipment": "machine",
-          "angle": "incline"
+          "angle": "incline",
+          "primaryMuscles": [
+            "quads",
+            "hamstrings",
+            "gastrocnemius",
+            "glutes"
+          ],
+          "secondaryMuscles": []
         }
       ]
     },
@@ -2904,7 +4185,7 @@
       ],
       "secondaryMuscles": [
         "hamstrings",
-        "calves",
+        "gastrocnemius",
         "glutes"
       ],
       "movementPattern": "",
@@ -2921,18 +4202,42 @@
           "id": "stationary",
           "name": "Stationary Bike",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "gastrocnemius",
+            "glutes"
+          ]
         },
         {
           "id": "spin",
           "name": "Spin Class",
           "aliases": [],
-          "equipment": "machine"
+          "equipment": "machine",
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "gastrocnemius",
+            "glutes"
+          ]
         },
         {
           "id": "outdoor",
           "name": "Outdoor Cycling",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "quads"
+          ],
+          "secondaryMuscles": [
+            "hamstrings",
+            "gastrocnemius",
+            "glutes"
+          ]
         }
       ]
     },
@@ -2976,7 +4281,7 @@
         "hamstrings"
       ],
       "secondaryMuscles": [
-        "calves",
+        "gastrocnemius",
         "glutes"
       ],
       "movementPattern": "",
@@ -3004,7 +4309,7 @@
         "quads"
       ],
       "secondaryMuscles": [
-        "calves"
+        "gastrocnemius"
       ],
       "movementPattern": "",
       "equipment": [
@@ -3026,10 +4331,10 @@
         "skipping"
       ],
       "primaryMuscles": [
-        "calves"
+        "gastrocnemius"
       ],
       "secondaryMuscles": [
-        "shoulders"
+        "side delts"
       ],
       "movementPattern": "",
       "equipment": [],
@@ -3043,7 +4348,13 @@
         {
           "id": "double_under",
           "name": "Double Unders",
-          "aliases": []
+          "aliases": [],
+          "primaryMuscles": [
+            "gastrocnemius"
+          ],
+          "secondaryMuscles": [
+            "side delts"
+          ]
         }
       ]
     }
