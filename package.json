@@ -10,7 +10,7 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build:web": "npx expo export -p web",
-    "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js",
+    "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js && node scripts/migration/canonical-muscles.test.js && node scripts/migration/catalog-seed.test.js",
     "migration:inventory": "node scripts/migration/legacy-inventory.js",
     "migration:firestore:snapshot": "node scripts/migration/firestore-readonly-snapshot.js",
     "migration:seed:exercises": "node scripts/migration/seed-exercise-catalog.js",

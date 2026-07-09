@@ -19,6 +19,8 @@
           "id": "barbell_flat",
           "name": "Flat Barbell Bench Press",
           "aliases": ["barbell bench"],
+          "primaryMuscles": ["chest"],
+          "secondaryMuscles": ["front delts", "triceps"],
           "equipment": "barbell",
           "angle": "flat"
         },
@@ -26,6 +28,8 @@
           "id": "dumbbell_flat",
           "name": "Flat Dumbbell Bench Press",
           "aliases": ["db bench", "dumbbell bench"],
+          "primaryMuscles": ["chest"],
+          "secondaryMuscles": ["front delts", "triceps"],
           "equipment": "dumbbell",
           "angle": "flat"
         }

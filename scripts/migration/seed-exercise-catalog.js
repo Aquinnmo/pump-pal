@@ -1,6 +1,9 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { getAccessToken, requestJson } = require('./firestore-readonly-snapshot');
+const { MUSCLE_IDS } = require('./canonical-muscles');
+
+const MUSCLE_ID_SET = new Set(MUSCLE_IDS);
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -39,6 +42,18 @@ function parseArgs(argv) {
   return args;
 }
 
+function validateMuscleList(errors, prefix, field, value, { requireNonEmpty }) {
+  if (!Array.isArray(value) || (requireNonEmpty && value.length === 0)) {
+    errors.push(`${prefix}.${field} must be a${requireNonEmpty ? ' non-empty' : 'n'} array`);
+    return;
+  }
+  value.forEach((muscle) => {
+    if (!MUSCLE_ID_SET.has(muscle)) {
+      errors.push(`${prefix}.${field} has unknown muscle id: ${muscle}`);
+    }
+  });
+}
+
 function validateCatalog(catalog) {
   const errors = [];
   const ids = new Set();
@@ -59,6 +74,9 @@ function validateCatalog(catalog) {
     if (ids.has(exercise.id)) errors.push(`duplicate exercise id: ${exercise.id}`);
     ids.add(exercise.id);
 
+    validateMuscleList(errors, prefix, 'primaryMuscles', exercise.primaryMuscles, { requireNonEmpty: true });
+    validateMuscleList(errors, prefix, 'secondaryMuscles', exercise.secondaryMuscles, { requireNonEmpty: false });
+
     if (!Array.isArray(exercise.variations)) {
       errors.push(`${prefix}.variations must be an array`);
       return;
@@ -71,6 +89,9 @@ function validateCatalog(catalog) {
       if (!variation.name) errors.push(`${variationPrefix}.name is required`);
       if (variationIds.has(variation.id)) errors.push(`duplicate variation id: ${exercise.id}/${variation.id}`);
       variationIds.add(variation.id);
+
+      validateMuscleList(errors, variationPrefix, 'primaryMuscles', variation.primaryMuscles, { requireNonEmpty: true });
+      validateMuscleList(errors, variationPrefix, 'secondaryMuscles', variation.secondaryMuscles, { requireNonEmpty: false });
     });
   });
 

@@ -1,221 +1,201 @@
-# Graph Report - pump-pal  (2026-07-07)
+# Graph Report - .  (2026-07-08)
 
 ## Corpus Check
-- 94 files · ~162,838 words
+- 40 files · ~168,656 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 651 nodes · 1015 edges · 80 communities (28 shown, 52 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 36 edges (avg confidence: 0.58)
-- Token cost: 0 input · 0 output
+- 641 nodes · 1017 edges · 46 communities (29 shown, 17 thin omitted)
+- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 48 edges (avg confidence: 0.68)
+- Token cost: 92,821 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_App Screens & Workout Data|App Screens & Workout Data]]
-- [[_COMMUNITY_Auth Flow & Firebase Config|Auth Flow & Firebase Config]]
-- [[_COMMUNITY_Firestore Migration Write Scripts|Firestore Migration Write Scripts]]
-- [[_COMMUNITY_Expo App Config|Expo App Config]]
+- [[_COMMUNITY_App Tab Screens|App Tab Screens]]
+- [[_COMMUNITY_Auth & Onboarding Flow|Auth & Onboarding Flow]]
+- [[_COMMUNITY_Migration Review Builder|Migration Review Builder]]
+- [[_COMMUNITY_App Config (app.json)|App Config (app.json)]]
+- [[_COMMUNITY_Muscle Data Tests|Muscle Data Tests]]
+- [[_COMMUNITY_Firestore Snapshot Script|Firestore Snapshot Script]]
 - [[_COMMUNITY_NPM Dependencies|NPM Dependencies]]
-- [[_COMMUNITY_Legacy Data Inventory & Mapping|Legacy Data Inventory & Mapping]]
+- [[_COMMUNITY_Exercise Catalog Docs|Exercise Catalog Docs]]
 - [[_COMMUNITY_V2 Migration Builder|V2 Migration Builder]]
 - [[_COMMUNITY_Exercise Inventory Builder|Exercise Inventory Builder]]
-- [[_COMMUNITY_NPM Scripts & Package Meta|NPM Scripts & Package Meta]]
-- [[_COMMUNITY_Firestore Refactor Docs|Firestore Refactor Docs]]
-- [[_COMMUNITY_Theming & UI Primitives|Theming & UI Primitives]]
-- [[_COMMUNITY_Firestore V2 Writer Script|Firestore V2 Writer Script]]
-- [[_COMMUNITY_Legacy Workout Conversion Scripts|Legacy Workout Conversion Scripts]]
+- [[_COMMUNITY_NPM Scripts & Devdeps|NPM Scripts & Devdeps]]
+- [[_COMMUNITY_Themed UI Components|Themed UI Components]]
+- [[_COMMUNITY_Firestore V2 Writer|Firestore V2 Writer]]
+- [[_COMMUNITY_Legacy Workout Conversion|Legacy Workout Conversion]]
 - [[_COMMUNITY_Pushup Challenge Feature|Pushup Challenge Feature]]
-- [[_COMMUNITY_Migration File Review Builder|Migration File Review Builder]]
-- [[_COMMUNITY_Project Reset Script|Project Reset Script]]
+- [[_COMMUNITY_Phone Auth & reCAPTCHA|Phone Auth & reCAPTCHA]]
+- [[_COMMUNITY_Reset Project Script|Reset Project Script]]
+- [[_COMMUNITY_Beads & Session Policy|Beads & Session Policy]]
 - [[_COMMUNITY_TypeScript Config|TypeScript Config]]
-- [[_COMMUNITY_Welcome Onboarding Screen|Welcome Onboarding Screen]]
-- [[_COMMUNITY_Theming Doc Notes|Theming Doc Notes]]
+- [[_COMMUNITY_Muscle Taxonomy Module|Muscle Taxonomy Module]]
+- [[_COMMUNITY_Welcome Screen|Welcome Screen]]
+- [[_COMMUNITY_Project README|Project README]]
 - [[_COMMUNITY_Vercel Deploy Config|Vercel Deploy Config]]
 - [[_COMMUNITY_Tab Bar Layout|Tab Bar Layout]]
-- [[_COMMUNITY_Auth Doc Notes|Auth Doc Notes]]
 - [[_COMMUNITY_External Link Component|External Link Component]]
-- [[_COMMUNITY_Exercise Schema Docs|Exercise Schema Docs]]
 - [[_COMMUNITY_ESLint Config|ESLint Config]]
-- [[_COMMUNITY_Android Icon Background Asset|Android Icon Background Asset]]
-- [[_COMMUNITY_Favicon & Mascot Logo|Favicon & Mascot Logo]]
-- [[_COMMUNITY_Android Icon Foreground Asset|Android Icon Foreground Asset]]
-- [[_COMMUNITY_Android Icon Monochrome Asset|Android Icon Monochrome Asset]]
+- [[_COMMUNITY_Graphify Policy Note|Graphify Policy Note]]
+- [[_COMMUNITY_Android Icon Assets|Android Icon Assets]]
+- [[_COMMUNITY_App Branding Assets|App Branding Assets]]
+- [[_COMMUNITY_Beads Post-Checkout Hook|Beads Post-Checkout Hook]]
+- [[_COMMUNITY_Beads Post-Merge Hook|Beads Post-Merge Hook]]
+- [[_COMMUNITY_Beads Pre-Commit Hook|Beads Pre-Commit Hook]]
+- [[_COMMUNITY_Beads Pre-Push Hook|Beads Pre-Push Hook]]
+- [[_COMMUNITY_Beads Commit-Msg Hook|Beads Commit-Msg Hook]]
+- [[_COMMUNITY_CLAUDE.md Arch & Theming|CLAUDE.md Arch & Theming]]
+- [[_COMMUNITY_Schema Versioning Concept|Schema Versioning Concept]]
+- [[_COMMUNITY_Android Icon Foreground|Android Icon Foreground]]
+- [[_COMMUNITY_Android Icon Monochrome|Android Icon Monochrome]]
 - [[_COMMUNITY_App Icon Asset|App Icon Asset]]
-- [[_COMMUNITY_ExerciseCatalogMeta Doc Note|ExerciseCatalogMeta Doc Note]]
-- [[_COMMUNITY_Firebase Config Doc Note|Firebase Config Doc Note]]
-- [[_COMMUNITY_Color Scheme Doc Note|Color Scheme Doc Note]]
-- [[_COMMUNITY_Search Ranking Rationale|Search Ranking Rationale]]
-- [[_COMMUNITY_AGENTS|AGENTS.md]]
-- [[_COMMUNITY_post-checkout|post-checkout]]
-- [[_COMMUNITY_post-merge|post-merge]]
-- [[_COMMUNITY_pre-commit|pre-commit]]
-- [[_COMMUNITY_pre-push|pre-push]]
-- [[_COMMUNITY_prepare-commit-msg|prepare-commit-msg]]
-- [[_COMMUNITY_AsyncStorage pumppal_onboarding_seen key|AsyncStorage pumppal_onboarding_seen key]]
-- [[_COMMUNITY_AuthProvider (contextauth-context.tsx)|AuthProvider (context/auth-context.tsx)]]
-- [[_COMMUNITY_exercises{exerciseId} collection|exercises/{exerciseId} collection]]
-- [[_COMMUNITY_Expo Router (file-based routing)|Expo Router (file-based routing)]]
-- [[_COMMUNITY_constantsgemini-config.ts|constants/gemini-config.ts]]
-- [[_COMMUNITY_utilsgemini-muscle-analysis.ts|utils/gemini-muscle-analysis.ts]]
-- [[_COMMUNITY_utilsgemini-workout-suggestions.ts|utils/gemini-workout-suggestions.ts]]
-- [[_COMMUNITY_scriptsmigration Node scripts|scripts/migration/ Node scripts]]
-- [[_COMMUNITY_app(tabs)settings.tsx|app/(tabs)/settings.tsx]]
-- [[_COMMUNITY_constantssplit-options.ts|constants/split-options.ts]]
-- [[_COMMUNITY_constantstheme.ts|constants/theme.ts]]
-- [[_COMMUNITY_componentsthemed-text.tsx|components/themed-text.tsx]]
-- [[_COMMUNITY_componentsthemed-view.tsx|components/themed-view.tsx]]
-- [[_COMMUNITY_hooksuse-theme-color.ts|hooks/use-theme-color.ts]]
-- [[_COMMUNITY_@typesworkout (performedExercises.sets shape)|@/types/workout (performedExercises[].sets shape)]]
-- [[_COMMUNITY_workouts{workoutId} collection|workouts/{workoutId} collection]]
-- [[_COMMUNITY_app(tabs)analytics.tsx|app/(tabs)/analytics.tsx]]
-- [[_COMMUNITY_App cutover to canonical top-level collections|App cutover to canonical top-level collections]]
-- [[_COMMUNITY_appmodal.tsx|app/modal.tsx]]
-- [[_COMMUNITY_ExerciseCatalogMeta (exerciseCatalogMetacurrent)|ExerciseCatalogMeta (exerciseCatalogMeta/current)]]
-- [[_COMMUNITY_utilsgemini-muscle-analysis.ts|utils/gemini-muscle-analysis.ts]]
-- [[_COMMUNITY_utilsgemini-workout-suggestions.ts|utils/gemini-workout-suggestions.ts]]
-- [[_COMMUNITY_app(tabs)index.tsx|app/(tabs)/index.tsx]]
-- [[_COMMUNITY_LegacyExercise type|LegacyExercise type]]
-- [[_COMMUNITY_LegacyWorkout type (users{uid}workouts{oldWorkoutId})|LegacyWorkout type (users/{uid}/workouts/{oldWorkoutId})]]
-- [[_COMMUNITY_Migration rules aggregate rows expanded to set-by-set|Migration rules: aggregate rows expanded to set-by-set]]
-- [[_COMMUNITY_Firestore Data Refactor doc (canonical schema)|Firestore Data Refactor doc (canonical schema)]]
-- [[_COMMUNITY_app(tabs)settings.tsx|app/(tabs)/settings.tsx]]
-- [[_COMMUNITY_TPC pushup-challenge feature (users{uid}pushup-challengedata)|TPC pushup-challenge feature (users/{uid}/pushup-challenge/data)]]
-- [[_COMMUNITY_Workout type (workouts{workoutId})|Workout type (workouts/{workoutId})]]
-- [[_COMMUNITY_componentsworkout-card.tsx|components/workout-card.tsx]]
-- [[_COMMUNITY_app(tabs)workouts.tsx|app/(tabs)/workouts.tsx]]
-- [[_COMMUNITY_.env.example|.env.example]]
+- [[_COMMUNITY_README Env Example|README Env Example]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `useAuth()` - 25 edges
+1. `useAuth()` - 19 edges
 2. `toDateObj()` - 18 edges
 3. `expo` - 17 edges
-4. `AddWorkoutModal()` - 17 edges
-5. `scripts` - 16 edges
-6. `Workout` - 14 edges
-7. `db` - 12 edges
-8. `buildPlan()` - 11 edges
-9. `Pump Pal Firestore Data Refactor` - 11 edges
-10. `isSplitOption()` - 10 edges
+4. `scripts` - 16 edges
+5. `Workout` - 14 edges
+6. `buildPlan()` - 11 edges
+7. `AddWorkoutModal()` - 10 edges
+8. `exerciseLabel()` - 10 edges
+9. `PushupChallengeScreen()` - 9 edges
+10. `main()` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `Graphify Knowledge Graph Rules (CLAUDE.md)` --semantically_similar_to--> `Graphify Knowledge Graph Rules (AGENTS.md)`  [INFERRED] [semantically similar]
+  CLAUDE.md → AGENTS.md
+- `User Workflow Override (CLAUDE.md)` --semantically_similar_to--> `User Workflow Override (AGENTS.md)`  [INFERRED] [semantically similar]
+  CLAUDE.md → AGENTS.md
+- `Beads Issue Tracker Rules (CLAUDE.md)` --semantically_similar_to--> `Beads Issue Tracker Rules (AGENTS.md)`  [INFERRED] [semantically similar]
+  CLAUDE.md → AGENTS.md
+- `Session Completion Protocol (CLAUDE.md)` --semantically_similar_to--> `Session Completion Protocol (AGENTS.md)`  [INFERRED] [semantically similar]
+  CLAUDE.md → AGENTS.md
 - `SettingsScreen()` --indirect_call--> `variation()`  [INFERRED]
   app/(tabs)/settings.tsx → scripts/migration/build-reviewed-migration-files.js
-- `AddWorkoutModal()` --references--> `react`  [EXTRACTED]
-  app/modal.tsx → package.json
-- `AddWorkoutModal()` --indirect_call--> `todayUTC()`  [INFERRED]
-  app/modal.tsx → utils/daily-name.ts
-- `SettingsScreen()` --references--> `updates`  [EXTRACTED]
-  app/(tabs)/settings.tsx → app.json
-- `TabLayout()` --indirect_call--> `HapticTab()`  [INFERRED]
-  app/(tabs)/_layout.tsx → components/haptic-tab.tsx
 
 ## Import Cycles
 - None detected.
 
-## Communities (80 total, 52 thin omitted)
+## Hyperedges (group relationships)
+- **Account Deletion Flow Across Collections** — docs_data_model_users_account_deletion, docs_data_model_legacy_account_deletion_touchpoint, docs_data_model_pushup_challenge_account_deletion, docs_data_model_workouts_workout_doc [EXTRACTED 0.90]
+- **Legacy-to-Canonical Workout Schema Migration** — docs_data_model_exercises_exercise_catalog, docs_data_model_workouts_workout_doc, docs_data_model_legacy_legacy_workout, docs_firestore_data_refactor_migration_history [EXTRACTED 0.90]
+- **Graphify/Beads/Workflow Project Policies** — claude_graphify, claude_user_workflow_override, claude_beads_issue_tracker, claude_session_completion [EXTRACTED 0.85]
 
-### Community 0 - "App Screens & Workout Data"
-Cohesion: 0.07
-Nodes (66): AddWorkoutModal(), styles, AnalyticsScreen(), styles, InsightsCache, MuscleInsightCards(), Props, RefreshCache (+58 more)
+## Communities (46 total, 17 thin omitted)
 
-### Community 1 - "Auth Flow & Firebase Config"
-Cohesion: 0.09
+### Community 0 - "App Tab Screens"
+Cohesion: 0.06
+Nodes (69): AddWorkoutModal(), styles, AnalyticsScreen(), styles, HomeScreen(), styles, styles, InsightsCache (+61 more)
+
+### Community 1 - "Auth & Onboarding Flow"
+Cohesion: 0.08
 Nodes (34): SignInScreen(), styles, SignUpScreen(), styles, RootLayoutNav(), unstable_settings, SetSplitScreen(), styles (+26 more)
 
-### Community 2 - "Firestore Migration Write Scripts"
-Cohesion: 0.07
-Nodes (51): base64url(), createJwt(), crypto, docId(), fieldsToJs(), firestoreValueToJs(), fs, getAccessToken() (+43 more)
+### Community 2 - "Migration Review Builder"
+Cohesion: 0.06
+Nodes (38): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+30 more)
 
-### Community 3 - "Expo App Config"
+### Community 3 - "App Config (app.json)"
 Cohesion: 0.05
 Nodes (38): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, predictiveBackGestureEnabled (+30 more)
 
-### Community 4 - "NPM Dependencies"
+### Community 4 - "Muscle Data Tests"
+Cohesion: 0.07
+Nodes (35): MUSCLE_IDS, assert, fs, match, { MUSCLE_IDS }, path, tsMuscleIds, tsSource (+27 more)
+
+### Community 5 - "Firestore Snapshot Script"
+Cohesion: 0.09
+Nodes (37): base64url(), createJwt(), crypto, docId(), fieldsToJs(), firestoreValueToJs(), fs, getAccessToken() (+29 more)
+
+### Community 6 - "NPM Dependencies"
 Cohesion: 0.05
-Nodes (39): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+31 more)
+Nodes (37): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+29 more)
 
-### Community 5 - "Legacy Data Inventory & Mapping"
-Cohesion: 0.06
-Nodes (39): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+31 more)
+### Community 7 - "Exercise Catalog Docs"
+Cohesion: 0.08
+Nodes (35): AI Features (Google Gemini), Firebase Setup and Canonical Firestore Paths, Migration Scripts, Navigation / Auth Gating, CatalogExercise / exercises/{exerciseId}, exerciseCatalogMeta/current, Exercise Picker (flattened search UX), ExerciseVariation (embedded) (+27 more)
 
-### Community 6 - "V2 Migration Builder"
+### Community 8 - "V2 Migration Builder"
 Cohesion: 0.12
 Nodes (30): blocker(), buildUsageFlags(), buildV2Artifacts(), cleanUndefined(), collectSource(), countMappedExerciseIds(), EXERCISES_OUT, EXPORT_FILE (+22 more)
 
-### Community 7 - "Exercise Inventory Builder"
+### Community 9 - "Exercise Inventory Builder"
 Cohesion: 0.13
 Nodes (26): buildInventory(), buildMapping(), buildReviewWarnings(), compactCounts(), csvCell(), documentIdFromPath(), EXPORT_FILE, fs (+18 more)
 
-### Community 8 - "NPM Scripts & Package Meta"
+### Community 10 - "NPM Scripts & Devdeps"
 Cohesion: 0.08
 Nodes (25): devDependencies, eslint, eslint-config-expo, @types/react, typescript, main, name, private (+17 more)
 
-### Community 9 - "Firestore Refactor Docs"
-Cohesion: 0.05
-Nodes (35): AI features, Architecture, Beads Issue Tracker, Commands, Firebase, graphify, Migration scripts (`scripts/migration/`, `migration/`), Navigation / auth gating (+27 more)
-
-### Community 10 - "Theming & UI Primitives"
+### Community 11 - "Themed UI Components"
 Cohesion: 0.14
 Nodes (16): ParallaxScrollView(), Props, styles, styles, ThemedText(), ThemedTextProps, ThemedView(), ThemedViewProps (+8 more)
 
-### Community 11 - "Firestore V2 Writer Script"
+### Community 12 - "Firestore V2 Writer"
 Cohesion: 0.13
 Nodes (21): commitWrites(), documentRoot(), encodeFields(), encodePathSegments(), encodeValue(), { execFileSync }, EXERCISES_FILE, fs (+13 more)
 
-### Community 12 - "Legacy Workout Conversion Scripts"
+### Community 13 - "Legacy Workout Conversion"
 Cohesion: 0.15
 Nodes (18): convertLegacyExercise(), convertLegacyWorkout(), durationSeconds(), assert, { convertedWorkout, report }, { convertLegacyWorkout }, mappingsByLegacyName, compareTotals() (+10 more)
 
-### Community 13 - "Pushup Challenge Feature"
-Cohesion: 0.15
-Nodes (16): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+8 more)
+### Community 14 - "Pushup Challenge Feature"
+Cohesion: 0.18
+Nodes (15): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+7 more)
 
-### Community 14 - "Migration File Review Builder"
+### Community 15 - "Phone Auth & reCAPTCHA"
 Cohesion: 0.24
 Nodes (8): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, FirebaseRecaptchaVerifierModal, FirebaseRecaptchaVerifierModalRef, Props, styles
 
-### Community 15 - "Project Reset Script"
+### Community 16 - "Reset Project Script"
 Cohesion: 0.22
 Nodes (7): exampleDirPath, fs, oldDirs, path, readline, rl, root
 
-### Community 16 - "TypeScript Config"
+### Community 17 - "Beads & Session Policy"
+Cohesion: 0.32
+Nodes (8): Beads Configuration File, Beads Issue Tracker (tool), Beads Issue Tracker Rules (AGENTS.md), Session Completion Protocol (AGENTS.md), User Workflow Override (AGENTS.md), Beads Issue Tracker Rules (CLAUDE.md), Session Completion Protocol (CLAUDE.md), User Workflow Override (CLAUDE.md)
+
+### Community 18 - "TypeScript Config"
 Cohesion: 0.29
 Nodes (6): compilerOptions, paths, strict, extends, include, @/*
 
-### Community 17 - "Welcome Onboarding Screen"
+### Community 19 - "Muscle Taxonomy Module"
+Cohesion: 0.47
+Nodes (5): isMuscleId(), MUSCLE_SET, MuscleId, muscleLabel(), MUSCLES
+
+### Community 20 - "Welcome Screen"
 Cohesion: 0.40
 Nodes (3): Slide, SLIDES, styles
 
-### Community 20 - "Vercel Deploy Config"
+### Community 21 - "Project README"
+Cohesion: 0.40
+Nodes (4): Architecture, Other commands, Pump Pal, Setup
+
+### Community 22 - "Vercel Deploy Config"
 Cohesion: 0.40
 Nodes (4): buildCommand, cleanUrls, outputDirectory, rewrites
 
-### Community 41 - "Search Ranking Rationale"
-Cohesion: 0.22
-Nodes (8): Beads - AI-Native Issue Tracking, Essential Commands, Get Started with Beads, Learn More, Quick Start, What is Beads?, Why Beads?, Working with Issues
-
-### Community 42 - "AGENTS.md"
-Cohesion: 0.29
-Nodes (6): Beads Issue Tracker, graphify, Quick Reference, Rules, Session Completion, User workflow override
-
 ## Knowledge Gaps
-- **308 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+303 more)
+- **272 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+267 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **52 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **17 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SettingsScreen()` connect `Auth Flow & Firebase Config` to `App Screens & Workout Data`, `Expo App Config`, `Legacy Data Inventory & Mapping`?**
-  _High betweenness centrality (0.267) - this node is a cross-community bridge._
-- **Why does `exercise()` connect `Legacy Data Inventory & Mapping` to `Firestore Migration Write Scripts`, `Legacy Workout Conversion Scripts`, `V2 Migration Builder`?**
-  _High betweenness centrality (0.255) - this node is a cross-community bridge._
-- **Why does `variation()` connect `Legacy Data Inventory & Mapping` to `Auth Flow & Firebase Config`?**
-  _High betweenness centrality (0.225) - this node is a cross-community bridge._
-- **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
-  _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `SettingsScreen()` connect `Auth & Onboarding Flow` to `App Tab Screens`, `App Config (app.json)`?**
+  _High betweenness centrality (0.314) - this node is a cross-community bridge._
+- **Why does `exercise()` connect `Migration Review Builder` to `V2 Migration Builder`, `Legacy Workout Conversion`?**
+  _High betweenness centrality (0.308) - this node is a cross-community bridge._
+- **Why does `variation()` connect `Auth & Onboarding Flow` to `Migration Review Builder`?**
+  _High betweenness centrality (0.269) - this node is a cross-community bridge._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _309 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `App Screens & Workout Data` be split into smaller, more focused modules?**
-  _Cohesion score 0.0694579681921454 - nodes in this community are weakly interconnected._
-- **Should `Auth Flow & Firebase Config` be split into smaller, more focused modules?**
-  _Cohesion score 0.08734693877551021 - nodes in this community are weakly interconnected._
+  _276 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `App Tab Screens` be split into smaller, more focused modules?**
+  _Cohesion score 0.06134453781512605 - nodes in this community are weakly interconnected._
+- **Should `Auth & Onboarding Flow` be split into smaller, more focused modules?**
+  _Cohesion score 0.08163265306122448 - nodes in this community are weakly interconnected._
+- **Should `Migration Review Builder` be split into smaller, more focused modules?**
+  _Cohesion score 0.05990338164251208 - nodes in this community are weakly interconnected._
