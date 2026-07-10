@@ -335,8 +335,10 @@ export default function ActiveWorkoutScreen() {
           onChangeText={setWorkoutName}
         />
 
-        {exercises.map((ex, i) => (
-          <View key={i} style={styles.exerciseCard}>
+        {exercises.map((ex, i) => {
+          const allSetsComplete = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
+          return (
+          <View key={i} style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
             <ExercisePicker
               options={catalogOptions}
               value={ex.label || null}
@@ -356,7 +358,7 @@ export default function ActiveWorkoutScreen() {
             />
 
             {ex.sets.map((set, si) => (
-              <View key={si} style={[styles.setRow, set.completed && styles.setRowComplete]}>
+              <View key={si} style={[styles.setRow, set.completed && !allSetsComplete && styles.setRowComplete]}>
                 <View style={styles.setCheckboxWrap}>
                   <Text style={styles.deleteSetSpacer}> </Text>
                   <View style={styles.setCheckboxIconWrap}>
@@ -459,7 +461,8 @@ export default function ActiveWorkoutScreen() {
               )}
             </View>
           </View>
-        ))}
+          );
+        })}
 
         <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
           <Ionicons name="add-circle-outline" size={18} color="#e54242" />
@@ -586,6 +589,10 @@ const styles = StyleSheet.create({
     borderColor: '#222',
     marginBottom: 10,
   },
+  exerciseCardComplete: {
+    borderColor: 'rgba(229, 66, 66, 0.35)',
+    backgroundColor: 'rgba(229, 66, 66, 0.08)',
+  },
   exerciseNameDropdown: {
     marginBottom: 12,
   },
@@ -600,6 +607,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   setRowComplete: {
+    marginHorizontal: -6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
     backgroundColor: 'rgba(229, 66, 66, 0.08)',
   },
   setCheckboxWrap: {
