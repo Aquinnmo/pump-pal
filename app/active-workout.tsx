@@ -357,12 +357,17 @@ export default function ActiveWorkoutScreen() {
 
             {ex.sets.map((set, si) => (
               <View key={si} style={[styles.setRow, set.completed && styles.setRowComplete]}>
-                <TouchableOpacity
-                  onPress={() => toggleSetComplete(i, si)}
-                  hitSlop={8}
-                  style={[styles.setCheckbox, set.completed && styles.setCheckboxChecked]}>
-                  {set.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
-                </TouchableOpacity>
+                <View style={styles.setCheckboxWrap}>
+                  <Text style={styles.deleteSetSpacer}> </Text>
+                  <View style={styles.setCheckboxIconWrap}>
+                    <TouchableOpacity
+                      onPress={() => toggleSetComplete(i, si)}
+                      hitSlop={8}
+                      style={[styles.setCheckbox, set.completed && styles.setCheckboxChecked]}>
+                      {set.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
                 <View style={styles.row}>
                   {ex.exerciseType === 'Sets of Duration' ? (
@@ -589,14 +594,21 @@ const styles = StyleSheet.create({
   },
   setRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 10,
     marginBottom: 10,
     borderRadius: 10,
     padding: 4,
   },
   setRowComplete: {
-    backgroundColor: 'rgba(76, 187, 106, 0.08)',
+    backgroundColor: 'rgba(229, 66, 66, 0.08)',
+  },
+  setCheckboxWrap: {
+    alignItems: 'center',
+  },
+  setCheckboxIconWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   setCheckbox: {
     width: 26,
@@ -608,8 +620,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   setCheckboxChecked: {
-    backgroundColor: '#4cbb6a',
-    borderColor: '#4cbb6a',
+    backgroundColor: '#e54242',
+    borderColor: '#e54242',
   },
   row: {
     flex: 1,
