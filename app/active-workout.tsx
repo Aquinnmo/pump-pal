@@ -1,3 +1,4 @@
+import { Dropdown } from '@/components/ui/dropdown';
 import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
@@ -346,16 +347,13 @@ export default function ActiveWorkoutScreen() {
               style={styles.exerciseNameDropdown}
             />
 
-            <View style={styles.typeRow}>
-              {EXERCISE_TYPES.map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={[styles.typeChip, ex.exerciseType === t && styles.typeChipActive]}
-                  onPress={() => updateExerciseField(i, 'exerciseType', t)}>
-                  <Text style={[styles.typeChipText, ex.exerciseType === t && styles.typeChipTextActive]}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <Dropdown
+              options={EXERCISE_TYPES}
+              value={ex.exerciseType}
+              onSelect={(v) => updateExerciseField(i, 'exerciseType', v as ExerciseType)}
+              placeholder="Type of exercise"
+              style={styles.exerciseTypeDropdown}
+            />
 
             {ex.sets.map((set, si) => (
               <View key={si} style={[styles.setRow, set.completed && styles.setRowComplete]}>
@@ -394,34 +392,39 @@ export default function ActiveWorkoutScreen() {
                         <Text style={styles.numLabel}>Reps</Text>
                         <View style={styles.incrementerContainerHorizontal}>
                           <TouchableOpacity onPress={() => decrementSet(i, si)} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={26} color="#e54242" />
+                            <Ionicons name="remove-circle" size={28} color="#e54242" />
                           </TouchableOpacity>
                           <Text style={styles.incrementerValue}>{set.reps}</Text>
                           <TouchableOpacity onPress={() => incrementSet(i, si)} hitSlop={10}>
-                            <Ionicons name="add-circle" size={26} color="#e54242" />
+                            <Ionicons name="add-circle" size={28} color="#e54242" />
                           </TouchableOpacity>
                         </View>
                       </View>
                       {!ex.bodyweight && (
                         <View style={styles.numField}>
                           <Text style={styles.numLabel}>Weight (lbs)</Text>
-                          <TextInput
-                            style={styles.numInput}
-                            keyboardType="decimal-pad"
-                            value={set.weight}
-                            onChangeText={(v) => updateSet(i, si, 'weight', v)}
-                            onBlur={() => {
-                              if (set.weight === '' || set.weight === '.') updateSet(i, si, 'weight', '0');
-                            }}
-                          />
+                          <View style={styles.weightInputContainer}>
+                            <TextInput
+                              style={[styles.numInput, styles.weightInput]}
+                              keyboardType="decimal-pad"
+                              value={set.weight}
+                              onChangeText={(v) => updateSet(i, si, 'weight', v)}
+                              onBlur={() => {
+                                if (set.weight === '' || set.weight === '.') updateSet(i, si, 'weight', '0');
+                              }}
+                            />
+                          </View>
                         </View>
                       )}
                     </>
                   )}
                   {ex.sets.length > 1 && (
-                    <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => removeSet(i, si)} hitSlop={12}>
-                      <Ionicons name="close-circle" size={22} color="#888" />
-                    </TouchableOpacity>
+                    <View style={styles.deleteSetButton}>
+                      <Text style={styles.deleteSetSpacer}> </Text>
+                      <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => removeSet(i, si)} hitSlop={12}>
+                        <Ionicons name="close-circle" size={26} color="#888" />
+                      </TouchableOpacity>
+                    </View>
                   )}
                 </View>
               </View>
@@ -581,30 +584,8 @@ const styles = StyleSheet.create({
   exerciseNameDropdown: {
     marginBottom: 12,
   },
-  typeRow: {
-    flexDirection: 'row',
-    gap: 8,
+  exerciseTypeDropdown: {
     marginBottom: 12,
-  },
-  typeChip: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    alignItems: 'center',
-  },
-  typeChipActive: {
-    backgroundColor: '#271515',
-    borderColor: '#e54242',
-  },
-  typeChipText: {
-    fontSize: 12,
-    color: '#888',
-    fontWeight: '600',
-  },
-  typeChipTextActive: {
-    color: '#e54242',
   },
   setRow: {
     flexDirection: 'row',
@@ -633,13 +614,29 @@ const styles = StyleSheet.create({
   row: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'flex-end',
     gap: 8,
   },
+  deleteSetButton: {
+    alignItems: 'center',
+  },
+  deleteSetSpacer: {
+    fontSize: 11,
+    marginBottom: 4,
+    color: 'transparent',
+  },
   deleteSetIconWrap: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 4,
+  },
+  weightInputContainer: {
+    flex: 1,
+  },
+  weightInput: {
+    flex: 1,
+    justifyContent: 'center',
+    height: '100%',
+    paddingVertical: 0,
   },
   addSetButton: {
     flexDirection: 'row',
