@@ -435,8 +435,8 @@
     "semantic_hash": ""
   },
   ".beads/export-state.json": {
-    "mtime": 1783642201.7246592,
-    "ast_hash": "7531f511f3648123f97a88e54f178149",
+    "mtime": 1783642280.286237,
+    "ast_hash": "55d8313d2e777261d1762a376d4d56ca",
     "semantic_hash": ""
   },
   ".beads/hooks/post-checkout": {
@@ -565,8 +565,8 @@
     "semantic_hash": ""
   },
   "components/ui/workout-prefill-loader.tsx": {
-    "mtime": 1783642211.0452774,
-    "ast_hash": "d31672607898f059b59f4e06db430f7d",
+    "mtime": 1783642288.731273,
+    "ast_hash": "dea0db33bc7c9a2522a3efc1970d4da7",
     "semantic_hash": ""
   }
 }

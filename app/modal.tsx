@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { router, useLocalSearchParams } from 'expo-router';
 import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, Timestamp, updateDoc, where } from 'firebase/firestore';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -71,9 +71,14 @@ export default function AddWorkoutModal() {
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [docStatus, setDocStatus] = useState<WorkoutStatus | undefined>(undefined);
+  const typePrefillTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isPlanMode = mode === 'plan' || docStatus === 'planned';
   const isFormLoading = loading || prefillLoading;
+
+  useEffect(() => () => {
+    if (typePrefillTimer.current) clearTimeout(typePrefillTimer.current);
+  }, []);
 
   // Fetch user's split + names used in past workouts to build the name dropdown
   // Also loads today's AI suggestion usage count from Firestore (shared across platforms,
@@ -280,6 +285,38 @@ export default function AddWorkoutModal() {
     () => recentExercisesForDay(workoutHistory, effectiveWorkoutName),
     [workoutHistory, effectiveWorkoutName]
   );
+
+  const prefillForWorkoutName = (selectedWorkoutName: string) => {
+    if (typePrefillTimer.current) clearTimeout(typePrefillTimer.current);
+    setPrefillWorkoutName(selectedWorkoutName);
+    setPrefillLoading(true);
+
+    typePrefillTimer.current = setTimeout(() => {
+      const lastMatchingWorkout = workoutHistory.find(
+        (workout) =>
+          (!workout.status || workout.status === 'completed') &&
+          workout.name === selectedWorkoutName
+      );
+      const lastExercises = lastMatchingWorkout?.performedExercises ?? [];
+      setExercises(lastExercises.length > 0 ? lastExercises.map(collapseSetsToDraft) : [blankRow()]);
+      setPrefillLoading(false);
+      typePrefillTimer.current = null;
+    }, 500);
+  };
+
+  const selectWorkoutName = (selectedWorkoutName: string) => {
+    if (selectedWorkoutName === 'Other') {
+      setIsCustomWorkoutName(true);
+      setWorkoutName('Other');
+      return;
+    }
+
+    if (!isCustomWorkoutName && selectedWorkoutName === workoutName) return;
+    setIsCustomWorkoutName(false);
+    setWorkoutName(selectedWorkoutName);
+    setCustomWorkoutName('');
+    if (isPlanMode) prefillForWorkoutName(selectedWorkoutName);
+  };
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -527,16 +564,7 @@ export default function AddWorkoutModal() {
               <Dropdown
                 options={[...workoutNameOptions, 'Other']}
                 value={isCustomWorkoutName ? 'Other' : (workoutName || null)}
-                onSelect={(v) => {
-                  if (v === 'Other') {
-                    setIsCustomWorkoutName(true);
-                    setWorkoutName('Other');
-                  } else {
-                    setIsCustomWorkoutName(false);
-                    setWorkoutName(v);
-                    setCustomWorkoutName('');
-                  }
-                }}
+                onSelect={selectWorkoutName}
                 placeholder="Select workout name"
                 style={styles.nameDropdown}
               />

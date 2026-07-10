@@ -71,5 +71,7 @@
   "69": "Firestore Data Refactor Migration History",
   "70": "firestore-readonly-snapshot.js",
   "71": "catalog-seed.test.js",
-  "72": "workout-prefill-loader.tsx"
+  "72": "workout-prefill-loader.tsx",
+  "73": "planned-workouts.tsx",
+  "74": "active-workout.tsx"
 }
