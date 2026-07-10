@@ -1,7 +1,7 @@
 # Graph Report - pump-pal  (2026-07-09)
 
 ## Corpus Check
-- 107 files · ~174,145 words
+- 107 files · ~174,120 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
