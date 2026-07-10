@@ -314,7 +314,7 @@ export default function ActiveWorkoutScreen() {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
         <TouchableOpacity onPress={() => setShowDiscardConfirm(true)} hitSlop={8}>
-          <Ionicons name="close" size={24} color="#fff" />
+          <Text style={styles.discardText}>Discard</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{workoutName || 'Active Workout'}</Text>
@@ -550,6 +550,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#e54242',
   },
+  discardText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#888',
+  },
   body: {
     padding: 20,
     paddingBottom: 40,
@@ -752,7 +757,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   bigFinishButton: {
-    backgroundColor: '#4cbb6a',
+    backgroundColor: '#e54242',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',

@@ -21,7 +21,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
@@ -32,6 +32,16 @@ export default function HomeScreen() {
   const [nextWorkoutToPlan, setNextWorkoutToPlan] = useState<string | null>(null);
   const [nextPlan, setNextPlan] = useState<Workout | null>(null);
   const [inProgress, setInProgress] = useState<Workout | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!inProgress?.startedAt) return;
+    const startMs = toDateObj(inProgress.startedAt as unknown as Workout['date']).getTime();
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [inProgress?.startedAt]);
 
   useFocusEffect(
     useCallback(() => {
@@ -120,6 +130,15 @@ export default function HomeScreen() {
     }, [user])
   );
 
+  const formatElapsed = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+  };
+
   const greeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -199,8 +218,11 @@ export default function HomeScreen() {
                 {inProgress ? inProgress.name : nextPlan ? nextPlan.name : nextWorkout}
               </Text>
             </View>
-            <View style={styles.nextWorkoutIcon}>
-              <Ionicons name="barbell-outline" size={32} color="#ff4d4d" />
+            <View style={styles.nextWorkoutRight}>
+              {inProgress && <Text style={styles.nextWorkoutTimer}>{formatElapsed(elapsed)}</Text>}
+              <View style={styles.nextWorkoutIcon}>
+                <Ionicons name="barbell-outline" size={32} color="#ff4d4d" />
+              </View>
             </View>
           </View>
         </TouchableOpacity>
@@ -456,6 +478,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.32)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  nextWorkoutRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  nextWorkoutTimer: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#fff',
+    fontVariant: ['tabular-nums'],
   },
   planCard: {
     position: 'relative',
