@@ -166,7 +166,7 @@ export default function PlannedWorkoutsScreen() {
             onPress={openNewPlan}
             activeOpacity={0.85}>
             <Ionicons name="add-circle-outline" size={18} color="#e54242" />
-            <Text style={styles.addButtonText}>Plan a Workout</Text>
+            <Text style={styles.addButtonText}>Plan New Workout</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -227,7 +227,7 @@ export default function PlannedWorkoutsScreen() {
             onPress={openNewPlan}
             activeOpacity={0.85}>
             <Ionicons name="add-circle-outline" size={18} color="#e54242" />
-            <Text style={styles.addExText}>Plan a Workout</Text>
+            <Text style={styles.addExText}>Plan New Workout</Text>
           </TouchableOpacity>
         </ScrollView>
       )}
