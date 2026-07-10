@@ -80,8 +80,8 @@
     "semantic_hash": ""
   },
   "app/modal.tsx": {
-    "mtime": 1783641506.4938176,
-    "ast_hash": "3309b87675429f0e660b3741bab6c298",
+    "mtime": 1783641980.8431308,
+    "ast_hash": "32db2d6436227965dacb24c5e7025c48",
     "semantic_hash": ""
   },
   "app/set-split.tsx": {
@@ -430,13 +430,13 @@
     "semantic_hash": "97dae5a0e62ad8551d8a31897b425e63"
   },
   ".beads/backup/backup_state.json": {
-    "mtime": 1783639336.971505,
-    "ast_hash": "f7a2c1c61662d8dcea86b8dc39e9598c",
+    "mtime": 1783641562.0412152,
+    "ast_hash": "5b1975627cb1978513a7cb73c1bddd89",
     "semantic_hash": ""
   },
   ".beads/export-state.json": {
-    "mtime": 1783641189.1963983,
-    "ast_hash": "58a831ba0524577d450c4be682bc4e15",
+    "mtime": 1783642280.286237,
+    "ast_hash": "55d8313d2e777261d1762a376d4d56ca",
     "semantic_hash": ""
   },
   ".beads/hooks/post-checkout": {
@@ -562,6 +562,11 @@
   "app/planned-workouts.tsx": {
     "mtime": 1783641504.8767483,
     "ast_hash": "77847fec38b0d8ff4a10f671537a2546",
+    "semantic_hash": ""
+  },
+  "components/ui/workout-prefill-loader.tsx": {
+    "mtime": 1783642288.731273,
+    "ast_hash": "dea0db33bc7c9a2522a3efc1970d4da7",
     "semantic_hash": ""
   }
 }

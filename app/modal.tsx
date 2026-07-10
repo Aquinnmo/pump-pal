@@ -1,5 +1,6 @@
 import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { Dropdown } from '@/components/ui/dropdown';
+import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
@@ -59,6 +60,8 @@ export default function AddWorkoutModal() {
   const { options: catalogOptions } = useExerciseCatalog();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
+  const [prefillLoading, setPrefillLoading] = useState(mode === 'plan' && !id);
+  const [prefillWorkoutName, setPrefillWorkoutName] = useState<string | null>(suggestion ?? null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsesLeft, setAiUsesLeft] = useState(3);
@@ -70,12 +73,23 @@ export default function AddWorkoutModal() {
   const [docStatus, setDocStatus] = useState<WorkoutStatus | undefined>(undefined);
 
   const isPlanMode = mode === 'plan' || docStatus === 'planned';
+  const isFormLoading = loading || prefillLoading;
 
   // Fetch user's split + names used in past workouts to build the name dropdown
   // Also loads today's AI suggestion usage count from Firestore (shared across platforms,
   // resets at midnight UTC)
   useEffect(() => {
     if (!user) return;
+    const shouldShowPrefillLoader = mode === 'plan' && !id;
+    let cancelled = false;
+    if (shouldShowPrefillLoader) {
+      setPrefillLoading(true);
+      setPrefillWorkoutName(suggestion ?? null);
+    }
+    const minimumPrefillTime = shouldShowPrefillLoader
+      ? new Promise<void>((resolve) => setTimeout(resolve, 500))
+      : Promise.resolve();
+
     const loadNameOptions = async () => {
       try {
         const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -145,6 +159,7 @@ export default function AddWorkoutModal() {
           }
 
           if (initialWorkoutName) {
+            setPrefillWorkoutName(initialWorkoutName);
             setWorkoutName(initialWorkoutName);
 
             if (mode === 'plan') {
@@ -153,8 +168,9 @@ export default function AddWorkoutModal() {
                   (!workout.status || workout.status === 'completed') &&
                   workout.name === initialWorkoutName
               );
-              if ((lastMatchingWorkout?.performedExercises ?? []).length > 0) {
-                setExercises(lastMatchingWorkout.performedExercises.map(collapseSetsToDraft));
+              const lastExercises = lastMatchingWorkout?.performedExercises ?? [];
+              if (lastExercises.length > 0) {
+                setExercises(lastExercises.map(collapseSetsToDraft));
               }
             }
           }
@@ -163,7 +179,13 @@ export default function AddWorkoutModal() {
         // silently fail — user can still type a name
       }
     };
-    loadNameOptions();
+    Promise.all([loadNameOptions(), minimumPrefillTime]).then(() => {
+      if (!cancelled && shouldShowPrefillLoader) setPrefillLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id, mode, suggestion, user]);
 
   useEffect(() => {
@@ -483,7 +505,7 @@ export default function AddWorkoutModal() {
         <Text style={styles.headerTitle}>
           {isPlanMode ? (id ? 'Edit Plan' : 'Plan Workout') : (id ? 'Edit Workout' : 'Log Workout')}
         </Text>
-        <TouchableOpacity onPress={handleSave} disabled={saving || loading}>
+        <TouchableOpacity onPress={handleSave} disabled={saving || isFormLoading}>
           {saving ? (
             <ActivityIndicator color="#e54242" />
           ) : (
@@ -492,7 +514,9 @@ export default function AddWorkoutModal() {
         </TouchableOpacity>
       </View>
 
-      {loading ? (
+      {prefillLoading ? (
+        <WorkoutPrefillLoader workoutName={prefillWorkoutName} />
+      ) : loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator color="#e54242" size="large" />
         </View>
@@ -756,9 +780,9 @@ export default function AddWorkoutModal() {
         />
 
         <TouchableOpacity
-          style={[styles.aiSuggestButton, (aiLoading || loading || aiUsesLeft <= 0) && styles.aiSuggestButtonDisabled]}
+          style={[styles.aiSuggestButton, (aiLoading || isFormLoading || aiUsesLeft <= 0) && styles.aiSuggestButtonDisabled]}
           onPress={handleAISuggest}
-          disabled={aiLoading || loading || aiUsesLeft <= 0}
+          disabled={aiLoading || isFormLoading || aiUsesLeft <= 0}
           activeOpacity={0.8}
         >
           {aiLoading ? (
@@ -804,9 +828,9 @@ export default function AddWorkoutModal() {
 
         <View style={id ? styles.saveRow : undefined}>
           <TouchableOpacity
-            style={[styles.bigSaveButton, (saving || loading) && styles.bigSaveButtonDisabled]}
+            style={[styles.bigSaveButton, (saving || isFormLoading) && styles.bigSaveButtonDisabled]}
             onPress={handleSave}
-            disabled={saving || loading}
+            disabled={saving || isFormLoading}
             activeOpacity={0.8}
           >
             {saving ? (
