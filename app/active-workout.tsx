@@ -1,13 +1,17 @@
 import { Dropdown } from '@/components/ui/dropdown';
 import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { db } from '@/config/firebase';
+import { isSplitOption } from '@/constants/split-options';
+import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
+import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
 import { buildPerformedExercise, collapseSetsToDraft, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import {
   addDoc,
@@ -16,11 +20,15 @@ import {
   deleteField,
   doc,
   getDoc,
+  getDocs,
+  orderBy,
+  query,
   serverTimestamp,
   Timestamp,
   updateDoc,
+  where,
 } from 'firebase/firestore';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -69,6 +77,9 @@ export default function ActiveWorkoutScreen() {
   const [elapsed, setElapsed] = useState(0);
 
   const [workoutName, setWorkoutName] = useState('');
+  const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
+  const [customWorkoutName, setCustomWorkoutName] = useState('');
+  const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
   const [exercises, setExercises] = useState<DraftExerciseRow[]>([blankRow()]);
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
@@ -134,6 +145,50 @@ export default function ActiveWorkoutScreen() {
     })();
   }, [user, id, suggestion]);
 
+  // Build the workout-name dropdown: the user's split day names first, then any
+  // other names they've actually used. Mirrors the same list the add/plan modal shows.
+  useEffect(() => {
+    if (!user) return;
+
+    (async () => {
+      try {
+        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const data = userSnap.data();
+        const splitType = data?.workoutSplit?.type;
+        const customSplitDesc: string = data?.workoutSplit?.custom ?? '';
+        let splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
+
+        if (splitType === 'Other' && customSplitDesc) {
+          const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
+          const cached = await AsyncStorage.getItem(cacheKey);
+          if (cached) {
+            try { splitNames = JSON.parse(cached); } catch { /* ignore */ }
+          } else {
+            try {
+              const generated = await generateSplitWorkoutNames(customSplitDesc);
+              if (generated.length > 0) {
+                splitNames = generated;
+                await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
+              }
+            } catch { /* silently fall through to used names */ }
+          }
+        }
+
+        const workoutsSnap = await getDocs(
+          query(collection(db, 'workouts'), where('userId', '==', user.uid), orderBy('date', 'desc'))
+        );
+        const merged = [...splitNames];
+        workoutsSnap.docs.forEach((d) => {
+          const name = d.data().name;
+          if (name && !merged.includes(name)) merged.push(name);
+        });
+        setWorkoutNameOptions(merged);
+      } catch {
+        // silently fail — user can still type a name
+      }
+    })();
+  }, [user]);
+
   // Elapsed-time ticker
   useEffect(() => {
     if (!startedAt) return;
@@ -143,6 +198,27 @@ export default function ActiveWorkoutScreen() {
     return () => clearInterval(iv);
   }, [startedAt]);
 
+  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
+
+  // A resumed workout may carry a one-off name that predates the split list —
+  // surface it so the dropdown can show it as the current selection.
+  const nameOptions = useMemo(() => {
+    const merged = [...workoutNameOptions];
+    if (workoutName && !isCustomWorkoutName && !merged.includes(workoutName)) merged.unshift(workoutName);
+    return [...merged, 'Other'];
+  }, [workoutNameOptions, workoutName, isCustomWorkoutName]);
+
+  const selectWorkoutName = (selected: string) => {
+    if (selected === 'Other') {
+      setIsCustomWorkoutName(true);
+      setWorkoutName('Other');
+      return;
+    }
+    setIsCustomWorkoutName(false);
+    setWorkoutName(selected);
+    setCustomWorkoutName('');
+  };
+
   // Debounced autosave — keeps the doc resumable if the app is closed mid-workout
   useEffect(() => {
     if (!workoutId || initializing) return;
@@ -151,13 +227,13 @@ export default function ActiveWorkoutScreen() {
         .filter((ex) => ex.label.trim() !== '')
         .map((ex, order) => buildPerformedExercise(ex, order));
       updateDoc(doc(db, 'workouts', workoutId), {
-        name: workoutName.trim(),
+        name: effectiveWorkoutName,
         performedExercises,
         updatedAt: serverTimestamp(),
       }).catch(() => { /* best-effort autosave */ });
     }, 800);
     return () => clearTimeout(t);
-  }, [exercises, workoutName, workoutId, initializing]);
+  }, [exercises, effectiveWorkoutName, workoutId, initializing]);
 
   const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
 
@@ -253,7 +329,7 @@ export default function ActiveWorkoutScreen() {
         .map((pe) => ({ ...pe, sets: pe.sets.map(({ completed, ...rest }) => rest) }));
 
       await updateDoc(doc(db, 'workouts', workoutId), {
-        name: workoutName.trim() || 'Workout',
+        name: effectiveWorkoutName || 'Workout',
         date: Timestamp.fromDate(new Date()),
         performedExercises,
         status: 'completed',
@@ -318,7 +394,7 @@ export default function ActiveWorkoutScreen() {
           <Text style={styles.discardText}>Discard</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{workoutName || 'Active Workout'}</Text>
+          <Text style={styles.headerTitle}>{effectiveWorkoutName || 'Active Workout'}</Text>
           <Text style={styles.headerTimer}>{formatElapsed(elapsed)}</Text>
         </View>
         <TouchableOpacity onPress={handleFinishPress} disabled={saving}>
@@ -327,13 +403,37 @@ export default function ActiveWorkoutScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <TextInput
-          style={styles.nameInput}
-          placeholder="Workout name (e.g. Push Day)"
-          placeholderTextColor="#555"
-          value={workoutName}
-          onChangeText={setWorkoutName}
-        />
+        {workoutNameOptions.length > 0 ? (
+          <>
+            <Dropdown
+              options={nameOptions}
+              value={isCustomWorkoutName ? 'Other' : (workoutName || null)}
+              onSelect={selectWorkoutName}
+              placeholder="Select workout name"
+              style={styles.nameDropdown}
+            />
+            {isCustomWorkoutName && (
+              <TextInput
+                style={styles.nameInput}
+                placeholder="Enter workout name"
+                placeholderTextColor="#555"
+                value={customWorkoutName}
+                onChangeText={setCustomWorkoutName}
+              />
+            )}
+          </>
+        ) : (
+          <TextInput
+            style={styles.nameInput}
+            placeholder="Workout name (e.g. Push Day)"
+            placeholderTextColor="#555"
+            value={isCustomWorkoutName ? customWorkoutName : workoutName}
+            onChangeText={(v) => {
+              setIsCustomWorkoutName(true);
+              setCustomWorkoutName(v);
+            }}
+          />
+        )}
 
         {exercises.map((ex, i) => {
           const allSetsComplete = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
@@ -569,6 +669,9 @@ const styles = StyleSheet.create({
   body: {
     padding: 20,
     paddingBottom: 40,
+  },
+  nameDropdown: {
+    marginBottom: 16,
   },
   nameInput: {
     backgroundColor: '#1c1c1c',
