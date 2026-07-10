@@ -6,7 +6,7 @@ import { Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
 import { predictWorkoutAfterName } from '@/utils/predict-next-workout';
-import { exerciseLabel, summarizePerformedExercise } from '@/utils/workout-conversion';
+import { exerciseLabel, summarizePerformedExerciseSetGroups } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
@@ -179,11 +179,12 @@ export default function PlannedWorkoutsScreen() {
                   <TouchableOpacity
                     onPress={() => router.push({ pathname: '/modal', params: { mode: 'plan', id: plan.id } })}
                     hitSlop={8}
-                    style={styles.iconButton}>
-                    <Ionicons name="pencil-outline" size={18} color="#666" />
+                    style={styles.editButton}>
+                    <Text style={styles.editText}>Edit</Text>
+                    <Ionicons name="pencil-outline" size={20} color="#666" />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setDeleteTargetId(plan.id)} hitSlop={8} style={styles.iconButton}>
-                    <Ionicons name="trash-outline" size={18} color="#666" />
+                  <TouchableOpacity onPress={() => setDeleteTargetId(plan.id)} hitSlop={8} style={styles.deleteButton}>
+                    <Ionicons name="trash-outline" size={22} color="#666" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -191,9 +192,14 @@ export default function PlannedWorkoutsScreen() {
               {(plan.performedExercises ?? []).length > 0 ? (
                 <View style={styles.exerciseList}>
                   {(plan.performedExercises ?? []).map((pe, i) => (
-                    <Text key={i} style={styles.exerciseLine} numberOfLines={1}>
-                      {exerciseLabel(pe)} — {summarizePerformedExercise(pe)}
-                    </Text>
+                    <View key={i} style={styles.exerciseRow}>
+                      <Text style={styles.exerciseName}>{exerciseLabel(pe)}</Text>
+                      <View style={styles.exerciseDetails}>
+                        {summarizePerformedExerciseSetGroups(pe).map((setSummary, setIndex) => (
+                          <Text key={setIndex} style={styles.exerciseSummary}>{setSummary}</Text>
+                        ))}
+                      </View>
+                    </View>
                   ))}
                 </View>
               ) : (
@@ -331,7 +337,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   cardName: {
     fontSize: 18,
@@ -341,24 +347,66 @@ const styles = StyleSheet.create({
   },
   cardActions: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 14,
   },
-  iconButton: {
-    padding: 4,
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 6,
+  },
+  editText: {
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '600',
+  },
+  deleteButton: {
+    padding: 6,
   },
   exerciseList: {
-    gap: 3,
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 12,
   },
-  exerciseLine: {
+  exerciseRow: {
+    backgroundColor: '#151515',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  exerciseName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#fff',
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
+  },
+  exerciseDetails: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
+    gap: 4,
+    minWidth: 120,
+  },
+  exerciseSummary: {
     fontSize: 13,
-    color: '#999',
+    color: '#e54242',
+    fontWeight: '500',
+    lineHeight: 18,
+    textAlign: 'right',
   },
   exerciseLineEmpty: {
     fontSize: 13,
     color: '#555',
     fontStyle: 'italic',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   reorderRow: {
     flexDirection: 'row',

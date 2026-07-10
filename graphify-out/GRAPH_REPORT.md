@@ -1,11 +1,11 @@
 # Graph Report - pump-pal  (2026-07-09)
 
 ## Corpus Check
-- 107 files · ~173,655 words
+- 107 files · ~174,145 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 718 nodes · 1182 edges · 75 communities (38 shown, 37 thin omitted)
+- 718 nodes · 1190 edges · 72 communities (35 shown, 37 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 37 edges (avg confidence: 0.59)
 - Token cost: 0 input · 0 output
 
@@ -75,10 +75,7 @@
 - [[_COMMUNITY_Legacy Data Still Present Section|Legacy Data Still Present Section]]
 - [[_COMMUNITY_Firestore Data Refactor Migration History|Firestore Data Refactor Migration History]]
 - [[_COMMUNITY_firestore-readonly-snapshot.js|firestore-readonly-snapshot.js]]
-- [[_COMMUNITY_catalog-seed.test.js|catalog-seed.test.js]]
 - [[_COMMUNITY_workout-prefill-loader.tsx|workout-prefill-loader.tsx]]
-- [[_COMMUNITY_planned-workouts.tsx|planned-workouts.tsx]]
-- [[_COMMUNITY_active-workout.tsx|active-workout.tsx]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAuth()` - 29 edges
@@ -88,54 +85,54 @@
 5. `scripts` - 16 edges
 6. `Workout` - 16 edges
 7. `db` - 14 edges
-8. `isSplitOption()` - 12 edges
-9. `exerciseLabel()` - 12 edges
-10. `ActiveWorkoutScreen()` - 11 edges
+8. `isSplitOption()` - 14 edges
+9. `ActiveWorkoutScreen()` - 13 edges
+10. `exerciseLabel()` - 12 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `SettingsScreen()` --indirect_call--> `variation()`  [INFERRED]
   app/(tabs)/settings.tsx → scripts/migration/build-reviewed-migration-files.js
-- `WorkoutsScreen()` --calls--> `useAuth()`  [EXTRACTED]
-  app/(tabs)/workouts.tsx → context/auth-context.tsx
-- `AddWorkoutModal()` --references--> `react`  [EXTRACTED]
-  app/modal.tsx → package.json
 - `AddWorkoutModal()` --indirect_call--> `todayUTC()`  [INFERRED]
   app/modal.tsx → utils/daily-name.ts
 - `SettingsScreen()` --references--> `updates`  [EXTRACTED]
   app/(tabs)/settings.tsx → app.json
+- `TabLayout()` --indirect_call--> `HapticTab()`  [INFERRED]
+  app/(tabs)/_layout.tsx → components/haptic-tab.tsx
+- `AnalyticsScreen()` --calls--> `useAuth()`  [EXTRACTED]
+  app/(tabs)/analytics.tsx → context/auth-context.tsx
 
 ## Import Cycles
 - None detected.
 
-## Communities (75 total, 37 thin omitted)
+## Communities (72 total, 37 thin omitted)
 
 ### Community 0 - "App Tab Screens"
-Cohesion: 0.13
-Nodes (28): styles, compareExerciseLabels(), ExercisePicker(), ExercisePickerProps, ExercisePickerSelection, Sheet, SheetHandle, SheetProps (+20 more)
+Cohesion: 0.06
+Nodes (81): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, formatElapsed(), styles, AddWorkoutModal(), styles (+73 more)
 
 ### Community 1 - "Auth & Onboarding Flow"
-Cohesion: 0.33
-Nodes (6): SignInScreen(), styles, SignUpScreen(), styles, FIREBASE_ERROR_MAP, getFriendlyAuthError()
+Cohesion: 0.18
+Nodes (17): buildExerciseDocument(), documentUrl(), fs, { getAccessToken, requestJson }, isFirestoreTimestamp(), jsObjectToFirestoreFields(), jsToFirestoreValue(), MUSCLE_ID_SET (+9 more)
 
 ### Community 2 - "Migration Review Builder"
 Cohesion: 0.06
-Nodes (38): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+30 more)
+Nodes (39): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+31 more)
 
 ### Community 3 - "App Config (app.json)"
 Cohesion: 0.05
 Nodes (38): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, predictiveBackGestureEnabled (+30 more)
 
 ### Community 4 - "Muscle Data Tests"
-Cohesion: 0.10
-Nodes (18): MUSCLE_IDS, assert, fs, match, { MUSCLE_IDS }, path, tsMuscleIds, tsSource (+10 more)
+Cohesion: 0.20
+Nodes (9): MUSCLE_IDS, assert, fs, match, { MUSCLE_IDS }, path, tsMuscleIds, tsSource (+1 more)
 
 ### Community 5 - "Firestore Snapshot Script"
-Cohesion: 0.07
-Nodes (54): base64url(), createJwt(), crypto, docId(), fieldsToJs(), firestoreValueToJs(), fs, getAccessToken() (+46 more)
+Cohesion: 0.15
+Nodes (22): firestoreTimestamp(), timestampShapeToIso(), buildPlan(), compareTotals(), { convertLegacyWorkout }, crypto, { firestoreTimestamp, patchDocument, timestampShapeToIso }, flattenSnapshot() (+14 more)
 
 ### Community 6 - "NPM Dependencies"
 Cohesion: 0.05
-Nodes (38): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+30 more)
+Nodes (37): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+29 more)
 
 ### Community 7 - "Exercise Catalog Docs"
 Cohesion: 0.07
@@ -166,8 +163,8 @@ Cohesion: 0.15
 Nodes (18): convertLegacyExercise(), convertLegacyWorkout(), durationSeconds(), assert, { convertedWorkout, report }, { convertLegacyWorkout }, mappingsByLegacyName, compareTotals() (+10 more)
 
 ### Community 14 - "Pushup Challenge Feature"
-Cohesion: 0.15
-Nodes (16): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+8 more)
+Cohesion: 0.16
+Nodes (15): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+7 more)
 
 ### Community 15 - "Phone Auth & reCAPTCHA"
 Cohesion: 0.24
@@ -202,8 +199,8 @@ Cohesion: 0.40
 Nodes (4): buildCommand, cleanUrls, outputDirectory, rewrites
 
 ### Community 26 - "Graphify Policy Note"
-Cohesion: 0.20
-Nodes (18): AnalyticsScreen(), styles, InsightsCache, MuscleInsightCards(), Props, RefreshCache, styles, todayKey() (+10 more)
+Cohesion: 0.22
+Nodes (15): base64url(), createJwt(), crypto, docId(), fieldsToJs(), firestoreValueToJs(), fs, getAccessToken() (+7 more)
 
 ### Community 35 - "CLAUDE.md Arch & Theming"
 Cohesion: 0.22
@@ -214,28 +211,16 @@ Cohesion: 0.11
 Nodes (18): Canonical Collections, Completed Work, Current Status, Exercise Picker UX, `exerciseCatalogMeta/current`, `exercises/{exerciseId}`, `ExerciseVariation`, Legacy Data Still Present (+10 more)
 
 ### Community 46 - "toast.tsx"
-Cohesion: 0.17
-Nodes (13): SetSplitScreen(), styles, SettingsScreen(), styles, Dropdown(), DropdownProps, styles, styles (+5 more)
+Cohesion: 0.09
+Nodes (32): SignInScreen(), styles, SignUpScreen(), styles, RootLayoutNav(), unstable_settings, SetSplitScreen(), styles (+24 more)
 
 ### Community 70 - "firestore-readonly-snapshot.js"
-Cohesion: 0.21
-Nodes (16): styles, WorkoutCard(), DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, RecentExercise, expandDraftToSets() (+8 more)
-
-### Community 71 - "catalog-seed.test.js"
-Cohesion: 0.17
-Nodes (10): RootLayoutNav(), unstable_settings, styles, WorkoutsScreen(), auth, firebaseConfig, AuthContext, AuthContextType (+2 more)
+Cohesion: 0.20
+Nodes (9): assert, catalog, catalogPath, errors, fs, { MUSCLE_IDS }, muscleIdSet, path (+1 more)
 
 ### Community 72 - "workout-prefill-loader.tsx"
 Cohesion: 0.33
 Nodes (5): LoadingPlateProps, PLATES, styles, WorkoutPrefillLoader(), WorkoutPrefillLoaderProps
-
-### Community 73 - "planned-workouts.tsx"
-Cohesion: 0.32
-Nodes (10): PlannedWorkoutsScreen(), styles, HomeScreen(), styles, isSplitOption(), SplitOption, SPLIT_WORKOUT_NAMES, generateSplitWorkoutNames() (+2 more)
-
-### Community 74 - "active-workout.tsx"
-Cohesion: 0.35
-Nodes (11): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, formatElapsed(), styles, AddWorkoutModal(), useAuth() (+3 more)
 
 ## Knowledge Gaps
 - **336 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+331 more)
@@ -245,17 +230,17 @@ Nodes (11): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, forma
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SettingsScreen()` connect `toast.tsx` to `Graphify Policy Note`, `planned-workouts.tsx`, `active-workout.tsx`, `App Config (app.json)`?**
+- **Why does `SettingsScreen()` connect `toast.tsx` to `App Tab Screens`, `Migration Review Builder`, `App Config (app.json)`?**
   _High betweenness centrality (0.268) - this node is a cross-community bridge._
-- **Why does `exercise()` connect `Migration Review Builder` to `V2 Migration Builder`, `Firestore Snapshot Script`, `Legacy Workout Conversion`?**
+- **Why does `exercise()` connect `Migration Review Builder` to `V2 Migration Builder`, `Auth & Onboarding Flow`, `Legacy Workout Conversion`?**
   _High betweenness centrality (0.260) - this node is a cross-community bridge._
-- **Why does `variation()` connect `toast.tsx` to `Migration Review Builder`?**
+- **Why does `variation()` connect `Migration Review Builder` to `toast.tsx`?**
   _High betweenness centrality (0.229) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
   _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
   _342 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App Tab Screens` be split into smaller, more focused modules?**
-  _Cohesion score 0.12834224598930483 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.062697243845992 - nodes in this community are weakly interconnected._
 - **Should `Migration Review Builder` be split into smaller, more focused modules?**
-  _Cohesion score 0.05990338164251208 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.058279370952821465 - nodes in this community are weakly interconnected._

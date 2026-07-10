@@ -70,6 +70,5 @@
   "68": "Legacy Data Still Present Section",
   "69": "Firestore Data Refactor Migration History",
   "70": "firestore-readonly-snapshot.js",
-  "71": "catalog-seed.test.js",
   "72": "workout-prefill-loader.tsx"
 }
