@@ -19,12 +19,14 @@ import {
   limit,
   orderBy,
   query,
-  updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const queueOrderCacheKey = (uid: string) => `pumppal_queue_order_v1_${uid}`;
 
 export default function PlannedWorkoutsScreen() {
   const { user } = useAuth();
@@ -34,6 +36,11 @@ export default function PlannedWorkoutsScreen() {
   const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const plansRef = useRef<Workout[]>([]);
+
+  useEffect(() => {
+    plansRef.current = plans;
+  }, [plans]);
 
   const loadPlans = useCallback(async () => {
     if (!user) return;
@@ -59,7 +66,17 @@ export default function PlannedWorkoutsScreen() {
         ),
       ]);
 
-      const loadedPlans = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      let loadedPlans = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      const cachedOrderRaw = await AsyncStorage.getItem(queueOrderCacheKey(user.uid));
+      if (cachedOrderRaw) {
+        try {
+          const cachedIds: string[] = JSON.parse(cachedOrderRaw);
+          const byId = new Map(loadedPlans.map((p) => [p.id, p]));
+          const cached = cachedIds.map((id) => byId.get(id)).filter((p): p is Workout => !!p);
+          const uncached = loadedPlans.filter((p) => !cachedIds.includes(p.id));
+          loadedPlans = [...cached, ...uncached];
+        } catch { /* fall back to Firestore queueOrder */ }
+      }
       const history = historySnap.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
       const splitType = userSnap.data()?.workoutSplit?.type;
       const customSplitDesc: string = userSnap.data()?.workoutSplit?.custom ?? '';
@@ -91,10 +108,31 @@ export default function PlannedWorkoutsScreen() {
     }
   }, [user]);
 
+  const flushQueueOrder = useCallback(async () => {
+    if (!user) return;
+    const current = plansRef.current;
+    if (current.length === 0) return;
+    try {
+      const batch = writeBatch(db);
+      current.forEach((plan, index) => {
+        if (plan.queueOrder !== index) {
+          batch.update(doc(db, 'workouts', plan.id), { queueOrder: index });
+        }
+      });
+      await batch.commit();
+      await AsyncStorage.removeItem(queueOrderCacheKey(user.uid));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [user]);
+
   useFocusEffect(
     useCallback(() => {
       loadPlans();
-    }, [loadPlans])
+      return () => {
+        flushQueueOrder();
+      };
+    }, [loadPlans, flushQueueOrder])
   );
 
   const nextWorkoutToPlan = useMemo(
@@ -102,25 +140,17 @@ export default function PlannedWorkoutsScreen() {
     [plans, splitNames, workoutHistory]
   );
 
-  const move = async (index: number, direction: -1 | 1) => {
+  const move = (index: number, direction: -1 | 1) => {
     const target = index + direction;
     if (target < 0 || target >= plans.length) return;
-    const a = plans[index];
-    const b = plans[target];
-    const aOrder = a.queueOrder;
-    const bOrder = b.queueOrder;
     const reordered = [...plans];
-    reordered[index] = { ...b, queueOrder: aOrder };
-    reordered[target] = { ...a, queueOrder: bOrder };
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
     setPlans(reordered);
-    try {
-      await Promise.all([
-        updateDoc(doc(db, 'workouts', a.id), { queueOrder: bOrder }),
-        updateDoc(doc(db, 'workouts', b.id), { queueOrder: aOrder }),
-      ]);
-    } catch (err) {
-      console.error(err);
-      loadPlans();
+    if (user) {
+      AsyncStorage.setItem(
+        queueOrderCacheKey(user.uid),
+        JSON.stringify(reordered.map((p) => p.id))
+      ).catch((err) => console.error(err));
     }
   };
 
