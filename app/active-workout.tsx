@@ -8,7 +8,7 @@ import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
-import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
+import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { buildPerformedExercise, collapseSetsToDraft, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';

@@ -2,6 +2,7 @@ import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercis
 import { Dropdown } from '@/components/ui/dropdown';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { db } from '@/config/firebase';
+import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from '@/constants/ai-config';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
@@ -10,7 +11,7 @@ import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout, W
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
-import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/gemini-workout-suggestions';
+import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/workout-suggestions';
 import { predictNextWorkoutName } from '@/utils/predict-next-workout';
 import { buildPerformedExercise, collapseSetsToDraft, recentExercisesForDay, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,7 +65,7 @@ export default function AddWorkoutModal() {
   const [prefillWorkoutName, setPrefillWorkoutName] = useState<string | null>(suggestion ?? null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiUsesLeft, setAiUsesLeft] = useState(3);
+  const [aiUsesLeft, setAiUsesLeft] = useState(TEMPORARY_AI_DAILY_LIMIT);
   const [splitType, setSplitType] = useState<string>('');
   const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
   const [isToday, setIsToday] = useState(true);
@@ -104,16 +105,16 @@ export default function AddWorkoutModal() {
         const todayUTC = new Date().toISOString().slice(0, 10);
         const aiUsage = data?.aiUsage as { date: string; count: number } | undefined;
         if (aiUsage && aiUsage.date === todayUTC) {
-          setAiUsesLeft(3 - (aiUsage.count ?? 0));
+          setAiUsesLeft(TEMPORARY_AI_DAILY_LIMIT - (aiUsage.count ?? 0));
         } else {
-          setAiUsesLeft(3);
+          setAiUsesLeft(TEMPORARY_AI_DAILY_LIMIT);
         }
 
         const splitType = data?.workoutSplit?.type;
         const customSplitDesc: string = data?.workoutSplit?.custom ?? '';
         let splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
 
-        // For "Other" splits, ask Gemini to generate day names (cached per description)
+        // For "Other" splits, ask the configured AI model to generate day names (cached per description)
         if (splitType === 'Other' && customSplitDesc) {
           const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
           const cached = await AsyncStorage.getItem(cacheKey);
@@ -406,7 +407,7 @@ export default function AddWorkoutModal() {
       const existing = userSnap.data()?.aiUsage as { date: string; count: number } | undefined;
       const newCount = existing && existing.date === todayUTC ? existing.count + 1 : 1;
       await updateDoc(userRef, { aiUsage: { date: todayUTC, count: newCount } });
-      setAiUsesLeft(3 - newCount);
+      setAiUsesLeft(TEMPORARY_AI_DAILY_LIMIT - newCount);
 
       if (suggested.length === 0) {
         showAlert('AI Suggestions', 'Your workout already looks well balanced!');
@@ -432,8 +433,9 @@ export default function AddWorkoutModal() {
       });
       setExercises((prev) => [...prev, ...newRows]);
     } catch (e) {
-      console.error('AI workout suggestion failed:', e);
-      showAlert('Error', 'Could not get AI suggestions. Please try again.');
+      const details = formatAIError(e);
+      console.error('AI workout suggestion failed:', details);
+      showAlert('Error', __DEV__ ? `AI request failed: ${details}` : 'Could not get AI suggestions. Please try again.');
     } finally {
       setAiLoading(false);
     }

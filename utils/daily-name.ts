@@ -1,6 +1,6 @@
 import { db } from '@/config/firebase';
-import { GEMINI_API_KEY, GEMINI_MODEL } from '@/constants/gemini-config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
+import { generateText } from 'ai';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 /** Returns today's UTC date as YYYY-MM-DD */
@@ -12,15 +12,13 @@ function todayUTC(): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Asks Gemini for a single random first name to use in the "Swipe left if you lied" prompt. */
+/** Asks the configured AI model for a single random first name to use in the "Swipe left if you lied" prompt. */
 async function generateRandomName(): Promise<string> {
   const prompt = `Give me one single random human first name. There should be a 10% chance of generating a medieval ruler's name. Return ONLY the name itself with no punctuation, explanation, or extra text. You are allowed 10 characters MAXIMUM.`;
 
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-  const result = await model.generateContent(prompt);
-  const name = result.response.text().trim().replace(/[^a-zA-Z'\- ]/g, '').trim();
-  if (!name) throw new Error('Gemini returned an empty name');
+  const { text } = await generateText({ model: getAIModel(), prompt, maxRetries: AI_MAX_RETRIES });
+  const name = text.trim().replace(/[^a-zA-Z'\- ]/g, '').trim();
+  if (!name) throw new Error('AI model returned an empty name');
   return name;
 }
 
@@ -29,7 +27,7 @@ async function generateRandomName(): Promise<string> {
  *
  * - Reads from Firestore `random/{utcDate}`.
  * - If the document doesn't exist (or has a different date), generates a new
- *   name via Gemini, writes it to `random/{utcDate}`, and returns it.
+ *   name via the configured AI model, writes it to `random/{utcDate}`, and returns it.
  * - Multiple clients hitting this at the same time may write the same doc
  *   concurrently, which is harmless (last write wins with the same date key).
  */

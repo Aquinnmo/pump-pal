@@ -4,7 +4,7 @@ import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
-import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
+import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';

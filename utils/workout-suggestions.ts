@@ -1,10 +1,11 @@
-import { GEMINI_API_KEY, GEMINI_MODEL } from '@/constants/gemini-config';
+import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
 import { DraftExerciseRow, Workout } from '@/types/workout';
 import { exerciseLabel, isDurationExercise, toDateObj } from '@/utils/workout-conversion';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 
 /**
- * Asks Gemini to generate a list of workout day/type names for a custom
+ * Asks the configured AI model to generate a list of workout day/type names for a custom
  * training split described in plain text (e.g. "3-day full body + 1 cardio day").
  * Returns an ordered array of day names such as ["Full Body A", "Full Body B", "Cardio"].
  */
@@ -27,12 +28,12 @@ Examples:
   Input: "push pull legs" → ["Push", "Pull", "Legs"]
   Input: "3-day full body + 1 cardio" → ["Full Body A", "Full Body B", "Full Body C", "Cardio"]`;
 
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim();
-  const jsonText = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim();
-  const parsed: string[] = JSON.parse(jsonText);
+  const { output: parsed } = await generateText({
+    model: getAIModel(),
+    prompt,
+    maxRetries: AI_MAX_RETRIES,
+    output: Output.array({ element: z.string() }),
+  });
   // Deduplicate while preserving order
   const seen = new Set<string>();
   return parsed.filter((n) => {
@@ -55,8 +56,19 @@ export interface SuggestedExercise {
   bodyweight: boolean;
 }
 
+const suggestedExerciseSchema = z.object({
+  name: z.string(),
+  exerciseType: z.enum(['Sets of Reps', 'Sets of Duration']),
+  sets: z.number(),
+  reps: z.number(),
+  durationMinutes: z.number(),
+  durationSeconds: z.number(),
+  weight: z.string(),
+  bodyweight: z.boolean(),
+});
+
 /**
- * Calls Gemini to suggest exercises to complete a balanced workout.
+ * Calls the configured AI model to suggest exercises to complete a balanced workout.
  *
  * @param workoutName  The name of today's workout day (e.g. "Push", "Legs")
  * @param splitType    The user's training split (e.g. "Push / Pull / Legs")
@@ -184,14 +196,12 @@ Return ONLY a valid JSON array with no markdown fences, no explanation:
   }
 ]`;
 
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
-
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim();
-  const jsonText = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim();
-
-  const parsed: SuggestedExercise[] = JSON.parse(jsonText);
+  const { output: parsed } = await generateText({
+    model: getAIModel(),
+    prompt,
+    maxRetries: AI_MAX_RETRIES,
+    output: Output.array({ element: suggestedExerciseSchema }),
+  });
 
   return parsed.map((ex) => ({
     name: ex.name ?? '',

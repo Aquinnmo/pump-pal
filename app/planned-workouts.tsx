@@ -4,7 +4,7 @@ import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
-import { generateSplitWorkoutNames } from '@/utils/gemini-workout-suggestions';
+import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { predictWorkoutAfterName } from '@/utils/predict-next-workout';
 import { exerciseLabel, summarizePerformedExerciseSetGroups } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
@@ -107,14 +107,16 @@ export default function PlannedWorkoutsScreen() {
     if (target < 0 || target >= plans.length) return;
     const a = plans[index];
     const b = plans[target];
+    const aOrder = a.queueOrder;
+    const bOrder = b.queueOrder;
     const reordered = [...plans];
-    reordered[index] = b;
-    reordered[target] = a;
+    reordered[index] = { ...b, queueOrder: aOrder };
+    reordered[target] = { ...a, queueOrder: bOrder };
     setPlans(reordered);
     try {
       await Promise.all([
-        updateDoc(doc(db, 'workouts', a.id), { queueOrder: b.queueOrder }),
-        updateDoc(doc(db, 'workouts', b.id), { queueOrder: a.queueOrder }),
+        updateDoc(doc(db, 'workouts', a.id), { queueOrder: bOrder }),
+        updateDoc(doc(db, 'workouts', b.id), { queueOrder: aOrder }),
       ]);
     } catch (err) {
       console.error(err);

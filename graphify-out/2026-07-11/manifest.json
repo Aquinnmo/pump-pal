@@ -420,8 +420,8 @@
     "semantic_hash": ""
   },
   ".beads/export-state.json": {
-    "mtime": 1783781973.3487594,
-    "ast_hash": "b4c29e26a3958c2e1886adb43664dcf3",
+    "mtime": 1783781724.309544,
+    "ast_hash": "2511cb24cf17ff4912c6139e1e5ec14a",
     "semantic_hash": ""
   },
   ".beads/hooks/post-checkout": {
@@ -590,8 +590,8 @@
     "semantic_hash": ""
   },
   "constants/ai-config.ts": {
-    "mtime": 1783781986.4255283,
-    "ast_hash": "7e2341dfb84938e6205528adc55fcbf5",
+    "mtime": 1783781737.5461657,
+    "ast_hash": "7c5b3e3fb5699f8d2a7f6cc34c5fce7d",
     "semantic_hash": ""
   },
   "utils/muscle-analysis.ts": {

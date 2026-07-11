@@ -1,6 +1,7 @@
 import { useAuth } from '@/context/auth-context';
+import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from '@/constants/ai-config';
 import { Workout } from '@/types/workout';
-import { analyzeMuscles, MuscleInsights } from '@/utils/gemini-muscle-analysis';
+import { analyzeMuscles, MuscleInsights } from '@/utils/muscle-analysis';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +11,7 @@ interface Props {
   workouts: Workout[];
 }
 
-const MAX_DAILY_REFRESHES = 3;
+const MAX_DAILY_REFRESHES = TEMPORARY_AI_DAILY_LIMIT;
 
 interface InsightsCache {
   date: string; // 'YYYY-MM-DD'
@@ -47,7 +48,6 @@ export function MuscleInsightCards({ workouts }: Props) {
         setRefreshesLeft(MAX_DAILY_REFRESHES - cached.count);
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshCountKey]);
 
   const runAnalysis = async (force = false) => {
@@ -67,7 +67,7 @@ export function MuscleInsightCards({ workouts }: Props) {
         }
       }
 
-      // Not cached or manual refresh — call Gemini
+      // Not cached or manual refresh — call configured AI model
       const result = await analyzeMuscles(workouts);
       setInsights(result);
 
@@ -75,8 +75,9 @@ export function MuscleInsightCards({ workouts }: Props) {
       const payload: InsightsCache = { date: todayKey(), insights: result };
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (e) {
-      console.error('Gemini muscle analysis failed:', e);
-      setError('Could not load AI insights. Tap to retry.');
+      const details = formatAIError(e);
+      console.error('AI muscle analysis failed:', details);
+      setError(__DEV__ ? `AI error: ${details}` : 'Could not load AI insights. Tap to retry.');
     } finally {
       setLoading(false);
     }
@@ -129,7 +130,7 @@ export function MuscleInsightCards({ workouts }: Props) {
             </TouchableOpacity>
           )}
         </View>
-        <Text style={styles.sectionSubtitle}>Past 30 days · Powered by Gemini</Text>
+        <Text style={styles.sectionSubtitle}>Past 30 days · Powered by AI</Text>
       </View>
 
       {loading ? (

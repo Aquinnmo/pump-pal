@@ -104,12 +104,12 @@ created workouts get Firestore auto-generated IDs.
 
 ## AI consumers
 
-`utils/gemini-muscle-analysis.ts` and `utils/gemini-workout-suggestions.ts`
-both read `performedExercises[].sets` to build prompts for Gemini. As of the
+`utils/muscle-analysis.ts` and `utils/workout-suggestions.ts`
+both read `performedExercises[].sets` to build prompts through AI SDK Core. As of the
 muscle-taxonomy work, neither one joins back to the exercise catalog to read
-`primaryMuscles`/`secondaryMuscles` — `gemini-muscle-analysis.ts` still asks
-Gemini to guess muscle groups from exercise **names**, with its own hardcoded
+`primaryMuscles`/`secondaryMuscles` — `muscle-analysis.ts` now uses
+the AI model to classify muscle groups from exercise data with canonical
 muscle vocabulary (`Chest, Back, Shoulders, ...` — not the canonical
 `MuscleId` list). Rewiring these to aggregate real per-muscle volume via
 `exerciseId`/`variationId` → catalog lookup is a known follow-up, not done as
-part of adding the muscle data.
+part of adding the muscle data; catalog attribution is now implemented.

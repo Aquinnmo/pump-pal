@@ -54,7 +54,7 @@ One-off, npm-scripted Node scripts (not part of the app bundle) that read/conver
 
 ### AI features
 
-Google Gemini (`@google/generative-ai`, model set in `constants/gemini-config.ts`, key from `EXPO_PUBLIC_GEMINI_API_KEY`) powers `utils/gemini-muscle-analysis.ts` (muscle group insight cards on Home) and `utils/gemini-workout-suggestions.ts`. Both consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
+AI SDK Core (`ai`) provides provider-neutral generation and structured output. `constants/ai-config.ts` currently registers Google via `@ai-sdk/google`, with provider/model selected through `EXPO_PUBLIC_AI_PROVIDER` and `EXPO_PUBLIC_AI_MODEL`, and the Google key supplied by `EXPO_PUBLIC_GEMINI_API_KEY`. AI features live in `utils/muscle-analysis.ts`, `utils/workout-suggestions.ts`, and `utils/daily-name.ts`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
 
 ### Theming
 
