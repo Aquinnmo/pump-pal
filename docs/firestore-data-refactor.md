@@ -361,7 +361,7 @@ Keep legacy data until app cutover, export, analytics, and account-delete behavi
 
 ## Remaining Work
 
-App cutover shipped: all reads/writes go through top-level `workouts`/`exercises`, filtered by `userId`, with set-by-set `performedExercises[].sets`, a flattened searchable exercise picker, and an `under-review` custom-exercise flow. `app/modal.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/workouts.tsx`, `app/(tabs)/analytics.tsx`, `app/(tabs)/settings.tsx`, `components/workout-card.tsx`, `utils/gemini-muscle-analysis.ts`, and `utils/gemini-workout-suggestions.ts` all consume the canonical shape.
+App cutover shipped: all reads/writes go through top-level `workouts`/`exercises`, filtered by `userId`, with set-by-set `performedExercises[].sets`, a flattened searchable exercise picker, and an `under-review` custom-exercise flow. `app/modal.tsx`, `app/(tabs)/index.tsx`, `app/(tabs)/workouts.tsx`, `app/(tabs)/analytics.tsx`, `app/(tabs)/settings.tsx`, `components/workout-card.tsx`, `utils/muscle-analysis.ts`, and `utils/workout-suggestions.ts` all consume the canonical shape.
 
 The TPC (pushup-challenge) tab is a live, intentional feature — not migration debt. Its `users/{uid}/pushup-challenge/data` doc and account-delete cleanup are unrelated to the workout schema and stay as-is.
 

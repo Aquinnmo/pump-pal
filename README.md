@@ -1,6 +1,6 @@
 # Pump Pal
 
-Workout tracking app built with Expo Router (TypeScript, React Native), backed by Firebase (auth + Firestore) with Gemini-powered workout insights.
+Workout tracking app built with Expo Router (TypeScript, React Native), backed by Firebase (auth + Firestore) with AI-powered workout insights.
 
 ## Setup
 
@@ -10,7 +10,7 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
    npm install
    ```
 
-2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and Gemini API key (`EXPO_PUBLIC_GEMINI_API_KEY`).
+2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`), AI provider/model settings, and Google provider key (`EXPO_PUBLIC_GEMINI_API_KEY`).
 
 3. Start the dev server
 

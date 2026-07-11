@@ -1,14 +1,20 @@
-import { GEMINI_API_KEY, GEMINI_MODEL } from '@/constants/gemini-config';
+import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
 import { isMuscleId, MUSCLES, MUSCLE_REGIONS, MuscleId, muscleLabel } from '@/constants/muscles';
 import { CatalogExercise, Workout } from '@/types/workout';
 import { loadCatalog } from '@/utils/exercise-catalog';
 import { exerciseLabel, toDateObj } from '@/utils/workout-conversion';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateText, Output } from 'ai';
+import { z } from 'zod';
 
 export interface MuscleInsights {
   overTrained: string[];
   underTrained: string[];
 }
+
+const muscleInsightsSchema = z.object({
+  overTrained: z.array(z.string()),
+  underTrained: z.array(z.string()),
+});
 
 /** Per-muscle training-volume stat over the analysis window, normalised per week. */
 export interface MuscleVolumeStat {
@@ -123,7 +129,7 @@ export function computeMuscleVolume(recent: Workout[], catalog: CatalogExercise[
 }
 
 /**
- * Analyses the past 30 days of workouts with Gemini and returns up to 3
+ * Analyses the past 30 days of workouts with the configured AI model and returns up to 3
  * over-trained and up to 3 under-trained muscle groups. Muscle attribution
  * comes from the exercise catalog (real primary/secondary muscles), not from
  * the model guessing what each exercise trains.
@@ -186,19 +192,14 @@ Return ONLY a valid JSON object with no markdown fences and no explanation, exac
 
 If nothing is meaningfully over- or under-trained, return "All good! 👍" as the only entry in each list.`;
 
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: GEMINI_MODEL,
-    generationConfig: { responseMimeType: 'application/json' },
+  const { output } = await generateText({
+    model: getAIModel(),
+    prompt,
+    maxRetries: AI_MAX_RETRIES,
+    output: Output.object({ schema: muscleInsightsSchema }),
   });
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().trim();
-
-  // Strip any accidental markdown code fences before parsing.
-  const jsonText = text.replace(/^```[a-z]*\n?/i, '').replace(/```$/, '').trim();
-
-  const parsed: MuscleInsights = JSON.parse(jsonText);
+  const parsed: MuscleInsights = output;
 
   return {
     overTrained: (parsed.overTrained ?? []).slice(0, 3),
