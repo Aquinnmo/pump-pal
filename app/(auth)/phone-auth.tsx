@@ -1,4 +1,5 @@
 import FirebaseRecaptchaVerifierModal, { FirebaseRecaptchaVerifierModalRef } from '@/components/firebase-recaptcha-modal';
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import app, { auth } from '@/config/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import { getLocales } from 'expo-localization';
@@ -111,180 +112,160 @@ export default function PhoneAuthScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <FirebaseRecaptchaVerifierModal
-        ref={recaptchaVerifier}
-        firebaseConfig={app.options}
-        attemptInvisibleVerification
-      />
+    <TimberAuthShell>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <FirebaseRecaptchaVerifierModal
+          ref={recaptchaVerifier}
+          firebaseConfig={app.options}
+          attemptInvisibleVerification
+        />
 
-      <View style={styles.inner}>
-        <TouchableOpacity
-          style={styles.back}
-          onPress={() => (step === 2 ? setStep(1) : router.back())}>
-          <Ionicons name="arrow-back" size={22} color="#fff" />
-        </TouchableOpacity>
+        <View style={styles.inner}>
+          <TouchableOpacity
+            accessibilityLabel={step === 2 ? 'Change phone number' : 'Go back'}
+            style={styles.back}
+            onPress={() => (step === 2 ? setStep(1) : router.back())}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </TouchableOpacity>
 
-        <Text style={styles.logo}>PumpPal</Text>
+          <TimberBrand compact title="Timber" subtitle="Your workout log" />
 
-        {step === 1 ? (
-          <>
-            <Text style={styles.heading}>Enter your phone number</Text>
-            <Text style={styles.hint}>We detected your country code automatically.</Text>
+          <View style={styles.formCard}>
+            {step === 1 ? (
+              <>
+                <Text style={styles.heading}>Log in with your phone</Text>
+                <Text style={styles.hint}>We detected your country code. We’ll text a code to get you back to your log.</Text>
 
-            <View style={styles.phoneRow}>
-              <View style={styles.callingCodeBox}>
-                <Text style={styles.callingCodeText}>{callingCode}</Text>
-              </View>
-              <TextInput
-                style={styles.phoneInput}
-                placeholder="555 000 1234"
-                placeholderTextColor="#555"
-                keyboardType="phone-pad"
-                autoFocus
-                value={localNumber}
-                onChangeText={setLocalNumber}
-              />
-            </View>
+                <View style={styles.phoneRow}>
+                  <View style={styles.callingCodeBox}>
+                    <Text style={styles.callingCodeText}>{callingCode}</Text>
+                  </View>
+                  <TextInput
+                    style={[timberAuthStyles.field, styles.phoneInput]}
+                    placeholder="555 000 1234"
+                    placeholderTextColor="#9f9a92"
+                    keyboardType="phone-pad"
+                    autoFocus
+                    value={localNumber}
+                    onChangeText={setLocalNumber}
+                  />
+                </View>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+                {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={sendOtp}
-              disabled={loading || !localNumber.trim()}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Send Code</Text>
-              )}
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Text style={styles.heading}>Enter the 6-digit code</Text>
-            <Text style={styles.hint}>Sent to {fullNumber}</Text>
+                <TouchableOpacity
+                  accessibilityLabel="Send login code"
+                  style={[timberAuthStyles.primaryButton, loading && styles.buttonDisabled]}
+                  onPress={sendOtp}
+                  disabled={loading || !localNumber.trim()}>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Send Code</Text>}
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.heading}>Enter your 6-digit code</Text>
+                <Text style={styles.hint}>Sent to {fullNumber}</Text>
 
-            <TextInput
-              style={[styles.input, styles.otpInput]}
-              placeholder="000000"
-              placeholderTextColor="#555"
-              keyboardType="number-pad"
-              maxLength={6}
-              autoFocus
-              value={otp}
-              onChangeText={setOtp}
-            />
+                <TextInput
+                  style={[timberAuthStyles.field, styles.otpInput]}
+                  placeholder="000000"
+                  placeholderTextColor="#9f9a92"
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  autoFocus
+                  value={otp}
+                  onChangeText={setOtp}
+                />
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+                {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <TouchableOpacity
-              style={[styles.button, loading && styles.buttonDisabled]}
-              onPress={verifyOtp}
-              disabled={loading || otp.length < 6}>
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.buttonText}>Verify</Text>
-              )}
-            </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityLabel="Verify login code"
+                  style={[timberAuthStyles.primaryButton, loading && styles.buttonDisabled]}
+                  onPress={verifyOtp}
+                  disabled={loading || otp.length < 6}>
+                  {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Verify</Text>}
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.resendLink}
-              onPress={() => { setStep(1); setOtp(''); setError(null); }}>
-              <Text style={styles.resendText}>Resend code</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+                <TouchableOpacity
+                  style={styles.resendLink}
+                  onPress={() => { setStep(1); setOtp(''); setError(null); }}>
+                  <Text style={styles.resendText}>Resend code</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </TimberAuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboard: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
   },
   inner: {
     flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 60,
+    paddingVertical: 16,
   },
   back: {
-    marginBottom: 24,
     width: 40,
     height: 40,
     justifyContent: 'center',
+    marginBottom: 18,
   },
-  logo: {
-    fontSize: 36,
-    fontWeight: '800',
-    color: '#e54242',
-    marginBottom: 32,
-    letterSpacing: -1,
+  formCard: {
+    marginTop: 28,
+    padding: 20,
+    borderRadius: 22,
+    backgroundColor: 'rgba(20, 19, 18, 0.94)',
+    borderWidth: 1,
+    borderColor: '#4a3324',
   },
   heading: {
     fontSize: 24,
-    fontWeight: '800',
+    fontWeight: '900',
     color: '#fff',
     marginBottom: 8,
+    letterSpacing: -0.5,
   },
   hint: {
     fontSize: 14,
-    color: '#888',
-    marginBottom: 28,
-  },
-  input: {
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 16,
+    color: '#aaa39a',
+    lineHeight: 20,
+    marginBottom: 22,
   },
   otpInput: {
     letterSpacing: 8,
     fontSize: 24,
     textAlign: 'center',
+    marginBottom: 16,
   },
   error: {
     color: '#f87171',
     fontSize: 14,
     marginBottom: 16,
-    backgroundColor: '#2a1515',
-    borderRadius: 10,
+    backgroundColor: '#291919',
+    borderWidth: 1,
+    borderColor: '#69302b',
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
-  button: {
-    backgroundColor: '#e54242',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
   buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
+    opacity: 0.6,
   },
   resendLink: {
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingTop: 18,
+    paddingBottom: 2,
   },
   resendText: {
-    color: '#e54242',
+    color: '#c9a567',
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   phoneRow: {
     flexDirection: 'row',
@@ -293,12 +274,12 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   callingCodeBox: {
-    backgroundColor: '#1c1c1c',
+    backgroundColor: '#181716',
     borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 12,
+    borderColor: '#4a3324',
+    borderRadius: 14,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 15,
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 64,
@@ -310,13 +291,5 @@ const styles = StyleSheet.create({
   },
   phoneInput: {
     flex: 1,
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#fff',
   },
 });

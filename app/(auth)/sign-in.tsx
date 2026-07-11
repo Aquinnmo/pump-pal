@@ -1,17 +1,19 @@
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import { useAuth } from '@/context/auth-context';
 import { getFriendlyAuthError } from '@/utils/firebase-errors';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function SignInScreen() {
@@ -39,131 +41,123 @@ export default function SignInScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.inner}>
-        <Text style={styles.logo}>PumpPal</Text>
-        <Text style={styles.subtitle}>Your workout companion</Text>
+    <TimberAuthShell>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
+          <TimberBrand eyebrow="Your workout log" subtitle="Your sessions, plans, and progress are waiting." />
 
-        {error && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="alert-circle" size={16} color="#f87171" style={{ marginRight: 8 }} />
-            <Text style={styles.errorText}>{error}</Text>
+          <View style={styles.formCard}>
+            <Text style={styles.heading}>Pick up your log</Text>
+            <Text style={styles.hint}>Sign in and keep building from your last session.</Text>
+
+            {error && (
+              <View style={[timberAuthStyles.errorBanner, styles.errorBanner]}>
+                <Ionicons name="alert-circle" size={16} color="#f87171" style={styles.errorIcon} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <View style={styles.fields}>
+              <TextInput
+                style={timberAuthStyles.field}
+                placeholder="Email"
+                placeholderTextColor="#9f9a92"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                value={email}
+                onChangeText={setEmail}
+              />
+              <TextInput
+                style={timberAuthStyles.field}
+                placeholder="Password"
+                placeholderTextColor="#9f9a92"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+              />
+            </View>
+
+            <TouchableOpacity
+              accessibilityLabel="Sign in to Timber"
+              style={[timberAuthStyles.primaryButton, loading && styles.buttonDisabled]}
+              onPress={handleSignIn}
+              disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Sign In</Text>}
+            </TouchableOpacity>
+
+            <Link href="/(auth)/sign-up" asChild>
+              <TouchableOpacity style={styles.linkButton}>
+                <Text style={styles.linkText}>
+                  New to Timber? <Text style={styles.linkBold}>Create Account</Text>
+                </Text>
+              </TouchableOpacity>
+            </Link>
           </View>
-        )}
-
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          placeholderTextColor="#aaa"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign In</Text>
-          )}
-        </TouchableOpacity>
-
-        <Link href="/(auth)/sign-up" asChild>
-          <TouchableOpacity style={styles.linkButton}>
-            <Text style={styles.linkText}>
-              Do not have an account? <Text style={styles.linkBold}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </Link>
-      </View>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TimberAuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboard: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
   },
   inner: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
-  logo: {
-    fontSize: 42,
-    fontWeight: '800',
-    color: '#e54242',
-    textAlign: 'center',
-    marginBottom: 6,
-    letterSpacing: -1,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  input: {
-    backgroundColor: '#1c1c1c',
+  formCard: {
+    marginTop: 30,
+    padding: 20,
+    borderRadius: 22,
+    backgroundColor: 'rgba(20, 19, 18, 0.94)',
     borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 16,
-    color: '#fff',
-    marginBottom: 14,
+    borderColor: '#4a3324',
   },
-  button: {
-    backgroundColor: '#e54242',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
+  heading: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+  },
+  hint: {
+    color: '#aaa39a',
+    fontSize: 14,
+    lineHeight: 20,
     marginTop: 6,
     marginBottom: 20,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  linkButton: {
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#888',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#e54242',
-    fontWeight: '600',
+  fields: {
+    gap: 12,
   },
   errorBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#2a1515',
-    borderWidth: 1,
-    borderColor: '#5a2020',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 16,
+    marginBottom: 14,
+  },
+  errorIcon: {
+    marginRight: 8,
   },
   errorText: {
     color: '#f87171',
     fontSize: 13,
     flex: 1,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  linkButton: {
+    alignItems: 'center',
+    paddingTop: 18,
+    paddingBottom: 2,
+  },
+  linkText: {
+    color: '#aaa39a',
+    fontSize: 14,
+  },
+  linkBold: {
+    color: '#c9a567',
+    fontWeight: '800',
   },
 });

@@ -4,6 +4,7 @@
  * Firebase's reCAPTCHA inside a Modal, implementing the ApplicationVerifier
  * interface expected by firebase/auth's signInWithPhoneNumber.
  */
+import type { FirebaseOptions } from 'firebase/app';
 import type { ApplicationVerifier } from 'firebase/auth';
 import { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -15,11 +16,11 @@ export interface FirebaseRecaptchaVerifierModalRef extends ApplicationVerifier {
 }
 
 interface Props {
-  firebaseConfig: Record<string, unknown>;
+  firebaseConfig: FirebaseOptions;
   attemptInvisibleVerification?: boolean;
 }
 
-function buildHtml(config: Record<string, unknown>, size: 'invisible' | 'normal'): string {
+function buildHtml(config: FirebaseOptions, size: 'invisible' | 'normal'): string {
   const configJson = JSON.stringify(config);
   return `<!DOCTYPE html>
 <html>

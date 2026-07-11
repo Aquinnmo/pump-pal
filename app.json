@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Pump Pal",
+    "name": "Timber",
     "slug": "pump-pal",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pumppal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#111111",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -21,12 +21,12 @@
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
-      "package": "com.aquinnmo.pumppal"
+      "package": "com.aquinnmo.timber"
     },
     "web": {
       "output": "static",
-      "name":"Pump Pal",
-      "description":"A workout tracker dedicated to balance your training.",
+      "name": "Timber",
+      "description": "Logging workouts with better insights.",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -44,7 +44,8 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-localization"
+      "expo-localization",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

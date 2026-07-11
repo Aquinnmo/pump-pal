@@ -1,3 +1,4 @@
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import { Dropdown } from '@/components/ui/dropdown';
 import { db } from '@/config/firebase';
 import { SPLIT_OPTIONS, SplitOption } from '@/constants/split-options';
@@ -7,12 +8,15 @@ import { router } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import {
-    ActivityIndicator,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 export default function SetSplitScreen() {
@@ -54,89 +58,93 @@ export default function SetSplitScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.title}>Set Your Split</Text>
-        <Text style={styles.subtitle}>Choose your typical workout split to personalize PumpPal.</Text>
+    <TimberAuthShell>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <TimberBrand eyebrow="One last thing" subtitle="Set your usual routine before you start logging." />
 
-        <Dropdown
-          options={SPLIT_OPTIONS}
-          value={selectedSplit}
-          onSelect={(val) => {
-            setSelectedSplit(val as SplitOption);
-            if (val !== 'Other') setCustomSplit('');
-          }}
-          placeholder="Select Your Split"
-        />
+          <View style={styles.card}>
+            <Text style={styles.title}>Set your training roots</Text>
+            <Text style={styles.subtitle}>
+              Choose the split you use most. You can still plan or log any workout you want.
+            </Text>
 
-        {selectedSplit === 'Other' && (
-          <TextInput
-            style={styles.customInput}
-            placeholder="Describe your split"
-            placeholderTextColor="#777"
-            value={customSplit}
-            onChangeText={setCustomSplit}
-          />
-        )}
+            <Dropdown
+              options={SPLIT_OPTIONS}
+              value={selectedSplit}
+              onSelect={(value) => {
+                setSelectedSplit(value as SplitOption);
+                if (value !== 'Other') setCustomSplit('');
+              }}
+              placeholder="Select Your Split"
+              style={styles.dropdown}
+            />
 
-        <TouchableOpacity
-          style={[styles.continueButton, saving && styles.continueButtonDisabled]}
-          onPress={handleContinue}
-          disabled={saving}>
-          {saving ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.continueButtonText}>Continue</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-    </View>
+            {selectedSplit === 'Other' && (
+              <TextInput
+                style={[timberAuthStyles.field, styles.customInput]}
+                placeholder="Describe your split"
+                placeholderTextColor="#9f9a92"
+                value={customSplit}
+                onChangeText={setCustomSplit}
+              />
+            )}
+
+            <TouchableOpacity
+              accessibilityLabel="Save workout split"
+              style={[timberAuthStyles.primaryButton, saving && styles.buttonDisabled]}
+              onPress={handleContinue}
+              disabled={saving}>
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Save My Split</Text>}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </TimberAuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboard: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
   },
   content: {
-    gap: 12,
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+  },
+  card: {
+    marginTop: 30,
+    padding: 20,
+    gap: 14,
+    borderRadius: 22,
+    backgroundColor: 'rgba(20, 19, 18, 0.94)',
+    borderWidth: 1,
+    borderColor: '#4a3324',
   },
   title: {
     color: '#fff',
-    fontSize: 30,
-    fontWeight: '800',
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    color: '#888',
+    color: '#aaa39a',
     fontSize: 14,
-    marginBottom: 10,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  dropdown: {
+    borderColor: '#4a3324',
+    backgroundColor: '#181716',
+    borderRadius: 14,
+    paddingVertical: 15,
   },
   customInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    backgroundColor: '#151515',
-    color: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 15,
+    marginTop: -2,
   },
-  continueButton: {
-    backgroundColor: '#e54242',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  continueButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.6,
-  },
-  continueButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
   },
 });

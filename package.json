@@ -9,6 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
+    "generate:icons": "node scripts/generate-icons.js",
     "build:web": "npx expo export -p web",
     "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js && node scripts/migration/canonical-muscles.test.js && node scripts/migration/catalog-seed.test.js",
     "migration:inventory": "node scripts/migration/legacy-inventory.js",
@@ -35,7 +36,7 @@
     "expo-image": "~3.0.11",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.11",
-    "expo-localization": "~17.0.8",
+    "expo-localization": "~17.0.9",
     "expo-navigation-bar": "~5.0.10",
     "expo-router": "~6.0.23",
     "expo-sharing": "~14.0.8",
@@ -44,7 +45,7 @@
     "expo-symbols": "~1.0.8",
     "expo-system-ui": "~6.0.9",
     "expo-updates": "~29.0.16",
-    "expo-web-browser": "~15.0.10",
+    "expo-web-browser": "~15.0.11",
     "firebase": "^12.9.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -64,6 +65,7 @@
     "@types/react": "~19.1.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
+    "sharp": "^0.35.3",
     "typescript": "~5.9.2"
   },
   "private": true
