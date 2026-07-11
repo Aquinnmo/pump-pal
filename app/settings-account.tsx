@@ -3,7 +3,7 @@ import { auth, db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { EmailAuthProvider, deleteUser, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
+import { deleteUser, sendPasswordResetEmail } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -17,10 +17,7 @@ export default function SettingsAccountScreen() {
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
+  const [sendingResetEmail, setSendingResetEmail] = useState(false);
   const [deleteModalError, setDeleteModalError] = useState('');
   const [changePasswordError, setChangePasswordError] = useState('');
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
@@ -32,46 +29,23 @@ export default function SettingsAccountScreen() {
   const handleSignOut = () => setShowSignOutModal(true);
 
   const handleChangePassword = () => {
-    setOldPassword('');
-    setNewPassword('');
-    setConfirmNewPassword('');
     setChangePasswordError('');
     setShowChangePasswordModal(true);
   };
 
   const confirmChangePassword = async () => {
     if (!user || !user.email) return;
-    if (newPassword !== confirmNewPassword) {
-      setChangePasswordError('New passwords do not match.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setChangePasswordError('Password must be at least 6 characters.');
-      return;
-    }
-    if (!oldPassword) {
-      setChangePasswordError('Please enter your current password.');
-      return;
-    }
 
-    setChangingPassword(true);
+    setSendingResetEmail(true);
     try {
-      const credential = EmailAuthProvider.credential(user.email, oldPassword);
-      await reauthenticateWithCredential(auth.currentUser!, credential);
-      await updatePassword(auth.currentUser!, newPassword);
+      await sendPasswordResetEmail(auth, user.email);
       setShowChangePasswordModal(false);
-      setToast({ visible: true, message: 'Password updated successfully', type: 'success' });
+      setToast({ visible: true, message: 'Password reset email sent', type: 'success' });
     } catch (err: any) {
       console.error(err);
-      const msg =
-        err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential'
-          ? 'Current password is incorrect.'
-          : err.code === 'auth/weak-password'
-          ? 'New password must be at least 6 characters.'
-          : 'Could not update password. Please try again.';
-      setChangePasswordError(msg);
+      setChangePasswordError('Could not send reset email. Please try again.');
     } finally {
-      setChangingPassword(false);
+      setSendingResetEmail(false);
     }
   };
 
@@ -136,49 +110,13 @@ export default function SettingsAccountScreen() {
       <Modal visible={showChangePasswordModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Change Password</Text>
-            <Text style={styles.modalMessage}>New passwords must be at least 6 characters.</Text>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Current password"
-              placeholderTextColor="#555"
-              value={oldPassword}
-              onChangeText={setOldPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="New password"
-              placeholderTextColor="#555"
-              value={newPassword}
-              onChangeText={setNewPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <TextInput
-              style={[
-                styles.passwordInput,
-                styles.passwordInputLast,
-                (confirmNewPassword.length > 0 && newPassword !== confirmNewPassword) || (newPassword.length > 0 && newPassword.length < 6)
-                  ? styles.passwordInputError
-                  : null,
-              ]}
-              placeholder="Confirm new password"
-              placeholderTextColor="#555"
-              value={confirmNewPassword}
-              onChangeText={setConfirmNewPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {changePasswordError ? (
-              <Text style={styles.modalErrorText}>{changePasswordError}</Text>
-            ) : newPassword.length > 0 && newPassword.length < 6 ? (
-              <Text style={styles.modalErrorText}>Password must be at least 6 characters.</Text>
-            ) : null}
+            <Text style={styles.modalTitle}>Reset Password</Text>
+            <Text style={styles.modalMessage}>
+              {"We'll send a password reset link to "}
+              <Text style={{ color: '#fff', fontWeight: '700' }}>{user?.email}</Text>
+              {'.'}
+            </Text>
+            {changePasswordError ? <Text style={styles.modalErrorText}>{changePasswordError}</Text> : null}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
@@ -187,22 +125,18 @@ export default function SettingsAccountScreen() {
                   setChangePasswordError('');
                 }}
                 activeOpacity={0.8}
-                disabled={changingPassword}>
+                disabled={sendingResetEmail}>
                 <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.modalConfirmButton,
-                  (newPassword !== confirmNewPassword || newPassword.length < 6 || !oldPassword || changingPassword) &&
-                    styles.modalButtonDisabled,
-                ]}
+                style={[styles.modalConfirmButton, sendingResetEmail && styles.modalButtonDisabled]}
                 onPress={confirmChangePassword}
                 activeOpacity={0.8}
-                disabled={newPassword !== confirmNewPassword || newPassword.length < 6 || !oldPassword || changingPassword}>
-                {changingPassword ? (
+                disabled={sendingResetEmail}>
+                {sendingResetEmail ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.modalConfirmText}>Update</Text>
+                  <Text style={styles.modalConfirmText}>Send</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -392,23 +326,6 @@ const styles = StyleSheet.create({
   },
   modalButtonDisabled: {
     opacity: 0.4,
-  },
-  passwordInput: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    backgroundColor: '#151515',
-    color: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  passwordInputLast: {
-    marginBottom: 20,
-  },
-  passwordInputError: {
-    borderColor: '#b00020',
   },
   modalOverlay: {
     flex: 1,

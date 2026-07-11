@@ -1,11 +1,11 @@
 # Graph Report - pump-pal  (2026-07-10)
 
 ## Corpus Check
-- 113 files · ~72,213 words
+- 113 files · ~72,563 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 753 nodes · 1277 edges · 69 communities (32 shown, 37 thin omitted)
+- 758 nodes · 1282 edges · 70 communities (33 shown, 37 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.6)
 - Token cost: 0 input · 0 output
 
@@ -36,6 +36,7 @@
 - [[_COMMUNITY_Tab Bar Layout|Tab Bar Layout]]
 - [[_COMMUNITY_External Link Component|External Link Component]]
 - [[_COMMUNITY_ESLint Config|ESLint Config]]
+- [[_COMMUNITY_package.json|package.json]]
 - [[_COMMUNITY_Android Icon Assets|Android Icon Assets]]
 - [[_COMMUNITY_App Branding Assets|App Branding Assets]]
 - [[_COMMUNITY_Beads Post-Checkout Hook|Beads Post-Checkout Hook]]
@@ -101,15 +102,15 @@
 ## Import Cycles
 - None detected.
 
-## Communities (69 total, 37 thin omitted)
+## Communities (70 total, 37 thin omitted)
 
 ### Community 0 - "App Tab Screens"
-Cohesion: 0.06
-Nodes (80): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, formatElapsed(), styles, RootLayoutNav(), unstable_settings (+72 more)
+Cohesion: 0.05
+Nodes (102): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, formatElapsed(), styles, RootLayoutNav(), unstable_settings (+94 more)
 
 ### Community 1 - "Auth & Onboarding Flow"
-Cohesion: 0.14
-Nodes (22): compareExerciseLabels(), ExercisePicker(), ExercisePickerProps, ExercisePickerSelection, Sheet, SheetHandle, SheetProps, styles (+14 more)
+Cohesion: 0.33
+Nodes (6): devDependencies, eslint, eslint-config-expo, sharp, @types/react, typescript
 
 ### Community 2 - "Migration Review Builder"
 Cohesion: 0.06
@@ -129,7 +130,7 @@ Nodes (54): base64url(), createJwt(), crypto, docId(), fieldsToJs(), firestoreVa
 
 ### Community 6 - "NPM Dependencies"
 Cohesion: 0.05
-Nodes (39): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-linear-gradient (+31 more)
+Nodes (40): dependencies, expo, expo-constants, expo-file-system, expo-font, expo-haptics, expo-image, expo-insights (+32 more)
 
 ### Community 7 - "Exercise Catalog Docs"
 Cohesion: 0.07
@@ -144,8 +145,8 @@ Cohesion: 0.13
 Nodes (26): buildInventory(), buildMapping(), buildReviewWarnings(), compactCounts(), csvCell(), documentIdFromPath(), EXPORT_FILE, fs (+18 more)
 
 ### Community 10 - "NPM Scripts & Devdeps"
-Cohesion: 0.07
-Nodes (27): devDependencies, eslint, eslint-config-expo, sharp, @types/react, typescript, main, name (+19 more)
+Cohesion: 0.12
+Nodes (17): scripts, android, build:web, generate:icons, ios, lint, migration:dry-run, migration:firestore:snapshot (+9 more)
 
 ### Community 11 - "Themed UI Components"
 Cohesion: 0.14
@@ -188,12 +189,16 @@ Cohesion: 0.33
 Nodes (9): fs, IMAGES_DIR, log(), LOGS, main(), markSvg(), path, sharp (+1 more)
 
 ### Community 21 - "Project README"
-Cohesion: 0.10
-Nodes (17): AI features, Architecture, Beads Issue Tracker, Commands, Firebase, graphify, Migration scripts (`scripts/migration/`, `migration/`), Navigation / auth gating (+9 more)
+Cohesion: 0.08
+Nodes (21): AI features, Architecture, Beads Issue Tracker, Commands, Firebase, graphify, Migration scripts (`scripts/migration/`, `migration/`), Navigation / auth gating (+13 more)
 
 ### Community 22 - "Vercel Deploy Config"
 Cohesion: 0.40
 Nodes (4): buildCommand, cleanUrls, outputDirectory, rewrites
+
+### Community 26 - "package.json"
+Cohesion: 0.40
+Nodes (4): main, name, private, version
 
 ### Community 35 - "CLAUDE.md Arch & Theming"
 Cohesion: 0.22
@@ -208,7 +213,7 @@ Cohesion: 0.33
 Nodes (5): LoadingPlateProps, PLATES, styles, WorkoutPrefillLoader(), WorkoutPrefillLoaderProps
 
 ## Knowledge Gaps
-- **349 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+344 more)
+- **353 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+348 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -216,16 +221,16 @@ Nodes (5): LoadingPlateProps, PLATES, styles, WorkoutPrefillLoader(), WorkoutPre
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `SettingsAppScreen()` connect `App Tab Screens` to `Migration Review Builder`, `App Config (app.json)`?**
-  _High betweenness centrality (0.269) - this node is a cross-community bridge._
+  _High betweenness centrality (0.266) - this node is a cross-community bridge._
 - **Why does `exercise()` connect `Migration Review Builder` to `V2 Migration Builder`, `Firestore Snapshot Script`, `Legacy Workout Conversion`?**
-  _High betweenness centrality (0.256) - this node is a cross-community bridge._
+  _High betweenness centrality (0.254) - this node is a cross-community bridge._
 - **Why does `variation()` connect `Migration Review Builder` to `App Tab Screens`?**
-  _High betweenness centrality (0.230) - this node is a cross-community bridge._
+  _High betweenness centrality (0.228) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
   _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _355 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _359 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App Tab Screens` be split into smaller, more focused modules?**
-  _Cohesion score 0.06391941391941391 - nodes in this community are weakly interconnected._
-- **Should `Auth & Onboarding Flow` be split into smaller, more focused modules?**
-  _Cohesion score 0.14153846153846153 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05085143863769818 - nodes in this community are weakly interconnected._
+- **Should `Migration Review Builder` be split into smaller, more focused modules?**
+  _Cohesion score 0.058279370952821465 - nodes in this community are weakly interconnected._
