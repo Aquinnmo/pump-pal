@@ -22,26 +22,34 @@ const FACE = '#C9A567';
 const RING = '#E54242'; // app accent red
 const PITH = '#E54242';
 
-// Three logs in a 2-bottom + 1-top bundle. Kept inside the center ~66% safe zone
-// (max extent ~302 of 512 from center) so Android adaptive masking never clips.
-const R = 150;
+// Six logs in a 3-2-1 pyramid (hex-packed). Kept inside the center ~66% safe zone
+// (max extent ~330 of 512 from center) so Android adaptive masking never clips.
+// Lower rows drawn first, top last (front).
+const R = 112;
 const LOGS = [
-  { cx: 360, cy: 640 }, // bottom-left (drawn first)
-  { cx: 664, cy: 640 }, // bottom-right
-  { cx: 512, cy: 396 }, // top (drawn last, in front)
+  // bottom row (touching, tangent — no overlap)
+  { cx: 288, cy: 706 },
+  { cx: 512, cy: 706 },
+  { cx: 736, cy: 706 },
+  // middle row (resting tangent in the crevices)
+  { cx: 400, cy: 512 },
+  { cx: 624, cy: 512 },
+  // top
+  { cx: 512, cy: 318 },
 ];
 
 /**
- * One cut-log end. `seam` is the color of the thin outline that separates
- * overlapping logs (the ground color). When `mono` is set, the whole log is a
- * single flat filled circle in that color (for the Android monochrome layer).
+ * One cut-log end. The logs are tangent (touching, never overlapping), so no
+ * separating seam is drawn — the BARK fill (radius R) is the true edge. When
+ * `mono` is set, the whole log is a single flat filled circle in that color
+ * (for the Android monochrome layer).
  */
-function log({ cx, cy, seam, mono = null }) {
+function log({ cx, cy, mono = null }) {
   if (mono) {
     return `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${mono}"/>`;
   }
   return [
-    `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${BARK}" stroke="${seam}" stroke-width="16"/>`,
+    `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${BARK}"/>`,
     `<circle cx="${cx}" cy="${cy}" r="${R * 0.82}" fill="${SAPWOOD}"/>`,
     `<circle cx="${cx}" cy="${cy}" r="${R * 0.72}" fill="${FACE}"/>`,
     `<circle cx="${cx}" cy="${cy}" r="${R * 0.5}" fill="none" stroke="${RING}" stroke-width="10"/>`,
@@ -57,7 +65,6 @@ function log({ cx, cy, seam, mono = null }) {
  * @param {string|null} opts.mono        single color for a flat silhouette, or null for the branded palette
  */
 function markSvg({ background = null, mono = null } = {}) {
-  const seam = background || GROUND; // seam blends into the ground
   const parts = [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">`,
   ];
@@ -65,7 +72,7 @@ function markSvg({ background = null, mono = null } = {}) {
     parts.push(`<rect width="1024" height="1024" fill="${background}"/>`);
   }
   for (const l of LOGS) {
-    parts.push(log({ cx: l.cx, cy: l.cy, seam, mono }));
+    parts.push(log({ cx: l.cx, cy: l.cy, mono }));
   }
   parts.push(`</svg>`);
   return parts.join('\n');

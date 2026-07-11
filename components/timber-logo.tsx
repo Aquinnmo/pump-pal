@@ -14,11 +14,17 @@ const FACE = '#C9A567';
 const RING = '#E54242';
 const PITH = '#E54242';
 
-const R = 150;
+const R = 112;
 const LOGS = [
-  { cx: 360, cy: 640 }, // bottom-left
-  { cx: 664, cy: 640 }, // bottom-right
-  { cx: 512, cy: 396 }, // top (front)
+  // bottom row (touching, tangent — no overlap)
+  { cx: 288, cy: 706 },
+  { cx: 512, cy: 706 },
+  { cx: 736, cy: 706 },
+  // middle row (resting tangent in the crevices)
+  { cx: 400, cy: 512 },
+  { cx: 624, cy: 512 },
+  // top
+  { cx: 512, cy: 318 },
 ];
 
 type Props = {
@@ -33,7 +39,7 @@ export function TimberLogo({ size = 96, withBackground = false }: Props) {
       {withBackground && <Rect x={0} y={0} width={1024} height={1024} rx={220} fill={GROUND} />}
       {LOGS.map((l) => (
         <Fragment key={`${l.cx}-${l.cy}`}>
-          <Circle cx={l.cx} cy={l.cy} r={R} fill={BARK} stroke={GROUND} strokeWidth={16} />
+          <Circle cx={l.cx} cy={l.cy} r={R} fill={BARK} />
           <Circle cx={l.cx} cy={l.cy} r={R * 0.82} fill={SAPWOOD} />
           <Circle cx={l.cx} cy={l.cy} r={R * 0.72} fill={FACE} />
           <Circle cx={l.cx} cy={l.cy} r={R * 0.5} fill="none" stroke={RING} strokeWidth={10} />
