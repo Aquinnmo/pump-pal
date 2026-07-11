@@ -15,8 +15,8 @@
     "semantic_hash": "5812a780e2bb6913d6200435c8860dae"
   },
   "app.json": {
-    "mtime": 1783732426.4705212,
-    "ast_hash": "03943fa796fed1fa555f88ad8a7178fa",
+    "mtime": 1783734937.5251043,
+    "ast_hash": "796313079342458a282d1514956dbaae",
     "semantic_hash": ""
   },
   "app/(auth)/_layout.tsx": {
@@ -25,23 +25,23 @@
     "semantic_hash": "60393dfe5460dc0804a83cbfa78415f7"
   },
   "app/(auth)/phone-auth.tsx": {
-    "mtime": 1783733735.2694688,
-    "ast_hash": "b0aea808470e1c9728c14d8b3264dc69",
+    "mtime": 1783734937.528105,
+    "ast_hash": "f741cb5d23b4e1e50fbd610692ff8344",
     "semantic_hash": ""
   },
   "app/(auth)/sign-in.tsx": {
-    "mtime": 1783733864.1590455,
-    "ast_hash": "36e5ec012fe16c512818956278d78186",
+    "mtime": 1783734937.530105,
+    "ast_hash": "d5caeb038c63edea82dadd9ac99fc935",
     "semantic_hash": ""
   },
   "app/(auth)/sign-up.tsx": {
-    "mtime": 1783733866.4267676,
-    "ast_hash": "07a8c032ff3f44e4a89ba7c80234a531",
+    "mtime": 1783734937.532106,
+    "ast_hash": "5c033c4b7ecb8e2b20262eb673856eec",
     "semantic_hash": ""
   },
   "app/(auth)/welcome.tsx": {
-    "mtime": 1783733583.3559022,
-    "ast_hash": "00d9d084b9b71e2c6bdcb4dc87454589",
+    "mtime": 1783734937.5331113,
+    "ast_hash": "b5e366e6b14c2b9b218a3ec58ec18d19",
     "semantic_hash": ""
   },
   "app/(tabs)/_layout.tsx": {
@@ -85,8 +85,8 @@
     "semantic_hash": ""
   },
   "app/set-split.tsx": {
-    "mtime": 1783733868.8748736,
-    "ast_hash": "4d0d61c383582ebfa652a60cf975a064",
+    "mtime": 1783734937.5341096,
+    "ast_hash": "6e88a2ed92f10193ad4bda39669646dd",
     "semantic_hash": ""
   },
   "components/external-link.tsx": {
@@ -95,8 +95,8 @@
     "semantic_hash": "f4681f52a20edd637d810e6f853e0be7"
   },
   "components/firebase-recaptcha-modal.tsx": {
-    "mtime": 1783733946.7307396,
-    "ast_hash": "70986dfcadad7e746a7ffc749892223d",
+    "mtime": 1783734937.5536935,
+    "ast_hash": "b9d6ff405df6aa39d9d9a57612e79037",
     "semantic_hash": ""
   },
   "components/haptic-tab.tsx": {
@@ -160,7 +160,7 @@
     "semantic_hash": "3e1a818ae9abe50f1f5376edc73e95bb"
   },
   "components/workout-card.tsx": {
-    "mtime": 1783732175.337509,
+    "mtime": 1783734937.5576935,
     "ast_hash": "1859224956cd2f35331cd1d05f843da2",
     "semantic_hash": ""
   },
@@ -255,8 +255,8 @@
     "semantic_hash": "fc4fd2be2f27e89d30af9520eab9544f"
   },
   "package.json": {
-    "mtime": 1783728762.7452996,
-    "ast_hash": "dd1f5cee8a446b4de75dc3454a86765e",
+    "mtime": 1783735798.8823829,
+    "ast_hash": "ad44bc4aa01e01d61c77ef031dcdb7b2",
     "semantic_hash": ""
   },
   "scripts/build-exercise-inventory.js": {
@@ -390,9 +390,9 @@
     "semantic_hash": "299cdb21db7e84425dabb44d2a398e90"
   },
   "README.md": {
-    "mtime": 1783562744.9761114,
-    "ast_hash": "202c6aca89f1388b44b21fe6fa415bb9",
-    "semantic_hash": "202c6aca89f1388b44b21fe6fa415bb9"
+    "mtime": 1783735331.64677,
+    "ast_hash": "ac580e390473a300dd4755843cfe5f28",
+    "semantic_hash": ""
   },
   "docs/firestore-data-refactor.md": {
     "mtime": 1783563196.8332875,
@@ -400,43 +400,43 @@
     "semantic_hash": "6d3955d6e0754f8bc0b609de7538c759"
   },
   "assets/images/android-icon-background.png": {
-    "mtime": 1783733007.204,
+    "mtime": 1783734937.5396266,
     "ast_hash": "02b0f64b11391256c44e477ea3a4a8a2",
     "semantic_hash": ""
   },
   "assets/images/android-icon-foreground.png": {
-    "mtime": 1783733007.186,
+    "mtime": 1783734937.541625,
     "ast_hash": "1020170ccd9a51a0bafbb29a50f513b8",
     "semantic_hash": ""
   },
   "assets/images/android-icon-monochrome.png": {
-    "mtime": 1783733007.219,
+    "mtime": 1783734937.5436265,
     "ast_hash": "f748284f1f6424e1847acb9e55d6cfc7",
     "semantic_hash": ""
   },
   "assets/images/favicon.png": {
-    "mtime": 1783733007.225,
+    "mtime": 1783734937.5466256,
     "ast_hash": "aaf1a4878965029e2344a1695a8c222b",
     "semantic_hash": ""
   },
   "assets/images/icon.png": {
-    "mtime": 1783733007.167,
+    "mtime": 1783734937.5486932,
     "ast_hash": "34d553bcc300dd745cf1fbce8205e165",
     "semantic_hash": ""
   },
   "assets/images/splash-icon.png": {
-    "mtime": 1783733007.234,
+    "mtime": 1783734937.552694,
     "ast_hash": "b3557b5c271216b970d82622619fc381",
     "semantic_hash": ""
   },
   ".beads/backup/backup_state.json": {
-    "mtime": 1783727894.3514931,
-    "ast_hash": "9e2b9a5155bd8a9a5970c033b9f84687",
+    "mtime": 1783735707.0981054,
+    "ast_hash": "f122bb701cd62db519b470bfe57d999c",
     "semantic_hash": ""
   },
   ".beads/export-state.json": {
-    "mtime": 1783733471.5210896,
-    "ast_hash": "7d7928f488b82a7bc73f1efa12fc6b6e",
+    "mtime": 1783735773.7276201,
+    "ast_hash": "f6f8648d98e2d137f7d2912ea8cceb39",
     "semantic_hash": ""
   },
   ".beads/hooks/post-checkout": {
@@ -575,8 +575,8 @@
     "semantic_hash": ""
   },
   "app/settings-app.tsx": {
-    "mtime": 1783732177.2196746,
-    "ast_hash": "e8d3360e6f156db51dd0887938e706f6",
+    "mtime": 1783734937.5361047,
+    "ast_hash": "121d49f72d4cac9f22e5f6ac96fdc697",
     "semantic_hash": ""
   },
   "app/settings-split.tsx": {
@@ -585,23 +585,23 @@
     "semantic_hash": ""
   },
   "components/timber-auth-shell.tsx": {
-    "mtime": 1783733525.8836787,
-    "ast_hash": "25650b7e65fb04a286d23cd9385fed49",
+    "mtime": 1783734937.554693,
+    "ast_hash": "b27638117435998fc23cdf5b8b07cca6",
     "semantic_hash": ""
   },
   "components/timber-logo.tsx": {
-    "mtime": 1783732943.9332268,
-    "ast_hash": "594c06dc59c74b62335ef7d272d8d0ef",
+    "mtime": 1783734937.555699,
+    "ast_hash": "f42484f58c40a72c3edd9590618ec729",
     "semantic_hash": ""
   },
   "scripts/generate-icons.js": {
-    "mtime": 1783732937.5861547,
-    "ast_hash": "07615332c3fc9dc0842f72e90af1a8eb",
+    "mtime": 1783734937.5936937,
+    "ast_hash": "1a856e80e1519197635e638dd6516b09",
     "semantic_hash": ""
   },
   "assets/images/icon.svg": {
-    "mtime": 1783733007.1471303,
-    "ast_hash": "9c1c27ae1682059bc455ed62d221ff71",
+    "mtime": 1783734937.5496957,
+    "ast_hash": "39c963ecfd4ea0d07aa344198b699a4e",
     "semantic_hash": ""
   }
 }
