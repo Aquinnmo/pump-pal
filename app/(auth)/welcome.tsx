@@ -26,7 +26,7 @@ const SLIDES: Slide[] = [
   {
     id: '1',
     icon: 'barbell-outline',
-    title: 'Welcome to Pump Pal',
+    title: 'Welcome to Timber',
     subtitle:
       'Your personal gym companion built to help you train smarter, stay consistent, and reach your goals.',
   },

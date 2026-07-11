@@ -1,4 +1,5 @@
 import FirebaseRecaptchaVerifierModal, { FirebaseRecaptchaVerifierModalRef } from '@/components/firebase-recaptcha-modal';
+import { TimberLogo } from '@/components/timber-logo';
 import app, { auth } from '@/config/firebase';
 import { Ionicons } from '@expo/vector-icons';
 import { getLocales } from 'expo-localization';
@@ -127,7 +128,10 @@ export default function PhoneAuthScreen() {
           <Ionicons name="arrow-back" size={22} color="#fff" />
         </TouchableOpacity>
 
-        <Text style={styles.logo}>PumpPal</Text>
+        <View style={styles.logoRow}>
+          <TimberLogo size={40} />
+          <Text style={styles.logo}>Timber</Text>
+        </View>
 
         {step === 1 ? (
           <>
@@ -219,11 +223,16 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 32,
+  },
   logo: {
     fontSize: 36,
     fontWeight: '800',
     color: '#e54242',
-    marginBottom: 32,
     letterSpacing: -1,
   },
   heading: {

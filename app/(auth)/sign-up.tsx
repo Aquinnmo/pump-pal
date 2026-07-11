@@ -1,3 +1,4 @@
+import { TimberLogo } from '@/components/timber-logo';
 import { useAuth } from '@/context/auth-context';
 import { getFriendlyAuthError } from '@/utils/firebase-errors';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,7 +49,10 @@ export default function SignUpScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.inner}>
-        <Text style={styles.logo}>PumpPal</Text>
+        <View style={styles.logoMark}>
+          <TimberLogo size={76} />
+        </View>
+        <Text style={styles.logo}>Timber</Text>
         <Text style={styles.subtitle}>Create your account</Text>
 
         {error && (
@@ -113,6 +117,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 28,
+  },
+  logoMark: {
+    alignItems: 'center',
+    marginBottom: 10,
   },
   logo: {
     fontSize: 42,

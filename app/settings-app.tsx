@@ -163,7 +163,7 @@ export default function SettingsAppScreen() {
       <View style={styles.content}>
         <TouchableOpacity
           style={styles.feedbackButton}
-          onPress={() => Linking.openURL('mailto:adammontcompany@gmail.com?subject=Pump Pal Feedback')}
+          onPress={() => Linking.openURL('mailto:adammontcompany@gmail.com?subject=Timber Feedback')}
           activeOpacity={0.8}>
           <Ionicons name="megaphone" size={24} color="#fff" style={styles.rowIcon} />
           <Text style={styles.feedbackButtonText}>SEND FEEDBACK</Text>

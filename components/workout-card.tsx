@@ -108,7 +108,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
       metricParts.join('\n'),
       workout.notes ? `\nNotes: ${workout.notes}` : '',
       '',
-      'Logged with Pump Pal 💪',
+      'Logged with Timber 🪵',
       'https://pump.adam-montgomery.ca',
     ].filter((l) => l !== undefined).join('\n');
 

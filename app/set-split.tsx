@@ -57,7 +57,7 @@ export default function SetSplitScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <Text style={styles.title}>Set Your Split</Text>
-        <Text style={styles.subtitle}>Choose your typical workout split to personalize PumpPal.</Text>
+        <Text style={styles.subtitle}>Choose your typical workout split to personalize Timber.</Text>
 
         <Dropdown
           options={SPLIT_OPTIONS}
