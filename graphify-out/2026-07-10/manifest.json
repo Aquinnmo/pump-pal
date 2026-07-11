@@ -95,9 +95,9 @@
     "semantic_hash": "f4681f52a20edd637d810e6f853e0be7"
   },
   "components/firebase-recaptcha-modal.tsx": {
-    "mtime": 1783733946.7307396,
-    "ast_hash": "70986dfcadad7e746a7ffc749892223d",
-    "semantic_hash": ""
+    "mtime": 1779634107.8733723,
+    "ast_hash": "e85d76b1df53428aae09e345c66598c3",
+    "semantic_hash": "e85d76b1df53428aae09e345c66598c3"
   },
   "components/haptic-tab.tsx": {
     "mtime": 1779634107.8733723,
