@@ -61,6 +61,12 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={20} color="#888" />
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.navRow} onPress={() => router.push('/settings-injuries')} activeOpacity={0.8}>
+        <Ionicons name="bandage-outline" size={20} color="#fff" style={styles.rowIcon} />
+        <Text style={styles.navRowText}>Injuries</Text>
+        <Ionicons name="chevron-forward" size={20} color="#888" />
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.navRow} onPress={() => router.push('/settings-account')} activeOpacity={0.8}>
         <Ionicons name="person-circle-outline" size={20} color="#fff" style={styles.rowIcon} />
         <Text style={styles.navRowText}>Account</Text>

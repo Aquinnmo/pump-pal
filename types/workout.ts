@@ -54,6 +54,9 @@ export type Workout = {
   status?: WorkoutStatus;
   queueOrder?: number;
   startedAt?: Timestamp;
+  // Ids of the user's injuries that were ongoing when this workout was logged
+  // (auto-attached on completion). Analytics/AI join these back to users/{uid}.injuries.
+  injuries?: string[];
 };
 
 export type ExerciseVariation = {

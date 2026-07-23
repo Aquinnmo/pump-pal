@@ -10,6 +10,7 @@ import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout, WorkoutStatus } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
+import { getOngoingInjuryIds } from '@/utils/injuries';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/workout-suggestions';
 import { predictNextWorkoutName } from '@/utils/predict-next-workout';
@@ -501,6 +502,7 @@ export default function AddWorkoutModal() {
         }
       } else {
         const finalDate = isToday ? new Date() : workoutDate;
+        const injuries = await getOngoingInjuryIds(user.uid);
 
         if (id) {
           await updateDoc(doc(db, 'workouts', id), {
@@ -509,6 +511,7 @@ export default function AddWorkoutModal() {
             performedExercises,
             notes: notes.trim(),
             status: 'completed',
+            injuries,
             updatedAt: serverTimestamp(),
           });
         } else {
@@ -520,6 +523,7 @@ export default function AddWorkoutModal() {
             notes: notes.trim(),
             schemaVersion: 2,
             status: 'completed',
+            injuries,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });

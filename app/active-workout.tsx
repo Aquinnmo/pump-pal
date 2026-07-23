@@ -8,6 +8,7 @@ import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
+import { getOngoingInjuryIds } from '@/utils/injuries';
 import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { buildPerformedExercise, collapseSetsToDraft, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
 import {
@@ -367,11 +368,13 @@ export default function ActiveWorkoutScreen() {
         .filter((pe) => pe.sets.length > 0)
         .map((pe) => ({ ...pe, sets: pe.sets.map(({ completed, ...rest }) => rest) }));
 
+      const injuries = user ? await getOngoingInjuryIds(user.uid) : [];
       await updateDoc(doc(db, 'workouts', workoutId), {
         name: effectiveWorkoutName || 'Workout',
         date: Timestamp.fromDate(new Date()),
         performedExercises,
         status: 'completed',
+        injuries,
         updatedAt: serverTimestamp(),
       });
       await dismissWorkoutNotification();

@@ -1,11 +1,10 @@
 # Users
 
-Path: `users/{uid}` · No dedicated TypeScript type — the doc has exactly one
-field group today, read inline with `snapshot.data()?.workoutSplit`.
+Path: `users/{uid}` · Typed as `UserDoc` in `types/user.ts`.
 
 `{uid}` is the Firebase Auth uid. Auth itself (email, phone, password) lives
 in Firebase Auth, not in this doc — this doc is Firestore-side app state
-about the user, and today that's just their workout split.
+about the user: their workout split and their injury history.
 
 ## Shape
 
@@ -16,14 +15,33 @@ type UserDoc = {
     custom: string | null; // free text when type === 'Other', else null
     updatedAt: Timestamp;
   };
+  injuries?: Injury[]; // types/user.ts — full history; ongoing = status === 'ongoing'
+  aiUsage?: { date: string; count: number }; // AI daily-limit counter, written by app/modal.tsx
 };
 ```
 
-There is no explicit `UserDoc` type in code — this shape is inferred from the
-two write sites (`app/set-split.tsx`, `app/(tabs)/settings.tsx`) and one read
-site (`app/_layout.tsx`), all of which agree on this shape. If you add a
-second field to this doc, consider promoting it to a real type in
-`types/workout.ts` (or a new `types/user.ts`) at that point.
+The `UserDoc` / `Injury` types now live in `types/user.ts` (promoted from the
+previously inferred inline shape when `injuries` was added).
+
+## Injuries
+
+`injuries` is a **flat array on the user doc**, not a subcollection: injuries
+are few, so an array needs no extra reads and no new account-deletion line
+(the user doc is already deleted — see below). Promote to a subcollection only
+if a user ever accrues hundreds of injuries.
+
+Each `Injury` has a client-generated `id`, a `bodyPart` (`constants/body-parts.ts`,
+mapped to canonical muscles via `BODY_PART_MUSCLES` so it joins the
+muscle-volume engine in `utils/muscle-analysis.ts`), `severity`, `status`
+(`ongoing` | `resolved`), onset/resolved timestamps, and optional
+`side`/`muscles`/`avoid`/`notes`. Injury timestamps use `Timestamp.now()`, not
+`serverTimestamp()` — Firestore forbids sentinel values inside array elements.
+
+Write/read sites: `app/settings-injuries.tsx` (add/list/resolve ongoing
+injuries) and `utils/injuries.ts` `getOngoingInjuryIds` (read at
+workout-completion to stamp `workouts/{id}.injuries`). Only **ongoing** input
+exists today; past-injury management is future work the `status`/`resolvedDate`
+fields already support.
 
 ## The doc doesn't exist until onboarding completes
 

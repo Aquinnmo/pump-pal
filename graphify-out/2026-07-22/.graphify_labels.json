@@ -1,6 +1,5 @@
 {
   "0": "App Tab Screens",
-  "1": "settings-injuries.tsx",
   "2": "Migration Review Builder",
   "3": "App Config (app.json)",
   "4": "Muscle Data Tests",
@@ -18,14 +17,12 @@
   "16": "Reset Project Script",
   "17": "Beads & Session Policy",
   "18": "TypeScript Config",
-  "19": "seed-exercise-catalog.js",
   "20": "Welcome Screen",
   "21": "Project README",
   "22": "Vercel Deploy Config",
   "23": "Tab Bar Layout",
   "24": "External Link Component",
   "25": "ESLint Config",
-  "26": "build-reviewed-migration-files.js",
   "27": "Auth Route Layout",
   "28": "Android Icon Assets",
   "29": "App Branding Assets",
@@ -69,10 +66,5 @@
   "67": "Workout / workouts/{workoutId}",
   "68": "Legacy Data Still Present Section",
   "69": "Firestore Data Refactor Migration History",
-  "70": "Dev Build Guide (Android)",
-  "71": "catalog-seed.test.js",
-  "72": "workout-prefill-loader.tsx",
-  "73": "devDependencies",
-  "74": "package.json",
-  "75": "app.config.js"
+  "72": "workout-prefill-loader.tsx"
 }
