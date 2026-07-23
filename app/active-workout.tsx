@@ -254,11 +254,17 @@ export default function ActiveWorkoutScreen() {
           .map((ex, order) => buildPerformedExercise({ ...ex, sets: ex.sets.filter((s) => s.completed) }, order))
           .filter((pe) => pe.sets.length > 0);
         const metricsSource = { performedExercises: completed } as Workout;
-        const currentExercise =
-          (started.find((ex) => ex.sets.some((s) => !s.completed)) ?? started[started.length - 1])?.label ?? null;
+        // Current exercise = the one owning the next set after the last completed
+        // set (in workout order). No completed sets yet → the very first set.
+        const flat: { label: string; completed: boolean }[] = [];
+        started.forEach((ex) => ex.sets.forEach((s) => flat.push({ label: ex.label, completed: !!s.completed })));
+        let lastCompleted = -1;
+        flat.forEach((f, i) => { if (f.completed) lastCompleted = i; });
+        const currentExercise = flat[lastCompleted + 1]?.label ?? null;
         showWorkoutNotification({
           name: effectiveWorkoutName || 'Workout in progress',
           startedAt,
+          sets: completed.reduce((n, pe) => n + pe.sets.length, 0),
           totalReps: workoutTotalReps(metricsSource),
           volume: workoutVolume(metricsSource),
           currentExercise,

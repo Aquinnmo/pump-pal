@@ -5,6 +5,7 @@
 export type WorkoutNotificationData = {
   name: string;
   startedAt: Date;
+  sets: number;
   totalReps: number;
   volume: number;
   currentExercise: string | null;
