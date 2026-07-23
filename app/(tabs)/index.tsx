@@ -7,6 +7,7 @@ import { Workout } from '@/types/workout';
 import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
 import { toDateObj } from '@/utils/workout-conversion';
+import { dismissWorkoutNotification } from '@/utils/workout-notification';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -106,6 +107,8 @@ export default function HomeScreen() {
           setInProgress(
             inProgressSnap.empty ? null : ({ id: inProgressSnap.docs[0].id, ...inProgressSnap.docs[0].data() } as Workout)
           );
+          // No live workout → clear any notification orphaned by a force-quit.
+          if (inProgressSnap.empty) dismissWorkoutNotification();
 
           // Head of the planned queue, if any — takes priority over the predicted name
           const planSnap = await getDocs(

@@ -9,7 +9,13 @@ import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } 
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
-import { buildPerformedExercise, collapseSetsToDraft, toDateObj } from '@/utils/workout-conversion';
+import { buildPerformedExercise, collapseSetsToDraft, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
+import {
+  dismissWorkoutNotification,
+  ensureWorkoutChannel,
+  requestNotificationPermission,
+  showWorkoutNotification,
+} from '@/utils/workout-notification';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -198,6 +204,15 @@ export default function ActiveWorkoutScreen() {
     return () => clearInterval(iv);
   }, [startedAt]);
 
+  // Prepare the Android notification channel + permission once a workout is live.
+  useEffect(() => {
+    if (!startedAt) return;
+    (async () => {
+      await ensureWorkoutChannel();
+      await requestNotificationPermission();
+    })();
+  }, [startedAt]);
+
   const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
 
   // A resumed workout may carry a one-off name that predates the split list —
@@ -231,9 +246,27 @@ export default function ActiveWorkoutScreen() {
         performedExercises,
         updatedAt: serverTimestamp(),
       }).catch(() => { /* best-effort autosave */ });
+
+      // Refresh the live Android notification with completed-set metrics.
+      if (startedAt) {
+        const started = exercises.filter((ex) => ex.label.trim() !== '');
+        const completed: PerformedExercise[] = started
+          .map((ex, order) => buildPerformedExercise({ ...ex, sets: ex.sets.filter((s) => s.completed) }, order))
+          .filter((pe) => pe.sets.length > 0);
+        const metricsSource = { performedExercises: completed } as Workout;
+        const currentExercise =
+          (started.find((ex) => ex.sets.some((s) => !s.completed)) ?? started[started.length - 1])?.label ?? null;
+        showWorkoutNotification({
+          name: effectiveWorkoutName || 'Workout in progress',
+          startedAt,
+          totalReps: workoutTotalReps(metricsSource),
+          volume: workoutVolume(metricsSource),
+          currentExercise,
+        });
+      }
     }, 800);
     return () => clearTimeout(t);
-  }, [exercises, effectiveWorkoutName, workoutId, initializing]);
+  }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
 
   const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
 
@@ -335,6 +368,7 @@ export default function ActiveWorkoutScreen() {
         status: 'completed',
         updatedAt: serverTimestamp(),
       });
+      await dismissWorkoutNotification();
       router.replace('/(tabs)');
     } catch (err: any) {
       showAlert('Error', 'Could not finish workout. ' + err.message);
@@ -370,6 +404,7 @@ export default function ActiveWorkoutScreen() {
       } else {
         await deleteDoc(doc(db, 'workouts', workoutId));
       }
+      await dismissWorkoutNotification();
       router.replace('/(tabs)');
     } catch (err: any) {
       showAlert('Error', 'Could not discard workout. ' + err.message);
