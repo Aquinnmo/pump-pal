@@ -1,7 +1,7 @@
 # Dev Build Guide (Android)
 
 Since the active-workout notification uses `@notifee/react-native` (a native
-module), **Expo Go can't run this app anymore** — you need a *development build*:
+module), **Expo Go can't run this app anymore** — you need a _development build_:
 your own compiled binary that behaves exactly like Expo Go (Metro, QR, hot
 reload) but includes your native modules.
 
@@ -13,10 +13,10 @@ The dev build installs as a **separate app** so it doesn't clobber the
 "Timber" preview/production build on your phone. This is driven by the
 `APP_VARIANT=development` env var (see `app.config.js` + `eas.json`):
 
-| Variant | App name | Android package |
-|---|---|---|
+| Variant                   | App name       | Android package           |
+| ------------------------- | -------------- | ------------------------- |
 | dev build (`development`) | **Timber Dev** | `com.aquinnmo.timber.dev` |
-| preview / production | Timber | `com.aquinnmo.timber` |
+| preview / production      | Timber         | `com.aquinnmo.timber`     |
 
 Different package = both apps coexist on the same phone. The dev one shows as
 **"Timber Dev"** on your home screen.
@@ -45,6 +45,7 @@ Then, from the repo root (**set `APP_VARIANT` so it installs as "Timber Dev"**):
 # Windows PowerShell
 $env:APP_VARIANT="development"; npx expo run:android
 ```
+
 ```bash
 # macOS / Linux / Git Bash
 APP_VARIANT=development npx expo run:android
@@ -70,6 +71,27 @@ eas build --profile development --platform android
 
 When it finishes, EAS gives you a URL / QR — install the `.apk` on your phone.
 You only rebuild when **native** deps change (see below).
+
+**Git clone error?** If the build fails with
+`git upload-pack ... active core.hooksPath found ... disallowed by default`,
+that's git's clone-protection tripping on this repo's beads hooks
+(`.beads/hooks`) — not a code problem. Set the escape-hatch env var and rebuild:
+
+```powershell
+# Windows PowerShell
+$env:GIT_CLONE_PROTECTION_ACTIVE="false"; eas build --profile development --platform android
+```
+
+```bash
+# macOS / Linux / Git Bash
+GIT_CLONE_PROTECTION_ACTIVE=false eas build --profile development --platform android
+```
+
+> **Cloud builds ship only _committed_ code.** EAS clones your git HEAD — any
+> uncommitted working changes are **not** uploaded. To test in-progress work
+> (like the notification feature) via a cloud build, commit it first. To build
+> straight from your working directory with no commit, use the local
+> `expo run:android` path instead.
 
 ---
 
@@ -114,22 +136,22 @@ when you:
 
 ## Troubleshooting
 
-| Symptom | Fix |
-|---|---|
-| "This project uses a native module not in Expo Go" | You opened Expo Go. Open the **dev-build** app instead. |
-| No notification appears | Permission denied → enable in system Settings → app → Notifications. |
-| Shade icon is a white square | Expected fallback (no small icon shipped). Add a white-transparent `ic_stat_*` drawable and set `smallIcon` in `utils/workout-notification.android.ts`. |
-| Timer not ticking | Confirm you're on a real dev build, not Expo Go; the chronometer needs the native Notifee module. |
-| Changes not showing | JS change → save should hot-reload. Native/`app.json` change → rebuild (one-time setup again). |
-| Metro connects but app is old | Rebuild — you likely changed a native dep without recompiling. |
+| Symptom                                            | Fix                                                                                                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "This project uses a native module not in Expo Go" | You opened Expo Go. Open the **dev-build** app instead.                                                                                                 |
+| No notification appears                            | Permission denied → enable in system Settings → app → Notifications.                                                                                    |
+| Shade icon is a white square                       | Expected fallback (no small icon shipped). Add a white-transparent `ic_stat_*` drawable and set `smallIcon` in `utils/workout-notification.android.ts`. |
+| Timer not ticking                                  | Confirm you're on a real dev build, not Expo Go; the chronometer needs the native Notifee module.                                                       |
+| Changes not showing                                | JS change → save should hot-reload. Native/`app.json` change → rebuild (one-time setup again).                                                          |
+| Metro connects but app is old                      | Rebuild — you likely changed a native dep without recompiling.                                                                                          |
 
 ---
 
 ## Which command when — cheat sheet
 
-| Situation | Command |
-|---|---|
-| First build / after native change (local) | `$env:APP_VARIANT="development"; npx expo run:android` |
-| First build / after native change (cloud) | `eas build --profile development --platform android` |
-| Everyday JS work | `npx expo start --dev-client` |
-| Web / non-native work (Notifee is a no-op there) | `npx expo start` (Expo Go still fine for web) |
+| Situation                                        | Command                                                |
+| ------------------------------------------------ | ------------------------------------------------------ |
+| First build / after native change (local)        | `$env:APP_VARIANT="development"; npx expo run:android` |
+| First build / after native change (cloud)        | `eas build --profile development --platform android`   |
+| Everyday JS work                                 | `npx expo start --dev-client`                          |
+| Web / non-native work (Notifee is a no-op there) | `npx expo start` (Expo Go still fine for web)          |
