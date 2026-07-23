@@ -22,6 +22,7 @@ type Workout = {
   source?: MigrationSource;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  injuries?: string[]; // ids of the user's injuries active when this workout was logged
 };
 
 type PerformedExercise = {
@@ -79,6 +80,15 @@ Field notes:
   time as the primary metric); `holdSeconds` is a hold component attached to
   an otherwise reps-based set (e.g. "3 reps with a 2s hold at the bottom").
   Both can be absent, and in practice are mutually exclusive per set.
+- `injuries?: string[]` holds the ids of the user's injuries
+  (`users/{uid}.injuries`, see [users.md](./users.md)) that were active when
+  this workout was logged. It is a **materialized as-of-then record**, written
+  two ways: auto-stamped with the then-ongoing injuries on completion
+  (`utils/injuries.ts` `getOngoingInjuryIds`), and retroactively bulk-editable
+  from the injuries screen via `applyInjuryToHistory` (`arrayUnion` across an
+  injury's date window) / `removeInjuryFromHistory` (`arrayRemove`). It stays
+  what it was even if the injury record is later edited or deleted, so it is
+  independent of the current user injury list.
 
 ## `MigrationSource`
 

@@ -1,16 +1,16 @@
-# Graph Report - pump-pal  (2026-07-23)
+# Graph Report - pump-pal  (2026-07-22)
 
 ## Corpus Check
-- 123 files · ~77,420 words
+- 121 files · ~76,124 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 831 nodes · 1438 edges · 81 communities (42 shown, 39 thin omitted)
+- 821 nodes · 1412 edges · 76 communities (39 shown, 37 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 39 edges (avg confidence: 0.6)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a9161281`
+- Built from commit: `0fb659f4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -84,56 +84,51 @@
 - [[_COMMUNITY_workout-prefill-loader.tsx|workout-prefill-loader.tsx]]
 - [[_COMMUNITY_devDependencies|devDependencies]]
 - [[_COMMUNITY_package.json|package.json]]
-- [[_COMMUNITY_workout-conversion.ts|workout-conversion.ts]]
-- [[_COMMUNITY_index.tsx|index.tsx]]
-- [[_COMMUNITY_active-workout.tsx|active-workout.tsx]]
-- [[_COMMUNITY_workout-notification.android.ts|workout-notification.android.ts]]
-- [[_COMMUNITY_SDD Progress — Retroactive Injury ApplyRemove|SDD Progress — Retroactive Injury Apply/Remove]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAuth()` - 37 edges
-2. `toDateObj()` - 25 edges
-3. `ActiveWorkoutScreen()` - 20 edges
+2. `ActiveWorkoutScreen()` - 20 edges
+3. `toDateObj()` - 20 edges
 4. `AddWorkoutModal()` - 19 edges
 5. `db` - 18 edges
 6. `expo` - 17 edges
 7. `scripts` - 17 edges
 8. `Workout` - 16 edges
 9. `isSplitOption()` - 14 edges
-10. `SettingsInjuriesScreen()` - 12 edges
+10. `exerciseLabel()` - 12 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `SettingsAppScreen()` --indirect_call--> `variation()`  [INFERRED]
-  app/settings-app.tsx → scripts/migration/build-reviewed-migration-files.js
-- `WorkoutsScreen()` --calls--> `useAuth()`  [EXTRACTED]
-  app/(tabs)/workouts.tsx → context/auth-context.tsx
+- `AddWorkoutModal()` --references--> `react`  [EXTRACTED]
+  app/modal.tsx → package.json
 - `AddWorkoutModal()` --indirect_call--> `todayUTC()`  [INFERRED]
   app/modal.tsx → utils/daily-name.ts
-- `AddWorkoutModal()` --indirect_call--> `collapseSetsToDraft()`  [INFERRED]
-  app/modal.tsx → utils/workout-conversion.ts
-- `Props` --references--> `Workout`  [EXTRACTED]
-  components/muscle-insight-cards.tsx → types/workout.ts
+- `SettingsAppScreen()` --indirect_call--> `variation()`  [INFERRED]
+  app/settings-app.tsx → scripts/migration/build-reviewed-migration-files.js
+- `analyzeMuscles()` --references--> `output`  [EXTRACTED]
+  utils/muscle-analysis.ts → app.json
+- `generateSplitWorkoutNames()` --references--> `output`  [EXTRACTED]
+  utils/workout-suggestions.ts → app.json
 
 ## Import Cycles
 - None detected.
 
-## Communities (81 total, 39 thin omitted)
+## Communities (76 total, 37 thin omitted)
 
 ### Community 0 - "App Tab Screens"
-Cohesion: 0.12
-Nodes (30): styles, compareExerciseLabels(), ExercisePicker(), ExercisePickerProps, ExercisePickerSelection, Sheet, SheetHandle, SheetProps (+22 more)
+Cohesion: 0.06
+Nodes (82): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, formatElapsed(), styles, AddWorkoutModal(), styles (+74 more)
 
 ### Community 1 - "settings-injuries.tsx"
-Cohesion: 0.12
-Nodes (26): atNoon(), cap(), labelToSide(), newId(), SettingsInjuriesScreen(), SEVERITIES, SIDE_OPTIONS, styles (+18 more)
+Cohesion: 0.16
+Nodes (19): cap(), labelToSide(), newId(), SettingsInjuriesScreen(), SEVERITIES, SIDE_OPTIONS, styles, BODY_PART_MUSCLES (+11 more)
 
 ### Community 2 - "Migration Review Builder"
-Cohesion: 0.06
-Nodes (39): byName, catalog, catalogSeed, decisions, exercise(), fs, inventory, mapping (+31 more)
+Cohesion: 0.09
+Nodes (30): exercise(), fs, generateMappingDraft(), guessExerciseId(), path, run(), slugify(), addToMapSet() (+22 more)
 
 ### Community 3 - "App Config (app.json)"
 Cohesion: 0.05
-Nodes (41): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, permissions (+33 more)
+Nodes (40): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, permissions (+32 more)
 
 ### Community 4 - "Muscle Data Tests"
 Cohesion: 0.20
@@ -177,11 +172,11 @@ Nodes (18): convertLegacyExercise(), convertLegacyWorkout(), durationSeconds(), 
 
 ### Community 14 - "Pushup Challenge Feature"
 Cohesion: 0.08
-Nodes (37): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+29 more)
+Nodes (35): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+27 more)
 
 ### Community 15 - "Phone Auth & reCAPTCHA"
-Cohesion: 0.11
-Nodes (28): RootLayoutNav(), unstable_settings, SetSplitScreen(), styles, SettingsAccountScreen(), styles, SettingsAppScreen(), styles (+20 more)
+Cohesion: 0.05
+Nodes (56): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, SignInScreen(), styles, SignUpScreen(), styles (+48 more)
 
 ### Community 16 - "Reset Project Script"
 Cohesion: 0.22
@@ -212,8 +207,8 @@ Cohesion: 0.40
 Nodes (4): buildCommand, cleanUrls, outputDirectory, rewrites
 
 ### Community 26 - "build-reviewed-migration-files.js"
-Cohesion: 0.09
-Nodes (26): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, SignInScreen(), styles, SignUpScreen(), styles (+18 more)
+Cohesion: 0.12
+Nodes (12): updates, SettingsAppScreen(), url, byName, catalog, catalogSeed, decisions, fs (+4 more)
 
 ### Community 35 - "CLAUDE.md Arch & Theming"
 Cohesion: 0.22
@@ -247,37 +242,25 @@ Nodes (6): devDependencies, eslint, eslint-config-expo, sharp, @types/react, typ
 Cohesion: 0.40
 Nodes (4): main, name, private, version
 
-### Community 76 - "workout-conversion.ts"
-Cohesion: 0.15
-Nodes (28): AddWorkoutModal(), AnalyticsScreen(), styles, styles, WorkoutsScreen(), styles, WorkoutCard(), WorkoutCardProps (+20 more)
-
-### Community 77 - "index.tsx"
-Cohesion: 0.27
-Nodes (11): PlannedWorkoutsScreen(), queueOrderCacheKey(), styles, HomeScreen(), styles, output, SplitOption, SPLIT_WORKOUT_NAMES (+3 more)
-
-### Community 78 - "active-workout.tsx"
-Cohesion: 0.28
-Nodes (13): ActiveWorkoutScreen(), blankRow(), blankSet(), EXERCISE_TYPES, formatElapsed(), styles, useExerciseCatalog(), getOngoingInjuryIds() (+5 more)
-
 ## Knowledge Gaps
-- **382 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+377 more)
+- **380 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+375 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **39 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **37 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SettingsAppScreen()` connect `Phone Auth & reCAPTCHA` to `Migration Review Builder`, `App Config (app.json)`, `workout-conversion.ts`?**
-  _High betweenness centrality (0.252) - this node is a cross-community bridge._
-- **Why does `exercise()` connect `Migration Review Builder` to `V2 Migration Builder`, `seed-exercise-catalog.js`, `Legacy Workout Conversion`?**
-  _High betweenness centrality (0.243) - this node is a cross-community bridge._
-- **Why does `variation()` connect `Migration Review Builder` to `Phone Auth & reCAPTCHA`?**
-  _High betweenness centrality (0.224) - this node is a cross-community bridge._
+- **Why does `SettingsAppScreen()` connect `build-reviewed-migration-files.js` to `App Tab Screens`, `Phone Auth & reCAPTCHA`?**
+  _High betweenness centrality (0.254) - this node is a cross-community bridge._
+- **Why does `exercise()` connect `Migration Review Builder` to `V2 Migration Builder`, `build-reviewed-migration-files.js`, `seed-exercise-catalog.js`, `Legacy Workout Conversion`?**
+  _High betweenness centrality (0.245) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `AddWorkoutModal()` (e.g. with `todayUTC()` and `collapseSetsToDraft()`) actually correct?**
   _`AddWorkoutModal()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _388 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _386 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `App Tab Screens` be split into smaller, more focused modules?**
-  _Cohesion score 0.11904761904761904 - nodes in this community are weakly interconnected._
-- **Should `settings-injuries.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.12043010752688173 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.0578790141896938 - nodes in this community are weakly interconnected._
+- **Should `Migration Review Builder` be split into smaller, more focused modules?**
+  _Cohesion score 0.08912655971479501 - nodes in this community are weakly interconnected._
+- **Should `App Config (app.json)` be split into smaller, more focused modules?**
+  _Cohesion score 0.04878048780487805 - nodes in this community are weakly interconnected._

@@ -37,11 +37,21 @@ muscle-volume engine in `utils/muscle-analysis.ts`), `severity`, `status`
 `side`/`muscles`/`avoid`/`notes`. Injury timestamps use `Timestamp.now()`, not
 `serverTimestamp()` — Firestore forbids sentinel values inside array elements.
 
-Write/read sites: `app/settings-injuries.tsx` (add/list/resolve ongoing
-injuries) and `utils/injuries.ts` `getOngoingInjuryIds` (read at
-workout-completion to stamp `workouts/{id}.injuries`). Only **ongoing** input
-exists today; past-injury management is future work the `status`/`resolvedDate`
-fields already support.
+`onsetDate` and `resolvedDate` define an injury's **window** — the span
+`[onsetDate, resolvedDate ?? now]` that its retroactive history apply targets.
+
+Write/read sites (`utils/injuries.ts` + `app/settings-injuries.tsx`):
+- `getOngoingInjuryIds` — read at workout-completion to stamp `workouts/{id}.injuries`.
+- `applyInjuryToHistory(uid, injury)` — from the injuries screen, `arrayUnion`s
+  the injury id onto every completed workout whose `date` falls in the injury's
+  window. Idempotent (re-applying never duplicates).
+- `removeInjuryFromHistory(uid, injuryId)` — `arrayRemove`s the id from every
+  workout, and the screen then deletes the injury record from this doc. Full
+  removal touches both the workouts and the user level.
+
+The injuries screen manages both **ongoing** and **past** (resolved) injuries:
+add (with a past onset, optionally already-resolved), edit onset/resolved dates
+inline, resolve, apply-to-history, or remove.
 
 ## The doc doesn't exist until onboarding completes
 
