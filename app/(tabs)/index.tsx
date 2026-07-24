@@ -34,6 +34,7 @@ export default function HomeScreen() {
   const [nextPlan, setNextPlan] = useState<Workout | null>(null);
   const [inProgress, setInProgress] = useState<Workout | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     if (!inProgress?.startedAt) return;
@@ -161,18 +162,8 @@ export default function HomeScreen() {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting()},</Text>
-          <Text style={styles.name}>{user?.displayName ?? 'Athlete'} 💪</Text>
-        </View>
-        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/modal')}>
-          <Ionicons name="add" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
+  const ListHeader = (
+    <>
       {(inProgress || nextPlan || nextWorkout) && (
         <TouchableOpacity
           style={styles.nextWorkoutCard}
@@ -284,34 +275,55 @@ export default function HomeScreen() {
           <Ionicons name="chevron-forward" size={16} color="#fff" />
         </TouchableOpacity>
       </View>
+    </>
+  );
 
-      {recentWorkouts.length === 0 ? (
-        <View style={styles.empty}>
-          <Ionicons name="barbell-outline" size={56} color="#2a2a2a" />
-          <Text style={styles.emptyTitle}>No workouts yet</Text>
-          <Text style={styles.emptySubtitle}>Tap + to log your first session</Text>
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>{greeting()},</Text>
+          <Text style={styles.name}>{user?.displayName ?? 'Athlete'} 💪</Text>
         </View>
-      ) : (
-        <View style={styles.listWrapper}>
-          <FlatList
-            data={recentWorkouts}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <WorkoutCard workout={item} onEdit={handleEdit} />}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-          />
+        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/modal')}>
+          <Ionicons name="add" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.scrollWrapper}>
+        <FlatList
+          data={recentWorkouts}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <WorkoutCard workout={item} onEdit={handleEdit} />}
+          ListHeaderComponent={ListHeader}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="barbell-outline" size={56} color="#2a2a2a" />
+              <Text style={styles.emptyTitle}>No workouts yet</Text>
+              <Text style={styles.emptySubtitle}>Tap + to log your first session</Text>
+            </View>
+          }
+          style={styles.scroll}
+          contentContainerStyle={styles.list}
+          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+        />
+
+        {scrollY > 0 && (
           <LinearGradient
             colors={['#0f0f0f', 'transparent']}
             style={styles.fadeTop}
             pointerEvents="none"
           />
-          <LinearGradient
-            colors={['transparent', '#0f0f0f']}
-            style={styles.fadeBottom}
-            pointerEvents="none"
-          />
-        </View>
-      )}
+        )}
+
+        <LinearGradient
+          colors={['transparent', '#0f0f0f']}
+          style={styles.fadeBottom}
+          pointerEvents="none"
+        />
+      </View>
     </View>
   );
 }
@@ -320,8 +332,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f0f0f',
-    paddingTop: 60,
-    paddingHorizontal: 20,
+  },
+  scrollWrapper: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
   },
   center: {
     flex: 1,
@@ -333,7 +349,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    backgroundColor: '#0f0f0f',
   },
   greeting: {
     fontSize: 15,
@@ -380,25 +399,23 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   list: {
-    paddingTop: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 48,
-  },
-  listWrapper: {
-    flex: 1,
   },
   fadeTop: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 28,
+    height: 40,
   },
   fadeBottom: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 48,
+    height: 60,
   },
   empty: {
     flex: 1,
