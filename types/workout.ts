@@ -130,6 +130,9 @@ export type DraftSet = {
 // bodyweight are exercise-wide; holdSeconds/peNotes/legacy are hidden
 // passthroughs so editing migrated data never drops hold/notes/legacy data.
 export type DraftExerciseRow = {
+  // Client-only stable id for React keys / drag-reorder identity. Never persisted
+  // (buildPerformedExercise builds a fresh object without it).
+  uid: string;
   exerciseId: string | null;
   variationId: string | null;
   label: string;

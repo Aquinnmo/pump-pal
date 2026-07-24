@@ -1,5 +1,5 @@
 import { HapticTab } from '@/components/haptic-tab';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
@@ -18,8 +18,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />,
+          title: 'Logs',
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="tree" size={size} color={color} />,
         }}
       />
       <Tabs.Screen name="workouts" options={{ href: null }} />

@@ -1,14 +1,17 @@
+import { DateField } from '@/components/ui/date-field';
 import { Dropdown } from '@/components/ui/dropdown';
 import { Toast } from '@/components/ui/toast';
 import { db } from '@/config/firebase';
 import { BODY_PARTS, BodyPart, bodyPartLabel, isBodyPart } from '@/constants/body-parts';
 import { useAuth } from '@/context/auth-context';
 import { Injury, InjurySeverity, InjurySide } from '@/types/user';
+import { applyInjuryToHistory, removeInjuryFromHistory } from '@/utils/injuries';
+import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Timestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const SEVERITIES: InjurySeverity[] = ['mild', 'moderate', 'severe'];
@@ -24,6 +27,10 @@ function labelToSide(label: string): InjurySide | undefined {
   return undefined;
 }
 
+// Normalize to local noon so the web <input type=date> (which reads the date in
+// UTC) can't show the wrong calendar day near a midnight boundary.
+const atNoon = (d: Date) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return x; };
+
 export default function SettingsInjuriesScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
@@ -31,6 +38,7 @@ export default function SettingsInjuriesScreen() {
   const [injuries, setInjuries] = useState<Injury[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<Injury | null>(null);
 
   // Add-form state
   const [bodyPart, setBodyPart] = useState<BodyPart>('shoulder');
@@ -38,6 +46,9 @@ export default function SettingsInjuriesScreen() {
   const [sideLabel, setSideLabel] = useState<string>('N/A');
   const [avoidText, setAvoidText] = useState('');
   const [notes, setNotes] = useState('');
+  const [onset, setOnset] = useState<Date>(atNoon(new Date()));
+  const [alreadyResolved, setAlreadyResolved] = useState(false);
+  const [resolved, setResolved] = useState<Date>(atNoon(new Date()));
 
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
     visible: false,
@@ -81,8 +92,8 @@ export default function SettingsInjuriesScreen() {
   };
 
   const handleAdd = async () => {
-    // onsetDate defaults to now — ponytail: no date picker in MVP, add when past-injury UI lands.
     const now = Timestamp.now();
+    const onsetTs = Timestamp.fromDate(onset);
     const avoid = avoidText
       .split(',')
       .map((s) => s.trim())
@@ -91,10 +102,11 @@ export default function SettingsInjuriesScreen() {
       id: newId(),
       bodyPart,
       severity,
-      status: 'ongoing',
-      onsetDate: now,
+      status: alreadyResolved ? 'resolved' : 'ongoing',
+      onsetDate: onsetTs,
       createdAt: now,
       updatedAt: now,
+      ...(alreadyResolved ? { resolvedDate: Timestamp.fromDate(resolved) } : {}),
       ...(labelToSide(sideLabel) ? { side: labelToSide(sideLabel) } : {}),
       ...(avoid.length ? { avoid } : {}),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
@@ -104,6 +116,9 @@ export default function SettingsInjuriesScreen() {
       setAvoidText('');
       setNotes('');
       setSideLabel('N/A');
+      setOnset(atNoon(new Date()));
+      setResolved(atNoon(new Date()));
+      setAlreadyResolved(false);
       setToast({ visible: true, message: 'Injury added', type: 'success' });
     }
   };
@@ -117,7 +132,80 @@ export default function SettingsInjuriesScreen() {
     if (ok) setToast({ visible: true, message: 'Marked resolved', type: 'success' });
   };
 
+  const handleApply = async (injury: Injury) => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const n = await applyInjuryToHistory(user.uid, injury);
+      setToast({ visible: true, message: `Applied to ${n} workout${n === 1 ? '' : 's'}`, type: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ visible: true, message: 'Could not apply to history', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmRemove = async () => {
+    const injury = removeTarget;
+    if (!user || !injury) return;
+    setSaving(true);
+    try {
+      const n = await removeInjuryFromHistory(user.uid, injury.id);
+      await persist(injuries.filter((i) => i.id !== injury.id));
+      setToast({ visible: true, message: `Removed from ${n} workout${n === 1 ? '' : 's'}`, type: 'success' });
+    } catch (err) {
+      console.error(err);
+      setToast({ visible: true, message: 'Could not remove injury', type: 'error' });
+    } finally {
+      setSaving(false);
+      setRemoveTarget(null);
+    }
+  };
+
+  const handleEditOnset = (id: string, date: Date) =>
+    persist(injuries.map((i) => (i.id === id ? { ...i, onsetDate: Timestamp.fromDate(date), updatedAt: Timestamp.now() } : i)));
+
+  const handleEditResolved = (id: string, date: Date) =>
+    persist(injuries.map((i) => (i.id === id ? { ...i, resolvedDate: Timestamp.fromDate(date), updatedAt: Timestamp.now() } : i)));
+
   const ongoing = injuries.filter((i) => i.status === 'ongoing');
+  const past = injuries.filter((i) => i.status === 'resolved');
+
+  const renderCard = (inj: Injury) => (
+    <View key={inj.id} style={styles.card}>
+      <Text style={styles.cardTitle}>
+        {bodyPartLabel(inj.bodyPart)}
+        {inj.side ? ` (${cap(inj.side)})` : ''}
+      </Text>
+      <Text style={styles.cardMeta}>{cap(inj.severity)}</Text>
+      {inj.notes ? <Text style={styles.cardNotes}>{inj.notes}</Text> : null}
+      {inj.avoid?.length ? <Text style={styles.cardNotes}>Avoid: {inj.avoid.join(', ')}</Text> : null}
+
+      <Text style={styles.cardDateLabel}>Onset</Text>
+      <DateField value={toDateObj(inj.onsetDate)} onChange={(d) => handleEditOnset(inj.id, d)} />
+      {inj.status === 'resolved' && inj.resolvedDate ? (
+        <>
+          <Text style={styles.cardDateLabel}>Resolved</Text>
+          <DateField value={toDateObj(inj.resolvedDate)} onChange={(d) => handleEditResolved(inj.id, d)} />
+        </>
+      ) : null}
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => handleApply(inj)} disabled={saving}>
+          <Text style={styles.resolveText}>Apply to history</Text>
+        </TouchableOpacity>
+        {inj.status === 'ongoing' ? (
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleResolve(inj.id)} disabled={saving}>
+            <Text style={styles.resolveText}>Resolve</Text>
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity style={styles.removeButton} onPress={() => setRemoveTarget(inj)} disabled={saving}>
+          <Text style={styles.removeText}>Remove</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -143,30 +231,17 @@ export default function SettingsInjuriesScreen() {
         ) : ongoing.length === 0 ? (
           <Text style={styles.empty}>No ongoing injuries.</Text>
         ) : (
-          ongoing.map((inj) => (
-            <View key={inj.id} style={styles.card}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>
-                  {bodyPartLabel(inj.bodyPart)}
-                  {inj.side ? ` (${cap(inj.side)})` : ''}
-                </Text>
-                <Text style={styles.cardMeta}>{cap(inj.severity)}</Text>
-                {inj.notes ? <Text style={styles.cardNotes}>{inj.notes}</Text> : null}
-                {inj.avoid?.length ? (
-                  <Text style={styles.cardNotes}>Avoid: {inj.avoid.join(', ')}</Text>
-                ) : null}
-              </View>
-              <TouchableOpacity
-                style={styles.resolveButton}
-                onPress={() => handleResolve(inj.id)}
-                disabled={saving}>
-                <Text style={styles.resolveText}>Resolve</Text>
-              </TouchableOpacity>
-            </View>
-          ))
+          ongoing.map(renderCard)
         )}
 
-        <Text style={[styles.sectionLabel, { marginTop: 28 }]}>Add ongoing injury</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 28 }]}>Past injuries</Text>
+        {loading ? null : past.length === 0 ? (
+          <Text style={styles.empty}>No past injuries.</Text>
+        ) : (
+          past.map(renderCard)
+        )}
+
+        <Text style={[styles.sectionLabel, { marginTop: 28 }]}>Add injury</Text>
         <View style={styles.form}>
           <Text style={styles.fieldLabel}>Body part</Text>
           <Dropdown
@@ -197,6 +272,20 @@ export default function SettingsInjuriesScreen() {
             placeholder="Side"
             style={styles.dropdown}
           />
+
+          <Text style={styles.fieldLabel}>Onset date</Text>
+          <DateField value={onset} onChange={setOnset} />
+
+          <TouchableOpacity style={styles.toggleRow} onPress={() => setAlreadyResolved((v) => !v)}>
+            <Ionicons name={alreadyResolved ? 'checkbox' : 'square-outline'} size={20} color="#e54242" />
+            <Text style={styles.toggleText}>Already resolved</Text>
+          </TouchableOpacity>
+          {alreadyResolved && (
+            <>
+              <Text style={styles.fieldLabel}>Resolved date</Text>
+              <DateField value={resolved} onChange={setResolved} />
+            </>
+          )}
 
           <Text style={styles.fieldLabel}>Avoid (comma-separated)</Text>
           <TextInput
@@ -229,6 +318,23 @@ export default function SettingsInjuriesScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      <Modal transparent visible={removeTarget !== null} animationType="fade" onRequestClose={() => setRemoveTarget(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Remove injury?</Text>
+            <Text style={styles.modalBody}>This deletes the injury and removes it from every workout.</Text>
+            <View style={styles.modalRow}>
+              <TouchableOpacity style={styles.modalCancel} onPress={() => setRemoveTarget(null)} disabled={saving}>
+                <Text style={styles.resolveText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalConfirm} onPress={confirmRemove} disabled={saving}>
+                <Text style={styles.saveButtonText}>{saving ? 'Removing…' : 'Remove'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -249,8 +355,6 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 15, color: '#fff', fontWeight: '700', marginBottom: 12 },
   empty: { color: '#888', fontSize: 14 },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#1c1c1c',
     borderRadius: 14,
     borderWidth: 1,
@@ -261,15 +365,25 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 15, color: '#fff', fontWeight: '600' },
   cardMeta: { fontSize: 13, color: '#e54242', marginTop: 2 },
   cardNotes: { fontSize: 13, color: '#999', marginTop: 4 },
-  resolveButton: {
+  cardDateLabel: { fontSize: 12, color: '#aaa', fontWeight: '600', marginTop: 10, marginBottom: 4 },
+  cardActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
+  actionButton: {
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#2e2e2e',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    marginLeft: 12,
+  },
+  removeButton: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#5a2020',
+    backgroundColor: '#2a1414',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   resolveText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  removeText: { color: '#e54242', fontSize: 13, fontWeight: '600' },
   form: {
     backgroundColor: '#1c1c1c',
     borderRadius: 14,
@@ -279,6 +393,8 @@ const styles = StyleSheet.create({
   },
   fieldLabel: { fontSize: 13, color: '#aaa', fontWeight: '600', marginBottom: 6, marginTop: 12 },
   dropdown: { marginBottom: 0 },
+  toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  toggleText: { color: '#fff', fontSize: 14 },
   input: {
     borderRadius: 10,
     borderWidth: 1,
@@ -300,4 +416,17 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: { opacity: 0.6 },
   saveButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 },
+  modalCard: {
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    padding: 20,
+  },
+  modalTitle: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  modalBody: { color: '#999', fontSize: 14, marginBottom: 16 },
+  modalRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, alignItems: 'center' },
+  modalCancel: { paddingHorizontal: 16, paddingVertical: 8 },
+  modalConfirm: { backgroundColor: '#e54242', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8 },
 });

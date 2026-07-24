@@ -1,15 +1,15 @@
 import { Dropdown } from '@/components/ui/dropdown';
-import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
+import { ExerciseCard } from '@/components/workout/exercise-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
+import { useDraftExercises } from '@/hooks/use-draft-exercises';
 import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
-import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
+import { DraftExerciseRow, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { getOngoingInjuryIds } from '@/utils/injuries';
-import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { buildPerformedExercise, collapseSetsToDraft, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
 import {
   dismissWorkoutNotification,
@@ -17,6 +17,7 @@ import {
   requestNotificationPermission,
   showWorkoutNotification,
 } from '@/utils/workout-notification';
+import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -40,27 +41,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import ReorderableList, {
+  ReorderableListRenderItemInfo,
+} from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
-
-const blankSet = (): DraftSet => ({ reps: 10, weight: '', durationMinutes: 0, durationSeconds: 30, completed: false });
-
-const blankRow = (): DraftExerciseRow => ({
-  exerciseId: null,
-  variationId: null,
-  label: '',
-  exerciseType: 'Sets of Reps',
-  bodyweight: false,
-  sets: [blankSet()],
-});
 
 function formatElapsed(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
@@ -69,6 +59,20 @@ function formatElapsed(totalSeconds: number): string {
   const mm = String(m).padStart(2, '0');
   const ss = String(s).padStart(2, '0');
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
+}
+
+// Self-contained so its 1Hz tick re-renders only this text, not the whole
+// ActiveWorkout tree — a parent re-render mid-drag jars the reorderable list.
+function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!startedAt) return;
+    const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [startedAt]);
+  return <Text style={styles.headerTimer}>{formatElapsed(elapsed)}</Text>;
 }
 
 export default function ActiveWorkoutScreen() {
@@ -81,13 +85,28 @@ export default function ActiveWorkoutScreen() {
   const [cameFromPlan, setCameFromPlan] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
-  const [elapsed, setElapsed] = useState(0);
 
   const [workoutName, setWorkoutName] = useState('');
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
   const [customWorkoutName, setCustomWorkoutName] = useState('');
   const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
-  const [exercises, setExercises] = useState<DraftExerciseRow[]>([blankRow()]);
+  const {
+    exercises,
+    setExercises,
+    blankRow,
+    addExercise,
+    selectExercise,
+    toggleBodyweight,
+    removeExercise,
+    updateExerciseField,
+    updateSet,
+    incrementSet,
+    decrementSet,
+    addSet,
+    removeSet,
+    toggleSetComplete,
+    reorder,
+  } = useDraftExercises({ trackCompletion: true });
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -150,7 +169,7 @@ export default function ActiveWorkoutScreen() {
         setInitializing(false);
       }
     })();
-  }, [user, id, suggestion]);
+  }, [user, id, suggestion, blankRow, setExercises]);
 
   // Build the workout-name dropdown: the user's split day names first, then any
   // other names they've actually used. Mirrors the same list the add/plan modal shows.
@@ -195,15 +214,6 @@ export default function ActiveWorkoutScreen() {
       }
     })();
   }, [user]);
-
-  // Elapsed-time ticker
-  useEffect(() => {
-    if (!startedAt) return;
-    const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
-    update();
-    const iv = setInterval(update, 1000);
-    return () => clearInterval(iv);
-  }, [startedAt]);
 
   // Prepare the Android notification channel + permission once a workout is live.
   useEffect(() => {
@@ -274,84 +284,6 @@ export default function ActiveWorkoutScreen() {
     }, 800);
     return () => clearTimeout(t);
   }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
-
-  const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
-
-  const selectExercise = (i: number, selection: ExercisePickerSelection) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) =>
-        idx === i ? { ...ex, exerciseId: selection.exerciseId, variationId: selection.variationId, label: selection.label } : ex
-      )
-    );
-
-  const toggleBodyweight = (i: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) =>
-        idx === i ? { ...ex, bodyweight: !ex.bodyweight, sets: ex.sets.map((s) => ({ ...s, weight: '' })) } : ex
-      )
-    );
-
-  const removeExercise = (i: number) => setExercises((prev) => prev.filter((_, idx) => idx !== i));
-
-  const updateExerciseField = (i: number, field: 'exerciseType', value: ExerciseType) =>
-    setExercises((prev) => prev.map((ex, idx) => (idx === i ? { ...ex, [field]: value } : ex)));
-
-  const updateSet = (i: number, setIdx: number, field: 'weight' | 'durationMinutes' | 'durationSeconds', value: string) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return {
-          ...ex,
-          sets: ex.sets.map((s, si) => {
-            if (si !== setIdx) return s;
-            if (field === 'weight') return { ...s, weight: value };
-            const n = Number(value) || 0;
-            return { ...s, [field]: field === 'durationSeconds' ? Math.min(59, n) : n };
-          }),
-        };
-      })
-    );
-
-  const incrementSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, reps: s.reps + 1 } : s)) };
-      })
-    );
-
-  const decrementSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, reps: Math.max(0, s.reps - 1) } : s)) };
-      })
-    );
-
-  const addSet = (i: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        const last = ex.sets[ex.sets.length - 1] ?? blankSet();
-        return { ...ex, sets: [...ex.sets, { ...last, completed: false }] };
-      })
-    );
-
-  const removeSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i || ex.sets.length <= 1) return ex;
-        return { ...ex, sets: ex.sets.filter((_, si) => si !== setIdx) };
-      })
-    );
-
-  const toggleSetComplete = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, completed: !s.completed } : s)) };
-      })
-    );
 
   const incompleteSetCount = () =>
     exercises
@@ -439,14 +371,26 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{effectiveWorkoutName || 'Active Workout'}</Text>
-          <Text style={styles.headerTimer}>{formatElapsed(elapsed)}</Text>
+          <WorkoutTimer startedAt={startedAt} />
         </View>
         <TouchableOpacity onPress={handleFinishPress} disabled={saving}>
           {saving ? <ActivityIndicator color="#e54242" /> : <Text style={styles.finishText}>Finish</Text>}
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ReorderableList
+        data={exercises}
+        keyExtractor={(item) => item.uid}
+        onReorder={({ from, to }) => reorder(from, to)}
+        autoscrollSpeedScale={2}
+        autoscrollThreshold={0.2}
+        autoscrollDelay={50}
+        animationDuration={150}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <>
         {workoutNameOptions.length > 0 ? (
           <>
             <Dropdown
@@ -478,136 +422,30 @@ export default function ActiveWorkoutScreen() {
             }}
           />
         )}
-
-        {exercises.map((ex, i) => {
-          const allSetsComplete = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
-          return (
-          <View key={i} style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
-            <ExercisePicker
-              options={catalogOptions}
-              value={ex.label || null}
-              recentExercises={[]}
-              onSelect={(selection) => selectExercise(i, selection)}
-              onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
-              placeholder="Select exercise"
-              style={styles.exerciseNameDropdown}
-            />
-
-            <Dropdown
-              options={EXERCISE_TYPES}
-              value={ex.exerciseType}
-              onSelect={(v) => updateExerciseField(i, 'exerciseType', v as ExerciseType)}
-              placeholder="Type of exercise"
-              style={styles.exerciseTypeDropdown}
-            />
-
-            {ex.sets.map((set, si) => (
-              <View key={si} style={[styles.setRow, set.completed && !allSetsComplete && styles.setRowComplete]}>
-                <View style={styles.setCheckboxWrap}>
-                  <Text style={styles.deleteSetSpacer}> </Text>
-                  <View style={styles.setCheckboxIconWrap}>
-                    <TouchableOpacity
-                      onPress={() => toggleSetComplete(i, si)}
-                      hitSlop={8}
-                      style={[styles.setCheckbox, set.completed && styles.setCheckboxChecked]}>
-                      {set.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                <View style={styles.row}>
-                  {ex.exerciseType === 'Sets of Duration' ? (
-                    <>
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Minutes</Text>
-                        <TextInput
-                          style={styles.numInput}
-                          keyboardType="number-pad"
-                          value={String(set.durationMinutes)}
-                          onChangeText={(v) => updateSet(i, si, 'durationMinutes', v)}
-                        />
-                      </View>
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Seconds</Text>
-                        <TextInput
-                          style={styles.numInput}
-                          keyboardType="number-pad"
-                          value={String(set.durationSeconds)}
-                          onChangeText={(v) => updateSet(i, si, 'durationSeconds', v)}
-                        />
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Reps</Text>
-                        <View style={styles.incrementerContainerHorizontal}>
-                          <TouchableOpacity onPress={() => decrementSet(i, si)} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                          <Text style={styles.incrementerValue}>{set.reps}</Text>
-                          <TouchableOpacity onPress={() => incrementSet(i, si)} hitSlop={10}>
-                            <Ionicons name="add-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                      {!ex.bodyweight && (
-                        <View style={styles.numField}>
-                          <Text style={styles.numLabel}>Weight (lbs)</Text>
-                          <View style={styles.weightInputContainer}>
-                            <TextInput
-                              style={[styles.numInput, styles.weightInput]}
-                              keyboardType="decimal-pad"
-                              value={set.weight}
-                              onChangeText={(v) => updateSet(i, si, 'weight', v)}
-                              onBlur={() => {
-                                if (set.weight === '' || set.weight === '.') updateSet(i, si, 'weight', '0');
-                              }}
-                            />
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
-                  {ex.sets.length > 1 && (
-                    <View style={styles.deleteSetButton}>
-                      <Text style={styles.deleteSetSpacer}> </Text>
-                      <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => removeSet(i, si)} hitSlop={12}>
-                        <Ionicons name="close-circle" size={26} color="#888" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </View>
-            ))}
-
-            <TouchableOpacity style={styles.addSetButton} onPress={() => addSet(i)}>
-              <Ionicons name="add-circle-outline" size={20} color="#e54242" />
-              <Text style={styles.addSetText}>Add Set</Text>
-            </TouchableOpacity>
-
-            <View style={styles.exerciseFooter}>
-              {ex.exerciseType === 'Sets of Reps' ? (
-                <TouchableOpacity style={styles.bodyweightRow} onPress={() => toggleBodyweight(i)} activeOpacity={0.7}>
-                  <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-                    {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-                  </View>
-                  <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-                </TouchableOpacity>
-              ) : (
-                <View style={styles.exerciseFooterSpacer} />
-              )}
-
-              {exercises.length > 1 && (
-                <TouchableOpacity style={styles.removeExerciseButton} onPress={() => removeExercise(i)} hitSlop={8}>
-                  <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          );
-        })}
-
+          </>
+        }
+        renderItem={({ item: ex, index: i }: ReorderableListRenderItemInfo<DraftExerciseRow>) => (
+          <ExerciseCard
+            exercise={ex}
+            index={i}
+            catalogOptions={catalogOptions}
+            onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
+            onSelectExercise={selectExercise}
+            onChangeType={updateExerciseField}
+            onToggleBodyweight={toggleBodyweight}
+            onRemoveExercise={removeExercise}
+            onUpdateSet={updateSet}
+            onIncrementSet={incrementSet}
+            onDecrementSet={decrementSet}
+            onAddSet={addSet}
+            onRemoveSet={removeSet}
+            onToggleSetComplete={toggleSetComplete}
+            showCompletion
+            canRemove={exercises.length > 1}
+          />
+        )}
+        ListFooterComponent={
+          <>
         <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
           <Ionicons name="add-circle-outline" size={18} color="#e54242" />
           <Text style={styles.addExText}>Add Exercise</Text>
@@ -620,7 +458,9 @@ export default function ActiveWorkoutScreen() {
           activeOpacity={0.8}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigFinishButtonText}>Finish Workout</Text>}
         </TouchableOpacity>
-      </ScrollView>
+          </>
+        }
+        />
 
       {showFinishConfirm && (
         <View style={styles.confirmOverlay}>
@@ -727,182 +567,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#fff',
     marginBottom: 16,
-  },
-  exerciseCard: {
-    backgroundColor: '#141414',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#222',
-    marginBottom: 10,
-  },
-  exerciseCardComplete: {
-    borderColor: 'rgba(229, 66, 66, 0.35)',
-    backgroundColor: 'rgba(229, 66, 66, 0.08)',
-  },
-  exerciseNameDropdown: {
-    marginBottom: 12,
-  },
-  exerciseTypeDropdown: {
-    marginBottom: 12,
-  },
-  setRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 10,
-    borderRadius: 10,
-    padding: 4,
-  },
-  setRowComplete: {
-    marginHorizontal: -6,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-    backgroundColor: 'rgba(229, 66, 66, 0.08)',
-  },
-  setCheckboxWrap: {
-    alignItems: 'center',
-  },
-  setCheckboxIconWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  setCheckbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: '#555',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  setCheckboxChecked: {
-    backgroundColor: '#e54242',
-    borderColor: '#e54242',
-  },
-  row: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 8,
-  },
-  deleteSetButton: {
-    alignItems: 'center',
-  },
-  deleteSetSpacer: {
-    fontSize: 11,
-    marginBottom: 4,
-    color: 'transparent',
-  },
-  deleteSetIconWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  weightInputContainer: {
-    flex: 1,
-  },
-  weightInput: {
-    flex: 1,
-    justifyContent: 'center',
-    height: '100%',
-    paddingVertical: 0,
-  },
-  addSetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 10,
-    borderStyle: 'dashed',
-    marginBottom: 10,
-    gap: 8,
-  },
-  addSetText: {
-    color: '#e54242',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  numField: {
-    flex: 1,
-  },
-  numLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  numInput: {
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 8,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  incrementerContainerHorizontal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  incrementerValue: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: '700',
-    paddingVertical: 4,
-  },
-  exerciseFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    gap: 12,
-  },
-  exerciseFooterSpacer: {
-    flex: 1,
-  },
-  bodyweightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#555',
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#e54242',
-    borderColor: '#e54242',
-  },
-  bodyweightLabel: {
-    color: '#888',
-    fontSize: 13,
-    marginLeft: 8,
-  },
-  removeExerciseButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#241414',
-    borderWidth: 1,
-    borderColor: '#3a1f1f',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   addExButton: {
     flexDirection: 'row',
