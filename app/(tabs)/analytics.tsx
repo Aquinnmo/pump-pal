@@ -20,6 +20,23 @@ import { LineChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
 
+const chartConfig = {
+  backgroundColor: '#1c1c1c',
+  backgroundGradientFrom: '#1c1c1c',
+  backgroundGradientTo: '#1c1c1c',
+  decimalPlaces: 0,
+  color: (opacity = 1) => `rgba(229, 66, 66, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+  style: {
+    borderRadius: 16,
+  },
+  propsForDots: {
+    r: '4',
+    strokeWidth: '2',
+    stroke: '#e54242',
+  },
+};
+
 export default function AnalyticsScreen() {
   const { user } = useAuth();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -28,7 +45,7 @@ export default function AnalyticsScreen() {
   const [selectedMaxExercise, setSelectedMaxExercise] = useState<string | null>(null);
   const [selectedMaxRepsExercise, setSelectedMaxRepsExercise] = useState<string | null>(null);
   const [selectedLongestDurationExercise, setSelectedLongestDurationExercise] = useState<string | null>(null);
-  const [scrollY, setScrollY] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) return;
@@ -230,7 +247,10 @@ export default function AnalyticsScreen() {
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.content}
-          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+          onScroll={(e) => {
+            const next = e.nativeEvent.contentOffset.y > 0;
+            setScrolled((prev) => (prev === next ? prev : next));
+          }}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >
@@ -285,22 +305,7 @@ export default function AnalyticsScreen() {
                 data={chartData}
                 width={screenWidth - 72} // padding
                 height={220}
-                chartConfig={{
-                  backgroundColor: '#1c1c1c',
-                  backgroundGradientFrom: '#1c1c1c',
-                  backgroundGradientTo: '#1c1c1c',
-                  decimalPlaces: 0,
-                  color: (opacity = 1) => `rgba(229, 66, 66, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                  style: {
-                    borderRadius: 16,
-                  },
-                  propsForDots: {
-                    r: '4',
-                    strokeWidth: '2',
-                    stroke: '#e54242',
-                  },
-                }}
+                chartConfig={chartConfig}
                 bezier
                 style={styles.chart}
               />
@@ -379,7 +384,7 @@ export default function AnalyticsScreen() {
           )}
         </ScrollView>
 
-        {scrollY > 0 && (
+        {scrolled && (
           <LinearGradient
             colors={['#0f0f0f', 'transparent']}
             style={styles.fadeTop}
