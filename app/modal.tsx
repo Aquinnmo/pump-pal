@@ -1,14 +1,15 @@
-import { DragHandle } from '@/components/ui/drag-handle';
 import { Dropdown } from '@/components/ui/dropdown';
-import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
+import { ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
+import { ExerciseCard } from '@/components/workout/exercise-card';
 import { db } from '@/config/firebase';
 import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from '@/constants/ai-config';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
+import { useDraftExercises } from '@/hooks/use-draft-exercises';
 import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
-import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout, WorkoutStatus } from '@/types/workout';
+import { DraftExerciseRow, PerformedExercise, Workout, WorkoutStatus } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
@@ -35,7 +36,6 @@ import {
 } from 'react-native';
 import ReorderableList, {
   ReorderableListRenderItemInfo,
-  reorderItems,
 } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -49,21 +49,21 @@ export default function AddWorkoutModal() {
   const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
 
-  const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
-
-  const blankSet = (): DraftSet => ({ reps: 10, weight: '', durationMinutes: 0, durationSeconds: 30 });
-
-  const blankRow = (): DraftExerciseRow => ({
-    uid: makeUid(),
-    exerciseId: null,
-    variationId: null,
-    label: '',
-    exerciseType: 'Sets of Reps',
-    bodyweight: false,
-    sets: [blankSet()],
-  });
-
-  const [exercises, setExercises] = useState<DraftExerciseRow[]>([blankRow()]);
+  const {
+    exercises,
+    setExercises,
+    blankRow,
+    addExercise,
+    toggleBodyweight,
+    removeExercise,
+    updateExerciseField,
+    updateSet,
+    incrementSet,
+    decrementSet,
+    addSet,
+    removeSet,
+    reorder,
+  } = useDraftExercises();
   const { options: catalogOptions } = useExerciseCatalog();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
@@ -198,7 +198,7 @@ export default function AddWorkoutModal() {
     return () => {
       cancelled = true;
     };
-  }, [id, mode, suggestion, user]);
+  }, [id, mode, suggestion, user, setExercises]);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -241,9 +241,7 @@ export default function AddWorkoutModal() {
     };
 
     fetchWorkout();
-  }, [id, user]);
-
-  const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
+  }, [id, user, setExercises]);
 
   // workoutHistory is already sorted date desc, so the first match is the most recent.
   // Prefers a match from a workout with the same name before falling back to any workout.
@@ -324,75 +322,6 @@ export default function AddWorkoutModal() {
     setCustomWorkoutName('');
     if (isPlanMode) prefillForWorkoutName(selectedWorkoutName);
   };
-
-  const toggleBodyweight = (i: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) =>
-        idx === i
-          ? { ...ex, bodyweight: !ex.bodyweight, sets: ex.sets.map((s) => ({ ...s, weight: '' })) }
-          : ex
-      )
-    );
-
-  const removeExercise = (i: number) =>
-    setExercises((prev) => prev.filter((_, idx) => idx !== i));
-
-  const updateExerciseField = (i: number, field: 'exerciseType', value: ExerciseType) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => (idx === i ? { ...ex, [field]: value } : ex))
-    );
-
-  // Text-input driven fields (weight stays a string; duration fields are numbers,
-  // durationSeconds clamped to 0-59 to match the old scalar behavior).
-  const updateSet = (i: number, setIdx: number, field: 'weight' | 'durationMinutes' | 'durationSeconds', value: string) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return {
-          ...ex,
-          sets: ex.sets.map((s, si) => {
-            if (si !== setIdx) return s;
-            if (field === 'weight') return { ...s, weight: value };
-            const n = Number(value) || 0;
-            return { ...s, [field]: field === 'durationSeconds' ? Math.min(59, n) : n };
-          }),
-        };
-      })
-    );
-
-  // Stepper-driven field (reps is the only one with +/- buttons).
-  const incrementSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, reps: s.reps + 1 } : s)) };
-      })
-    );
-
-  const decrementSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, reps: Math.max(0, s.reps - 1) } : s)) };
-      })
-    );
-
-  const addSet = (i: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        const last = ex.sets[ex.sets.length - 1] ?? blankSet();
-        return { ...ex, sets: [...ex.sets, { ...last }] };
-      })
-    );
-
-  const removeSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i || ex.sets.length <= 1) return ex;
-        return { ...ex, sets: ex.sets.filter((_, si) => si !== setIdx) };
-      })
-    );
 
   const handleAISuggest = async () => {
     if (!user || aiUsesLeft <= 0) return;
@@ -573,7 +502,7 @@ export default function AddWorkoutModal() {
         <ReorderableList
           data={exercises}
           keyExtractor={(item) => item.uid}
-          onReorder={({ from, to }) => setExercises((prev) => reorderItems(prev, from, to))}
+          onReorder={({ from, to }) => reorder(from, to)}
           autoscrollSpeedScale={2}
           autoscrollThreshold={0.2}
           autoscrollDelay={50}
@@ -689,136 +618,23 @@ export default function AddWorkoutModal() {
             </>
           }
           renderItem={({ item: ex, index: i }: ReorderableListRenderItemInfo<DraftExerciseRow>) => (
-          <View style={styles.exerciseCard}>
-            <View style={styles.exerciseNameRow}>
-              <ExercisePicker
-                options={catalogOptions}
-                value={ex.label || null}
-                recentExercises={recentExercises}
-                onSelect={(selection) => selectExercise(i, selection)}
-                onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
-                placeholder="Select exercise"
-                style={styles.exerciseNameDropdownFlex}
-              />
-              <DragHandle />
-            </View>
-
-            <Dropdown
-              options={EXERCISE_TYPES}
-              value={ex.exerciseType}
-              onSelect={(v) => updateExerciseField(i, 'exerciseType', v as ExerciseType)}
-              placeholder="Type of exercise"
-              style={styles.exerciseTypeDropdown}
-            />
-
-            {ex.sets.map((set, si) => (
-              <View key={si} style={styles.setRow}>
-                <View style={styles.row}>
-                  {ex.exerciseType === 'Sets of Duration' ? (
-                    <>
-                      {/* Minutes */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Minutes</Text>
-                        <TextInput
-                          style={styles.numInput}
-                          keyboardType="number-pad"
-                          value={String(set.durationMinutes)}
-                          onChangeText={(v) => updateSet(i, si, 'durationMinutes', v)}
-                        />
-                      </View>
-                      {/* Seconds */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Seconds</Text>
-                        <TextInput
-                          style={styles.numInput}
-                          keyboardType="number-pad"
-                          value={String(set.durationSeconds)}
-                          onChangeText={(v) => updateSet(i, si, 'durationSeconds', v)}
-                        />
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      {/* Reps */}
-                      <View style={styles.numField}>
-                        <Text style={styles.numLabel}>Reps</Text>
-                        <View style={styles.incrementerContainerHorizontal}>
-                          <TouchableOpacity onPress={() => decrementSet(i, si)} hitSlop={10}>
-                            <Ionicons name="remove-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                          <Text style={styles.incrementerValue}>{set.reps}</Text>
-                          <TouchableOpacity onPress={() => incrementSet(i, si)} hitSlop={10}>
-                            <Ionicons name="add-circle" size={28} color="#e54242" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                      {/* Weight */}
-                      {!ex.bodyweight && (
-                        <View style={styles.numField}>
-                          <Text style={styles.numLabel}>Weight (lbs)</Text>
-                          <View style={styles.weightInputContainer}>
-                            <TextInput
-                              style={[styles.numInput, styles.weightInput]}
-                              keyboardType="decimal-pad"
-                              value={set.weight}
-                              onChangeText={(v) => updateSet(i, si, 'weight', v)}
-                              onBlur={() => {
-                                if (set.weight === '' || set.weight === '.') {
-                                  updateSet(i, si, 'weight', '0');
-                                }
-                              }}
-                            />
-                          </View>
-                        </View>
-                      )}
-                    </>
-                  )}
-                  {ex.sets.length > 1 && (
-                    <View style={styles.deleteSetButton}>
-                      <Text style={styles.deleteSetSpacer}> </Text>
-                      <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => removeSet(i, si)} hitSlop={12}>
-                        <Ionicons name="close-circle" size={26} color="#888" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </View>
-              </View>
-            ))}
-
-            <TouchableOpacity style={styles.addSetButton} onPress={() => addSet(i)}>
-              <Ionicons name="add-circle-outline" size={20} color="#e54242" />
-              <Text style={styles.addSetText}>Add Set</Text>
-            </TouchableOpacity>
-
-            {(ex.exerciseType === 'Sets of Reps' || exercises.length > 1) && (
-              <View style={styles.exerciseFooter}>
-                {ex.exerciseType === 'Sets of Reps' ? (
-                  <TouchableOpacity
-                    style={styles.bodyweightRow}
-                    onPress={() => toggleBodyweight(i)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-                      {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-                    </View>
-                    <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={styles.exerciseFooterSpacer} />
-                )}
-
-                {exercises.length > 1 && (
-                  <TouchableOpacity
-                    style={styles.removeExerciseButton}
-                    onPress={() => removeExercise(i)}
-                    hitSlop={8}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            )}
-          </View>
+          <ExerciseCard
+            exercise={ex}
+            index={i}
+            catalogOptions={catalogOptions}
+            recentExercises={recentExercises}
+            onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
+            onSelectExercise={selectExercise}
+            onChangeType={updateExerciseField}
+            onToggleBodyweight={toggleBodyweight}
+            onRemoveExercise={removeExercise}
+            onUpdateSet={updateSet}
+            onIncrementSet={incrementSet}
+            onDecrementSet={decrementSet}
+            onAddSet={addSet}
+            onRemoveSet={removeSet}
+            canRemove={exercises.length > 1}
+          />
           )}
         ListFooterComponent={
           <>
@@ -1004,19 +820,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 15,
   },
-  exerciseTypeDropdown: {
-    marginBottom: 12,
-  },
-  bodyweightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-  },
-  bodyweightLabel: {
-    color: '#888',
-    fontSize: 13,
-    marginLeft: 8,
-  },
   dateButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -1026,125 +829,6 @@ const styles = StyleSheet.create({
   dateButtonText: {
     color: '#fff',
     fontSize: 15,
-  },
-  exerciseNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  exerciseNameDropdownFlex: {
-    flex: 1,
-  },
-  exerciseCard: {
-    backgroundColor: '#141414',
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#222',
-    marginBottom: 10,
-  },
-  exerciseFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    gap: 12,
-  },
-  exerciseFooterSpacer: {
-    flex: 1,
-  },
-  removeExerciseButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#241414',
-    borderWidth: 1,
-    borderColor: '#3a1f1f',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  setRow: {
-    marginBottom: 10,
-  },
-  deleteSetButton: {
-    alignItems: 'center',
-  },
-  deleteSetSpacer: {
-    fontSize: 11,
-    marginBottom: 4,
-    color: 'transparent',
-  },
-  deleteSetIconWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  addSetButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    borderRadius: 10,
-    borderStyle: 'dashed',
-    marginBottom: 10,
-    gap: 8,
-  },
-  addSetText: {
-    color: '#e54242',
-    fontWeight: '600',
-    fontSize: 15,
-  },
-  numField: {
-    flex: 1,
-  },
-  numLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  numInput: {
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 8,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  weightInputContainer: {
-    flex: 1,
-  },
-  weightInput: {
-    flex: 1,
-    justifyContent: 'center',
-    height: '100%',
-    paddingVertical: 0,
-  },
-  incrementerContainerHorizontal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  incrementerValue: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: '700',
-    paddingVertical: 4,
   },
   addExButton: {
     flexDirection: 'row',
