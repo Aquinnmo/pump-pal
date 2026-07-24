@@ -285,7 +285,20 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>{greeting()},</Text>
           <Text style={styles.name}>{user?.displayName ?? 'Athlete'} 💪</Text>
         </View>
-        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/modal')}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => {
+            if (inProgress) {
+              router.push({ pathname: '/active-workout', params: { id: inProgress.id } });
+            } else if (nextPlan) {
+              router.push({ pathname: '/active-workout', params: { id: nextPlan.id } });
+            } else {
+              router.push({
+                pathname: '/modal',
+                params: { mode: 'plan', ...(nextWorkoutToPlan ? { suggestion: nextWorkoutToPlan } : {}) },
+              });
+            }
+          }}>
           <Ionicons name="add" size={22} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -300,7 +313,7 @@ export default function HomeScreen() {
             <View style={styles.empty}>
               <Ionicons name="barbell-outline" size={56} color="#2a2a2a" />
               <Text style={styles.emptyTitle}>No workouts yet</Text>
-              <Text style={styles.emptySubtitle}>Tap + to log your first session</Text>
+              <Text style={styles.emptySubtitle}>Tap + to start or plan a workout</Text>
             </View>
           }
           style={styles.scroll}

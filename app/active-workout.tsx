@@ -10,7 +10,7 @@ import { DraftExerciseRow, PerformedExercise, Workout } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { getOngoingInjuryIds } from '@/utils/injuries';
-import { buildPerformedExercise, collapseSetsToDraft, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
+import { buildPerformedExercise, collapseSetsToDraft, recentExercisesForDay, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
 import {
   dismissWorkoutNotification,
   ensureWorkoutChannel,
@@ -90,6 +90,7 @@ export default function ActiveWorkoutScreen() {
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
   const [customWorkoutName, setCustomWorkoutName] = useState('');
   const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
+  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
   const {
     exercises,
     setExercises,
@@ -110,6 +111,7 @@ export default function ActiveWorkoutScreen() {
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [showLogConfirm, setShowLogConfirm] = useState(false);
 
   const hydrated = useRef(false);
 
@@ -204,11 +206,14 @@ export default function ActiveWorkoutScreen() {
           query(collection(db, 'workouts'), where('userId', '==', user.uid), orderBy('date', 'desc'))
         );
         const merged = [...splitNames];
+        const historyData: Workout[] = [];
         workoutsSnap.docs.forEach((d) => {
-          const name = d.data().name;
-          if (name && !merged.includes(name)) merged.push(name);
+          const data = d.data();
+          if (data.name && !merged.includes(data.name)) merged.push(data.name);
+          historyData.push({ id: d.id, ...data } as Workout);
         });
         setWorkoutNameOptions(merged);
+        setWorkoutHistory(historyData);
       } catch {
         // silently fail — user can still type a name
       }
@@ -225,6 +230,13 @@ export default function ActiveWorkoutScreen() {
   }, [startedAt]);
 
   const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
+
+  // Exercises performed for this same split-day (workout name) in the last 30 days
+  // float to the top of the picker, mirroring the plan/log editor's behavior.
+  const recentExercises = useMemo(
+    () => recentExercisesForDay(workoutHistory, effectiveWorkoutName),
+    [workoutHistory, effectiveWorkoutName]
+  );
 
   // A resumed workout may carry a one-off name that predates the split list —
   // surface it so the dropdown can show it as the current selection.
@@ -422,6 +434,10 @@ export default function ActiveWorkoutScreen() {
             }}
           />
         )}
+        <TouchableOpacity style={styles.logFinishedButton} onPress={() => setShowLogConfirm(true)}>
+          <Ionicons name="create-outline" size={16} color="#888" />
+          <Text style={styles.logFinishedText}>Log a finished workout instead</Text>
+        </TouchableOpacity>
           </>
         }
         renderItem={({ item: ex, index: i }: ReorderableListRenderItemInfo<DraftExerciseRow>) => (
@@ -429,6 +445,7 @@ export default function ActiveWorkoutScreen() {
             exercise={ex}
             index={i}
             catalogOptions={catalogOptions}
+            recentExercises={recentExercises}
             onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
             onSelectExercise={selectExercise}
             onChangeType={updateExerciseField}
@@ -476,6 +493,29 @@ export default function ActiveWorkoutScreen() {
               </TouchableOpacity>
               <TouchableOpacity style={styles.confirmConfirmButton} onPress={finishWorkout} activeOpacity={0.8}>
                 <Text style={styles.confirmConfirmText}>Finish Anyway</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {showLogConfirm && (
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmCard}>
+            <Text style={styles.confirmTitle}>Log a finished workout?</Text>
+            <Text style={styles.confirmMessage}>
+              This opens the manual log form for a workout you&apos;ve already completed. Your current
+              session stays in progress and can be resumed.
+            </Text>
+            <View style={styles.confirmActions}>
+              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setShowLogConfirm(false)} activeOpacity={0.8}>
+                <Text style={styles.confirmCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.confirmConfirmButton}
+                onPress={() => { setShowLogConfirm(false); router.push('/modal'); }}
+                activeOpacity={0.8}>
+                <Text style={styles.confirmConfirmText}>Log Workout</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -567,6 +607,19 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#fff',
     marginBottom: 16,
+  },
+  logFinishedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  logFinishedText: {
+    color: '#888',
+    fontSize: 13,
+    fontWeight: '600',
   },
   addExButton: {
     flexDirection: 'row',
