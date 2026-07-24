@@ -1,5 +1,11 @@
 import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, RecentExercise, Workout } from '@/types/workout';
 
+// Client-only unique id for a draft row (React key + drag identity). Only needs
+// to be unique within one screen's editing session.
+export function makeUid(): string {
+  return `ex_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}
+
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
   return row.sets.map((draftSet, index) => {
     if (row.exerciseType === 'Sets of Duration') {
@@ -48,6 +54,7 @@ export function collapseSetsToDraft(pe: PerformedExercise): DraftExerciseRow {
   });
 
   return {
+    uid: makeUid(),
     exerciseId: pe.exerciseId,
     variationId: pe.variationId,
     label: pe.variationNameSnapshot ?? pe.exerciseNameSnapshot,

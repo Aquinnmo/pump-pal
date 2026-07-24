@@ -1,3 +1,4 @@
+import { DragHandle } from '@/components/ui/drag-handle';
 import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { Dropdown } from '@/components/ui/dropdown';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
@@ -14,7 +15,7 @@ import { getOngoingInjuryIds } from '@/utils/injuries';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/workout-suggestions';
 import { predictNextWorkoutName } from '@/utils/predict-next-workout';
-import { buildPerformedExercise, collapseSetsToDraft, recentExercisesForDay, toDateObj } from '@/utils/workout-conversion';
+import { buildPerformedExercise, collapseSetsToDraft, makeUid, recentExercisesForDay, toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -26,13 +27,16 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import ReorderableList, {
+  reorderItems,
+  ReorderableListRenderItemInfo,
+} from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function AddWorkoutModal() {
@@ -50,6 +54,7 @@ export default function AddWorkoutModal() {
   const blankSet = (): DraftSet => ({ reps: 10, weight: '', durationMinutes: 0, durationSeconds: 30 });
 
   const blankRow = (): DraftExerciseRow => ({
+    uid: makeUid(),
     exerciseId: null,
     variationId: null,
     label: '',
@@ -421,6 +426,7 @@ export default function AddWorkoutModal() {
           ? { exerciseId: match.exerciseId, variationId: match.variationId, label: match.label }
           : { exerciseId: 'under-review', variationId: `ur_${slugify(ex.name)}`, label: ex.name };
         return {
+          uid: makeUid(),
           ...resolved,
           exerciseType: ex.exerciseType,
           bodyweight: ex.bodyweight,
@@ -564,7 +570,18 @@ export default function AddWorkoutModal() {
           <ActivityIndicator color="#e54242" size="large" />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+        <ReorderableList
+          data={exercises}
+          keyExtractor={(item) => item.uid}
+          onReorder={({ from, to }) => setExercises((prev) => reorderItems(prev, from, to))}
+          autoscrollSpeedScale={2.5}
+          autoscrollThreshold={0.2}
+          animationDuration={150}
+          contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          ListHeaderComponent={
+            <>
           {workoutNameOptions.length > 0 ? (
             <>
               <Dropdown
@@ -668,18 +685,22 @@ export default function AddWorkoutModal() {
               </View>
             )}
           </View>
-
-        {exercises.map((ex, i) => (
-          <View key={i} style={styles.exerciseCard}>
-            <ExercisePicker
-              options={catalogOptions}
-              value={ex.label || null}
-              recentExercises={recentExercises}
-              onSelect={(selection) => selectExercise(i, selection)}
-              onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
-              placeholder="Select exercise"
-              style={styles.exerciseNameDropdown}
-            />
+            </>
+          }
+          renderItem={({ item: ex, index: i }: ReorderableListRenderItemInfo<DraftExerciseRow>) => (
+          <View style={styles.exerciseCard}>
+            <View style={styles.exerciseNameRow}>
+              <ExercisePicker
+                options={catalogOptions}
+                value={ex.label || null}
+                recentExercises={recentExercises}
+                onSelect={(selection) => selectExercise(i, selection)}
+                onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
+                placeholder="Select exercise"
+                style={styles.exerciseNameDropdownFlex}
+              />
+              <DragHandle />
+            </View>
 
             <Dropdown
               options={EXERCISE_TYPES}
@@ -797,8 +818,9 @@ export default function AddWorkoutModal() {
               </View>
             )}
           </View>
-        ))}
-
+          )}
+        ListFooterComponent={
+          <>
         <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
           <Ionicons name="add-circle-outline" size={18} color="#e54242" />
           <Text style={styles.addExText}>Add Exercise</Text>
@@ -884,7 +906,9 @@ export default function AddWorkoutModal() {
             </TouchableOpacity>
           )}
         </View>
-      </ScrollView>
+          </>
+        }
+        />
       )}
     </KeyboardAvoidingView>
   );
@@ -1001,6 +1025,15 @@ const styles = StyleSheet.create({
   dateButtonText: {
     color: '#fff',
     fontSize: 15,
+  },
+  exerciseNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  exerciseNameDropdownFlex: {
+    flex: 1,
   },
   exerciseCard: {
     backgroundColor: '#141414',
@@ -1243,9 +1276,6 @@ const styles = StyleSheet.create({
     color: '#444',
   },
   nameDropdown: {
-    marginBottom: 12,
-  },
-  exerciseNameDropdown: {
     marginBottom: 12,
   },
 });

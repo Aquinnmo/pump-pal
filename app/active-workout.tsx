@@ -1,3 +1,4 @@
+import { DragHandle } from '@/components/ui/drag-handle';
 import { Dropdown } from '@/components/ui/dropdown';
 import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { db } from '@/config/firebase';
@@ -10,7 +11,7 @@ import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { getOngoingInjuryIds } from '@/utils/injuries';
 import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
-import { buildPerformedExercise, collapseSetsToDraft, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
+import { buildPerformedExercise, collapseSetsToDraft, makeUid, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
 import {
   dismissWorkoutNotification,
   ensureWorkoutChannel,
@@ -40,13 +41,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import ReorderableList, {
+  reorderItems,
+  ReorderableListRenderItemInfo,
+} from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
@@ -54,6 +58,7 @@ const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
 const blankSet = (): DraftSet => ({ reps: 10, weight: '', durationMinutes: 0, durationSeconds: 30, completed: false });
 
 const blankRow = (): DraftExerciseRow => ({
+  uid: makeUid(),
   exerciseId: null,
   variationId: null,
   label: '',
@@ -446,7 +451,18 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
+      <ReorderableList
+        data={exercises}
+        keyExtractor={(item) => item.uid}
+        onReorder={({ from, to }) => setExercises((prev) => reorderItems(prev, from, to))}
+        autoscrollSpeedScale={2.5}
+        autoscrollThreshold={0.2}
+        animationDuration={150}
+        contentContainerStyle={styles.body}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        ListHeaderComponent={
+          <>
         {workoutNameOptions.length > 0 ? (
           <>
             <Dropdown
@@ -478,20 +494,24 @@ export default function ActiveWorkoutScreen() {
             }}
           />
         )}
-
-        {exercises.map((ex, i) => {
+          </>
+        }
+        renderItem={({ item: ex, index: i }: ReorderableListRenderItemInfo<DraftExerciseRow>) => {
           const allSetsComplete = ex.sets.length > 0 && ex.sets.every((s) => s.completed);
           return (
-          <View key={i} style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
-            <ExercisePicker
-              options={catalogOptions}
-              value={ex.label || null}
-              recentExercises={[]}
-              onSelect={(selection) => selectExercise(i, selection)}
-              onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
-              placeholder="Select exercise"
-              style={styles.exerciseNameDropdown}
-            />
+          <View style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
+            <View style={styles.exerciseNameRow}>
+              <ExercisePicker
+                options={catalogOptions}
+                value={ex.label || null}
+                recentExercises={[]}
+                onSelect={(selection) => selectExercise(i, selection)}
+                onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
+                placeholder="Select exercise"
+                style={styles.exerciseNameDropdownFlex}
+              />
+              <DragHandle />
+            </View>
 
             <Dropdown
               options={EXERCISE_TYPES}
@@ -606,8 +626,9 @@ export default function ActiveWorkoutScreen() {
             </View>
           </View>
           );
-        })}
-
+          }}
+        ListFooterComponent={
+          <>
         <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
           <Ionicons name="add-circle-outline" size={18} color="#e54242" />
           <Text style={styles.addExText}>Add Exercise</Text>
@@ -620,7 +641,9 @@ export default function ActiveWorkoutScreen() {
           activeOpacity={0.8}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigFinishButtonText}>Finish Workout</Text>}
         </TouchableOpacity>
-      </ScrollView>
+          </>
+        }
+        />
 
       {showFinishConfirm && (
         <View style={styles.confirmOverlay}>
@@ -736,12 +759,18 @@ const styles = StyleSheet.create({
     borderColor: '#222',
     marginBottom: 10,
   },
+  exerciseNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  exerciseNameDropdownFlex: {
+    flex: 1,
+  },
   exerciseCardComplete: {
     borderColor: 'rgba(229, 66, 66, 0.35)',
     backgroundColor: 'rgba(229, 66, 66, 0.08)',
-  },
-  exerciseNameDropdown: {
-    marginBottom: 12,
   },
   exerciseTypeDropdown: {
     marginBottom: 12,
