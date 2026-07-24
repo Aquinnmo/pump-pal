@@ -19,6 +19,7 @@ import {
 import { LineChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
+const MAX_CHART_LABELS = 6;
 
 const chartConfig = {
   backgroundColor: '#1c1c1c',
@@ -186,8 +187,14 @@ export default function AnalyticsScreen() {
     if (targetEx && exerciseHistory[targetEx] && exerciseHistory[targetEx].length > 1) {
       const history = exerciseHistory[targetEx];
       // ChartKit needs at least 1 data point, but looks better with 2. We'll pass it anyway.
+      const labelCount = Math.min(MAX_CHART_LABELS, history.length);
+      const shownIndices = new Set(
+        Array.from({ length: labelCount }, (_, i) =>
+          Math.round((i * (history.length - 1)) / (labelCount - 1))
+        )
+      );
       cData = {
-        labels: history.map((h) => h.date),
+        labels: history.map((h, i) => (shownIndices.has(i) ? h.date : '')),
         datasets: [
           {
             data: history.map((h) => h.score),
