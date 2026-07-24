@@ -10,7 +10,6 @@ import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } 
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
 import { getOngoingInjuryIds } from '@/utils/injuries';
-import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { buildPerformedExercise, collapseSetsToDraft, makeUid, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
 import {
   dismissWorkoutNotification,
@@ -18,6 +17,7 @@ import {
   requestNotificationPermission,
   showWorkoutNotification,
 } from '@/utils/workout-notification';
+import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -48,8 +48,8 @@ import {
   View,
 } from 'react-native';
 import ReorderableList, {
-  reorderItems,
   ReorderableListRenderItemInfo,
+  reorderItems,
 } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -76,6 +76,20 @@ function formatElapsed(totalSeconds: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
+// Self-contained so its 1Hz tick re-renders only this text, not the whole
+// ActiveWorkout tree — a parent re-render mid-drag jars the reorderable list.
+function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!startedAt) return;
+    const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
+    update();
+    const iv = setInterval(update, 1000);
+    return () => clearInterval(iv);
+  }, [startedAt]);
+  return <Text style={styles.headerTimer}>{formatElapsed(elapsed)}</Text>;
+}
+
 export default function ActiveWorkoutScreen() {
   const { user } = useAuth();
   const { id, suggestion } = useLocalSearchParams<{ id: string; suggestion: string }>();
@@ -86,7 +100,6 @@ export default function ActiveWorkoutScreen() {
   const [cameFromPlan, setCameFromPlan] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
-  const [elapsed, setElapsed] = useState(0);
 
   const [workoutName, setWorkoutName] = useState('');
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
@@ -200,15 +213,6 @@ export default function ActiveWorkoutScreen() {
       }
     })();
   }, [user]);
-
-  // Elapsed-time ticker
-  useEffect(() => {
-    if (!startedAt) return;
-    const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
-    update();
-    const iv = setInterval(update, 1000);
-    return () => clearInterval(iv);
-  }, [startedAt]);
 
   // Prepare the Android notification channel + permission once a workout is live.
   useEffect(() => {
@@ -444,7 +448,7 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{effectiveWorkoutName || 'Active Workout'}</Text>
-          <Text style={styles.headerTimer}>{formatElapsed(elapsed)}</Text>
+          <WorkoutTimer startedAt={startedAt} />
         </View>
         <TouchableOpacity onPress={handleFinishPress} disabled={saving}>
           {saving ? <ActivityIndicator color="#e54242" /> : <Text style={styles.finishText}>Finish</Text>}
@@ -455,8 +459,9 @@ export default function ActiveWorkoutScreen() {
         data={exercises}
         keyExtractor={(item) => item.uid}
         onReorder={({ from, to }) => setExercises((prev) => reorderItems(prev, from, to))}
-        autoscrollSpeedScale={2.5}
+        autoscrollSpeedScale={2}
         autoscrollThreshold={0.2}
+        autoscrollDelay={50}
         animationDuration={150}
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}

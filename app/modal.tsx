@@ -1,6 +1,6 @@
 import { DragHandle } from '@/components/ui/drag-handle';
-import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { Dropdown } from '@/components/ui/dropdown';
+import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { db } from '@/config/firebase';
 import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from '@/constants/ai-config';
@@ -11,11 +11,11 @@ import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout, WorkoutStatus } from '@/types/workout';
 import { showAlert } from '@/utils/alert';
 import { createPendingExercise } from '@/utils/create-pending-exercise';
-import { getOngoingInjuryIds } from '@/utils/injuries';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
-import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/workout-suggestions';
+import { getOngoingInjuryIds } from '@/utils/injuries';
 import { predictNextWorkoutName } from '@/utils/predict-next-workout';
 import { buildPerformedExercise, collapseSetsToDraft, makeUid, recentExercisesForDay, toDateObj } from '@/utils/workout-conversion';
+import { generateSplitWorkoutNames, suggestWorkoutCompletion } from '@/utils/workout-suggestions';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -34,8 +34,8 @@ import {
   View,
 } from 'react-native';
 import ReorderableList, {
-  reorderItems,
   ReorderableListRenderItemInfo,
+  reorderItems,
 } from 'react-native-reorderable-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -574,8 +574,9 @@ export default function AddWorkoutModal() {
           data={exercises}
           keyExtractor={(item) => item.uid}
           onReorder={({ from, to }) => setExercises((prev) => reorderItems(prev, from, to))}
-          autoscrollSpeedScale={2.5}
+          autoscrollSpeedScale={2}
           autoscrollThreshold={0.2}
+          autoscrollDelay={50}
           animationDuration={150}
           contentContainerStyle={styles.body}
           showsVerticalScrollIndicator={false}
