@@ -1,6 +1,7 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { getDailyName } from '@/utils/daily-name';
+import { syncStreakReminders } from '@/utils/streak-notification';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
@@ -412,6 +413,19 @@ export default function PushupChallengeScreen() {
   useEffect(() => {
     setTodayNodeY(null);
   }, [data?.startDate]);
+
+  // Keep the 6 PM / 10 PM streak reminders in sync with challenge state.
+  // Every write path (start / complete / undo / reset / load) ends in setData,
+  // so this one effect covers them all.
+  useEffect(() => {
+    if (loading) return; // don't cancel reminders on a pending or failed load
+    const nodes = buildTimeline(data);
+    syncStreakReminders({
+      active: !!data && isStreakAlive(nodes),
+      todayCompleted: nodes.some((n) => n.isToday && n.completed),
+      startDate: data?.startDate ?? null,
+    }).catch((e) => console.error('Failed to sync streak reminders', e));
+  }, [data, loading]);
 
   const docRef = user ? doc(db, 'users', user.uid, 'pushup-challenge', 'data') : null;
 
