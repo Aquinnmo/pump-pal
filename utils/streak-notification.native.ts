@@ -1,19 +1,15 @@
 import notifee, { AndroidImportance, TriggerType } from "@notifee/react-native";
+// Import from ./streak-schedule, never from ./streak-notification: on native,
+// that specifier resolves back to this file and the module cycle hangs startup.
 import {
   LAST_CALL_HOUR,
   LOST_HOUR,
   NUDGE_HOUR,
   nextFireAt,
   type StreakReminderState,
-} from "./streak-notification";
+} from "./streak-schedule";
 
-export {
-  LAST_CALL_HOUR,
-  LOST_HOUR,
-  NUDGE_HOUR,
-  nextFireAt,
-} from "./streak-notification";
-export type { StreakReminderState } from "./streak-notification";
+export type { StreakReminderState } from "./streak-schedule";
 
 const CHANNEL_ID = "streak-reminder";
 const NUDGE_ID = "streak-nudge";
