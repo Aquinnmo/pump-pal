@@ -1,4 +1,5 @@
 import { Dropdown } from '@/components/ui/dropdown';
+import { PlateCalculator } from '@/components/ui/plate-calculator';
 import { ExerciseCard } from '@/components/workout/exercise-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
@@ -112,6 +113,7 @@ export default function ActiveWorkoutScreen() {
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showLogConfirm, setShowLogConfirm] = useState(false);
+  const [showPlateCalc, setShowPlateCalc] = useState(false);
 
   const hydrated = useRef(false);
 
@@ -479,6 +481,17 @@ export default function ActiveWorkoutScreen() {
         }
         />
 
+      {!showFinishConfirm && !showLogConfirm && !showDiscardConfirm && (
+        <TouchableOpacity
+          style={[styles.plateCalcFab, { bottom: Math.max(insets.bottom, 20) }]}
+          onPress={() => setShowPlateCalc(true)}
+          activeOpacity={0.8}>
+          <Ionicons name="calculator-outline" size={24} color="#e54242" />
+        </TouchableOpacity>
+      )}
+
+      <PlateCalculator visible={showPlateCalc} onClose={() => setShowPlateCalc(false)} />
+
       {showFinishConfirm && (
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmCard}>
@@ -592,7 +605,20 @@ const styles = StyleSheet.create({
   },
   body: {
     padding: 20,
-    paddingBottom: 40,
+    // extra room so the plate-calculator FAB can't sit on the Finish Workout button
+    paddingBottom: 100,
+  },
+  plateCalcFab: {
+    position: 'absolute',
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#271515',
+    borderWidth: 1,
+    borderColor: '#e54242',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nameDropdown: {
     marginBottom: 16,

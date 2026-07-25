@@ -12,6 +12,27 @@ import { reorderItems } from 'react-native-reorderable-list';
 // are done (and persist it so a killed workout resumes with checkmarks intact), while the
 // plan/log editor must NOT write a `completed` key — expandDraftToSets only persists it
 // when defined, so omitting it here keeps logged/planned docs clean.
+// An edit to a set cascades forward: the new value overwrites each following set that
+// still held the old value, stopping at the first set the user deliberately made
+// different so pyramids / drop sets survive. Completed sets are a record of what was
+// actually lifted — they are skipped, not overwritten, and do not stop the run.
+function cascadeSetField<K extends keyof DraftSet>(
+  sets: DraftSet[],
+  from: number,
+  field: K,
+  value: DraftSet[K]
+): DraftSet[] {
+  const previous = sets[from][field];
+  const next = sets.slice();
+  next[from] = { ...next[from], [field]: value };
+  for (let si = from + 1; si < next.length; si++) {
+    if (next[si].completed) continue;
+    if (next[si][field] !== previous) break;
+    next[si] = { ...next[si], [field]: value };
+  }
+  return next;
+}
+
 export function useDraftExercises(opts?: { trackCompletion?: boolean }) {
   const trackCompletion = opts?.trackCompletion ?? false;
 
@@ -66,33 +87,23 @@ export function useDraftExercises(opts?: { trackCompletion?: boolean }) {
     setExercises((prev) =>
       prev.map((ex, idx) => {
         if (idx !== i) return ex;
-        return {
-          ...ex,
-          sets: ex.sets.map((s, si) => {
-            if (si !== setIdx) return s;
-            if (field === 'weight') return { ...s, weight: value };
-            const n = Number(value) || 0;
-            return { ...s, [field]: field === 'durationSeconds' ? Math.min(59, n) : n };
-          }),
-        };
+        if (field === 'weight') return { ...ex, sets: cascadeSetField(ex.sets, setIdx, 'weight', value) };
+        const n = Number(value) || 0;
+        return { ...ex, sets: cascadeSetField(ex.sets, setIdx, field, field === 'durationSeconds' ? Math.min(59, n) : n) };
       })
     );
 
-  const incrementSet = (i: number, setIdx: number) =>
+  const bumpReps = (i: number, setIdx: number, delta: number) =>
     setExercises((prev) =>
       prev.map((ex, idx) => {
         if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, reps: s.reps + 1 } : s)) };
+        return { ...ex, sets: cascadeSetField(ex.sets, setIdx, 'reps', Math.max(0, ex.sets[setIdx].reps + delta)) };
       })
     );
 
-  const decrementSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, reps: Math.max(0, s.reps - 1) } : s)) };
-      })
-    );
+  const incrementSet = (i: number, setIdx: number) => bumpReps(i, setIdx, 1);
+
+  const decrementSet = (i: number, setIdx: number) => bumpReps(i, setIdx, -1);
 
   const addSet = (i: number) =>
     setExercises((prev) =>
