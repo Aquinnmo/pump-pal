@@ -11,7 +11,6 @@ npm run android            # start + open Android
 npm run ios                # start + open iOS
 npm run web                 # start + open web
 npm run lint                 # expo lint (eslint-config-expo flat config)
-npm run build:web            # static web export to dist/ (used by Vercel, see vercel.json)
 ```
 
 There is no test runner configured for the app itself. The only automated tests are for the legacy migration scripts:
@@ -19,6 +18,8 @@ There is no test runner configured for the app itself. The only automated tests 
 ```bash
 npm run migration:test    # runs scripts/migration/convert-legacy-workout.test.js and legacy-inventory.test.js directly with node
 ```
+
+YOU ARE NEVER ALLOWED TO RUN A LOCAL BUILD `npx expo run:android` or anything similar. ALL DEV BUILDS WILL BE CREATED BY THE USER
 
 ## User workflow override
 

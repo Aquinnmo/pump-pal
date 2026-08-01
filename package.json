@@ -5,8 +5,8 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
     "generate:icons": "node scripts/generate-icons.js",
@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.12",
+    "@ai-sdk/openai": "^4.0.27",
     "@expo/vector-icons": "^15.0.3",
     "@notifee/react-native": "^9.1.8",
     "@react-native-async-storage/async-storage": "^2.2.0",
