@@ -1,10 +1,11 @@
 import { createGoogle } from '@ai-sdk/google';
-import { createProviderRegistry } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createProviderRegistry, defaultSettingsMiddleware, wrapLanguageModel } from 'ai';
 import { fetch as expoFetch } from 'expo/fetch';
 
-export type AIProviderId = 'google';
+export type AIProviderId = 'google' | 'openai';
 
-export const AI_PROVIDER = process.env.EXPO_PUBLIC_AI_PROVIDER ?? 'google';
+export const AI_PROVIDER = (process.env.EXPO_PUBLIC_AI_PROVIDER ?? 'google') as AIProviderId;
 export const AI_MODEL = process.env.EXPO_PUBLIC_AI_MODEL ?? 'gemini-3.5-flash';
 export const AI_MAX_RETRIES = 2;
 
@@ -38,12 +39,32 @@ const googleProvider = createGoogle({
   fetch: expoFetch as typeof fetch,
 });
 
-const providerRegistry = createProviderRegistry({ google: googleProvider });
+const openaiProvider = createOpenAI({
+  apiKey: process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? '',
+  fetch: expoFetch as typeof fetch,
+});
+
+const providerRegistry = createProviderRegistry({ google: googleProvider, openai: openaiProvider });
+
+// ponytail: hardcoded high effort, not an env var — nobody asked to tune this per-request yet.
+// If that changes, add EXPO_PUBLIC_AI_REASONING_EFFORT and read it here instead.
+const OPENAI_REASONING_EFFORT = 'high';
 
 export function getAIModel() {
-  if (AI_PROVIDER !== 'google') {
+  if (AI_PROVIDER !== 'google' && AI_PROVIDER !== 'openai') {
     throw new Error(`Unsupported AI provider: ${AI_PROVIDER}`);
   }
 
-  return providerRegistry.languageModel(`google:${AI_MODEL}`);
+  const model = providerRegistry.languageModel(`${AI_PROVIDER}:${AI_MODEL}`);
+
+  if (AI_PROVIDER === 'openai') {
+    return wrapLanguageModel({
+      model,
+      middleware: defaultSettingsMiddleware({
+        settings: { providerOptions: { openai: { reasoningEffort: OPENAI_REASONING_EFFORT } } },
+      }),
+    });
+  }
+
+  return model;
 }
