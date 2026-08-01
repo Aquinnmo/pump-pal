@@ -1,16 +1,5 @@
 {
   "hooks": {
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "command": "bd prime",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
-      }
-    ],
     "PreToolUse": [
       {
         "hooks": [
@@ -35,7 +24,7 @@
       {
         "hooks": [
           {
-            "command": "bd prime",
+            "command": "bd prime --hook-json",
             "type": "command"
           }
         ],
