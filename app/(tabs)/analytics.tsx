@@ -1,13 +1,17 @@
-import { MuscleInsightCards } from '@/components/muscle-insight-cards';
-import { Dropdown } from '@/components/ui/dropdown';
-import { db } from '@/config/firebase';
-import { useAuth } from '@/context/auth-context';
-import { Workout } from '@/types/workout';
-import { exerciseLabel, isDurationExercise, toDateObj } from '@/utils/workout-conversion';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MuscleInsightCards } from "@/components/muscle-insight-cards";
+import { Dropdown } from "@/components/ui/dropdown";
+import { db } from "@/config/firebase";
+import { useAuth } from "@/context/auth-context";
+import { Workout } from "@/types/workout";
+import {
+  exerciseLabel,
+  isDurationExercise,
+  toDateObj,
+} from "@/utils/workout-conversion";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -16,27 +20,27 @@ import {
   Text,
   useWindowDimensions,
   View,
-} from 'react-native';
-import { LineChart } from 'react-native-chart-kit';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import { LineChart } from "react-native-chart-kit";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MAX_CHART_LABELS = 6;
 
 const chartConfig = {
-  backgroundColor: '#171717',
-  backgroundGradientFrom: '#171717',
-  backgroundGradientTo: '#171717',
+  backgroundColor: "#171717",
+  backgroundGradientFrom: "#171717",
+  backgroundGradientTo: "#171717",
   decimalPlaces: 0,
   color: (opacity = 1) => `rgba(229, 66, 66, ${opacity})`,
   labelColor: (opacity = 1) => `rgba(194, 194, 194, ${opacity})`,
   propsForBackgroundLines: {
-    stroke: '#2b2b2b',
-    strokeDasharray: '',
+    stroke: "#2b2b2b",
+    strokeDasharray: "",
   },
   propsForDots: {
-    r: '4',
-    strokeWidth: '2',
-    stroke: '#0f0f0f',
+    r: "4",
+    strokeWidth: "2",
+    stroke: "#0f0f0f",
   },
   propsForLabels: {
     fontSize: 13,
@@ -51,9 +55,14 @@ export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
   const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
-  const [selectedMaxExercise, setSelectedMaxExercise] = useState<string | null>(null);
-  const [selectedMaxRepsExercise, setSelectedMaxRepsExercise] = useState<string | null>(null);
-  const [selectedLongestDurationExercise, setSelectedLongestDurationExercise] = useState<string | null>(null);
+  const [selectedMaxExercise, setSelectedMaxExercise] = useState<string | null>(
+    null,
+  );
+  const [selectedMaxRepsExercise, setSelectedMaxRepsExercise] = useState<
+    string | null
+  >(null);
+  const [selectedLongestDurationExercise, setSelectedLongestDurationExercise] =
+    useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
     if (!user) {
@@ -66,12 +75,16 @@ export default function AnalyticsScreen() {
     setFetchError(false);
     try {
       const workoutsQuery = query(
-        collection(db, 'workouts'),
-        where('userId', '==', user.uid),
-        orderBy('date', 'asc')
+        collection(db, "workouts"),
+        where("userId", "==", user.uid),
+        orderBy("date", "asc"),
       );
       const snapshot = await getDocs(workoutsQuery);
-      setWorkouts(snapshot.docs.map((document) => ({ id: document.id, ...document.data() } as Workout)));
+      setWorkouts(
+        snapshot.docs.map(
+          (document) => ({ id: document.id, ...document.data() }) as Workout,
+        ),
+      );
     } catch (error) {
       console.error(error);
       setFetchError(true);
@@ -83,7 +96,7 @@ export default function AnalyticsScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchWorkouts();
-    }, [fetchWorkouts])
+    }, [fetchWorkouts]),
   );
 
   const {
@@ -123,7 +136,8 @@ export default function AnalyticsScreen() {
     const maxW: Record<string, number> = {};
     const maxR: Record<string, number> = {};
     const maxD: Record<string, number> = {};
-    const exerciseHistory: Record<string, { date: string; score: number }[]> = {};
+    const exerciseHistory: Record<string, { date: string; score: number }[]> =
+      {};
     const bodyweightExerciseSet = new Set<string>();
     const durationExerciseSet = new Set<string>();
     let heaviest: { exercise: string; weight: number } | null = null;
@@ -135,7 +149,8 @@ export default function AnalyticsScreen() {
       const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`;
 
       if (workout.name) {
-        workoutTypeCounts[workout.name] = (workoutTypeCounts[workout.name] || 0) + 1;
+        workoutTypeCounts[workout.name] =
+          (workoutTypeCounts[workout.name] || 0) + 1;
         workoutTypeLastDate[workout.name] = date.getTime();
       }
 
@@ -144,18 +159,22 @@ export default function AnalyticsScreen() {
         if (!name) return;
 
         counts[name] = (counts[name] || 0) + 1;
-        if (performedExercise.sets.some((set) => set.bodyweight)) bodyweightExerciseSet.add(name);
-        if (isDurationExercise(performedExercise)) durationExerciseSet.add(name);
+        if (performedExercise.sets.some((set) => set.bodyweight))
+          bodyweightExerciseSet.add(name);
+        if (isDurationExercise(performedExercise))
+          durationExerciseSet.add(name);
         if (!exerciseHistory[name]) exerciseHistory[name] = [];
 
         performedExercise.sets.forEach((set) => {
-          const isDuration = set.durationSeconds !== undefined && set.reps === undefined;
+          const isDuration =
+            set.durationSeconds !== undefined && set.reps === undefined;
 
           if (isDuration) {
             maxD[name] = Math.max(maxD[name] || 0, set.durationSeconds ?? 0);
           } else {
             maxW[name] = Math.max(maxW[name] || 0, set.weight ?? 0);
-            if (set.bodyweight) maxR[name] = Math.max(maxR[name] || 0, set.reps ?? 0);
+            if (set.bodyweight)
+              maxR[name] = Math.max(maxR[name] || 0, set.reps ?? 0);
             if (
               !set.bodyweight &&
               (set.weight ?? 0) > 0 &&
@@ -166,11 +185,13 @@ export default function AnalyticsScreen() {
           }
 
           const score = isDuration
-            ? set.durationSeconds ?? 0
+            ? (set.durationSeconds ?? 0)
             : set.bodyweight
-              ? set.reps ?? 0
+              ? (set.reps ?? 0)
               : (set.weight ?? 0) * (1 + (set.reps ?? 0) / 30);
-          const existingDay = exerciseHistory[name].find((history) => history.date === dateLabel);
+          const existingDay = exerciseHistory[name].find(
+            (history) => history.date === dateLabel,
+          );
           if (existingDay) {
             existingDay.score = Math.max(existingDay.score, score);
           } else {
@@ -194,7 +215,10 @@ export default function AnalyticsScreen() {
     let maxTypeDate = 0;
     Object.entries(workoutTypeCounts).forEach(([name, count]) => {
       const lastDate = workoutTypeLastDate[name] || 0;
-      if (count > maxTypeCount || (count === maxTypeCount && lastDate > maxTypeDate)) {
+      if (
+        count > maxTypeCount ||
+        (count === maxTypeCount && lastDate > maxTypeDate)
+      ) {
         maxTypeCount = count;
         maxTypeDate = lastDate;
         favoriteType = name;
@@ -203,23 +227,34 @@ export default function AnalyticsScreen() {
 
     const allExerciseNames = Object.keys(counts).sort();
     const weighted = allExerciseNames.filter(
-      (name) => !bodyweightExerciseSet.has(name) && !durationExerciseSet.has(name)
+      (name) =>
+        !bodyweightExerciseSet.has(name) && !durationExerciseSet.has(name),
     );
-    const bodyweight = allExerciseNames.filter((name) => bodyweightExerciseSet.has(name));
-    const duration = allExerciseNames.filter((name) => durationExerciseSet.has(name));
+    const bodyweight = allExerciseNames.filter((name) =>
+      bodyweightExerciseSet.has(name),
+    );
+    const duration = allExerciseNames.filter((name) =>
+      durationExerciseSet.has(name),
+    );
     const targetExercise = selectedExercise || favorite;
     let data = null;
 
-    if (targetExercise && exerciseHistory[targetExercise] && exerciseHistory[targetExercise].length > 1) {
+    if (
+      targetExercise &&
+      exerciseHistory[targetExercise] &&
+      exerciseHistory[targetExercise].length > 1
+    ) {
       const history = exerciseHistory[targetExercise];
       const labelCount = Math.min(MAX_CHART_LABELS, history.length);
       const shownIndices = new Set(
         Array.from({ length: labelCount }, (_, index) =>
-          Math.round((index * (history.length - 1)) / (labelCount - 1))
-        )
+          Math.round((index * (history.length - 1)) / (labelCount - 1)),
+        ),
       );
       data = {
-        labels: history.map((historyItem, index) => (shownIndices.has(index) ? historyItem.date : '')),
+        labels: history.map((historyItem, index) =>
+          shownIndices.has(index) ? historyItem.date : "",
+        ),
         datasets: [{ data: history.map((historyItem) => historyItem.score) }],
       };
     }
@@ -242,8 +277,10 @@ export default function AnalyticsScreen() {
   }, [workouts, selectedExercise]);
 
   useEffect(() => {
-    if (!selectedExercise && favoriteExercise) setSelectedExercise(favoriteExercise);
-    if (!selectedMaxExercise && weightedExercises.length > 0) setSelectedMaxExercise(weightedExercises[0]);
+    if (!selectedExercise && favoriteExercise)
+      setSelectedExercise(favoriteExercise);
+    if (!selectedMaxExercise && weightedExercises.length > 0)
+      setSelectedMaxExercise(weightedExercises[0]);
     if (!selectedMaxRepsExercise && bodyweightExerciseList.length > 0) {
       setSelectedMaxRepsExercise(bodyweightExerciseList[0]);
     }
@@ -262,16 +299,18 @@ export default function AnalyticsScreen() {
   ]);
 
   const chartWidth = Math.max(244, Math.min(width - 40, 720) - 36);
-  const strengthDescription = selectedExercise && durationExercises.has(selectedExercise)
-    ? 'Max set duration in seconds over time'
-    : selectedExercise && bodyweightExercises.has(selectedExercise)
-      ? 'Max reps per session over time'
-      : 'Estimated 1RM over time';
-  const strengthUnit = selectedExercise && durationExercises.has(selectedExercise)
-    ? 'seconds'
-    : selectedExercise && bodyweightExercises.has(selectedExercise)
-      ? 'repetitions'
-      : 'estimated pounds';
+  const strengthDescription =
+    selectedExercise && durationExercises.has(selectedExercise)
+      ? "Max set duration in seconds over time"
+      : selectedExercise && bodyweightExercises.has(selectedExercise)
+        ? "Max reps per session over time"
+        : "Estimated 1RM over time";
+  const strengthUnit =
+    selectedExercise && durationExercises.has(selectedExercise)
+      ? "seconds"
+      : selectedExercise && bodyweightExercises.has(selectedExercise)
+        ? "repetitions"
+        : "estimated pounds";
   const latestChartValue = chartData?.datasets[0]?.data.at(-1);
 
   const header = (
@@ -289,12 +328,19 @@ export default function AnalyticsScreen() {
           styles.content,
           styles.stateContent,
           { paddingTop: Math.max(insets.top + 18, 36) },
-        ]}>
+        ]}
+      >
         {header}
-        <View style={styles.statePanel} accessibilityRole="progressbar" accessibilityLabel="Loading analytics">
+        <View
+          style={styles.statePanel}
+          accessibilityRole="progressbar"
+          accessibilityLabel="Loading analytics"
+        >
           <ActivityIndicator color="#e54242" size="large" />
           <Text style={styles.stateTitle}>Loading your numbers</Text>
-          <Text style={styles.stateMessage}>We’re gathering your workout history.</Text>
+          <Text style={styles.stateMessage}>
+            We’re gathering your workout history.
+          </Text>
         </View>
       </ScrollView>
     );
@@ -308,17 +354,26 @@ export default function AnalyticsScreen() {
           styles.content,
           styles.stateContent,
           { paddingTop: Math.max(insets.top + 18, 36) },
-        ]}>
+        ]}
+      >
         {header}
         <View style={styles.statePanel}>
           <Ionicons name="cloud-offline-outline" size={34} color="#e54242" />
-          <Text style={styles.stateTitle} selectable>Couldn’t load analytics</Text>
-          <Text style={styles.stateMessage} selectable>Check your connection, then try again.</Text>
+          <Text style={styles.stateTitle} selectable>
+            Couldn’t load analytics
+          </Text>
+          <Text style={styles.stateMessage} selectable>
+            Check your connection, then try again.
+          </Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Retry loading analytics"
             onPress={fetchWorkouts}
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}>
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Ionicons name="refresh" size={19} color="#fff" />
             <Text style={styles.primaryButtonText}>Try again</Text>
           </Pressable>
@@ -334,8 +389,12 @@ export default function AnalyticsScreen() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={[
         styles.content,
-        { paddingTop: Math.max(insets.top + 18, 36), paddingBottom: Math.max(insets.bottom + 40, 64) },
-      ]}>
+        {
+          paddingTop: Math.max(insets.top + 18, 36),
+          paddingBottom: Math.max(insets.bottom + 40, 64),
+        },
+      ]}
+    >
       {header}
 
       {fetchError && (
@@ -343,9 +402,15 @@ export default function AnalyticsScreen() {
           accessibilityRole="button"
           accessibilityLabel="Workout history could not be refreshed. Retry."
           onPress={fetchWorkouts}
-          style={({ pressed }) => [styles.inlineError, pressed && styles.buttonPressed]}>
+          style={({ pressed }) => [
+            styles.inlineError,
+            pressed && styles.buttonPressed,
+          ]}
+        >
           <Ionicons name="alert-circle-outline" size={21} color="#e54242" />
-          <Text style={styles.inlineErrorText} selectable>Couldn’t refresh workout history. Tap to retry.</Text>
+          <Text style={styles.inlineErrorText} selectable>
+            Couldn’t refresh workout history. Tap to retry.
+          </Text>
         </Pressable>
       )}
 
@@ -354,16 +419,23 @@ export default function AnalyticsScreen() {
           <View style={styles.emptyIcon}>
             <Ionicons name="stats-chart" size={30} color="#e54242" />
           </View>
-          <Text style={styles.stateTitle} selectable>Your progress starts with one workout</Text>
+          <Text style={styles.stateTitle} selectable>
+            Your progress starts with one workout
+          </Text>
           <Text style={styles.stateMessage} selectable>
-            Log a session and Timber will turn it into records, trends, and muscle insights.
+            Log a session and Timber will turn it into records, trends, and
+            muscle insights.
           </Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Start a workout"
             accessibilityHint="Opens the workout logger"
-            onPress={() => router.push('/active-workout')}
-            style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}>
+            onPress={() => router.push("/active-workout")}
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.buttonPressed,
+            ]}
+          >
             <Text style={styles.primaryButtonText}>Start a workout</Text>
             <Ionicons name="arrow-forward" size={19} color="#fff" />
           </Pressable>
@@ -376,14 +448,18 @@ export default function AnalyticsScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
-              <Text style={styles.eyebrow}>ALL TIME</Text>
-              <Text style={styles.sectionTitle}>Training highlights</Text>
-              <Text style={styles.sectionSubtitle}>The patterns and records from every logged workout.</Text>
+              <Text style={styles.sectionTitle}>The All Timers</Text>
             </View>
             <View style={styles.groupedPanel}>
-              <HighlightRow label="Favorite Workout Type" value={favoriteWorkoutType || 'Not available'} />
+              <HighlightRow
+                label="Favorite Workout Type"
+                value={favoriteWorkoutType || "Not available"}
+              />
               <View style={styles.divider} />
-              <HighlightRow label="Favorite Exercise" value={favoriteExercise || 'Not available'} />
+              <HighlightRow
+                label="Favorite Exercise"
+                value={favoriteExercise || "Not available"}
+              />
               {heaviestLift && (
                 <>
                   <View style={styles.divider} />
@@ -400,9 +476,11 @@ export default function AnalyticsScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
-              <Text style={styles.eyebrow}>PROGRESS</Text>
+              <Text style={styles.eyebrow}>YOUR PROGRESS</Text>
               <Text style={styles.sectionTitle}>Strength-O-Meter</Text>
-              <Text style={styles.sectionSubtitle} selectable>{strengthDescription}</Text>
+              <Text style={styles.sectionSubtitle} selectable>
+                {strengthDescription}
+              </Text>
             </View>
             <View style={styles.featurePanel}>
               <Dropdown
@@ -417,8 +495,9 @@ export default function AnalyticsScreen() {
                 <View
                   accessible
                   accessibilityRole="image"
-                  accessibilityLabel={`${selectedExercise ?? 'Selected exercise'}. ${strengthDescription}. ${chartData.datasets[0].data.length} sessions shown. Latest value ${Math.round(latestChartValue ?? 0)} ${strengthUnit}.`}
-                  style={styles.chartFrame}>
+                  accessibilityLabel={`${selectedExercise ?? "Selected exercise"}. ${strengthDescription}. ${chartData.datasets[0].data.length} sessions shown. Latest value ${Math.round(latestChartValue ?? 0)} ${strengthUnit}.`}
+                  style={styles.chartFrame}
+                >
                   <LineChart
                     data={chartData}
                     width={chartWidth}
@@ -431,10 +510,17 @@ export default function AnalyticsScreen() {
                 </View>
               ) : (
                 <View style={styles.chartEmpty}>
-                  <Ionicons name="trending-up-outline" size={28} color="#6f6f6f" />
-                  <Text style={styles.chartEmptyTitle} selectable>One more workout needed</Text>
+                  <Ionicons
+                    name="trending-up-outline"
+                    size={28}
+                    color="#6f6f6f"
+                  />
+                  <Text style={styles.chartEmptyTitle} selectable>
+                    One more workout needed
+                  </Text>
                   <Text style={styles.chartEmptyText} selectable>
-                    Log this exercise in at least two sessions to see progress over time.
+                    Log this exercise in at least two sessions to see progress
+                    over time.
                   </Text>
                 </View>
               )}
@@ -443,9 +529,10 @@ export default function AnalyticsScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
-              <Text style={styles.eyebrow}>PERSONAL BESTS</Text>
               <Text style={styles.sectionTitle}>Your best sets</Text>
-              <Text style={styles.sectionSubtitle}>Choose an exercise to see its highest recorded result.</Text>
+              <Text style={styles.sectionSubtitle}>
+                Choose an exercise to see your best set.
+              </Text>
             </View>
             <View style={styles.groupedPanel}>
               <PersonalBestRow
@@ -455,7 +542,8 @@ export default function AnalyticsScreen() {
                 selected={selectedMaxExercise}
                 onSelect={setSelectedMaxExercise}
                 value={
-                  selectedMaxExercise && maxWeights[selectedMaxExercise] !== undefined
+                  selectedMaxExercise &&
+                  maxWeights[selectedMaxExercise] !== undefined
                     ? `${maxWeights[selectedMaxExercise]} lbs`
                     : null
                 }
@@ -472,7 +560,8 @@ export default function AnalyticsScreen() {
                     selected={selectedMaxRepsExercise}
                     onSelect={setSelectedMaxRepsExercise}
                     value={
-                      selectedMaxRepsExercise && maxReps[selectedMaxRepsExercise] !== undefined
+                      selectedMaxRepsExercise &&
+                      maxReps[selectedMaxRepsExercise] !== undefined
                         ? `${maxReps[selectedMaxRepsExercise]} reps`
                         : null
                     }
@@ -491,8 +580,11 @@ export default function AnalyticsScreen() {
                     selected={selectedLongestDurationExercise}
                     onSelect={setSelectedLongestDurationExercise}
                     value={
-                      selectedLongestDurationExercise && maxDuration[selectedLongestDurationExercise] !== undefined
-                        ? formatDuration(maxDuration[selectedLongestDurationExercise])
+                      selectedLongestDurationExercise &&
+                      maxDuration[selectedLongestDurationExercise] !== undefined
+                        ? formatDuration(
+                            maxDuration[selectedLongestDurationExercise],
+                          )
                         : null
                     }
                     emptyMessage="No duration records yet."
@@ -519,12 +611,25 @@ function HighlightRow({
   numeric?: boolean;
 }) {
   return (
-    <View style={styles.highlightRow} accessible accessibilityLabel={`${label}. ${detail ? `${detail}. ` : ''}${value}`}>
+    <View
+      style={styles.highlightRow}
+      accessible
+      accessibilityLabel={`${label}. ${detail ? `${detail}. ` : ""}${value}`}
+    >
       <View style={styles.highlightCopy}>
         <Text style={styles.metricLabel}>{label}</Text>
-        {detail && <Text style={styles.metricDetail} selectable>{detail}</Text>}
+        {detail && (
+          <Text style={styles.metricDetail} selectable>
+            {detail}
+          </Text>
+        )}
       </View>
-      <Text style={[styles.highlightValue, numeric && styles.numeric]} selectable>{value}</Text>
+      <Text
+        style={[styles.highlightValue, numeric && styles.numeric]}
+        selectable
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -553,7 +658,11 @@ function PersonalBestRow({
           <Text style={styles.metricLabel}>{label}</Text>
           <Text style={styles.metricDetail}>{description}</Text>
         </View>
-        {value && <Text style={[styles.personalBestValue, styles.numeric]} selectable>{value}</Text>}
+        {value && (
+          <Text style={[styles.personalBestValue, styles.numeric]} selectable>
+            {value}
+          </Text>
+        )}
       </View>
       {options.length > 0 ? (
         <Dropdown
@@ -564,7 +673,9 @@ function PersonalBestRow({
           accessibilityLabel={`Exercise for ${label}`}
         />
       ) : (
-        <Text style={styles.emptyMessage} selectable>{emptyMessage}</Text>
+        <Text style={styles.emptyMessage} selectable>
+          {emptyMessage}
+        </Text>
       )}
     </View>
   );
@@ -578,12 +689,12 @@ function formatDuration(seconds: number) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
+    backgroundColor: "#0f0f0f",
   },
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: 760,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: 20,
     gap: 32,
   },
@@ -594,17 +705,17 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   pageTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 34,
     lineHeight: 40,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.8,
   },
   pageSubtitle: {
-    color: '#999',
+    color: "#999",
     fontSize: 17,
     lineHeight: 24,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   section: {
     gap: 14,
@@ -613,55 +724,55 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   eyebrow: {
-    color: '#e56f6f',
+    color: "#e56f6f",
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1.4,
   },
   sectionTitle: {
-    color: '#f5f5f5',
+    color: "#f5f5f5",
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.35,
   },
   sectionSubtitle: {
-    color: '#999',
+    color: "#999",
     fontSize: 16,
     lineHeight: 22,
   },
   groupedPanel: {
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: 18,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#2b2b2b',
-    backgroundColor: '#181818',
+    borderColor: "#2b2b2b",
+    backgroundColor: "#181818",
   },
   featurePanel: {
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: 18,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#382424',
-    backgroundColor: '#171717',
+    borderColor: "#382424",
+    backgroundColor: "#171717",
     padding: 18,
     gap: 18,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: '#303030',
+    backgroundColor: "#303030",
     marginHorizontal: 18,
   },
   highlightRow: {
     minHeight: 88,
     paddingHorizontal: 18,
     paddingVertical: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
     gap: 18,
   },
   highlightCopy: {
@@ -669,36 +780,36 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   metricLabel: {
-    color: '#f1f1f1',
+    color: "#f1f1f1",
     fontSize: 17,
     lineHeight: 22,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   metricDetail: {
-    color: '#919191',
+    color: "#919191",
     fontSize: 14,
     lineHeight: 20,
   },
   highlightValue: {
-    maxWidth: '53%',
-    color: '#e54242',
+    maxWidth: "53%",
+    color: "#e54242",
     fontSize: 21,
     lineHeight: 27,
-    fontWeight: '800',
-    textAlign: 'right',
+    fontWeight: "800",
+    textAlign: "right",
   },
   numeric: {
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   personalBestRow: {
     padding: 18,
     gap: 14,
   },
   personalBestHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
     gap: 16,
   },
   personalBestCopy: {
@@ -707,22 +818,22 @@ const styles = StyleSheet.create({
   },
   personalBestValue: {
     flexShrink: 0,
-    color: '#e54242',
+    color: "#e54242",
     fontSize: 25,
     lineHeight: 30,
-    fontWeight: '800',
-    textAlign: 'right',
+    fontWeight: "800",
+    textAlign: "right",
   },
   emptyMessage: {
-    color: '#a0a0a0',
+    color: "#a0a0a0",
     fontSize: 15,
     lineHeight: 21,
   },
   chartFrame: {
-    alignItems: 'center',
-    overflow: 'hidden',
+    alignItems: "center",
+    overflow: "hidden",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
   },
   chart: {
     borderRadius: 14,
@@ -730,97 +841,97 @@ const styles = StyleSheet.create({
   },
   chartEmpty: {
     minHeight: 190,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 24,
     gap: 8,
   },
   chartEmptyTitle: {
-    color: '#e8e8e8',
+    color: "#e8e8e8",
     fontSize: 18,
     lineHeight: 24,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontWeight: "700",
+    textAlign: "center",
   },
   chartEmptyText: {
-    color: '#969696',
+    color: "#969696",
     fontSize: 15,
     lineHeight: 21,
-    textAlign: 'center',
+    textAlign: "center",
   },
   statePanel: {
     flex: 1,
     minHeight: 330,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 24,
     gap: 12,
   },
   emptyIcon: {
     width: 64,
     height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 18,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#3a2424',
-    backgroundColor: '#1e1515',
+    borderColor: "#3a2424",
+    backgroundColor: "#1e1515",
   },
   stateTitle: {
-    color: '#f2f2f2',
+    color: "#f2f2f2",
     fontSize: 22,
     lineHeight: 28,
-    fontWeight: '800',
-    textAlign: 'center',
+    fontWeight: "800",
+    textAlign: "center",
   },
   stateMessage: {
     maxWidth: 420,
-    color: '#9d9d9d',
+    color: "#9d9d9d",
     fontSize: 16,
     lineHeight: 23,
-    textAlign: 'center',
+    textAlign: "center",
   },
   primaryButton: {
     minHeight: 50,
     marginTop: 8,
     borderRadius: 14,
-    borderCurve: 'continuous',
-    backgroundColor: '#e54242',
+    borderCurve: "continuous",
+    backgroundColor: "#e54242",
     paddingHorizontal: 20,
     paddingVertical: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 9,
   },
   primaryButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   buttonPressed: {
     opacity: 0.72,
   },
   inlineError: {
     minHeight: 52,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#4a2929',
-    backgroundColor: '#211616',
+    borderColor: "#4a2929",
+    backgroundColor: "#211616",
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 10,
   },
   inlineErrorText: {
     flex: 1,
-    color: '#efb1b1',
+    color: "#efb1b1",
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

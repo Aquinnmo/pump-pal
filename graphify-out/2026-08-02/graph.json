@@ -490,8 +490,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "app_web_output",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "output"
     },
     {
@@ -545,7 +545,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_router",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "expo-router"
     },
@@ -556,8 +556,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_react_native_community_datetimepicker",
-      "community": 3,
-      "community_name": "expo",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "@react-native-community/datetimepicker"
     },
     {
@@ -688,8 +688,8 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "app_expo_updates",
-      "community": 88,
-      "community_name": "SettingsAppScreen",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "updates"
     },
     {
@@ -699,8 +699,8 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "app_updates_url",
-      "community": 88,
-      "community_name": "SettingsAppScreen",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "url"
     },
     {
@@ -710,7 +710,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_layout",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "(auth)/_layout.tsx"
     },
@@ -721,7 +721,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "app_auth_layout_authlayout",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "authlayout()"
     },
@@ -732,7 +732,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_phone_auth",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "phone-auth.tsx"
     },
@@ -743,7 +743,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "app_auth_phone_auth_region_to_calling_code",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "region_to_calling_code"
     },
@@ -754,7 +754,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "app_auth_phone_auth_getcallingcode",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "getcallingcode()"
     },
@@ -765,7 +765,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "app_auth_phone_auth_phoneauthscreen",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "phoneauthscreen()"
     },
@@ -776,7 +776,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "app_auth_phone_auth_styles",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
@@ -788,7 +788,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_in",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "sign-in.tsx"
     },
     {
@@ -799,7 +799,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_in_signinscreen",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "signinscreen()"
     },
     {
@@ -810,7 +810,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_in_styles",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -821,7 +821,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_up",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "sign-up.tsx"
     },
     {
@@ -832,7 +832,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_up_signupscreen",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "signupscreen()"
     },
     {
@@ -843,7 +843,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_up_styles",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -854,7 +854,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "welcome.tsx"
     },
     {
@@ -865,7 +865,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_slide",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "slide"
     },
     {
@@ -876,7 +876,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_slides",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "slides"
     },
     {
@@ -887,7 +887,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_welcomescreen",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "welcomescreen()"
     },
     {
@@ -898,7 +898,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_styles",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -916,7 +916,7 @@
       "label": "TabLayout()",
       "file_type": "code",
       "source_file": "app/(tabs)/_layout.tsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "_origin": "ast",
       "id": "app_tabs_layout_tablayout",
       "community": 23,
@@ -931,40 +931,73 @@
       "_origin": "ast",
       "id": "app_tabs_analytics",
       "community": 24,
-      "community_name": "useAuth",
+      "community_name": "analytics.tsx",
       "norm_label": "analytics.tsx"
     },
     {
       "label": "chartConfig",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L24",
+      "source_location": "L25",
       "_origin": "ast",
       "id": "app_tabs_analytics_chartconfig",
       "community": 24,
-      "community_name": "useAuth",
+      "community_name": "analytics.tsx",
       "norm_label": "chartconfig"
     },
     {
       "label": "AnalyticsScreen()",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L41",
+      "source_location": "L46",
       "_origin": "ast",
       "id": "app_tabs_analytics_analyticsscreen",
       "community": 24,
-      "community_name": "useAuth",
+      "community_name": "analytics.tsx",
       "norm_label": "analyticsscreen()"
+    },
+    {
+      "label": "HighlightRow()",
+      "file_type": "code",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L510",
+      "_origin": "ast",
+      "id": "app_tabs_analytics_highlightrow",
+      "community": 24,
+      "community_name": "analytics.tsx",
+      "norm_label": "highlightrow()"
+    },
+    {
+      "label": "PersonalBestRow()",
+      "file_type": "code",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L532",
+      "_origin": "ast",
+      "id": "app_tabs_analytics_personalbestrow",
+      "community": 24,
+      "community_name": "analytics.tsx",
+      "norm_label": "personalbestrow()"
+    },
+    {
+      "label": "formatDuration()",
+      "file_type": "code",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L573",
+      "_origin": "ast",
+      "id": "app_tabs_analytics_formatduration",
+      "community": 24,
+      "community_name": "analytics.tsx",
+      "norm_label": "formatduration()"
     },
     {
       "label": "styles",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L412",
+      "source_location": "L578",
       "_origin": "ast",
       "id": "app_tabs_analytics_styles",
       "community": 24,
-      "community_name": "useAuth",
+      "community_name": "analytics.tsx",
       "norm_label": "styles"
     },
     {
@@ -974,8 +1007,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_index",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "index.tsx"
     },
     {
@@ -985,8 +1018,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "app_tabs_index_homescreen",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "homescreen()"
     },
     {
@@ -996,8 +1029,8 @@
       "source_location": "L273",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "styles"
     },
     {
@@ -1172,7 +1205,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_settings",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "settings.tsx"
     },
@@ -1183,7 +1216,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "app_tabs_settings_settingsscreen",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "settingsscreen()"
     },
@@ -1194,7 +1227,7 @@
       "source_location": "L121",
       "_origin": "ast",
       "id": "app_tabs_settings_styles",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "styles"
     },
@@ -1205,8 +1238,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_workouts",
-      "community": 24,
-      "community_name": "useAuth",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workouts.tsx"
     },
     {
@@ -1216,8 +1249,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_tabs_workouts_workoutsscreen",
-      "community": 24,
-      "community_name": "useAuth",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutsscreen()"
     },
     {
@@ -1227,8 +1260,8 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "app_tabs_workouts_styles",
-      "community": 24,
-      "community_name": "useAuth",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "styles"
     },
     {
@@ -1239,7 +1272,7 @@
       "_origin": "ast",
       "id": "app_layout",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "app/_layout.tsx"
     },
     {
@@ -1250,7 +1283,7 @@
       "_origin": "ast",
       "id": "app_layout_unstable_settings",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "unstable_settings"
     },
     {
@@ -1261,7 +1294,7 @@
       "_origin": "ast",
       "id": "app_layout_rootlayoutnav",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "rootlayoutnav()"
     },
     {
@@ -1272,7 +1305,7 @@
       "_origin": "ast",
       "id": "app_layout_rootlayout",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "rootlayout()"
     },
     {
@@ -1282,8 +1315,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_active_workout",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "active-workout.tsx"
     },
     {
@@ -1293,8 +1326,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "app_active_workout_formatelapsed",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "formatelapsed()"
     },
     {
@@ -1304,8 +1337,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "app_active_workout_workouttimer",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "workouttimer()"
     },
     {
@@ -1315,8 +1348,8 @@
       "source_location": "L79",
       "_origin": "ast",
       "id": "app_active_workout_activeworkoutscreen",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "activeworkoutscreen()"
     },
     {
@@ -1326,8 +1359,8 @@
       "source_location": "L566",
       "_origin": "ast",
       "id": "app_active_workout_styles",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "styles"
     },
     {
@@ -1337,7 +1370,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_modal",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "modal.tsx"
     },
@@ -1348,7 +1381,7 @@
       "source_location": "L42",
       "_origin": "ast",
       "id": "app_modal_addworkoutmodal",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "addworkoutmodal()"
     },
@@ -1359,7 +1392,7 @@
       "source_location": "L734",
       "_origin": "ast",
       "id": "app_modal_styles",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "styles"
     },
@@ -1370,8 +1403,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_planned_workouts",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "planned-workouts.tsx"
     },
     {
@@ -1381,8 +1414,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "app_planned_workouts_queueordercachekey",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "queueordercachekey()"
     },
     {
@@ -1392,8 +1425,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_planned_workouts_plannedworkoutsscreen",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "plannedworkoutsscreen()"
     },
     {
@@ -1403,8 +1436,8 @@
       "source_location": "L301",
       "_origin": "ast",
       "id": "app_planned_workouts_styles",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "styles"
     },
     {
@@ -1414,8 +1447,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_set_split",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "set-split.tsx"
     },
     {
@@ -1425,8 +1458,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "app_set_split_setsplitscreen",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "setsplitscreen()"
     },
     {
@@ -1436,8 +1469,8 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "app_set_split_styles",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1448,7 +1481,7 @@
       "_origin": "ast",
       "id": "app_settings_account",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "settings-account.tsx"
     },
     {
@@ -1458,7 +1491,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "app_settings_account_settingsaccountscreen",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "settingsaccountscreen()"
     },
@@ -1470,7 +1503,7 @@
       "_origin": "ast",
       "id": "app_settings_account_styles",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1481,7 +1514,7 @@
       "_origin": "ast",
       "id": "app_settings_app",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "settings-app.tsx"
     },
     {
@@ -1491,8 +1524,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "app_settings_app_settingsappscreen",
-      "community": 88,
-      "community_name": "SettingsAppScreen",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "settingsappscreen()"
     },
     {
@@ -1503,7 +1536,7 @@
       "_origin": "ast",
       "id": "app_settings_app_styles",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1612,8 +1645,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_settings_split",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "settings-split.tsx"
     },
     {
@@ -1623,8 +1656,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "app_settings_split_settingssplitscreen",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "settingssplitscreen()"
     },
     {
@@ -1634,8 +1667,8 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "app_settings_split_styles",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1678,7 +1711,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "firebase-recaptcha-modal.tsx"
     },
@@ -1689,7 +1722,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_firebaserecaptchaverifiermodalref",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "firebaserecaptchaverifiermodalref"
     },
@@ -1700,7 +1733,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_props",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "props"
     },
@@ -1711,7 +1744,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_buildhtml",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "buildhtml()"
     },
@@ -1722,7 +1755,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_firebaserecaptchaverifiermodal",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "firebaserecaptchaverifiermodal"
     },
@@ -1733,7 +1766,7 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_styles",
-      "community": 77,
+      "community": 26,
       "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
@@ -1799,8 +1832,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_props",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 14,
+      "community_name": "muscle-analysis.ts",
       "norm_label": "props"
     },
     {
@@ -1848,10 +1881,21 @@
       "norm_label": "muscleinsightcards()"
     },
     {
+      "label": "InsightRow()",
+      "file_type": "code",
+      "source_file": "components/muscle-insight-cards.tsx",
+      "source_location": "L180",
+      "_origin": "ast",
+      "id": "components_muscle_insight_cards_insightrow",
+      "community": 14,
+      "community_name": "muscle-analysis.ts",
+      "norm_label": "insightrow()"
+    },
+    {
       "label": "styles",
       "file_type": "code",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L191",
+      "source_location": "L223",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_styles",
       "community": 14,
@@ -1987,7 +2031,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timber-auth-shell.tsx"
     },
     {
@@ -1998,7 +2042,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberauthshellprops",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberauthshellprops"
     },
     {
@@ -2009,7 +2053,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberbrandprops",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberbrandprops"
     },
     {
@@ -2020,7 +2064,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberauthshell",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberauthshell()"
     },
     {
@@ -2031,7 +2075,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberbrand",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberbrand()"
     },
     {
@@ -2042,7 +2086,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberauthstyles",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberauthstyles"
     },
     {
@@ -2053,7 +2097,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_styles",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -2064,7 +2108,7 @@
       "_origin": "ast",
       "id": "components_timber_logo",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timber-logo.tsx"
     },
     {
@@ -2075,7 +2119,7 @@
       "_origin": "ast",
       "id": "components_timber_logo_logs",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "logs"
     },
     {
@@ -2086,7 +2130,7 @@
       "_origin": "ast",
       "id": "components_timber_logo_props",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "props"
     },
     {
@@ -2097,8 +2141,41 @@
       "_origin": "ast",
       "id": "components_timber_logo_timberlogo",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberlogo()"
+    },
+    {
+      "label": "timber-tab-icon.tsx",
+      "file_type": "code",
+      "source_file": "components/timber-tab-icon.tsx",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "components_timber_tab_icon",
+      "community": 23,
+      "community_name": "(tabs)/_layout.tsx",
+      "norm_label": "timber-tab-icon.tsx"
+    },
+    {
+      "label": "TimberTabIconProps",
+      "file_type": "code",
+      "source_file": "components/timber-tab-icon.tsx",
+      "source_location": "L3",
+      "_origin": "ast",
+      "id": "components_timber_tab_icon_timbertabiconprops",
+      "community": 23,
+      "community_name": "(tabs)/_layout.tsx",
+      "norm_label": "timbertabiconprops"
+    },
+    {
+      "label": "TimberTabIcon()",
+      "file_type": "code",
+      "source_file": "components/timber-tab-icon.tsx",
+      "source_location": "L9",
+      "_origin": "ast",
+      "id": "components_timber_tab_icon_timbertabicon",
+      "community": 23,
+      "community_name": "(tabs)/_layout.tsx",
+      "norm_label": "timbertabicon()"
     },
     {
       "label": "collapsible.tsx",
@@ -2174,7 +2251,7 @@
       "_origin": "ast",
       "id": "components_ui_drag_handle",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "drag-handle.tsx"
     },
     {
@@ -2185,7 +2262,7 @@
       "_origin": "ast",
       "id": "components_ui_drag_handle_draghandle",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draghandle()"
     },
     {
@@ -2196,7 +2273,7 @@
       "_origin": "ast",
       "id": "components_ui_drag_handle_styles",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -2206,19 +2283,19 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_ui_dropdown",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 24,
+      "community_name": "analytics.tsx",
       "norm_label": "dropdown.tsx"
     },
     {
       "label": "DropdownProps",
       "file_type": "code",
       "source_file": "components/ui/dropdown.tsx",
-      "source_location": "L27",
+      "source_location": "L26",
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdownprops",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 24,
+      "community_name": "analytics.tsx",
       "norm_label": "dropdownprops"
     },
     {
@@ -2228,19 +2305,19 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdown",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 24,
+      "community_name": "analytics.tsx",
       "norm_label": "dropdown()"
     },
     {
       "label": "styles",
       "file_type": "code",
       "source_file": "components/ui/dropdown.tsx",
-      "source_location": "L153",
+      "source_location": "L169",
       "_origin": "ast",
       "id": "components_ui_dropdown_styles",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 24,
+      "community_name": "analytics.tsx",
       "norm_label": "styles"
     },
     {
@@ -2251,7 +2328,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise-picker.tsx"
     },
     {
@@ -2262,7 +2339,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_compareexerciselabels",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "compareexerciselabels()"
     },
     {
@@ -2273,7 +2350,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerselection",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisepickerselection"
     },
     {
@@ -2284,7 +2361,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheethandle",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "sheethandle"
     },
     {
@@ -2295,7 +2372,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheetprops",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "sheetprops"
     },
     {
@@ -2306,7 +2383,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheet",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "sheet"
     },
     {
@@ -2317,7 +2394,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerprops",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisepickerprops"
     },
     {
@@ -2328,7 +2405,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepicker",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisepicker()"
     },
     {
@@ -2339,7 +2416,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_styles",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -2515,7 +2592,7 @@
       "_origin": "ast",
       "id": "components_ui_toast",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "toast.tsx"
     },
     {
@@ -2526,7 +2603,7 @@
       "_origin": "ast",
       "id": "components_ui_toast_toastprops",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "toastprops"
     },
     {
@@ -2537,7 +2614,7 @@
       "_origin": "ast",
       "id": "components_ui_toast_toast",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "toast()"
     },
     {
@@ -2548,7 +2625,7 @@
       "_origin": "ast",
       "id": "components_ui_toast_styles",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -2635,8 +2712,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_workout_card",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout-card.tsx"
     },
     {
@@ -2646,8 +2723,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "components_workout_card_workoutcardprops",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutcardprops"
     },
     {
@@ -2657,8 +2734,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_workout_card_workoutcard",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutcard()"
     },
     {
@@ -2668,8 +2745,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "components_workout_card_styles",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "styles"
     },
     {
@@ -2680,7 +2757,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise-card.tsx"
     },
     {
@@ -2691,7 +2768,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_exercise_types",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise_types"
     },
     {
@@ -2702,7 +2779,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_setfield",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "setfield"
     },
     {
@@ -2713,7 +2790,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_exercisecardprops",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisecardprops"
     },
     {
@@ -2724,7 +2801,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_exercisecard",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisecard()"
     },
     {
@@ -2735,7 +2812,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_styles",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -2746,7 +2823,7 @@
       "_origin": "ast",
       "id": "config_firebase",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "firebase.ts"
     },
     {
@@ -2757,7 +2834,7 @@
       "_origin": "ast",
       "id": "config_firebase_firebaseconfig",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "firebaseconfig"
     },
     {
@@ -2768,7 +2845,7 @@
       "_origin": "ast",
       "id": "config_firebase_auth",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "auth"
     },
     {
@@ -2779,7 +2856,7 @@
       "_origin": "ast",
       "id": "config_firebase_db",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "db"
     },
     {
@@ -2855,7 +2932,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "constants_ai_config_formataierror",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "formataierror()"
     },
@@ -2899,8 +2976,8 @@
       "source_location": "L53",
       "_origin": "ast",
       "id": "constants_ai_config_getaimodel",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "getaimodel()"
     },
     {
@@ -3108,8 +3185,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_options",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "split-options.ts"
     },
     {
@@ -3119,8 +3196,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_options_split_options",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "split_options"
     },
     {
@@ -3130,8 +3207,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "constants_split_options_splitoption",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "splitoption"
     },
     {
@@ -3141,8 +3218,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "constants_split_options_issplitoption",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "issplitoption()"
     },
     {
@@ -3152,8 +3229,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_workout_names",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "split-workout-names.ts"
     },
     {
@@ -3163,8 +3240,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "constants_split_workout_names_split_workout_names",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "split_workout_names"
     },
     {
@@ -3208,7 +3285,7 @@
       "_origin": "ast",
       "id": "context_auth_context",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "auth-context.tsx"
     },
     {
@@ -3219,7 +3296,7 @@
       "_origin": "ast",
       "id": "context_auth_context_authcontexttype",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "authcontexttype"
     },
     {
@@ -3230,7 +3307,7 @@
       "_origin": "ast",
       "id": "context_auth_context_authcontext",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "authcontext"
     },
     {
@@ -3241,7 +3318,7 @@
       "_origin": "ast",
       "id": "context_auth_context_authprovider",
       "community": 15,
-      "community_name": "auth-context.tsx",
+      "community_name": "useAuth",
       "norm_label": "authprovider()"
     },
     {
@@ -3251,7 +3328,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "context_auth_context_useauth",
-      "community": 24,
+      "community": 15,
       "community_name": "useAuth",
       "norm_label": "useauth()"
     },
@@ -3329,7 +3406,7 @@
       "_origin": "ast",
       "id": "hooks_use_draft_exercises",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "use-draft-exercises.ts"
     },
     {
@@ -3340,7 +3417,7 @@
       "_origin": "ast",
       "id": "hooks_use_draft_exercises_cascadesetfield",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "cascadesetfield()"
     },
     {
@@ -3350,7 +3427,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "hooks_use_draft_exercises_usedraftexercises",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "usedraftexercises()"
     },
@@ -3361,7 +3438,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "hooks_use_exercise_catalog",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "use-exercise-catalog.ts"
     },
@@ -3372,7 +3449,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "hooks_use_exercise_catalog_useexercisecatalog",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "useexercisecatalog()"
     },
@@ -3922,8 +3999,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "package_dependencies_ai_sdk_google",
-      "community": 6,
-      "community_name": "dependencies",
+      "community": 130,
+      "community_name": "@ai-sdk/google",
       "norm_label": "@ai-sdk/google"
     },
     {
@@ -3933,8 +4010,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ai_sdk_google",
-      "community": 6,
-      "community_name": "dependencies",
+      "community": 130,
+      "community_name": "@ai-sdk/google",
       "norm_label": "@ai-sdk/google"
     },
     {
@@ -4846,8 +4923,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "package_dependencies_react_native_web",
-      "community": 121,
-      "community_name": "react-native-web",
+      "community": 6,
+      "community_name": "dependencies",
       "norm_label": "react-native-web"
     },
     {
@@ -4857,8 +4934,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "react_native_web",
-      "community": 121,
-      "community_name": "react-native-web",
+      "community": 6,
+      "community_name": "dependencies",
       "norm_label": "react-native-web"
     },
     {
@@ -8059,7 +8136,7 @@
       "_origin": "ast",
       "id": "types_workout",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "workout.ts"
     },
     {
@@ -8070,7 +8147,7 @@
       "_origin": "ast",
       "id": "types_workout_trackingmode",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "trackingmode"
     },
     {
@@ -8081,7 +8158,7 @@
       "_origin": "ast",
       "id": "types_workout_performedset",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "performedset"
     },
     {
@@ -8092,7 +8169,7 @@
       "_origin": "ast",
       "id": "types_workout_performedexercise",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "performedexercise"
     },
     {
@@ -8103,7 +8180,7 @@
       "_origin": "ast",
       "id": "types_workout_migrationsource",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "migrationsource"
     },
     {
@@ -8114,7 +8191,7 @@
       "_origin": "ast",
       "id": "types_workout_workoutstatus",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "workoutstatus"
     },
     {
@@ -8124,8 +8201,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "types_workout_workout",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout"
     },
     {
@@ -8136,7 +8213,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisevariation",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisevariation"
     },
     {
@@ -8146,7 +8223,7 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "types_workout_catalogexercise",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "catalogexercise"
     },
@@ -8157,7 +8234,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "id": "types_workout_exercisecatalogmeta",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "exercisecatalogmeta"
     },
@@ -8169,7 +8246,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisesearchoption",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisesearchoption"
     },
     {
@@ -8180,7 +8257,7 @@
       "_origin": "ast",
       "id": "types_workout_exerciseref",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exerciseref"
     },
     {
@@ -8191,7 +8268,7 @@
       "_origin": "ast",
       "id": "types_workout_recentexercise",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "recentexercise"
     },
     {
@@ -8202,7 +8279,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisetype",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisetype"
     },
     {
@@ -8213,7 +8290,7 @@
       "_origin": "ast",
       "id": "types_workout_draftset",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draftset"
     },
     {
@@ -8224,7 +8301,7 @@
       "_origin": "ast",
       "id": "types_workout_draftexerciserow",
       "community": 76,
-      "community_name": "modal.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draftexerciserow"
     },
     {
@@ -8234,8 +8311,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_alert",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "alert.ts"
     },
     {
@@ -8245,8 +8322,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "utils_alert_showalert",
-      "community": 27,
-      "community_name": "set-split.tsx",
+      "community": 15,
+      "community_name": "useAuth",
       "norm_label": "showalert()"
     },
     {
@@ -8256,7 +8333,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_create_pending_exercise",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "create-pending-exercise.ts"
     },
@@ -8267,7 +8344,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "utils_create_pending_exercise_reserveexerciseid",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "reserveexerciseid()"
     },
@@ -8278,7 +8355,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "utils_create_pending_exercise_creatependingexercise",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "creatependingexercise()"
     },
@@ -8333,7 +8410,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_exercise_catalog",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "exercise-catalog.ts"
     },
@@ -8344,7 +8421,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "utils_exercise_catalog_readcache",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "readcache()"
     },
@@ -8355,7 +8432,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "utils_exercise_catalog_writecache",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "writecache()"
     },
@@ -8366,7 +8443,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "utils_exercise_catalog_loadcatalog",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "loadcatalog()"
     },
@@ -8377,7 +8454,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "utils_exercise_catalog_slugify",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "slugify()"
     },
@@ -8388,7 +8465,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "utils_exercise_catalog_tokenize",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "tokenize()"
     },
@@ -8399,7 +8476,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "utils_exercise_catalog_buildsearchoptions",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "buildsearchoptions()"
     },
@@ -8410,7 +8487,7 @@
       "source_location": "L94",
       "_origin": "ast",
       "id": "utils_exercise_catalog_ranksearchoptions",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "ranksearchoptions()"
     },
@@ -8422,7 +8499,7 @@
       "_origin": "ast",
       "id": "utils_firebase_errors",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "firebase-errors.ts"
     },
     {
@@ -8433,7 +8510,7 @@
       "_origin": "ast",
       "id": "utils_firebase_errors_firebase_error_map",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "firebase_error_map"
     },
     {
@@ -8444,7 +8521,7 @@
       "_origin": "ast",
       "id": "utils_firebase_errors_getfriendlyautherror",
       "community": 26,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "getfriendlyautherror()"
     },
     {
@@ -8465,8 +8542,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "utils_injuries_getongoinginjuryids",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "getongoinginjuryids()"
     },
     {
@@ -8641,8 +8718,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_predict_next_workout",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "predict-next-workout.ts"
     },
     {
@@ -8652,8 +8729,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_predict_next_workout_predictworkoutaftername",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "predictworkoutaftername()"
     },
     {
@@ -8663,8 +8740,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "utils_predict_next_workout_predictnextworkoutname",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "predictnextworkoutname()"
     },
     {
@@ -8795,8 +8872,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_conversion",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout-conversion.ts"
     },
     {
@@ -8806,7 +8883,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "utils_workout_conversion_makeuid",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "makeuid()"
     },
@@ -8817,8 +8894,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "utils_workout_conversion_expanddrafttosets",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "expanddrafttosets()"
     },
     {
@@ -8828,7 +8905,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "utils_workout_conversion_collapsesetstodraft",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "collapsesetstodraft()"
     },
@@ -8839,8 +8916,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "utils_workout_conversion_buildperformedexercise",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "buildperformedexercise()"
     },
     {
@@ -8850,8 +8927,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "utils_workout_conversion_exerciselabel",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "exerciselabel()"
     },
     {
@@ -8861,8 +8938,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "utils_workout_conversion_isdurationexercise",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "isdurationexercise()"
     },
     {
@@ -8872,8 +8949,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "utils_workout_conversion_fmtduration",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "fmtduration()"
     },
     {
@@ -8883,8 +8960,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "utils_workout_conversion_holdsuffix",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "holdsuffix()"
     },
     {
@@ -8894,8 +8971,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "utils_workout_conversion_weightsuffix",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "weightsuffix()"
     },
     {
@@ -8905,8 +8982,8 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "utils_workout_conversion_samedisplayedset",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "samedisplayedset()"
     },
     {
@@ -8916,8 +8993,8 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercisesetgroups",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "summarizeperformedexercisesetgroups()"
     },
     {
@@ -8927,8 +9004,8 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercise",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "summarizeperformedexercise()"
     },
     {
@@ -8938,8 +9015,8 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "utils_workout_conversion_workoutvolume",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutvolume()"
     },
     {
@@ -8949,8 +9026,8 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "utils_workout_conversion_workouttotalreps",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 88,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workouttotalreps()"
     },
     {
@@ -8960,8 +9037,8 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "utils_workout_conversion_todateobj",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "todateobj()"
     },
     {
@@ -8971,7 +9048,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "utils_workout_conversion_recentexercisesforday",
-      "community": 76,
+      "community": 27,
       "community_name": "modal.tsx",
       "norm_label": "recentexercisesforday()"
     },
@@ -9048,8 +9125,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_notification",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "workout-notification.ts"
     },
     {
@@ -9059,8 +9136,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "utils_workout_notification_workoutsegment",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "workoutsegment"
     },
     {
@@ -9081,8 +9158,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "utils_workout_notification_ensureworkoutchannel",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "ensureworkoutchannel()"
     },
     {
@@ -9092,8 +9169,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "utils_workout_notification_requestnotificationpermission",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "requestnotificationpermission()"
     },
     {
@@ -9103,8 +9180,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "utils_workout_notification_showworkoutnotification",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "showworkoutnotification()"
     },
     {
@@ -9114,8 +9191,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "utils_workout_notification_dismissworkoutnotification",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 121,
+      "community_name": "active-workout.tsx",
       "norm_label": "dismissworkoutnotification()"
     },
     {
@@ -9125,8 +9202,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_suggestions",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "workout-suggestions.ts"
     },
     {
@@ -9136,8 +9213,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "utils_workout_suggestions_generatesplitworkoutnames",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "generatesplitworkoutnames()"
     },
     {
@@ -9147,8 +9224,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexercise",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "suggestedexercise"
     },
     {
@@ -9158,8 +9235,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexerciseschema",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "suggestedexerciseschema"
     },
     {
@@ -9169,8 +9246,8 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestworkoutcompletion",
-      "community": 76,
-      "community_name": "modal.tsx",
+      "community": 77,
+      "community_name": "toDateObj",
       "norm_label": "suggestworkoutcompletion()"
     },
     {
@@ -11735,7 +11812,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/_layout.tsx",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_layout",
@@ -12494,7 +12571,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/_layout.tsx",
-      "source_location": "L5",
+      "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_layout",
@@ -12526,12 +12603,36 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/_layout.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_layout",
+      "target": "components_timber_tab_icon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/_layout.tsx",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_layout",
+      "target": "components_timber_tab_icon_timbertabicon",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "indirect_call",
       "context": "collection",
       "confidence": "INFERRED",
       "confidence_score": 0.8,
       "source_file": "app/(tabs)/_layout.tsx",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_layout_tablayout",
@@ -12541,7 +12642,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L41",
+      "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12552,7 +12653,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L24",
+      "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12563,7 +12664,40 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L412",
+      "source_location": "L573",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics",
+      "target": "app_tabs_analytics_formatduration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L510",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics",
+      "target": "app_tabs_analytics_highlightrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L532",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics",
+      "target": "app_tabs_analytics_personalbestrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L578",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12742,9 +12876,21 @@
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L495",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics_analyticsscreen",
+      "target": "app_tabs_analytics_formatduration",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L42",
+      "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -12756,7 +12902,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L102",
+      "source_location": "L143",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -12768,7 +12914,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L110",
+      "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -12780,7 +12926,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L93",
+      "source_location": "L134",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -17137,6 +17283,17 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
+      "source_location": "L180",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "components_muscle_insight_cards",
+      "target": "components_muscle_insight_cards_insightrow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/muscle-insight-cards.tsx",
       "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
@@ -17181,7 +17338,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L191",
+      "source_location": "L223",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards",
@@ -17204,7 +17361,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L2",
+      "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards",
@@ -17216,7 +17373,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L2",
+      "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards",
@@ -17228,7 +17385,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L2",
+      "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards",
@@ -17240,7 +17397,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L1",
+      "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards",
@@ -17252,7 +17409,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L1",
+      "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards",
@@ -17348,7 +17505,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L47",
+      "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards_muscleinsightcards",
@@ -17361,7 +17518,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L78",
+      "source_location": "L73",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards_muscleinsightcards",
@@ -17385,7 +17542,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/muscle-insight-cards.tsx",
-      "source_location": "L71",
+      "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_insight_cards_muscleinsightcards",
@@ -17797,6 +17954,28 @@
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
+      "source_file": "components/timber-tab-icon.tsx",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "components_timber_tab_icon",
+      "target": "components_timber_tab_icon_timbertabicon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "components/timber-tab-icon.tsx",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "components_timber_tab_icon",
+      "target": "components_timber_tab_icon_timbertabiconprops",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "components/ui/collapsible.tsx",
       "source_location": "L10",
       "weight": 1.0,
@@ -17971,7 +18150,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/dropdown.tsx",
-      "source_location": "L27",
+      "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_ui_dropdown",
@@ -17982,7 +18161,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "components/ui/dropdown.tsx",
-      "source_location": "L153",
+      "source_location": "L169",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_ui_dropdown",
@@ -30260,5 +30439,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "4857e08d85979c71e0c9eabf124f5cc786ded47b"
+  "built_at_commit": "b0dd06692034e930775ffcd5de3181746ac59646"
 }

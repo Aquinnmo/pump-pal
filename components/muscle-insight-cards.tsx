@@ -1,11 +1,21 @@
-import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from '@/constants/ai-config';
-import { useAuth } from '@/context/auth-context';
-import { Workout } from '@/types/workout';
-import { analyzeMuscles, MuscleInsights } from '@/utils/muscle-analysis';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from "@/constants/ai-config";
+import { useAuth } from "@/context/auth-context";
+import { Workout } from "@/types/workout";
+import {
+  analyzeMuscles,
+  MuscleInsights,
+  normalizeMuscleInsights,
+} from "@/utils/muscle-analysis";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface Props {
   workouts: Workout[];
@@ -59,7 +69,7 @@ export function MuscleInsightCards({ workouts }: Props) {
         if (raw) {
           const cached: InsightsCache = JSON.parse(raw);
           if (cached.date === todayKey()) {
-            setInsights(cached.insights);
+            setInsights(normalizeMuscleInsights(cached.insights));
             return;
           }
         }
@@ -71,8 +81,12 @@ export function MuscleInsightCards({ workouts }: Props) {
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (caughtError) {
       const details = formatAIError(caughtError);
-      console.error('AI muscle analysis failed:', details);
-      setError(__DEV__ ? `AI error: ${details}` : 'Could not load AI insights. Tap to retry.');
+      console.error("AI muscle analysis failed:", details);
+      setError(
+        __DEV__
+          ? `AI error: ${details}`
+          : "Could not load AI insights. Tap to retry.",
+      );
     } finally {
       setLoading(false);
     }
@@ -87,7 +101,10 @@ export function MuscleInsightCards({ workouts }: Props) {
       const cached: RefreshCache = JSON.parse(raw);
       newCount = cached.date === todayKey() ? cached.count + 1 : 1;
     }
-    await AsyncStorage.setItem(refreshCountKey, JSON.stringify({ date: todayKey(), count: newCount }));
+    await AsyncStorage.setItem(
+      refreshCountKey,
+      JSON.stringify({ date: todayKey(), count: newCount }),
+    );
     setRefreshesLeft(Math.max(0, MAX_DAILY_REFRESHES - newCount));
     runAnalysis(true);
   };
@@ -103,7 +120,10 @@ export function MuscleInsightCards({ workouts }: Props) {
 
   if (workouts.length === 0) return null;
 
-  const refreshLabel = refreshesLeft > 0 ? `Refresh · ${refreshesLeft} left` : 'Daily limit reached';
+  const refreshLabel =
+    refreshesLeft > 0
+      ? `Refresh · ${refreshesLeft} left`
+      : "Daily limit reached";
 
   return (
     <>
@@ -111,12 +131,18 @@ export function MuscleInsightCards({ workouts }: Props) {
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>AI INSIGHTS</Text>
           <Text style={styles.sectionTitle}>Muscle Fatigue</Text>
-          <Text style={styles.sectionSubtitle} selectable>Past 30 days</Text>
+          <Text style={styles.sectionSubtitle} selectable>
+            Past 30 days
+          </Text>
         </View>
         {insights && !loading && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={refreshesLeft > 0 ? `Refresh AI muscle insights. ${refreshesLeft} refreshes left today.` : 'AI muscle insight daily refresh limit reached.'}
+            accessibilityLabel={
+              refreshesLeft > 0
+                ? `Refresh AI muscle insights. ${refreshesLeft} refreshes left today.`
+                : "AI muscle insight daily refresh limit reached."
+            }
             accessibilityState={{ disabled: refreshesLeft <= 0 }}
             style={({ pressed }) => [
               styles.refreshButton,
@@ -124,9 +150,19 @@ export function MuscleInsightCards({ workouts }: Props) {
               pressed && refreshesLeft > 0 && styles.buttonPressed,
             ]}
             onPress={handleManualRefresh}
-            disabled={refreshesLeft <= 0 || loading}>
-            <Ionicons name="refresh" size={17} color={refreshesLeft <= 0 ? '#6c6c6c' : '#f08a8a'} />
-            <Text style={[styles.refreshButtonText, refreshesLeft <= 0 && styles.refreshButtonTextDisabled]}>
+            disabled={refreshesLeft <= 0 || loading}
+          >
+            <Ionicons
+              name="refresh"
+              size={17}
+              color={refreshesLeft <= 0 ? "#6c6c6c" : "#f08a8a"}
+            />
+            <Text
+              style={[
+                styles.refreshButtonText,
+                refreshesLeft <= 0 && styles.refreshButtonTextDisabled,
+              ]}
+            >
               {refreshLabel}
             </Text>
           </Pressable>
@@ -134,10 +170,16 @@ export function MuscleInsightCards({ workouts }: Props) {
       </View>
 
       {loading ? (
-        <View style={styles.statusPanel} accessibilityRole="progressbar" accessibilityLabel="Analyzing your workouts">
+        <View
+          style={styles.statusPanel}
+          accessibilityRole="progressbar"
+          accessibilityLabel="Analyzing your workouts"
+        >
           <ActivityIndicator color="#e54242" size="small" />
           <View style={styles.statusCopy}>
-            <Text style={styles.statusTitle}>Reading your training pattern</Text>
+            <Text style={styles.statusTitle}>
+              Reading your training pattern
+            </Text>
             <Text style={styles.statusText}>This can take a moment.</Text>
           </View>
         </View>
@@ -145,33 +187,62 @@ export function MuscleInsightCards({ workouts }: Props) {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${error} Retry AI muscle insights.`}
-          style={({ pressed }) => [styles.errorPanel, pressed && styles.buttonPressed]}
-          onPress={() => runAnalysis(true)}>
+          style={({ pressed }) => [
+            styles.errorPanel,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => runAnalysis(true)}
+        >
           <Ionicons name="alert-circle-outline" size={24} color="#e54242" />
           <View style={styles.statusCopy}>
             <Text style={styles.statusTitle}>Insights aren’t available</Text>
-            <Text style={styles.errorText} selectable>{error}</Text>
+            <Text style={styles.errorText} selectable>
+              {error}
+            </Text>
             <Text style={styles.retryText}>Tap to try again</Text>
           </View>
         </Pressable>
       ) : insights ? (
-        <View style={styles.insightsPanel}>
-          <InsightRow
-            icon="shield-checkmark-outline"
-            title="Over Trained"
-            description="Muscles that may need more recovery"
-            muscles={insights.overTrained}
-            color="#e86d6d"
-          />
-          <View style={styles.divider} />
-          <InsightRow
-            icon="barbell-outline"
-            title="Under Trained"
-            description="Muscles you may want to focus on"
-            muscles={insights.underTrained}
-            color="#69b9e8"
-          />
-        </View>
+        insights.overTrained.length === 0 &&
+        insights.underTrained.length === 0 ? (
+          <View
+            style={styles.balancedPanel}
+            accessible
+            accessibilityLabel="Training looks balanced. No recovery or volume imbalances stood out in the past 30 days."
+          >
+            <View style={styles.balancedIconFrame}>
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={28}
+                color="#73c69a"
+              />
+            </View>
+            <View style={styles.statusCopy}>
+              <Text style={styles.balancedTitle}>Training looks balanced</Text>
+              <Text style={styles.balancedText} selectable>
+                No recovery or volume imbalances stood out in the past 30 days.
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.insightsPanel}>
+            <InsightRow
+              icon="shield-checkmark-outline"
+              title="Over Trained"
+              description="Muscles due for recovery"
+              muscles={insights.overTrained}
+              color="#e86d6d"
+            />
+            <View style={styles.divider} />
+            <InsightRow
+              icon="barbell-outline"
+              title="Under Trained"
+              description="Muscles you should focus on"
+              muscles={insights.underTrained}
+              color="#69b9e8"
+            />
+          </View>
+        )
       ) : null}
     </>
   );
@@ -190,14 +261,20 @@ function InsightRow({
   muscles: string[];
   color: string;
 }) {
-  const summary = muscles.length > 0 ? muscles.join(', ') : 'None detected';
+  const summary = muscles.length > 0 ? muscles.join(", ") : "None detected";
 
   return (
     <View
       style={styles.insightRow}
       accessible
-      accessibilityLabel={`${title}. ${description}. ${summary}.`}>
-      <View style={[styles.iconFrame, { borderColor: `${color}55`, backgroundColor: `${color}14` }]}>
+      accessibilityLabel={`${title}. ${description}. ${summary}.`}
+    >
+      <View
+        style={[
+          styles.iconFrame,
+          { borderColor: `${color}55`, backgroundColor: `${color}14` },
+        ]}
+      >
         <Ionicons name={icon} size={24} color={color} />
       </View>
       <View style={styles.insightCopy}>
@@ -205,12 +282,18 @@ function InsightRow({
         <Text style={styles.insightDescription}>{description}</Text>
         <View style={styles.muscleList}>
           {muscles.length === 0 ? (
-            <Text style={styles.noneText} selectable>None detected</Text>
+            <Text style={styles.noneText} selectable>
+              None detected
+            </Text>
           ) : (
             muscles.map((muscle) => (
               <View key={muscle} style={styles.muscleRow}>
-                <View style={[styles.muscleMarker, { backgroundColor: color }]} />
-                <Text style={styles.muscleName} selectable>{muscle}</Text>
+                <View
+                  style={[styles.muscleMarker, { backgroundColor: color }]}
+                />
+                <Text style={styles.muscleName} selectable>
+                  {muscle}
+                </Text>
               </View>
             ))
           )}
@@ -222,10 +305,10 @@ function InsightRow({
 
 const styles = StyleSheet.create({
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    flexWrap: "wrap",
     gap: 12,
   },
   headingCopy: {
@@ -234,66 +317,101 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   eyebrow: {
-    color: '#e56f6f',
+    color: "#e56f6f",
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1.4,
   },
   sectionTitle: {
-    color: '#f5f5f5',
+    color: "#f5f5f5",
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.35,
   },
   sectionSubtitle: {
-    color: '#999',
+    color: "#999",
     fontSize: 16,
     lineHeight: 22,
   },
   refreshButton: {
     minHeight: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#533030',
-    backgroundColor: '#211717',
+    borderColor: "#533030",
+    backgroundColor: "#211717",
     paddingHorizontal: 14,
     paddingVertical: 10,
     gap: 7,
   },
   refreshButtonDisabled: {
-    borderColor: '#303030',
-    backgroundColor: '#181818',
+    borderColor: "#303030",
+    backgroundColor: "#181818",
   },
   refreshButtonText: {
-    color: '#f08a8a',
+    color: "#f08a8a",
     fontSize: 14,
     lineHeight: 20,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   refreshButtonTextDisabled: {
-    color: '#777',
+    color: "#777",
   },
   buttonPressed: {
     opacity: 0.72,
   },
   insightsPanel: {
-    overflow: 'hidden',
+    overflow: "hidden",
     borderRadius: 18,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#382727',
-    backgroundColor: '#191717',
+    borderColor: "#382727",
+    backgroundColor: "#191717",
+  },
+  balancedPanel: {
+    minHeight: 112,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 18,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "#294438",
+    backgroundColor: "#17201c",
+    padding: 18,
+    gap: 14,
+  },
+  balancedIconFrame: {
+    width: 48,
+    height: 48,
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "#3a6a53",
+    backgroundColor: "#1d3027",
+  },
+  balancedTitle: {
+    color: "#dff4e8",
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "800",
+  },
+  balancedText: {
+    color: "#9eb9aa",
+    fontSize: 15,
+    lineHeight: 21,
   },
   insightRow: {
     minHeight: 138,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     padding: 18,
     gap: 14,
   },
@@ -301,10 +419,10 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     flexShrink: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
   },
   insightCopy: {
@@ -312,13 +430,13 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   insightTitle: {
-    color: '#f3f3f3',
+    color: "#f3f3f3",
     fontSize: 19,
     lineHeight: 24,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   insightDescription: {
-    color: '#999',
+    color: "#999",
     fontSize: 15,
     lineHeight: 21,
   },
@@ -327,8 +445,8 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   muscleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 9,
   },
   muscleMarker: {
@@ -338,43 +456,43 @@ const styles = StyleSheet.create({
   },
   muscleName: {
     flexShrink: 1,
-    color: '#e3e3e3',
+    color: "#e3e3e3",
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   noneText: {
-    color: '#b3b3b3',
+    color: "#b3b3b3",
     fontSize: 16,
     lineHeight: 22,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   divider: {
     height: StyleSheet.hairlineWidth,
     marginHorizontal: 18,
-    backgroundColor: '#3a3030',
+    backgroundColor: "#3a3030",
   },
   statusPanel: {
     minHeight: 108,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 18,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#382727',
-    backgroundColor: '#191717',
+    borderColor: "#382727",
+    backgroundColor: "#191717",
     padding: 18,
     gap: 14,
   },
   errorPanel: {
     minHeight: 124,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
     borderRadius: 18,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: '#4a2929',
-    backgroundColor: '#211616',
+    borderColor: "#4a2929",
+    backgroundColor: "#211616",
     padding: 18,
     gap: 14,
   },
@@ -383,26 +501,26 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   statusTitle: {
-    color: '#ededed',
+    color: "#ededed",
     fontSize: 17,
     lineHeight: 23,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   statusText: {
-    color: '#999',
+    color: "#999",
     fontSize: 15,
     lineHeight: 21,
   },
   errorText: {
-    color: '#d5a1a1',
+    color: "#d5a1a1",
     fontSize: 15,
     lineHeight: 21,
   },
   retryText: {
     paddingTop: 5,
-    color: '#f08a8a',
+    color: "#f08a8a",
     fontSize: 15,
     lineHeight: 21,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 });

@@ -16,6 +16,21 @@ const muscleInsightsSchema = z.object({
   underTrained: z.array(z.string()),
 });
 
+function normalizeInsightList(insights: string[]): string[] {
+  return insights
+    .map((insight) => insight.trim())
+    .filter((insight) => insight.length > 0 && !insight.toLowerCase().startsWith('all good'))
+    .slice(0, 3);
+}
+
+/** Converts model output and legacy cached sentinel values into the canonical empty-list state. */
+export function normalizeMuscleInsights(insights: MuscleInsights): MuscleInsights {
+  return {
+    overTrained: normalizeInsightList(insights.overTrained ?? []),
+    underTrained: normalizeInsightList(insights.underTrained ?? []),
+  };
+}
+
 /** Per-muscle training-volume stat over the analysis window, normalised per week. */
 export interface MuscleVolumeStat {
   muscle: MuscleId;
@@ -190,7 +205,7 @@ Naming rules:
 Return ONLY a valid JSON object with no markdown fences and no explanation, exactly this structure:
 {"overTrained":["Muscle1","Muscle2"],"underTrained":["Muscle1","Muscle2"]}
 
-If nothing is meaningfully over- or under-trained, return "All good! 👍" as the only entry in each list.`;
+If a category has no meaningful findings, return an empty array for that category. If neither category has findings, return empty arrays for both.`;
 
   const { output } = await generateText({
     model: getAIModel(),
@@ -201,8 +216,5 @@ If nothing is meaningfully over- or under-trained, return "All good! 👍" as th
 
   const parsed: MuscleInsights = output;
 
-  return {
-    overTrained: (parsed.overTrained ?? []).slice(0, 3),
-    underTrained: (parsed.underTrained ?? []).slice(0, 3),
-  };
+  return normalizeMuscleInsights(parsed);
 }
