@@ -86,4 +86,11 @@ npm run migration:test  # runs the legacy-migration script tests
 
 ## Architecture
 
-File-based routing via Expo Router, with auth/onboarding gating and the Firestore data model documented in [CLAUDE.md](CLAUDE.md). The Firestore workout/exercise schema (canonical collections, set-by-set data model, exercise catalog) is documented in [docs/firestore-data-refactor.md](docs/firestore-data-refactor.md).
+File-based routing via Expo Router, with auth/onboarding gating documented in [CLAUDE.md](CLAUDE.md). The Firestore workout/exercise schema (canonical collections, set-by-set data model, exercise catalog) is documented in [docs/data-model/](docs/data-model/README.md) — [docs/firestore-data-refactor.md](docs/firestore-data-refactor.md) is the historical record of the migration, not the current schema.
+
+## Source of truth
+
+Two docs define what Timber is and how it should look. Read them before making a change, and update them in the same PR when the answer genuinely shifts.
+
+- **[docs/purpose.md](docs/purpose.md)** — why the app exists, what it optimizes for, its non-goals, and the rules for deciding whether a change belongs.
+- **[docs/design-language.md](docs/design-language.md)** — the visual and verbal system: color, type, spacing, components, motion, copy voice, accessibility.

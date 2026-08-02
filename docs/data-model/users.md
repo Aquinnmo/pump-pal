@@ -16,7 +16,7 @@ type UserDoc = {
     updatedAt: Timestamp;
   };
   injuries?: Injury[]; // types/user.ts — full history; ongoing = status === 'ongoing'
-  aiUsage?: { date: string; count: number }; // AI daily-limit counter, written by app/modal.tsx
+  aiUsage?: { date: string; count: number }; // AI daily-limit counter, shared by plan and active-workout suggestions
 };
 ```
 

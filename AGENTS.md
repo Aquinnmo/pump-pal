@@ -11,6 +11,15 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
+## Source-of-truth docs
+
+Read these before changing the app. They take precedence over patterns you find in the code.
+
+- **[docs/purpose.md](docs/purpose.md)** — why Timber exists, what it optimizes for, non-goals, and the decision rules for judging a change. Consult before adding, removing, or reshaping a feature.
+- **[docs/design-language.md](docs/design-language.md)** — color/type/spacing tokens, component recipes, motion, copy voice, accessibility. Consult before writing any UI. It is prescriptive, not descriptive: the code has known drift, listed in its appendix. Use the spec's values, not whatever the neighbouring file happens to do.
+  - **Hard rule:** its [off-limits list](docs/design-language.md#off-limits-generic-ai-generated-design) names generic AI-generated design tropes (gradient/glass surfaces, sparkle-as-AI, bento stat grids, "elevate your fitness journey" copy). These are banned by default. If a request calls for one, do **not** silently comply and do **not** silently substitute — stop, name the pattern, and ask the user with explicit non-trope alternatives. Implement it only if the user explicitly picks it after seeing them, then record the exception.
+- **[docs/data-model/README.md](docs/data-model/README.md)** — Firestore schema as it exists today.
+
 ## User workflow override
 
 These rules override the generated Beads session-completion protocol below unless the user explicitly says otherwise in the current conversation.

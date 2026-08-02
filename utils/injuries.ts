@@ -19,10 +19,19 @@ import {
  * Returns [] on any read failure or when the user doc has no injuries yet.
  */
 export async function getOngoingInjuryIds(uid: string): Promise<string[]> {
+  return (await getOngoingInjuries(uid)).map((injury) => injury.id);
+}
+
+/**
+ * Read the user's currently-ongoing injuries for AI or other contextual
+ * features. Resolved injuries are intentionally excluded from this result.
+ * Returns [] on any read failure or when the user doc has no injuries yet.
+ */
+export async function getOngoingInjuries(uid: string): Promise<Injury[]> {
   try {
     const snap = await getDoc(doc(db, 'users', uid));
     const injuries = (snap.data()?.injuries ?? []) as Injury[];
-    return injuries.filter((i) => i.status === 'ongoing').map((i) => i.id);
+    return injuries.filter((i) => i.status === 'ongoing');
   } catch {
     return [];
   }

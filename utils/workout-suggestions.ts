@@ -1,6 +1,9 @@
 import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
-import { DraftExerciseRow, Workout } from '@/types/workout';
-import { exerciseLabel, isDurationExercise, toDateObj } from '@/utils/workout-conversion';
+import { BODY_PART_MUSCLES, bodyPartLabel } from '@/constants/body-parts';
+import { Injury } from '@/types/user';
+import { DraftExerciseRow, ExerciseSearchOption, Workout } from '@/types/workout';
+import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
+import { exerciseLabel, isDurationExercise, makeUid, toDateObj } from '@/utils/workout-conversion';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 
@@ -68,6 +71,54 @@ const suggestedExerciseSchema = z.object({
 });
 
 /**
+ * Convert model output into rows that can be appended to either workout
+ * editor. Catalog matches retain their canonical ids; unknown names remain in
+ * the existing under-review flow.
+ */
+export function suggestedExercisesToDraftRows(
+  suggested: SuggestedExercise[],
+  catalogOptions: ExerciseSearchOption[]
+): DraftExerciseRow[] {
+  return suggested.map((ex) => {
+    const match = rankSearchOptions(catalogOptions, ex.name, [])[0];
+    const resolved = match
+      ? { exerciseId: match.exerciseId, variationId: match.variationId, label: match.label }
+      : { exerciseId: 'under-review', variationId: `ur_${slugify(ex.name)}`, label: ex.name };
+    return {
+      uid: makeUid(),
+      ...resolved,
+      exerciseType: ex.exerciseType,
+      bodyweight: ex.bodyweight,
+      sets: Array.from({ length: Math.max(1, ex.sets) }, () => ({
+        reps: ex.reps,
+        weight: ex.weight,
+        durationMinutes: ex.durationMinutes,
+        durationSeconds: ex.durationSeconds,
+      })),
+    };
+  });
+}
+
+function formatActiveInjuries(injuries: Injury[]): string {
+  if (injuries.length === 0) return '  (none reported)';
+
+  return injuries.map((injury) => {
+    const affectedMuscles = [...new Set([
+      ...(BODY_PART_MUSCLES[injury.bodyPart] ?? []),
+      ...(injury.muscles ?? []),
+    ])].join(', ');
+    const details = [
+      `${bodyPartLabel(injury.bodyPart)}${injury.side ? ` (${injury.side})` : ''}`,
+      `severity: ${injury.severity}`,
+      affectedMuscles ? `affected muscles: ${affectedMuscles}` : undefined,
+      injury.avoid?.length ? `avoid: ${injury.avoid.join(', ')}` : undefined,
+      injury.notes ? `notes: ${injury.notes}` : undefined,
+    ].filter(Boolean);
+    return `  - ${details.join('; ')}`;
+  }).join('\n');
+}
+
+/**
  * Calls the configured AI model to suggest exercises to complete a balanced workout.
  *
  * @param workoutName  The name of today's workout day (e.g. "Push", "Legs")
@@ -79,7 +130,8 @@ export async function suggestWorkoutCompletion(
   workoutName: string,
   splitType: string,
   current: DraftExerciseRow[],
-  history: Workout[]
+  history: Workout[],
+  activeInjuries: Injury[] = []
 ): Promise<SuggestedExercise[]> {
   const now = Date.now();
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
@@ -160,6 +212,8 @@ export async function suggestWorkoutCompletion(
     })
     .join('\n') || '  (nothing yet)';
 
+  const activeInjuryLines = formatActiveInjuries(activeInjuries);
+
   const prompt = `You are an expert personal trainer. A user is logging a workout and wants you to suggest exercises to complete it in a balanced way.
 
 TRAINING SPLIT: ${splitType || 'Not specified'}
@@ -171,11 +225,19 @@ ${currentLines}
 PAST 30 DAYS OF WORKOUT HISTORY (for context on volume, frequency, and weights used):
 ${historyLines}
 
+ACTIVE USER-REPORTED INJURIES:
+${activeInjuryLines}
+
 TASK:
 Suggest 2–5 additional exercises to round out this workout. Take into account:
+- The selected workout day is authoritative: suggest exercises for this day only and keep the workout balanced within this day, not across the whole split
+- Stay strictly inside the user's split boundaries. Do not pull exercises from the next, previous, or another split day just to add variety; for example, if the split is Push / Pull / Legs and today's day is Pull, do not suggest calf or other Legs-day exercises even if Legs is next
+- The split is a prioritization guide, not an exhaustive whitelist: muscle groups that are not assigned to a split day, such as core in a Push / Pull / Legs split, may be suggested on any day when they complement the workout
 - The workout day type (e.g. Push = chest/shoulders/triceps, Pull = back/biceps, Legs = quads/hamstrings/glutes/calves)
 - What has already been done today (avoid duplicates, ensure muscle balance within the session)
 - Past history (avoid further overtraining muscles already hit frequently; prefer exercises that address undertrained ones where relevant)
+- Active injuries above (avoid exercises or movements that could aggravate an injury, honor explicit avoid instructions, and prefer alternatives that train unaffected areas)
+- Do not diagnose, prescribe treatment, or claim that any exercise is medically cleared. If no reasonable safe additions remain, return an empty array.
 - Realistic sets/reps/weights based on historical weights used (if no history exists, use sensible beginner-intermediate defaults)
 
 For weighted exercises suggest a weight in lbs based on history. If no history, pick a reasonable starting weight.
