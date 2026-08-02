@@ -132,6 +132,54 @@ when you:
 8. **Deny** the permission (Settings → app → Notifications off) → app works
    normally, just no notification. No crash.
 
+> **Channel importance is locked after first creation.** If an existing
+> install already created the `active-workout` channel before an
+> importance/behavior change, Android won't pick up the new value —
+> uninstall/reinstall to get a clean channel.
+
+### Testing the Android 16 Live Update (Pixel, API 36+)
+
+9. **Start a workout with three exercises that have different set counts**
+   (e.g. 2 / 4 / 3 sets) → a status-bar chip appears, and pulling it down
+   shows a progress bar with **three grey ovals**, widths proportional to
+   each exercise's set count.
+10. **Complete one set on the second exercise** → only that oval turns
+    **fully red** — the whole oval flips on the first completed set, not
+    partially as more of its sets complete. That's by design.
+11. **Lock the phone** → the notification shows prominently on the lock
+    screen and on the **Always-On Display**, with a legible small icon.
+12. **Keep logging sets across the 800ms autosave refreshes** → the
+    chronometer keeps ticking (OS-driven) with **no repeated sound** — only
+    the initial post should make noise.
+13. **Finish**, **Discard**, or navigate **Home** → both the status-bar chip
+    and the notification disappear.
+14. **Promotion check** — confirm the OS actually granted promotion:
+    ```bash
+    adb shell dumpsys notification --noredact | grep -i PROMOTED_ONGOING
+    ```
+15. **Fallback path** — disable promoted notifications for Timber (system
+    Settings → Apps → Timber → Notifications → promoted notifications off),
+    or test on a pre-Android-16 device → the old Notifee notification appears
+    instead. Confirm **no crash and no duplicate**. This is the subtlest part
+    of the feature: two surfaces (the native `LiveUpdateNotification` module
+    and Notifee) post this notification, and
+    `utils/workout-notification.android.ts` is what keeps them mutually
+    exclusive — a regression there shows up as two notifications instead of
+    one, not as a crash.
+
+**Check on-device — neither of these can be verified from source:**
+
+- **Small icon legibility at 24dp.** `ic_stat_timber` is trimmed full-bleed
+  from a non-square 672×612 bounding box, so it may read oversized or
+  letterboxed next to the system's status-bar icons. See the troubleshooting
+  table below if it looks wrong.
+- **Does the Live Update survive backgrounding / force-quit?** Step 7 above
+  confirmed the *Notifee* notification survives a force-quit. Whether a
+  *promoted* ongoing notification keeps its promotion once the app process
+  isn't running is unverified — check it. If it demotes, the escalation is
+  `notifee.registerForegroundService`; don't add that preemptively, only if
+  this actually reproduces.
+
 ---
 
 ## Troubleshooting
@@ -140,7 +188,7 @@ when you:
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | "This project uses a native module not in Expo Go" | You opened Expo Go. Open the **dev-build** app instead.                                                                                                 |
 | No notification appears                            | Permission denied → enable in system Settings → app → Notifications.                                                                                    |
-| Shade icon is a white square                       | Expected fallback (no small icon shipped). Add a white-transparent `ic_stat_*` drawable and set `smallIcon` in `utils/workout-notification.android.ts`. |
+| Small icon looks oversized or letterboxed          | Add padding around the glyph in `scripts/generate-ic-stat-timber.js` and regenerate (`node scripts/generate-ic-stat-timber.js`) — don't hand-edit the PNGs. |
 | Timer not ticking                                  | Confirm you're on a real dev build, not Expo Go; the chronometer needs the native Notifee module.                                                       |
 | Changes not showing                                | JS change → save should hot-reload. Native/`app.json` change → rebuild (one-time setup again).                                                          |
 | Metro connects but app is old                      | Rebuild — you likely changed a native dep without recompiling.                                                                                          |

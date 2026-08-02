@@ -1,5 +1,4 @@
 import { Dropdown } from '@/components/ui/dropdown';
-import { ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { ExerciseCard } from '@/components/workout/exercise-card';
 import { db } from '@/config/firebase';
@@ -48,6 +47,8 @@ export default function AddWorkoutModal() {
   const [customWorkoutName, setCustomWorkoutName] = useState('');
   const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
+  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
+  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
 
   const {
     exercises,
@@ -63,7 +64,8 @@ export default function AddWorkoutModal() {
     addSet,
     removeSet,
     reorder,
-  } = useDraftExercises();
+    selectExercise,
+  } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName });
   const { options: catalogOptions } = useExerciseCatalog();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
@@ -73,7 +75,6 @@ export default function AddWorkoutModal() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiUsesLeft, setAiUsesLeft] = useState(TEMPORARY_AI_DAILY_LIMIT);
   const [splitType, setSplitType] = useState<string>('');
-  const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
   const [isToday, setIsToday] = useState(true);
   const [workoutDate, setWorkoutDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -242,47 +243,6 @@ export default function AddWorkoutModal() {
 
     fetchWorkout();
   }, [id, user, setExercises]);
-
-  // workoutHistory is already sorted date desc, so the first match is the most recent.
-  // Prefers a match from a workout with the same name before falling back to any workout.
-  const findLastPerformed = (
-    forWorkoutName: string,
-    exerciseId: string,
-    variationId: string | null
-  ): PerformedExercise | null => {
-    const search = (predicate: (w: Workout) => boolean): PerformedExercise | null => {
-      for (const w of workoutHistory) {
-        if (!predicate(w)) continue;
-        const match = (w.performedExercises ?? []).find(
-          (pe) => pe.exerciseId === exerciseId && pe.variationId === variationId
-        );
-        if (match) return match;
-      }
-      return null;
-    };
-    return search((w) => w.name === forWorkoutName) ?? search(() => true);
-  };
-
-  const selectExercise = (i: number, selection: ExercisePickerSelection) => {
-    const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
-    const last = findLastPerformed(effectiveWorkoutName, selection.exerciseId, selection.variationId);
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        if (last) {
-          return {
-            ...collapseSetsToDraft(last),
-            exerciseId: selection.exerciseId,
-            variationId: selection.variationId,
-            label: selection.label,
-          };
-        }
-        return { ...ex, exerciseId: selection.exerciseId, variationId: selection.variationId, label: selection.label };
-      })
-    );
-  };
-
-  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName;
 
   // Exercises performed for this same split-day (workout name) in the last 30 days
   // float to the top of the picker, and seed a dedicated "recent" stage in the sheet.

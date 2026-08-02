@@ -1,4 +1,3 @@
-import { WorkoutCard } from '@/components/workout-card';
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
@@ -10,7 +9,6 @@ import { toDateObj } from '@/utils/workout-conversion';
 import { dismissWorkoutNotification } from '@/utils/workout-notification';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
 import {
   collection,
@@ -23,18 +21,19 @@ import {
   where,
 } from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { user } = useAuth();
-  const [recentWorkouts, setRecentWorkouts] = useState<Workout[]>([]);
+  const insets = useSafeAreaInsets();
+  const { height } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
   const [nextWorkout, setNextWorkout] = useState<string | null>(null);
   const [nextWorkoutToPlan, setNextWorkoutToPlan] = useState<string | null>(null);
   const [nextPlan, setNextPlan] = useState<Workout | null>(null);
   const [inProgress, setInProgress] = useState<Workout | null>(null);
   const [elapsed, setElapsed] = useState(0);
-  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     if (!inProgress?.startedAt) return;
@@ -51,7 +50,7 @@ export default function HomeScreen() {
       (async () => {
         setLoading(true);
         try {
-          // Fetch recent workouts for display (min 5, max last 8 days) and prediction (top 20)
+          // Completed history is only needed to predict the next split workout.
           const q = query(
             collection(db, 'workouts'),
             where('userId', '==', user.uid),
@@ -60,15 +59,6 @@ export default function HomeScreen() {
           );
           const snapshot = await getDocs(q);
           const allFetched = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
-
-          const startOfToday = new Date();
-          startOfToday.setHours(0, 0, 0, 0);
-          const windowStart = new Date(startOfToday);
-          windowStart.setDate(windowStart.getDate() - 7); // 8-day window: today + previous 7 days
-          const windowStartMs = windowStart.getTime();
-
-          const withinWindow = allFetched.filter((w) => toDateObj(w.date).getTime() >= windowStartMs);
-          setRecentWorkouts(withinWindow.length >= 5 ? withinWindow : allFetched.slice(0, 5));
 
           // Predict next workout type
           const userSnap = await getDoc(doc(db, 'users', user.uid));
@@ -150,10 +140,6 @@ export default function HomeScreen() {
     return 'Good evening';
   };
 
-  const handleEdit = (workout: Workout) => {
-    router.push({ pathname: '/modal', params: { id: workout.id } });
-  };
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -162,180 +148,123 @@ export default function HomeScreen() {
     );
   }
 
-  const ListHeader = (
-    <>
-      {(inProgress || nextPlan || nextWorkout) && (
-        <TouchableOpacity
-          style={styles.nextWorkoutCard}
-          onPress={() => {
-            if (inProgress) {
-              router.push({ pathname: '/active-workout', params: { id: inProgress.id } });
-            } else if (nextPlan) {
-              router.push({ pathname: '/active-workout', params: { id: nextPlan.id } });
-            } else {
-              router.push({ pathname: '/active-workout', params: { suggestion: nextWorkout ?? '' } });
-            }
-          }}
-          activeOpacity={0.85}>
-          <LinearGradient
-            colors={['rgba(255, 77, 77, 0.16)', 'rgba(255, 77, 77, 0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-            style={styles.nextWorkoutGlowTop}
-            pointerEvents="none"
-          />
-          <LinearGradient
-            colors={['rgba(255, 77, 77, 0.16)', 'rgba(255, 77, 77, 0)']}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 0, y: 0 }}
-            style={styles.nextWorkoutGlowBottom}
-            pointerEvents="none"
-          />
-          <LinearGradient
-            colors={['rgba(255, 77, 77, 0.10)', 'rgba(255, 77, 77, 0)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.nextWorkoutGlowLeft}
-            pointerEvents="none"
-          />
-          <LinearGradient
-            colors={['rgba(255, 77, 77, 0.10)', 'rgba(255, 77, 77, 0)']}
-            start={{ x: 1, y: 0 }}
-            end={{ x: 0, y: 0 }}
-            style={styles.nextWorkoutGlowRight}
-            pointerEvents="none"
-          />
-          <View style={styles.nextWorkoutContent}>
-            <View style={styles.nextWorkoutLeft}>
-              <Text style={styles.nextWorkoutLabel}>{inProgress ? 'Resume:' : 'Up Next:'}</Text>
-              <Text style={styles.nextWorkoutName}>
-                {inProgress ? inProgress.name : nextPlan ? nextPlan.name : nextWorkout}
-              </Text>
-            </View>
-            <View style={styles.nextWorkoutRight}>
-              {inProgress && <Text style={styles.nextWorkoutTimer}>{formatElapsed(elapsed)}</Text>}
-              <View style={styles.nextWorkoutIcon}>
-                <Ionicons name="barbell-outline" size={32} color="#ff4d4d" />
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      )}
-
-      <TouchableOpacity
-        style={styles.planCard}
-        onPress={() => router.push('/planned-workouts')}
-        activeOpacity={0.85}>
-        <LinearGradient
-          colors={['rgba(78, 168, 222, 0.16)', 'rgba(78, 168, 222, 0)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-          style={styles.nextWorkoutGlowTop}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={['rgba(78, 168, 222, 0.16)', 'rgba(78, 168, 222, 0)']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 0, y: 0 }}
-          style={styles.nextWorkoutGlowBottom}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={['rgba(78, 168, 222, 0.10)', 'rgba(78, 168, 222, 0)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.nextWorkoutGlowLeft}
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={['rgba(78, 168, 222, 0.10)', 'rgba(78, 168, 222, 0)']}
-          start={{ x: 1, y: 0 }}
-          end={{ x: 0, y: 0 }}
-          style={styles.nextWorkoutGlowRight}
-          pointerEvents="none"
-        />
-        <View style={styles.planCardContent}>
-          <View style={styles.nextWorkoutLeft}>
-            <Text style={styles.planCardLabel}>Plan Workout:</Text>
-            <Text style={styles.nextWorkoutName}>{nextWorkoutToPlan ?? 'Choose Workout'}</Text>
-          </View>
-          <View style={styles.planCardIcon}>
-            <Ionicons name="calendar-outline" size={30} color="#4ea8de" />
-          </View>
-        </View>
-      </TouchableOpacity>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Recent Workouts</Text>
-        <TouchableOpacity
-          style={styles.seeAllButton}
-          onPress={() => router.push('/(tabs)/workouts')}
-          activeOpacity={0.7}>
-          <Text style={styles.seeAllText}>See all workouts</Text>
-          <Ionicons name="chevron-forward" size={16} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </>
-  );
+  const upNextName = inProgress?.name ?? nextPlan?.name ?? nextWorkout ?? 'Start a workout';
+  const displayName = user?.displayName?.trim() || 'Athlete';
+  const isCompact = height < 650;
+  const upNextLabel = inProgress
+    ? `Resume ${upNextName}, elapsed time ${formatElapsed(elapsed)}`
+    : nextPlan
+      ? `Start planned workout, ${upNextName}`
+      : nextWorkout
+        ? `Start suggested workout, ${upNextName}`
+        : 'Start a custom workout';
+  const upNextAction = inProgress
+    ? 'Resume workout'
+    : nextPlan
+      ? 'Start planned workout'
+      : nextWorkout
+        ? 'Start workout'
+        : 'Choose your workout';
+  const upNextSource = inProgress
+    ? 'In progress'
+    : nextPlan
+      ? 'Planned'
+      : nextWorkout
+        ? 'Next in your split'
+        : 'New session';
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting()},</Text>
-          <Text style={styles.name}>{user?.displayName ?? 'Athlete'} 💪</Text>
-        </View>
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => {
-            if (inProgress) {
-              router.push({ pathname: '/active-workout', params: { id: inProgress.id } });
-            } else if (nextPlan) {
-              router.push({ pathname: '/active-workout', params: { id: nextPlan.id } });
-            } else {
-              router.push({
-                pathname: '/modal',
-                params: { mode: 'plan', ...(nextWorkoutToPlan ? { suggestion: nextWorkoutToPlan } : {}) },
-              });
-            }
-          }}>
-          <Ionicons name="add" size={22} color="#fff" />
-        </TouchableOpacity>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: Math.max(insets.top, 20), paddingBottom: Math.max(insets.bottom, 12) },
+      ]}>
+      <View style={[styles.header, isCompact && styles.headerCompact]}>
+        <Text style={styles.greeting} numberOfLines={1}>
+          {greeting()}, {displayName}
+        </Text>
       </View>
 
-      <View style={styles.scrollWrapper}>
-        <FlatList
-          data={recentWorkouts}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <WorkoutCard workout={item} onEdit={handleEdit} />}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="barbell-outline" size={56} color="#2a2a2a" />
-              <Text style={styles.emptyTitle}>No workouts yet</Text>
-              <Text style={styles.emptySubtitle}>Tap + to start or plan a workout</Text>
+      <View style={styles.dashboardContent}>
+        <View style={[styles.actionStack, isCompact && styles.actionStackCompact]}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.nextWorkoutCard,
+              isCompact && styles.nextWorkoutCardCompact,
+              pressed && styles.actionPressed,
+            ]}
+            onPress={() => {
+              if (inProgress) {
+                router.push({ pathname: '/active-workout', params: { id: inProgress.id } });
+              } else if (nextPlan) {
+                router.push({ pathname: '/active-workout', params: { id: nextPlan.id } });
+              } else if (nextWorkout) {
+                router.push({ pathname: '/active-workout', params: { suggestion: nextWorkout } });
+              } else {
+                router.push('/active-workout');
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={upNextLabel}
+            accessibilityHint="Opens your active workout">
+            <View style={styles.nextWorkoutAccent} pointerEvents="none" />
+            <View style={[styles.nextWorkoutContent, isCompact && styles.nextWorkoutContentCompact]}>
+              <View style={styles.nextWorkoutHeader}>
+                <View style={styles.nextWorkoutContext}>
+                  <Text style={styles.nextWorkoutLabel}>{inProgress ? 'Resume' : 'Up next'}</Text>
+                  <View style={styles.contextDivider} />
+                  <Text style={styles.nextWorkoutSource} numberOfLines={1}>{upNextSource}</Text>
+                </View>
+                {inProgress && <Text style={styles.nextWorkoutTimer}>{formatElapsed(elapsed)}</Text>}
+              </View>
+              <Text style={[styles.nextWorkoutName, isCompact && styles.nextWorkoutNameCompact]} numberOfLines={2}>
+                {upNextName}
+              </Text>
+              <View style={styles.nextWorkoutFooter}>
+                <Text style={styles.nextWorkoutAction}>{upNextAction}</Text>
+                <Ionicons name="arrow-forward" size={19} color="#e54242" />
+              </View>
             </View>
-          }
-          style={styles.scroll}
-          contentContainerStyle={styles.list}
-          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-        />
+          </Pressable>
 
-        {scrollY > 0 && (
-          <LinearGradient
-            colors={['#0f0f0f', 'transparent']}
-            style={styles.fadeTop}
-            pointerEvents="none"
-          />
-        )}
+          <Pressable
+            style={({ pressed }) => [
+              styles.supportingCard,
+              isCompact && styles.supportingCardCompact,
+              pressed && styles.actionPressed,
+            ]}
+            onPress={() => router.push('/planned-workouts')}
+            accessibilityRole="button"
+            accessibilityLabel="Plan workout"
+            accessibilityHint="Opens your planned workout queue">
+            <Ionicons name="calendar-outline" size={23} color="#68b7e7" />
+            <View style={styles.supportingCopy}>
+              <Text style={styles.supportingTitle}>Plan workout</Text>
+              <Text style={styles.supportingDetail} numberOfLines={1}>
+                {nextWorkoutToPlan ?? 'Choose workout'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={19} color="#666" />
+          </Pressable>
 
-        <LinearGradient
-          colors={['transparent', '#0f0f0f']}
-          style={styles.fadeBottom}
-          pointerEvents="none"
-        />
+          <Pressable
+            style={({ pressed }) => [
+              styles.supportingCard,
+              isCompact && styles.supportingCardCompact,
+              pressed && styles.actionPressed,
+            ]}
+            onPress={() => router.push('/(tabs)/workouts')}
+            accessibilityRole="button"
+            accessibilityLabel="See all workouts"
+            accessibilityHint="Opens your workout history">
+            <Ionicons name="albums-outline" size={23} color="#b8b8b8" />
+            <View style={styles.supportingCopy}>
+              <Text style={styles.supportingTitle}>See all workouts</Text>
+              <Text style={styles.supportingDetail} numberOfLines={1}>Training history</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={19} color="#666" />
+          </Pressable>
+        </View>
       </View>
     </View>
   );
@@ -346,12 +275,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f0f0f',
   },
-  scrollWrapper: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -359,199 +282,156 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f0f0f',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    backgroundColor: '#0f0f0f',
-  },
-  greeting: {
-    fontSize: 15,
-    color: '#888',
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  addButton: {
-    backgroundColor: '#e54242',
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  seeAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#525252',
-    backgroundColor: '#2c2c2c',
-  },
-  seeAllText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
-  },
-  list: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 48,
+    paddingBottom: 18,
+    backgroundColor: '#0f0f0f',
   },
-  fadeTop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 40,
+  headerCompact: {
+    paddingTop: 8,
+    paddingBottom: 12,
   },
-  fadeBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
+  greeting: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#fff',
   },
-  empty: {
+  dashboardContent: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  actionStack: {
+    width: '100%',
+    gap: 12,
+  },
+  actionStackCompact: {
     gap: 10,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#444',
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#555',
   },
   nextWorkoutCard: {
+    height: 218,
     position: 'relative',
-    borderRadius: 14,
+    borderRadius: 16,
+    borderCurve: 'continuous',
     borderWidth: 1,
-    borderColor: '#2a2a2a',
-    marginBottom: 20,
+    borderColor: '#332626',
     overflow: 'hidden',
-    backgroundColor: '#1c1c1c',
+    backgroundColor: '#1a1818',
   },
-  nextWorkoutGlowTop: {
+  nextWorkoutCardCompact: {
+    height: 168,
+  },
+  nextWorkoutAccent: {
     position: 'absolute',
-    top: 0,
-    right: 0,
+    top: 20,
+    bottom: 20,
     left: 0,
-    height: 20,
-  },
-  nextWorkoutGlowBottom: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    left: 0,
-    height: 22,
-  },
-  nextWorkoutGlowLeft: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: 20,
-  },
-  nextWorkoutGlowRight: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    width: 22,
+    width: 3,
+    borderRadius: 2,
+    backgroundColor: '#e54242',
   },
   nextWorkoutContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
+    gap: 14,
+  },
+  nextWorkoutContentCompact: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  nextWorkoutHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    gap: 12,
   },
-  nextWorkoutLeft: {
-    gap: 4,
+  nextWorkoutContext: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  contextDivider: {
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#595959',
   },
   nextWorkoutLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#ff8f8f',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    color: '#d88383',
+  },
+  nextWorkoutSource: {
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#858585',
   },
   nextWorkoutName: {
-    fontSize: 20,
-    fontWeight: '800',
+    fontSize: 29,
+    fontWeight: '700',
+    letterSpacing: -0.5,
     color: '#fff',
   },
-  nextWorkoutIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.32)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  nextWorkoutNameCompact: {
+    fontSize: 25,
   },
-  nextWorkoutRight: {
+  nextWorkoutFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 7,
+  },
+  nextWorkoutAction: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#e8e8e8',
   },
   nextWorkoutTimer: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#c9c9c9',
     fontVariant: ['tabular-nums'],
   },
-  planCard: {
-    position: 'relative',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    marginBottom: 24,
-    overflow: 'hidden',
-    backgroundColor: '#1c1c1c',
-  },
-  planCardContent: {
+  supportingCard: {
+    height: 94,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: '#292929',
+    backgroundColor: '#181818',
+    paddingHorizontal: 18,
     paddingVertical: 14,
+    gap: 14,
   },
-  planCardLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#8fd0f7',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+  supportingCardCompact: {
+    height: 76,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 12,
   },
-  planCardIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.32)',
+  supportingCopy: {
+    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+    gap: 5,
+  },
+  supportingTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#f2f2f2',
+  },
+  supportingDetail: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+    color: '#898989',
+  },
+  actionPressed: {
+    opacity: 0.72,
   },
 });

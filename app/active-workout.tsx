@@ -92,6 +92,7 @@ export default function ActiveWorkoutScreen() {
   const [customWorkoutName, setCustomWorkoutName] = useState('');
   const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
   const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
+  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
   const {
     exercises,
     setExercises,
@@ -108,7 +109,11 @@ export default function ActiveWorkoutScreen() {
     removeSet,
     toggleSetComplete,
     reorder,
-  } = useDraftExercises({ trackCompletion: true });
+  } = useDraftExercises({
+    trackCompletion: true,
+    workoutHistory,
+    workoutName: effectiveWorkoutName,
+  });
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -231,8 +236,6 @@ export default function ActiveWorkoutScreen() {
     })();
   }, [startedAt]);
 
-  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
-
   // Exercises performed for this same split-day (workout name) in the last 30 days
   // float to the top of the picker, mirroring the plan/log editor's behavior.
   const recentExercises = useMemo(
@@ -293,6 +296,10 @@ export default function ActiveWorkoutScreen() {
           totalReps: workoutTotalReps(metricsSource),
           volume: workoutVolume(metricsSource),
           currentExercise,
+          segments: started.map((ex) => ({
+            sets: ex.sets.length,
+            started: ex.sets.some((s) => s.completed),
+          })),
         });
       }
     }, 800);

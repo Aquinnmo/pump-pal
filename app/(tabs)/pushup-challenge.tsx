@@ -1,6 +1,8 @@
 import { db } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { getDailyName } from '@/utils/daily-name';
+import { syncStreakReminders } from '@/utils/streak-notification';
+import { dayNumberOn } from '@/utils/streak-schedule';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
@@ -274,6 +276,7 @@ export default function PushupChallengeScreen() {
   const { user } = useAuth();
   const [data, setData] = useState<ChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false); // last read succeeded
   const [saving, setSaving] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const [scrollViewH, setScrollViewH] = useState(0);
@@ -413,6 +416,21 @@ export default function PushupChallengeScreen() {
     setTodayNodeY(null);
   }, [data?.startDate]);
 
+  // Keep the 6 PM / 10 PM streak reminders in sync with challenge state.
+  // Every write path (start / complete / undo / reset / load) ends in setData,
+  // so this one effect covers them all.
+  useEffect(() => {
+    // Don't sync on a pending or failed load: a null `data` from an offline
+    // read would cancel the reminders of a challenge that still exists.
+    if (loading || !loaded) return;
+    const nodes = buildTimeline(data);
+    syncStreakReminders({
+      active: !!data && isStreakAlive(nodes),
+      todayCompleted: nodes.some((n) => n.isToday && n.completed),
+      startDate: data?.startDate ?? null,
+    }).catch((e) => console.error('Failed to sync streak reminders', e));
+  }, [data, loading, loaded]);
+
   const docRef = user ? doc(db, 'users', user.uid, 'pushup-challenge', 'data') : null;
 
   const load = useCallback(async () => {
@@ -426,7 +444,9 @@ export default function PushupChallengeScreen() {
         setData(null);
       }
       setDailyName(name);
+      setLoaded(true);
     } catch (e) {
+      setLoaded(false);
       console.error('Failed to load pushup challenge', e);
     } finally {
       setLoading(false);
@@ -457,11 +477,7 @@ export default function PushupChallengeScreen() {
       const alreadyDone = data.days.some((d) => d.date === today);
       if (alreadyDone) return;
 
-      const dayNumber =
-        Math.floor(
-          (new Date(today + 'T00:00:00').getTime() - new Date(data.startDate + 'T00:00:00').getTime()) /
-            (1000 * 60 * 60 * 24),
-        ) + 1;
+      const dayNumber = dayNumberOn(data.startDate, new Date());
 
       const newDays = [
         ...data.days,

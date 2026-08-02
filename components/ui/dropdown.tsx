@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useState } from 'react';
 import {
-  Dimensions,
   Modal,
   ScrollView,
   StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
@@ -21,7 +21,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const DISMISS_THRESHOLD = 120;
 
 interface DropdownProps {
@@ -29,6 +28,7 @@ interface DropdownProps {
   value: string | null;
   onSelect: (value: string) => void;
   placeholder?: string;
+  accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -37,8 +37,10 @@ export function Dropdown({
   value,
   onSelect,
   placeholder = 'Select an option',
+  accessibilityLabel,
   style,
 }: DropdownProps) {
+  const { height: screenHeight } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
   const translateY = useSharedValue(0);
   const overlayOpacity = useSharedValue(1);
@@ -55,22 +57,22 @@ export function Dropdown({
   }, [translateY, overlayOpacity]);
 
   const handleClose = useCallback(() => {
-    translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+    translateY.value = withTiming(screenHeight, { duration: 200 });
     overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
       runOnJS(dismiss)();
     });
-  }, [translateY, overlayOpacity, dismiss]);
+  }, [translateY, overlayOpacity, dismiss, screenHeight]);
 
   const panGesture = Gesture.Pan()
     .onUpdate((e) => {
       if (e.translationY > 0) {
         translateY.value = e.translationY;
-        overlayOpacity.value = Math.max(0, 1 - e.translationY / (SCREEN_HEIGHT * 0.4));
+        overlayOpacity.value = Math.max(0, 1 - e.translationY / (screenHeight * 0.4));
       }
     })
     .onEnd((e) => {
       if (e.translationY > DISMISS_THRESHOLD) {
-        translateY.value = withTiming(SCREEN_HEIGHT, { duration: 200 });
+        translateY.value = withTiming(screenHeight, { duration: 200 });
         overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
           runOnJS(dismiss)();
         });
@@ -90,7 +92,13 @@ export function Dropdown({
 
   return (
     <>
-      <TouchableOpacity style={[styles.dropdownRow, style]} onPress={handleOpen}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel ?? placeholder}
+        accessibilityHint="Opens a list of options"
+        accessibilityState={{ expanded: visible }}
+        style={[styles.dropdownRow, style]}
+        onPress={handleOpen}>
         <Text style={value ? styles.dropdownText : styles.placeholderText}>
           {value || placeholder}
         </Text>
@@ -101,7 +109,9 @@ export function Dropdown({
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Animated.View style={[styles.modalOverlay, overlayAnimatedStyle]}>
             <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={handleClose} />
-            <Animated.View style={[styles.modalContent, cardAnimatedStyle, { paddingBottom: Math.max(30, insets.bottom) }]}>
+            <Animated.View
+              accessibilityViewIsModal
+              style={[styles.modalContent, cardAnimatedStyle, { paddingBottom: Math.max(30, insets.bottom) }]}>
               {/* Extends sheet background colour behind the Android nav bar */}
               <View style={[styles.navBarFill, { height: insets.bottom }]} />
               <GestureDetector gesture={panGesture}>
@@ -110,7 +120,11 @@ export function Dropdown({
                     <View style={styles.pill} />
                     <View style={styles.modalHeaderRow}>
                       <Text style={styles.modalTitle}>{placeholder}</Text>
-                      <TouchableOpacity onPress={handleClose} hitSlop={8}>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel="Close exercise list"
+                        onPress={handleClose}
+                        hitSlop={8}>
                         <Ionicons name="close" size={24} color="#888" />
                       </TouchableOpacity>
                     </View>
@@ -121,6 +135,8 @@ export function Dropdown({
                 {options.map((option) => (
                   <TouchableOpacity
                     key={option}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: value === option }}
                     style={[
                       styles.optionRow,
                       value === option && styles.optionRowSelected,
@@ -152,6 +168,7 @@ export function Dropdown({
 
 const styles = StyleSheet.create({
   dropdownRow: {
+    minHeight: 52,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#2e2e2e',
@@ -219,6 +236,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   optionRow: {
+    minHeight: 52,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

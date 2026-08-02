@@ -1,6 +1,6 @@
 import { ExercisePickerSelection } from '@/components/ui/exercise-picker';
-import { DraftExerciseRow, DraftSet, ExerciseType } from '@/types/workout';
-import { makeUid } from '@/utils/workout-conversion';
+import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
+import { collapseSetsToDraft, makeUid } from '@/utils/workout-conversion';
 import { useMemo, useState } from 'react';
 import { reorderItems } from 'react-native-reorderable-list';
 
@@ -12,6 +12,8 @@ import { reorderItems } from 'react-native-reorderable-list';
 // are done (and persist it so a killed workout resumes with checkmarks intact), while the
 // plan/log editor must NOT write a `completed` key — expandDraftToSets only persists it
 // when defined, so omitting it here keeps logged/planned docs clean.
+// Exercise selection also lives here so every editor uses the planning behavior: prefer
+// the latest matching exercise from the same workout day, then fall back to any day.
 // An edit to a set cascades forward: the new value overwrites each following set that
 // still held the old value, stopping at the first set the user deliberately made
 // different so pyramids / drop sets survive. Completed sets are a record of what was
@@ -33,8 +35,37 @@ function cascadeSetField<K extends keyof DraftSet>(
   return next;
 }
 
-export function useDraftExercises(opts?: { trackCompletion?: boolean }) {
+type DraftExerciseOptions = {
+  trackCompletion?: boolean;
+  workoutHistory?: Workout[];
+  workoutName?: string;
+};
+
+function findLastPerformed(
+  workoutHistory: Workout[],
+  workoutName: string,
+  selection: ExercisePickerSelection
+): PerformedExercise | null {
+  const search = (predicate: (workout: Workout) => boolean): PerformedExercise | null => {
+    for (const workout of workoutHistory) {
+      if (!predicate(workout)) continue;
+      const match = (workout.performedExercises ?? []).find(
+        (exercise) =>
+          exercise.exerciseId === selection.exerciseId &&
+          exercise.variationId === selection.variationId
+      );
+      if (match) return match;
+    }
+    return null;
+  };
+
+  return search((workout) => workout.name === workoutName) ?? search(() => true);
+}
+
+export function useDraftExercises(opts?: DraftExerciseOptions) {
   const trackCompletion = opts?.trackCompletion ?? false;
+  const workoutHistory = opts?.workoutHistory ?? [];
+  const workoutName = opts?.workoutName ?? '';
 
   const blankSet = useMemo(
     () => (): DraftSet => ({
@@ -64,12 +95,34 @@ export function useDraftExercises(opts?: { trackCompletion?: boolean }) {
 
   const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
 
-  const selectExercise = (i: number, selection: ExercisePickerSelection) =>
+  const selectExercise = (i: number, selection: ExercisePickerSelection) => {
+    const lastPerformed = findLastPerformed(workoutHistory, workoutName, selection);
     setExercises((prev) =>
-      prev.map((ex, idx) =>
-        idx === i ? { ...ex, exerciseId: selection.exerciseId, variationId: selection.variationId, label: selection.label } : ex
-      )
+      prev.map((exercise, idx) => {
+        if (idx !== i) return exercise;
+
+        const selected = lastPerformed
+          ? {
+              ...collapseSetsToDraft(lastPerformed),
+              exerciseId: selection.exerciseId,
+              variationId: selection.variationId,
+              label: selection.label,
+            }
+          : {
+              ...exercise,
+              exerciseId: selection.exerciseId,
+              variationId: selection.variationId,
+              label: selection.label,
+            };
+
+        if (!trackCompletion || !lastPerformed) return selected;
+        return {
+          ...selected,
+          sets: selected.sets.map((set) => ({ ...set, completed: false })),
+        };
+      })
     );
+  };
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
