@@ -1,27 +1,43 @@
-import { Dropdown } from '@/components/ui/dropdown';
-import { PlateCalculator } from '@/components/ui/plate-calculator';
-import { ExerciseCard } from '@/components/workout/exercise-card';
-import { db } from '@/config/firebase';
-import { isSplitOption } from '@/constants/split-options';
-import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
-import { useAuth } from '@/context/auth-context';
-import { useDraftExercises } from '@/hooks/use-draft-exercises';
-import { useExerciseCatalog } from '@/hooks/use-exercise-catalog';
-import { DraftExerciseRow, PerformedExercise, Workout } from '@/types/workout';
-import { showAlert } from '@/utils/alert';
-import { createPendingExercise } from '@/utils/create-pending-exercise';
-import { getOngoingInjuryIds } from '@/utils/injuries';
-import { buildPerformedExercise, collapseSetsToDraft, recentExercisesForDay, toDateObj, workoutTotalReps, workoutVolume } from '@/utils/workout-conversion';
+import { Dropdown } from "@/components/ui/dropdown";
+import { PlateCalculator } from "@/components/ui/plate-calculator";
+import { Toast } from "@/components/ui/toast";
+import { ExerciseCard } from "@/components/workout/exercise-card";
+import { db } from "@/config/firebase";
+import {
+  formatAIError,
+  TEMPORARY_AI_DAILY_LIMIT,
+} from "@/constants/ai-config";
+import { isSplitOption } from "@/constants/split-options";
+import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
+import { useAuth } from "@/context/auth-context";
+import { useDraftExercises } from "@/hooks/use-draft-exercises";
+import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
+import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
+import { showAlert } from "@/utils/alert";
+import { createPendingExercise } from "@/utils/create-pending-exercise";
+import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
+import {
+  buildPerformedExercise,
+  collapseSetsToDraft,
+  recentExercisesForDay,
+  toDateObj,
+  workoutTotalReps,
+  workoutVolume,
+} from "@/utils/workout-conversion";
 import {
   dismissWorkoutNotification,
   ensureWorkoutChannel,
   requestNotificationPermission,
   showWorkoutNotification,
-} from '@/utils/workout-notification';
-import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router, useLocalSearchParams } from 'expo-router';
+} from "@/utils/workout-notification";
+import {
+  generateSplitWorkoutNames,
+  suggestedExercisesToDraftRows,
+  suggestWorkoutCompletion,
+} from "@/utils/workout-suggestions";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   addDoc,
   collection,
@@ -36,8 +52,8 @@ import {
   Timestamp,
   updateDoc,
   where,
-} from 'firebase/firestore';
-import { useEffect, useMemo, useRef, useState } from 'react';
+} from "firebase/firestore";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -47,18 +63,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 import ReorderableList, {
   ReorderableListRenderItemInfo,
-} from 'react-native-reorderable-list';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native-reorderable-list";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatElapsed(totalSeconds: number): string {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  const mm = String(m).padStart(2, '0');
-  const ss = String(s).padStart(2, '0');
+  const mm = String(m).padStart(2, "0");
+  const ss = String(s).padStart(2, "0");
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
@@ -68,7 +84,8 @@ function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     if (!startedAt) return;
-    const update = () => setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
+    const update = () =>
+      setElapsed(Math.floor((Date.now() - startedAt.getTime()) / 1000));
     update();
     const iv = setInterval(update, 1000);
     return () => clearInterval(iv);
@@ -78,7 +95,10 @@ function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
 
 export default function ActiveWorkoutScreen() {
   const { user } = useAuth();
-  const { id, suggestion } = useLocalSearchParams<{ id: string; suggestion: string }>();
+  const { id, suggestion } = useLocalSearchParams<{
+    id: string;
+    suggestion: string;
+  }>();
   const insets = useSafeAreaInsets();
   const { options: catalogOptions } = useExerciseCatalog();
 
@@ -87,12 +107,15 @@ export default function ActiveWorkoutScreen() {
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
 
-  const [workoutName, setWorkoutName] = useState('');
+  const [workoutName, setWorkoutName] = useState("");
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
-  const [customWorkoutName, setCustomWorkoutName] = useState('');
+  const [customWorkoutName, setCustomWorkoutName] = useState("");
   const [workoutNameOptions, setWorkoutNameOptions] = useState<string[]>([]);
   const [workoutHistory, setWorkoutHistory] = useState<Workout[]>([]);
-  const effectiveWorkoutName = isCustomWorkoutName ? customWorkoutName.trim() : workoutName.trim();
+  const [splitType, setSplitType] = useState("");
+  const effectiveWorkoutName = isCustomWorkoutName
+    ? customWorkoutName.trim()
+    : workoutName.trim();
   const {
     exercises,
     setExercises,
@@ -119,6 +142,17 @@ export default function ActiveWorkoutScreen() {
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showLogConfirm, setShowLogConfirm] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiUsesLeft, setAiUsesLeft] = useState(TEMPORARY_AI_DAILY_LIMIT);
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    visible: false,
+    message: "",
+    type: "success",
+  });
 
   const hydrated = useRef(false);
 
@@ -129,38 +163,43 @@ export default function ActiveWorkoutScreen() {
     (async () => {
       try {
         if (id) {
-          const ref = doc(db, 'workouts', id);
+          const ref = doc(db, "workouts", id);
           const snap = await getDoc(ref);
           if (!snap.exists() || snap.data().userId !== user.uid) {
-            showAlert('Error', 'Could not load workout.');
+            showAlert("Error", "Could not load workout.");
             router.back();
             return;
           }
           const data = snap.data() as Workout;
-          setWorkoutName(data.name || '');
+          setWorkoutName(data.name || "");
           setExercises(
             data.performedExercises && data.performedExercises.length > 0
               ? data.performedExercises.map(collapseSetsToDraft)
-              : [blankRow()]
+              : [blankRow()],
           );
           // queueOrder is only ever set on docs that passed through the planned
           // queue — it's left in place through the in_progress transition, so
           // its presence tells us how "discard" should behave even on resume.
           setCameFromPlan(data.queueOrder !== undefined);
-          if (data.status === 'planned') {
-            await updateDoc(ref, { status: 'in_progress', startedAt: serverTimestamp() });
+          if (data.status === "planned") {
+            await updateDoc(ref, {
+              status: "in_progress",
+              startedAt: serverTimestamp(),
+            });
             setStartedAt(new Date());
           } else {
-            setStartedAt(data.startedAt ? toDateObj(data.startedAt) : new Date());
+            setStartedAt(
+              data.startedAt ? toDateObj(data.startedAt) : new Date(),
+            );
           }
           setWorkoutId(id);
         } else {
-          const name = suggestion || '';
-          const newDoc = await addDoc(collection(db, 'workouts'), {
+          const name = suggestion || "";
+          const newDoc = await addDoc(collection(db, "workouts"), {
             userId: user.uid,
             name,
             performedExercises: [],
-            status: 'in_progress',
+            status: "in_progress",
             startedAt: serverTimestamp(),
             schemaVersion: 2,
             createdAt: serverTimestamp(),
@@ -172,7 +211,7 @@ export default function ActiveWorkoutScreen() {
           setStartedAt(new Date());
         }
       } catch (err: any) {
-        showAlert('Error', 'Could not start workout. ' + err.message);
+        showAlert("Error", "Could not start workout. " + err.message);
         router.back();
       } finally {
         setInitializing(false);
@@ -187,30 +226,53 @@ export default function ActiveWorkoutScreen() {
 
     (async () => {
       try {
-        const userSnap = await getDoc(doc(db, 'users', user.uid));
+        const userSnap = await getDoc(doc(db, "users", user.uid));
         const data = userSnap.data();
+        const todayUTC = new Date().toISOString().slice(0, 10);
+        const aiUsage = data?.aiUsage as
+          | { date: string; count: number }
+          | undefined;
+        setAiUsesLeft(
+          aiUsage && aiUsage.date === todayUTC
+            ? TEMPORARY_AI_DAILY_LIMIT - (aiUsage.count ?? 0)
+            : TEMPORARY_AI_DAILY_LIMIT,
+        );
         const splitType = data?.workoutSplit?.type;
-        const customSplitDesc: string = data?.workoutSplit?.custom ?? '';
-        let splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
+        setSplitType(splitType ?? "");
+        const customSplitDesc: string = data?.workoutSplit?.custom ?? "";
+        let splitNames: string[] = isSplitOption(splitType)
+          ? SPLIT_WORKOUT_NAMES[splitType]
+          : [];
 
-        if (splitType === 'Other' && customSplitDesc) {
-          const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
+        if (splitType === "Other" && customSplitDesc) {
+          const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 60)}`;
           const cached = await AsyncStorage.getItem(cacheKey);
           if (cached) {
-            try { splitNames = JSON.parse(cached); } catch { /* ignore */ }
+            try {
+              splitNames = JSON.parse(cached);
+            } catch {
+              /* ignore */
+            }
           } else {
             try {
-              const generated = await generateSplitWorkoutNames(customSplitDesc);
+              const generated =
+                await generateSplitWorkoutNames(customSplitDesc);
               if (generated.length > 0) {
                 splitNames = generated;
                 await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
               }
-            } catch { /* silently fall through to used names */ }
+            } catch {
+              /* silently fall through to used names */
+            }
           }
         }
 
         const workoutsSnap = await getDocs(
-          query(collection(db, 'workouts'), where('userId', '==', user.uid), orderBy('date', 'desc'))
+          query(
+            collection(db, "workouts"),
+            where("userId", "==", user.uid),
+            orderBy("date", "desc"),
+          ),
         );
         const merged = [...splitNames];
         const historyData: Workout[] = [];
@@ -240,26 +302,77 @@ export default function ActiveWorkoutScreen() {
   // float to the top of the picker, mirroring the plan/log editor's behavior.
   const recentExercises = useMemo(
     () => recentExercisesForDay(workoutHistory, effectiveWorkoutName),
-    [workoutHistory, effectiveWorkoutName]
+    [workoutHistory, effectiveWorkoutName],
   );
 
   // A resumed workout may carry a one-off name that predates the split list —
   // surface it so the dropdown can show it as the current selection.
   const nameOptions = useMemo(() => {
     const merged = [...workoutNameOptions];
-    if (workoutName && !isCustomWorkoutName && !merged.includes(workoutName)) merged.unshift(workoutName);
-    return [...merged, 'Other'];
+    if (workoutName && !isCustomWorkoutName && !merged.includes(workoutName))
+      merged.unshift(workoutName);
+    return [...merged, "Other"];
   }, [workoutNameOptions, workoutName, isCustomWorkoutName]);
 
   const selectWorkoutName = (selected: string) => {
-    if (selected === 'Other') {
+    if (selected === "Other") {
       setIsCustomWorkoutName(true);
-      setWorkoutName('Other');
+      setWorkoutName("Other");
       return;
     }
     setIsCustomWorkoutName(false);
     setWorkoutName(selected);
-    setCustomWorkoutName('');
+    setCustomWorkoutName("");
+  };
+
+  const handleAISuggest = async () => {
+    if (!user || aiUsesLeft <= 0) return;
+    setAiLoading(true);
+    try {
+      const suggested = await suggestWorkoutCompletion(
+        effectiveWorkoutName,
+        splitType,
+        exercises,
+        workoutHistory,
+        await getOngoingInjuries(user.uid),
+      );
+
+      const todayUTC = new Date().toISOString().slice(0, 10);
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      const existing = userSnap.data()?.aiUsage as
+        | { date: string; count: number }
+        | undefined;
+      const newCount =
+        existing && existing.date === todayUTC ? existing.count + 1 : 1;
+      await updateDoc(userRef, { aiUsage: { date: todayUTC, count: newCount } });
+      setAiUsesLeft(TEMPORARY_AI_DAILY_LIMIT - newCount);
+
+      if (suggested.length === 0) {
+        setToast({
+          visible: true,
+          message: "Your workout already looks balanced!",
+          type: "success",
+        });
+        return;
+      }
+
+      setExercises((prev) => [
+        ...prev,
+        ...suggestedExercisesToDraftRows(suggested, catalogOptions),
+      ]);
+    } catch (e) {
+      const details = formatAIError(e);
+      console.error("AI workout suggestion failed:", details);
+      showAlert(
+        "Error",
+        __DEV__
+          ? `AI request failed: ${details}`
+          : "Could not get AI suggestions. Please try again.",
+      );
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // Debounced autosave — keeps the doc resumable if the app is closed mid-workout
@@ -267,30 +380,43 @@ export default function ActiveWorkoutScreen() {
     if (!workoutId || initializing) return;
     const t = setTimeout(() => {
       const performedExercises: PerformedExercise[] = exercises
-        .filter((ex) => ex.label.trim() !== '')
+        .filter((ex) => ex.label.trim() !== "")
         .map((ex, order) => buildPerformedExercise(ex, order));
-      updateDoc(doc(db, 'workouts', workoutId), {
+      updateDoc(doc(db, "workouts", workoutId), {
         name: effectiveWorkoutName,
         performedExercises,
         updatedAt: serverTimestamp(),
-      }).catch(() => { /* best-effort autosave */ });
+      }).catch(() => {
+        /* best-effort autosave */
+      });
 
       // Refresh the live Android notification with completed-set metrics.
       if (startedAt) {
-        const started = exercises.filter((ex) => ex.label.trim() !== '');
+        const started = exercises.filter((ex) => ex.label.trim() !== "");
         const completed: PerformedExercise[] = started
-          .map((ex, order) => buildPerformedExercise({ ...ex, sets: ex.sets.filter((s) => s.completed) }, order))
+          .map((ex, order) =>
+            buildPerformedExercise(
+              { ...ex, sets: ex.sets.filter((s) => s.completed) },
+              order,
+            ),
+          )
           .filter((pe) => pe.sets.length > 0);
         const metricsSource = { performedExercises: completed } as Workout;
         // Current exercise = the one owning the next set after the last completed
         // set (in workout order). No completed sets yet → the very first set.
         const flat: { label: string; completed: boolean }[] = [];
-        started.forEach((ex) => ex.sets.forEach((s) => flat.push({ label: ex.label, completed: !!s.completed })));
+        started.forEach((ex) =>
+          ex.sets.forEach((s) =>
+            flat.push({ label: ex.label, completed: !!s.completed }),
+          ),
+        );
         let lastCompleted = -1;
-        flat.forEach((f, i) => { if (f.completed) lastCompleted = i; });
+        flat.forEach((f, i) => {
+          if (f.completed) lastCompleted = i;
+        });
         const currentExercise = flat[lastCompleted + 1]?.label ?? null;
         showWorkoutNotification({
-          name: effectiveWorkoutName || 'Workout in progress',
+          name: effectiveWorkoutName || "Workout in progress",
           startedAt,
           sets: completed.reduce((n, pe) => n + pe.sets.length, 0),
           totalReps: workoutTotalReps(metricsSource),
@@ -308,7 +434,7 @@ export default function ActiveWorkoutScreen() {
 
   const incompleteSetCount = () =>
     exercises
-      .filter((ex) => ex.label.trim() !== '')
+      .filter((ex) => ex.label.trim() !== "")
       .reduce((sum, ex) => sum + ex.sets.filter((s) => !s.completed).length, 0);
 
   const finishWorkout = async () => {
@@ -316,24 +442,32 @@ export default function ActiveWorkoutScreen() {
     setSaving(true);
     try {
       const performedExercises: PerformedExercise[] = exercises
-        .filter((ex) => ex.label.trim() !== '')
-        .map((ex, order) => buildPerformedExercise({ ...ex, sets: ex.sets.filter((s) => s.completed) }, order))
+        .filter((ex) => ex.label.trim() !== "")
+        .map((ex, order) =>
+          buildPerformedExercise(
+            { ...ex, sets: ex.sets.filter((s) => s.completed) },
+            order,
+          ),
+        )
         .filter((pe) => pe.sets.length > 0)
-        .map((pe) => ({ ...pe, sets: pe.sets.map(({ completed, ...rest }) => rest) }));
+        .map((pe) => ({
+          ...pe,
+          sets: pe.sets.map(({ completed, ...rest }) => rest),
+        }));
 
       const injuries = user ? await getOngoingInjuryIds(user.uid) : [];
-      await updateDoc(doc(db, 'workouts', workoutId), {
-        name: effectiveWorkoutName || 'Workout',
+      await updateDoc(doc(db, "workouts", workoutId), {
+        name: effectiveWorkoutName || "Workout",
         date: Timestamp.fromDate(new Date()),
         performedExercises,
-        status: 'completed',
+        status: "completed",
         injuries,
         updatedAt: serverTimestamp(),
       });
       await dismissWorkoutNotification();
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } catch (err: any) {
-      showAlert('Error', 'Could not finish workout. ' + err.message);
+      showAlert("Error", "Could not finish workout. " + err.message);
     } finally {
       setSaving(false);
       setShowFinishConfirm(false);
@@ -354,22 +488,25 @@ export default function ActiveWorkoutScreen() {
     try {
       if (cameFromPlan) {
         const performedExercises: PerformedExercise[] = exercises
-          .filter((ex) => ex.label.trim() !== '')
+          .filter((ex) => ex.label.trim() !== "")
           .map((ex, order) => buildPerformedExercise(ex, order))
-          .map((pe) => ({ ...pe, sets: pe.sets.map(({ completed, ...rest }) => rest) }));
-        await updateDoc(doc(db, 'workouts', workoutId), {
-          status: 'planned',
+          .map((pe) => ({
+            ...pe,
+            sets: pe.sets.map(({ completed, ...rest }) => rest),
+          }));
+        await updateDoc(doc(db, "workouts", workoutId), {
+          status: "planned",
           performedExercises,
           startedAt: deleteField(),
           updatedAt: serverTimestamp(),
         });
       } else {
-        await deleteDoc(doc(db, 'workouts', workoutId));
+        await deleteDoc(doc(db, "workouts", workoutId));
       }
       await dismissWorkoutNotification();
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } catch (err: any) {
-      showAlert('Error', 'Could not discard workout. ' + err.message);
+      showAlert("Error", "Could not discard workout. " + err.message);
     } finally {
       setSaving(false);
       setShowDiscardConfirm(false);
@@ -385,17 +522,35 @@ export default function ActiveWorkoutScreen() {
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-        <TouchableOpacity onPress={() => setShowDiscardConfirm(true)} hitSlop={8}>
+        <TouchableOpacity
+          onPress={() => setShowDiscardConfirm(true)}
+          hitSlop={8}
+        >
           <Text style={styles.discardText}>Discard</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{effectiveWorkoutName || 'Active Workout'}</Text>
+          <Text style={styles.headerTitle}>
+            {effectiveWorkoutName || "Active Workout"}
+          </Text>
           <WorkoutTimer startedAt={startedAt} />
         </View>
         <TouchableOpacity onPress={handleFinishPress} disabled={saving}>
-          {saving ? <ActivityIndicator color="#e54242" /> : <Text style={styles.finishText}>Finish</Text>}
+          {saving ? (
+            <ActivityIndicator color="#e54242" />
+          ) : (
+            <Text style={styles.finishText}>Finish</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -412,50 +567,60 @@ export default function ActiveWorkoutScreen() {
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
-        {workoutNameOptions.length > 0 ? (
-          <>
-            <Dropdown
-              options={nameOptions}
-              value={isCustomWorkoutName ? 'Other' : (workoutName || null)}
-              onSelect={selectWorkoutName}
-              placeholder="Select workout name"
-              style={styles.nameDropdown}
-            />
-            {isCustomWorkoutName && (
+            {workoutNameOptions.length > 0 ? (
+              <>
+                <Dropdown
+                  options={nameOptions}
+                  value={isCustomWorkoutName ? "Other" : workoutName || null}
+                  onSelect={selectWorkoutName}
+                  placeholder="Select workout name"
+                  style={styles.nameDropdown}
+                />
+                {isCustomWorkoutName && (
+                  <TextInput
+                    style={styles.nameInput}
+                    placeholder="Enter workout name"
+                    placeholderTextColor="#555"
+                    value={customWorkoutName}
+                    onChangeText={setCustomWorkoutName}
+                  />
+                )}
+              </>
+            ) : (
               <TextInput
                 style={styles.nameInput}
-                placeholder="Enter workout name"
+                placeholder="Workout name (e.g. Push Day)"
                 placeholderTextColor="#555"
-                value={customWorkoutName}
-                onChangeText={setCustomWorkoutName}
+                value={isCustomWorkoutName ? customWorkoutName : workoutName}
+                onChangeText={(v) => {
+                  setIsCustomWorkoutName(true);
+                  setCustomWorkoutName(v);
+                }}
               />
             )}
-          </>
-        ) : (
-          <TextInput
-            style={styles.nameInput}
-            placeholder="Workout name (e.g. Push Day)"
-            placeholderTextColor="#555"
-            value={isCustomWorkoutName ? customWorkoutName : workoutName}
-            onChangeText={(v) => {
-              setIsCustomWorkoutName(true);
-              setCustomWorkoutName(v);
-            }}
-          />
-        )}
-        <TouchableOpacity style={styles.logFinishedButton} onPress={() => setShowLogConfirm(true)}>
-          <Ionicons name="create-outline" size={16} color="#888" />
-          <Text style={styles.logFinishedText}>Log a finished workout instead</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logFinishedButton}
+              onPress={() => setShowLogConfirm(true)}
+            >
+              <Ionicons name="create-outline" size={16} color="#888" />
+              <Text style={styles.logFinishedText}>
+                Log a finished workout instead
+              </Text>
+            </TouchableOpacity>
           </>
         }
-        renderItem={({ item: ex, index: i }: ReorderableListRenderItemInfo<DraftExerciseRow>) => (
+        renderItem={({
+          item: ex,
+          index: i,
+        }: ReorderableListRenderItemInfo<DraftExerciseRow>) => (
           <ExerciseCard
             exercise={ex}
             index={i}
             catalogOptions={catalogOptions}
             recentExercises={recentExercises}
-            onCreateNew={user ? (name) => createPendingExercise(name, user.uid) : undefined}
+            onCreateNew={
+              user ? (name) => createPendingExercise(name, user.uid) : undefined
+            }
             onSelectExercise={selectExercise}
             onChangeType={updateExerciseField}
             onToggleBodyweight={toggleBodyweight}
@@ -472,46 +637,100 @@ export default function ActiveWorkoutScreen() {
         )}
         ListFooterComponent={
           <>
-        <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
-          <Ionicons name="add-circle-outline" size={18} color="#e54242" />
-          <Text style={styles.addExText}>Add Exercise</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
+              <Ionicons name="add-circle-outline" size={18} color="#e54242" />
+              <Text style={styles.addExText}>Add Exercise</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.bigFinishButton, saving && styles.bigFinishButtonDisabled]}
-          onPress={handleFinishPress}
-          disabled={saving}
-          activeOpacity={0.8}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.bigFinishButtonText}>Finish Workout</Text>}
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.aiSuggestButton,
+                (aiLoading || initializing || aiUsesLeft <= 0) &&
+                  styles.aiSuggestButtonDisabled,
+              ]}
+              onPress={handleAISuggest}
+              disabled={aiLoading || initializing || aiUsesLeft <= 0}
+              activeOpacity={0.8}
+            >
+              {aiLoading ? (
+                <ActivityIndicator color="#4ea8de" />
+              ) : (
+                <>
+                  <Ionicons
+                    name="sparkles"
+                    size={16}
+                    color={aiUsesLeft <= 0 ? "#444" : "#4ea8de"}
+                  />
+                  <Text
+                    style={[
+                      styles.aiSuggestButtonText,
+                      aiUsesLeft <= 0 && styles.aiSuggestButtonTextDisabled,
+                    ]}
+                  >
+                    {aiUsesLeft > 0
+                      ? `Balance Workout with AI (${aiUsesLeft} left)`
+                      : "No AI uses left today"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.bigFinishButton,
+                saving && styles.bigFinishButtonDisabled,
+              ]}
+              onPress={handleFinishPress}
+              disabled={saving}
+              activeOpacity={0.8}
+            >
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.bigFinishButtonText}>Finish Workout</Text>
+              )}
+            </TouchableOpacity>
           </>
         }
-        />
+      />
 
       {!showFinishConfirm && !showLogConfirm && !showDiscardConfirm && (
         <TouchableOpacity
           style={[styles.plateCalcFab, { bottom: Math.max(insets.bottom, 20) }]}
           onPress={() => setShowPlateCalc(true)}
-          activeOpacity={0.8}>
+          activeOpacity={0.8}
+        >
           <Ionicons name="calculator-outline" size={24} color="#e54242" />
         </TouchableOpacity>
       )}
 
-      <PlateCalculator visible={showPlateCalc} onClose={() => setShowPlateCalc(false)} />
+      <PlateCalculator
+        visible={showPlateCalc}
+        onClose={() => setShowPlateCalc(false)}
+      />
 
       {showFinishConfirm && (
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmCard}>
             <Text style={styles.confirmTitle}>Sets incomplete</Text>
             <Text style={styles.confirmMessage}>
-              {incompleteSetCount()} set{incompleteSetCount() !== 1 ? 's' : ''} not marked complete. They&apos;ll be
-              dropped from this workout. Finish anyway?
+              {incompleteSetCount()} set{incompleteSetCount() !== 1 ? "s" : ""}{" "}
+              not marked complete. They&apos;ll be dropped from this workout.
+              Finish anyway?
             </Text>
             <View style={styles.confirmActions}>
-              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setShowFinishConfirm(false)} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.confirmCancelButton}
+                onPress={() => setShowFinishConfirm(false)}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.confirmCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmConfirmButton} onPress={finishWorkout} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.confirmConfirmButton}
+                onPress={finishWorkout}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.confirmConfirmText}>Finish Anyway</Text>
               </TouchableOpacity>
             </View>
@@ -524,17 +743,26 @@ export default function ActiveWorkoutScreen() {
           <View style={styles.confirmCard}>
             <Text style={styles.confirmTitle}>Log a finished workout?</Text>
             <Text style={styles.confirmMessage}>
-              This opens the manual log form for a workout you&apos;ve already completed. Your current
-              session stays in progress and can be resumed.
+              This opens the manual log form for a workout you&apos;ve already
+              completed. Your current session stays in progress and can be
+              resumed.
             </Text>
             <View style={styles.confirmActions}>
-              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setShowLogConfirm(false)} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.confirmCancelButton}
+                onPress={() => setShowLogConfirm(false)}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.confirmCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmConfirmButton}
-                onPress={() => { setShowLogConfirm(false); router.push('/modal'); }}
-                activeOpacity={0.8}>
+                onPress={() => {
+                  setShowLogConfirm(false);
+                  router.push("/modal");
+                }}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.confirmConfirmText}>Log Workout</Text>
               </TouchableOpacity>
             </View>
@@ -545,18 +773,30 @@ export default function ActiveWorkoutScreen() {
       {showDiscardConfirm && (
         <View style={styles.confirmOverlay}>
           <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>{cameFromPlan ? 'Stop workout?' : 'Discard workout?'}</Text>
+            <Text style={styles.confirmTitle}>
+              {cameFromPlan ? "Stop workout?" : "Discard workout?"}
+            </Text>
             <Text style={styles.confirmMessage}>
               {cameFromPlan
-                ? 'This will move the workout back to your planned queue.'
-                : 'This will delete the workout — it was never saved as a plan.'}
+                ? "This will move the workout back to your planned queue."
+                : "This will delete the workout — it was never saved as a plan."}
             </Text>
             <View style={styles.confirmActions}>
-              <TouchableOpacity style={styles.confirmCancelButton} onPress={() => setShowDiscardConfirm(false)} activeOpacity={0.8}>
+              <TouchableOpacity
+                style={styles.confirmCancelButton}
+                onPress={() => setShowDiscardConfirm(false)}
+                activeOpacity={0.8}
+              >
                 <Text style={styles.confirmCancelText}>Keep Going</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmConfirmButton} onPress={discardWorkout} activeOpacity={0.8}>
-                <Text style={styles.confirmConfirmText}>{cameFromPlan ? 'Stop' : 'Discard'}</Text>
+              <TouchableOpacity
+                style={styles.confirmConfirmButton}
+                onPress={discardWorkout}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.confirmConfirmText}>
+                  {cameFromPlan ? "Stop" : "Discard"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -569,46 +809,46 @@ export default function ActiveWorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
+    backgroundColor: "#0f0f0f",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#0f0f0f',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#0f0f0f",
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingBottom: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#1e1e1e',
+    borderBottomColor: "#1e1e1e",
   },
   headerCenter: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
   headerTimer: {
     fontSize: 12,
-    color: '#e54242',
-    fontWeight: '600',
+    color: "#e54242",
+    fontWeight: "600",
     marginTop: 2,
   },
   finishText: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#e54242',
+    fontWeight: "700",
+    color: "#e54242",
   },
   discardText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#888',
+    fontWeight: "600",
+    color: "#888",
   },
   body: {
     padding: 20,
@@ -616,136 +856,162 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   plateCalcFab: {
-    position: 'absolute',
+    position: "absolute",
     right: 20,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#271515',
+    backgroundColor: "#271515",
     borderWidth: 1,
-    borderColor: '#e54242',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderColor: "#e54242",
+    alignItems: "center",
+    justifyContent: "center",
   },
   nameDropdown: {
     marginBottom: 16,
   },
   nameInput: {
-    backgroundColor: '#1c1c1c',
+    backgroundColor: "#1c1c1c",
     borderWidth: 1,
-    borderColor: '#2e2e2e',
+    borderColor: "#2e2e2e",
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-    color: '#fff',
+    color: "#fff",
     marginBottom: 16,
   },
   logFinishedButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     paddingVertical: 10,
     marginBottom: 16,
   },
   logFinishedText: {
-    color: '#888',
+    color: "#888",
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   addExButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
-    backgroundColor: '#271515',
+    backgroundColor: "#271515",
     borderWidth: 1,
-    borderColor: '#e54242',
+    borderColor: "#e54242",
     borderRadius: 10,
     marginBottom: 16,
     gap: 6,
   },
   addExText: {
-    color: '#e54242',
-    fontWeight: '700',
+    color: "#e54242",
+    fontWeight: "700",
     fontSize: 14,
     letterSpacing: 0.2,
   },
-  bigFinishButton: {
-    backgroundColor: '#e54242',
+  aiSuggestButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#0d1e2e",
     borderRadius: 14,
     paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#1a3a56",
+  },
+  aiSuggestButtonDisabled: {
+    backgroundColor: "#141414",
+    borderColor: "#2a2a2a",
+  },
+  aiSuggestButtonText: {
+    color: "#4ea8de",
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+  aiSuggestButtonTextDisabled: {
+    color: "#444",
+  },
+  bigFinishButton: {
+    backgroundColor: "#e54242",
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 8,
   },
   bigFinishButtonDisabled: {
     opacity: 0.5,
   },
   bigFinishButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.3,
   },
   confirmOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 30,
   },
   confirmCard: {
-    backgroundColor: '#1c1c1c',
+    backgroundColor: "#1c1c1c",
     borderRadius: 16,
     padding: 24,
-    width: '100%',
+    width: "100%",
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "#2a2a2a",
   },
   confirmTitle: {
     fontSize: 18,
-    fontWeight: '800',
-    color: '#fff',
+    fontWeight: "800",
+    color: "#fff",
     marginBottom: 8,
   },
   confirmMessage: {
     fontSize: 14,
-    color: '#aaa',
+    color: "#aaa",
     lineHeight: 20,
     marginBottom: 24,
   },
   confirmActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   confirmCancelButton: {
     flex: 1,
-    backgroundColor: '#2a2a2a',
+    backgroundColor: "#2a2a2a",
     borderRadius: 10,
     paddingVertical: 13,
-    alignItems: 'center',
+    alignItems: "center",
   },
   confirmCancelText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
   },
   confirmConfirmButton: {
     flex: 1,
-    backgroundColor: '#e54242',
+    backgroundColor: "#e54242",
     borderRadius: 10,
     paddingVertical: 13,
-    alignItems: 'center',
+    alignItems: "center",
   },
   confirmConfirmText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: "700",
+    color: "#fff",
   },
 });

@@ -8,7 +8,6 @@ export type AIProviderId = 'google' | 'openai';
 export const AI_PROVIDER = (process.env.EXPO_PUBLIC_AI_PROVIDER ?? 'google') as AIProviderId;
 export const AI_MODEL = process.env.EXPO_PUBLIC_AI_MODEL ?? 'gemini-3.5-flash';
 export const AI_MAX_RETRIES = 2;
-
 export const TEMPORARY_AI_DAILY_LIMIT = 3;
 
 export function formatAIError(error: unknown): string {
