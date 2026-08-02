@@ -11,6 +11,7 @@
     "lint": "expo lint",
     "generate:icons": "node scripts/generate-icons.js",
     "build:web": "npx expo export -p web",
+    "test:muscle-load": "tsx utils/muscle-load.test.ts && tsx constants/muscle-map-paths.test.ts",
     "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js && node scripts/migration/canonical-muscles.test.js && node scripts/migration/catalog-seed.test.js",
     "migration:inventory": "node scripts/migration/legacy-inventory.js",
     "migration:firestore:snapshot": "node scripts/migration/firestore-readonly-snapshot.js",
@@ -73,6 +74,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "sharp": "^0.35.3",
+    "tsx": "^4.23.4",
     "typescript": "~5.9.2"
   },
   "private": true

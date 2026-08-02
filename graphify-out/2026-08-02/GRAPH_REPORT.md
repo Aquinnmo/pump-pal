@@ -1,16 +1,16 @@
 # Graph Report - pump-pal  (2026-08-02)
 
 ## Corpus Check
-- 138 files · ~89,748 words
+- 143 files · ~96,210 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1035 nodes · 1767 edges · 129 communities (54 shown, 75 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 32 edges (avg confidence: 0.56)
+- 1097 nodes · 1927 edges · 125 communities (50 shown, 75 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 36 edges (avg confidence: 0.58)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `05e298ec`
+- Built from commit: `16f2fb04`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -29,8 +29,8 @@
 - collapsible.tsx
 - write-v2-firestore.js
 - dry-run-conversion.js
-- useAuth
-- phone-auth.tsx
+- active-workout.tsx
+- muscle-load.ts
 - reset-project.js
 - AGENTS.md
 - include
@@ -39,10 +39,10 @@
 - CLAUDE.md
 - vercel.json
 - (tabs)/_layout.tsx
-- muscle-analysis.ts
+- workout.ts
 - eslint.config.js
-- active-workout.tsx
-- analytics.tsx
+- expo
+- expo-font
 - Android Adaptive Icon Background Layer
 - favicon.png (Pump Pal web favicon)
 - post-checkout
@@ -86,12 +86,12 @@
 - workout-prefill-loader.tsx
 - build-reviewed-migration-files.js
 - plate-calculator.tsx
-- timber-auth-shell.tsx
-- expo-router
+- phone-auth.tsx
+- react
 - LiveUpdateNotificationModule
 - index.ts
 - Exercise Catalog
-- set-split.tsx
+- react-native
 - generate-ic-stat-timber.js
 - Beads
 - Users
@@ -107,7 +107,6 @@
 - expo-linear-gradient
 - expo-localization
 - expo-navigation-bar
-- expo-router
 - expo-sharing
 - expo-splash-screen
 - expo-status-bar
@@ -118,15 +117,12 @@
 - expo-web-browser
 - firebase
 - @notifee/react-native
-- react-dom
 - @react-native-async-storage/async-storage
 - react-native-chart-kit
 - @react-native-community/datetimepicker
 - react-native-gesture-handler
-- react-native-get-random-values
 - react-native-reanimated
 - react-native-reorderable-list
-- react-native-safe-area-context
 - react-native-screens
 - react-native-svg
 - @ai-sdk/openai
@@ -141,48 +137,48 @@
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAuth()` - 37 edges
-2. `toDateObj()` - 25 edges
+2. `toDateObj()` - 27 edges
 3. `ActiveWorkoutScreen()` - 23 edges
 4. `expo-router` - 22 edges
-5. `AddWorkoutModal()` - 19 edges
-6. `db` - 18 edges
-7. `expo` - 17 edges
-8. `scripts` - 17 edges
-9. `Workout` - 17 edges
-10. `isSplitOption()` - 14 edges
+5. `Workout` - 21 edges
+6. `AddWorkoutModal()` - 19 edges
+7. `db` - 18 edges
+8. `scripts` - 18 edges
+9. `expo` - 17 edges
+10. `computeMuscleLoad()` - 15 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Props` --references--> `Workout`  [EXTRACTED]
-  components/muscle-insight-cards.tsx → types/workout.ts
+- `computeMuscleVolume()` --indirect_call--> `isMuscleId()`  [INFERRED]
+  utils/muscle-analysis.ts → constants/muscles.ts
+- `analyzeMuscles()` --indirect_call--> `muscleLabel()`  [INFERRED]
+  utils/muscle-analysis.ts → constants/muscles.ts
+- `findLastPerformed()` --indirect_call--> `workout()`  [INFERRED]
+  hooks/use-draft-exercises.ts → utils/muscle-load.test.ts
+- `collectSource()` --indirect_call--> `workout()`  [INFERRED]
+  scripts/build-v2-migration.js → utils/muscle-load.test.ts
 - `analyzeMuscles()` --references--> `output`  [EXTRACTED]
   utils/muscle-analysis.ts → app.json
-- `SettingsAppScreen()` --references--> `updates`  [EXTRACTED]
-  app/settings-app.tsx → app.json
-- `SignInScreen()` --calls--> `useAuth()`  [EXTRACTED]
-  app/(auth)/sign-in.tsx → context/auth-context.tsx
-- `SignUpScreen()` --calls--> `useAuth()`  [EXTRACTED]
-  app/(auth)/sign-up.tsx → context/auth-context.tsx
 
 ## Import Cycles
 - None detected.
 
-## Communities (129 total, 75 thin omitted)
+## Communities (125 total, 75 thin omitted)
 
 ### Community 0 - "pushup-challenge.tsx"
-Cohesion: 0.14
-Nodes (20): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+12 more)
+Cohesion: 0.07
+Nodes (44): buildTimeline(), ChallengeData, ChallengeDay, currentStreakLength(), formatDate(), formatTime(), isStreakAlive(), PushupChallengeScreen() (+36 more)
 
 ### Community 1 - "settings-injuries.tsx"
-Cohesion: 0.12
-Nodes (25): atNoon(), cap(), labelToSide(), newId(), SettingsInjuriesScreen(), SEVERITIES, SIDE_OPTIONS, styles (+17 more)
+Cohesion: 0.11
+Nodes (28): atNoon(), cap(), labelToSide(), newId(), SettingsInjuriesScreen(), SEVERITIES, SIDE_OPTIONS, styles (+20 more)
 
 ### Community 2 - "legacy-inventory.test.js"
 Cohesion: 0.09
 Nodes (29): fs, generateMappingDraft(), guessExerciseId(), path, run(), slugify(), addToMapSet(), formatMarkdown() (+21 more)
 
 ### Community 3 - "expo"
-Cohesion: 0.05
-Nodes (42): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, permissions (+34 more)
+Cohesion: 0.04
+Nodes (45): backgroundColor, backgroundImage, foregroundImage, monochromeImage, adaptiveIcon, edgeToEdgeEnabled, package, permissions (+37 more)
 
 ### Community 4 - "canonical-muscles.test.js"
 Cohesion: 0.20
@@ -193,8 +189,8 @@ Cohesion: 0.15
 Nodes (22): firestoreTimestamp(), timestampShapeToIso(), buildPlan(), compareTotals(), { convertLegacyWorkout }, crypto, { firestoreTimestamp, patchDocument, timestampShapeToIso }, flattenSnapshot() (+14 more)
 
 ### Community 6 - "dependencies"
-Cohesion: 0.18
-Nodes (11): ai, expo, expo-font, expo-linking, dependencies, ai, expo, expo-font (+3 more)
+Cohesion: 0.15
+Nodes (13): ai, expo-linking, expo-router, dependencies, ai, expo-linking, expo-router, react-dom (+5 more)
 
 ### Community 7 - "data-model/README.md"
 Cohesion: 0.16
@@ -210,7 +206,7 @@ Nodes (26): buildInventory(), buildMapping(), buildReviewWarnings(), compactCoun
 
 ### Community 10 - "scripts"
 Cohesion: 0.06
-Nodes (32): eslint, eslint-config-expo, devDependencies, eslint, eslint-config-expo, sharp, @types/react, typescript (+24 more)
+Nodes (35): eslint, eslint-config-expo, devDependencies, eslint, eslint-config-expo, sharp, tsx, @types/react (+27 more)
 
 ### Community 11 - "collapsible.tsx"
 Cohesion: 0.14
@@ -224,13 +220,13 @@ Nodes (21): commitWrites(), documentRoot(), encodeFields(), encodePathSegments()
 Cohesion: 0.15
 Nodes (18): convertLegacyExercise(), convertLegacyWorkout(), durationSeconds(), assert, { convertedWorkout, report }, { convertLegacyWorkout }, mappingsByLegacyName, compareTotals() (+10 more)
 
-### Community 14 - "useAuth"
-Cohesion: 0.13
-Nodes (20): RootLayoutNav(), unstable_settings, SettingsAccountScreen(), styles, SettingsAppScreen(), styles, SettingsScreen(), styles (+12 more)
+### Community 14 - "active-workout.tsx"
+Cohesion: 0.05
+Nodes (94): ActiveWorkoutScreen(), formatElapsed(), styles, WorkoutTimer(), updates, RootLayoutNav(), unstable_settings, AddWorkoutModal() (+86 more)
 
-### Community 15 - "phone-auth.tsx"
-Cohesion: 0.24
-Nodes (8): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, FirebaseRecaptchaVerifierModal, FirebaseRecaptchaVerifierModalRef, Props, styles
+### Community 15 - "muscle-load.ts"
+Cohesion: 0.08
+Nodes (51): LOAD_LEGEND_STEPS, MUSCLE_OPTIONS, MuscleLoadMap(), relativeDate(), selectedAccessibility(), statusFor(), styles, MUSCLE_MAP_SEGMENTS (+43 more)
 
 ### Community 16 - "reset-project.js"
 Cohesion: 0.22
@@ -264,17 +260,9 @@ Nodes (4): buildCommand, cleanUrls, outputDirectory, rewrites
 Cohesion: 0.43
 Nodes (4): TabLayout(), HapticTab(), TimberTabIcon(), TimberTabIconProps
 
-### Community 24 - "muscle-analysis.ts"
-Cohesion: 0.10
-Nodes (30): InsightsCache, MuscleInsightCards(), Props, RefreshCache, styles, todayKey(), AI_MAX_RETRIES, AI_MODEL (+22 more)
-
-### Community 26 - "active-workout.tsx"
-Cohesion: 0.05
-Nodes (97): ActiveWorkoutScreen(), formatElapsed(), styles, WorkoutTimer(), AddWorkoutModal(), styles, PlannedWorkoutsScreen(), queueOrderCacheKey() (+89 more)
-
-### Community 27 - "analytics.tsx"
-Cohesion: 0.24
-Nodes (7): AnalyticsScreen(), chartConfig, formatDuration(), formatPounds(), formatSignedPounds(), StrengthHistoryPoint, styles
+### Community 24 - "workout.ts"
+Cohesion: 0.08
+Nodes (38): DragHandle(), styles, compareExerciseLabels(), ExercisePicker(), ExercisePickerProps, ExercisePickerSelection, Sheet, SheetHandle (+30 more)
 
 ### Community 35 - "Beads - AI-Native Issue Tracking"
 Cohesion: 0.22
@@ -312,13 +300,9 @@ Nodes (8): byName, catalog, catalogSeed, decisions, fs, inventory, mapping, path
 Cohesion: 0.24
 Nodes (12): fmt(), Mode, MODES, num(), PlateCalculator(), PlateCalculatorProps, styles, DENOM_UNITS (+4 more)
 
-### Community 76 - "timber-auth-shell.tsx"
-Cohesion: 0.13
-Nodes (18): SignInScreen(), styles, SignUpScreen(), styles, Slide, SLIDES, styles, styles (+10 more)
-
-### Community 77 - "expo-router"
-Cohesion: 0.22
-Nodes (6): plugins, Props, expo-localization, expo-router, expo-web-browser, @react-native-community/datetimepicker
+### Community 76 - "phone-auth.tsx"
+Cohesion: 0.09
+Nodes (26): getCallingCode(), PhoneAuthScreen(), REGION_TO_CALLING_CODE, styles, SignInScreen(), styles, SignUpScreen(), styles (+18 more)
 
 ### Community 78 - "LiveUpdateNotificationModule"
 Cohesion: 0.29
@@ -331,10 +315,6 @@ Nodes (10): LiveUpdateNotificationPayload, LiveUpdateSegment, dismiss(), isSuppo
 ### Community 80 - "Exercise Catalog"
 Cohesion: 0.22
 Nodes (9): Doc ID convention, Exercise Catalog, Exercise picker (why the shape is flattened at read time), `exerciseCatalogMeta/current`, `ExerciseVariation` (embedded, not a separate doc), Muscle taxonomy, Shape, Validation (+1 more)
-
-### Community 81 - "set-split.tsx"
-Cohesion: 0.23
-Nodes (9): SetSplitScreen(), styles, SettingsSplitScreen(), styles, Dropdown(), DropdownProps, styles, SPLIT_OPTIONS (+1 more)
 
 ### Community 82 - "generate-ic-stat-timber.js"
 Cohesion: 0.29
@@ -353,32 +333,32 @@ Cohesion: 0.40
 Nodes (5): AI consumers, Doc ID convention, `MigrationSource`, Shape, Workouts
 
 ### Community 86 - "Timber Design Language"
-Cohesion: 0.10
-Nodes (21): Accessibility, Appendix: known drift, Color, Color, Component canon, Copy, Copy voice, Destructive actions are not color-coded (+13 more)
+Cohesion: 0.07
+Nodes (29): Accessibility, Appendix: known drift, Color, Color, Component canon, Copy, Copy, Copy voice (+21 more)
 
 ### Community 88 - "Why Timber Exists"
 Cohesion: 0.20
 Nodes (10): A note on the name, Decision rules, How the product already embodies this, Known tensions, Non-goals, The deterministic-first rule, Thesis, What the insights are for (+2 more)
 
 ## Knowledge Gaps
-- **446 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+441 more)
+- **469 isolated node(s):** `name`, `slug`, `version`, `orientation`, `icon` (+464 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **75 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dependencies` connect `dependencies` to `settings-injuries.tsx`, `@ai-sdk/google`, `react-native-web`, `scripts`, `expo-constants`, `expo-dev-client`, `expo-file-system`, `expo-haptics`, `expo-image`, `expo-insights`, `expo-linear-gradient`, `expo-localization`, `expo-navigation-bar`, `expo-router`, `expo-sharing`, `expo-splash-screen`, `expo-status-bar`, `expo-symbols`, `expo-system-ui`, `expo-updates`, `@expo/vector-icons`, `expo-web-browser`, `firebase`, `@notifee/react-native`, `react-dom`, `@react-native-async-storage/async-storage`, `react-native-chart-kit`, `@react-native-community/datetimepicker`, `react-native-gesture-handler`, `react-native-get-random-values`, `react-native-reanimated`, `react-native-reorderable-list`, `react-native-safe-area-context`, `react-native-screens`, `react-native-svg`, `@ai-sdk/openai`, `react-native-webview`, `react-native-worklets`, `@react-navigation/bottom-tabs`, `@react-navigation/elements`, `@react-navigation/native`, `zod`?**
-  _High betweenness centrality (0.116) - this node is a cross-community bridge._
-- **Why does `react` connect `settings-injuries.tsx` to `active-workout.tsx`, `dependencies`?**
-  _High betweenness centrality (0.101) - this node is a cross-community bridge._
-- **Why does `AddWorkoutModal()` connect `active-workout.tsx` to `settings-injuries.tsx`, `useAuth`?**
-  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+- **Why does `dependencies` connect `dependencies` to `@ai-sdk/google`, `react-native-web`, `scripts`, `expo`, `expo-font`, `react`, `react-native`, `expo-constants`, `expo-dev-client`, `expo-file-system`, `expo-haptics`, `expo-image`, `expo-insights`, `expo-linear-gradient`, `expo-localization`, `expo-navigation-bar`, `expo-sharing`, `expo-splash-screen`, `expo-status-bar`, `expo-symbols`, `expo-system-ui`, `expo-updates`, `@expo/vector-icons`, `expo-web-browser`, `firebase`, `@notifee/react-native`, `@react-native-async-storage/async-storage`, `react-native-chart-kit`, `@react-native-community/datetimepicker`, `react-native-gesture-handler`, `react-native-reanimated`, `react-native-reorderable-list`, `react-native-screens`, `react-native-svg`, `@ai-sdk/openai`, `react-native-webview`, `react-native-worklets`, `@react-navigation/bottom-tabs`, `@react-navigation/elements`, `@react-navigation/native`, `zod`?**
+  _High betweenness centrality (0.121) - this node is a cross-community bridge._
+- **Why does `react` connect `react` to `settings-injuries.tsx`, `active-workout.tsx`, `dependencies`?**
+  _High betweenness centrality (0.109) - this node is a cross-community bridge._
+- **Why does `AddWorkoutModal()` connect `active-workout.tsx` to `pushup-challenge.tsx`, `workout.ts`, `react`?**
+  _High betweenness centrality (0.094) - this node is a cross-community bridge._
 - **What connects `name`, `slug`, `version` to the rest of the system?**
-  _446 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _469 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `pushup-challenge.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.14461538461538462 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.06734006734006734 - nodes in this community are weakly interconnected._
 - **Should `settings-injuries.tsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.11822660098522167 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.1140819964349376 - nodes in this community are weakly interconnected._
 - **Should `legacy-inventory.test.js` be split into smaller, more focused modules?**
   _Cohesion score 0.0928030303030303 - nodes in this community are weakly interconnected._
