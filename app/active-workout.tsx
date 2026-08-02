@@ -293,6 +293,10 @@ export default function ActiveWorkoutScreen() {
           totalReps: workoutTotalReps(metricsSource),
           volume: workoutVolume(metricsSource),
           currentExercise,
+          segments: started.map((ex) => ({
+            sets: ex.sets.length,
+            started: ex.sets.some((s) => s.completed),
+          })),
         });
       }
     }, 800);
