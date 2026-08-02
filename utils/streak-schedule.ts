@@ -25,3 +25,15 @@ export function nextFireAt(hour: number, now: Date, skipToday: boolean): Date {
   if (skipToday || t <= now) t.setDate(t.getDate() + 1);
   return t;
 }
+
+/**
+ * 1-indexed challenge day for a local date.
+ * Compares UTC midnights so a DST change (a 23- or 25-hour local day) can't
+ * shift the count — elapsed-hour division undercounts across a spring forward.
+ */
+export function dayNumberOn(startDate: string, date: Date): number {
+  const [y, m, d] = startDate.split('-').map(Number);
+  const start = Date.UTC(y, m - 1, d);
+  const target = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.round((target - start) / 86400000) + 1;
+}

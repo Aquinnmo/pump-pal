@@ -5,6 +5,7 @@ import {
   LAST_CALL_HOUR,
   LOST_HOUR,
   NUDGE_HOUR,
+  dayNumberOn,
   nextFireAt,
   type StreakReminderState,
 } from "./streak-schedule";
@@ -15,17 +16,6 @@ const CHANNEL_ID = "streak-reminder";
 const NUDGE_ID = "streak-nudge";
 const LAST_CALL_ID = "streak-last-call";
 const LOST_ID = "streak-lost";
-
-/** Challenge day number for a given fire date — same math as the TPC screen. */
-function dayNumberOn(startDate: string, fire: Date): number {
-  const start = new Date(startDate + "T00:00:00").getTime();
-  const day = new Date(
-    fire.getFullYear(),
-    fire.getMonth(),
-    fire.getDate(),
-  ).getTime();
-  return Math.floor((day - start) / (1000 * 60 * 60 * 24)) + 1;
-}
 
 /**
  * Cancel and re-create both streak reminders to match the current challenge state.
@@ -50,41 +40,38 @@ export async function syncStreakReminders(
   });
 
   const now = new Date();
+
+  // The post-mortem lands the morning after the day the warnings are about, so
+  // it stays armed when today is already logged — these are one-shot triggers
+  // and a user who misses tomorrow may never reopen the screen to re-sync.
+  const lostFire = nextFireAt(LOST_HOUR, now, true);
+  if (state.todayCompleted) lostFire.setDate(lostFire.getDate() + 1);
+
   const reminders = [
     {
       id: NUDGE_ID,
-      hour: NUDGE_HOUR,
-      skipToday: state.todayCompleted,
+      fire: nextFireAt(NUDGE_HOUR, now, state.todayCompleted),
       title: "Streak at risk! 🔥",
       body: (day: number) =>
         `Day ${day} — ${day} pushup${day === 1 ? "" : "s"} left today.`,
     },
     {
       id: LAST_CALL_ID,
-      hour: LAST_CALL_HOUR,
-      skipToday: state.todayCompleted,
+      fire: nextFireAt(LAST_CALL_HOUR, now, state.todayCompleted),
       title: "🔥🔥 Last call!! 🔥🔥",
       body: (day: number) =>
         `Day ${day} — ${day} pushup${day === 1 ? "" : "s"}. Your streak dies at midnight.`,
     },
-    // Morning-after post-mortem. Only armed while today is still unlogged, and
-    // always fires tomorrow — logging today cancels it on the next sync.
-    ...(state.todayCompleted
-      ? []
-      : [
-          {
-            id: LOST_ID,
-            hour: LOST_HOUR,
-            skipToday: true,
-            title: "Streak lost 💔",
-            body: () =>
-              "You missed a day, so the streak reset. Start again today — Day 1, 1 pushup.",
-          },
-        ]),
+    {
+      id: LOST_ID,
+      fire: lostFire,
+      title: "Streak lost 💔",
+      body: () =>
+        "You missed a day, so the streak reset. Start again today — Day 1, 1 pushup.",
+    },
   ];
 
-  for (const { id, hour, skipToday, title, body } of reminders) {
-    const fire = nextFireAt(hour, now, skipToday);
+  for (const { id, fire, title, body } of reminders) {
     const day = dayNumberOn(state.startDate, fire);
 
     await notifee.createTriggerNotification(
