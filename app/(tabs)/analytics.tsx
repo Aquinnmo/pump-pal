@@ -325,7 +325,7 @@ export default function AnalyticsScreen() {
           accessibilityLabel="Loading analytics"
         >
           <ActivityIndicator color="#e54242" size="large" />
-          <Text style={styles.stateTitle}>Loading your numbers</Text>
+          <Text style={styles.stateTitle}>Crunching your numbers</Text>
           <Text style={styles.stateMessage}>
             We’re gathering your workout history.
           </Text>
