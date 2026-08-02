@@ -9,9 +9,11 @@ import {
   toDateObj,
 } from "@/utils/workout-conversion";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -25,6 +27,8 @@ import { LineChart } from "react-native-chart-kit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MAX_CHART_LABELS = 6;
+const FADE_HEIGHT = 24;
+const SCROLL_EDGE_THRESHOLD = 4;
 
 const chartConfig = {
   backgroundColor: "#171717",
@@ -50,7 +54,6 @@ const chartConfig = {
 export default function AnalyticsScreen() {
   const { user } = useAuth();
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(false);
@@ -313,24 +316,9 @@ export default function AnalyticsScreen() {
         : "estimated pounds";
   const latestChartValue = chartData?.datasets[0]?.data.at(-1);
 
-  const header = (
-    <View style={styles.pageHeader}>
-      <Text style={styles.pageTitle}>Analytics</Text>
-      <Text style={styles.pageSubtitle}>Your training, at a glance.</Text>
-    </View>
-  );
-
   if (loading && workouts.length === 0) {
     return (
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[
-          styles.content,
-          styles.stateContent,
-          { paddingTop: Math.max(insets.top + 18, 36) },
-        ]}
-      >
-        {header}
+      <AnalyticsLayout stateContent>
         <View
           style={styles.statePanel}
           accessibilityRole="progressbar"
@@ -342,21 +330,13 @@ export default function AnalyticsScreen() {
             We’re gathering your workout history.
           </Text>
         </View>
-      </ScrollView>
+      </AnalyticsLayout>
     );
   }
 
   if (fetchError && workouts.length === 0) {
     return (
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[
-          styles.content,
-          styles.stateContent,
-          { paddingTop: Math.max(insets.top + 18, 36) },
-        ]}
-      >
-        {header}
+      <AnalyticsLayout stateContent>
         <View style={styles.statePanel}>
           <Ionicons name="cloud-offline-outline" size={34} color="#e54242" />
           <Text style={styles.stateTitle} selectable>
@@ -378,25 +358,12 @@ export default function AnalyticsScreen() {
             <Text style={styles.primaryButtonText}>Try again</Text>
           </Pressable>
         </View>
-      </ScrollView>
+      </AnalyticsLayout>
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentInsetAdjustmentBehavior="automatic"
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingTop: Math.max(insets.top + 18, 36),
-          paddingBottom: Math.max(insets.bottom + 40, 64),
-        },
-      ]}
-    >
-      {header}
-
+    <AnalyticsLayout>
       {fetchError && (
         <Pressable
           accessibilityRole="button"
@@ -595,7 +562,112 @@ export default function AnalyticsScreen() {
           </View>
         </>
       )}
-    </ScrollView>
+    </AnalyticsLayout>
+  );
+}
+
+function AnalyticsLayout({
+  children,
+  stateContent = false,
+}: {
+  children: ReactNode;
+  stateContent?: boolean;
+}) {
+  const insets = useSafeAreaInsets();
+  const scrollYRef = useRef(0);
+  const contentHeightRef = useRef(0);
+  const layoutHeightRef = useRef(0);
+  const [showTopFade, setShowTopFade] = useState(false);
+  const [showBottomFade, setShowBottomFade] = useState(false);
+
+  const updateFades = () => {
+    const hasOverflow =
+      contentHeightRef.current >
+      layoutHeightRef.current + SCROLL_EDGE_THRESHOLD;
+    const nextTopFade =
+      hasOverflow && scrollYRef.current > SCROLL_EDGE_THRESHOLD;
+    const nextBottomFade =
+      hasOverflow &&
+      scrollYRef.current + layoutHeightRef.current <
+        contentHeightRef.current - SCROLL_EDGE_THRESHOLD;
+
+    setShowTopFade((current) =>
+      current === nextTopFade ? current : nextTopFade,
+    );
+    setShowBottomFade((current) =>
+      current === nextBottomFade ? current : nextBottomFade,
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <View
+        style={[
+          styles.fixedHeader,
+          { paddingTop: Math.max(insets.top + 18, 36) },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <Text style={styles.pageTitle}>Analytics</Text>
+        </View>
+      </View>
+
+      <View
+        style={styles.scrollWrapper}
+        onLayout={(event) => {
+          layoutHeightRef.current = event.nativeEvent.layout.height;
+          updateFades();
+        }}
+      >
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(event) => {
+            scrollYRef.current = event.nativeEvent.contentOffset.y;
+            updateFades();
+          }}
+          onContentSizeChange={(_, height) => {
+            contentHeightRef.current = height;
+            updateFades();
+          }}
+          contentContainerStyle={[
+            styles.content,
+            stateContent && styles.stateContent,
+            {
+              paddingTop: FADE_HEIGHT,
+              paddingBottom: Math.max(insets.bottom + 40, 64) + FADE_HEIGHT,
+            },
+          ]}
+        >
+          {children}
+        </ScrollView>
+
+        <View
+          pointerEvents="none"
+          style={[styles.fadeTop, { opacity: showTopFade ? 1 : 0 }]}
+        >
+          <LinearGradient
+            colors={["#0f0f0f", "transparent"]}
+            style={styles.fadeGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </View>
+
+        <View
+          pointerEvents="none"
+          style={[styles.fadeBottom, { opacity: showBottomFade ? 1 : 0 }]}
+        >
+          <LinearGradient
+            colors={["transparent", "#0f0f0f"]}
+            style={styles.fadeGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -691,6 +763,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0f0f0f",
   },
+  fixedHeader: {
+    width: "100%",
+    backgroundColor: "#0f0f0f",
+    paddingBottom: 8,
+  },
+  headerContent: {
+    width: "100%",
+    maxWidth: 760,
+    alignSelf: "center",
+    paddingHorizontal: 20,
+  },
+  scrollWrapper: {
+    flex: 1,
+    position: "relative",
+  },
+  scroll: {
+    flex: 1,
+  },
   content: {
     width: "100%",
     maxWidth: 760,
@@ -701,21 +791,29 @@ const styles = StyleSheet.create({
   stateContent: {
     flexGrow: 1,
   },
-  pageHeader: {
-    gap: 4,
-  },
   pageTitle: {
     color: "#fff",
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: "800",
-    letterSpacing: -0.8,
+    letterSpacing: -0.5,
   },
-  pageSubtitle: {
-    color: "#999",
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: "500",
+  fadeTop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: FADE_HEIGHT,
+  },
+  fadeBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: FADE_HEIGHT,
+  },
+  fadeGradient: {
+    flex: 1,
   },
   section: {
     gap: 14,
