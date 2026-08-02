@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "app/(tabs)/index.tsx": {
-    "mtime": 1785644219.317424,
-    "ast_hash": "d262a474fae2ad243b2c23dcc2f09c4e",
+    "mtime": 1785643851.9783132,
+    "ast_hash": "1dfbd93a106432272e112c7324432a5f",
     "semantic_hash": ""
   },
   "app/(tabs)/pushup-challenge.tsx": {

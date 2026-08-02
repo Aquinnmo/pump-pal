@@ -140,7 +140,7 @@ export default function WorkoutsScreen() {
           <Ionicons name="chevron-back" size={22} color="#e54242" />
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>All Workouts</Text>
+        <Text style={styles.title}>Past Workouts</Text>
         <View style={styles.headerSpacer} />
       </View>
 

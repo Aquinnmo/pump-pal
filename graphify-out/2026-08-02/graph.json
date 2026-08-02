@@ -993,7 +993,7 @@
       "label": "styles",
       "file_type": "code",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L273",
+      "source_location": "L266",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
       "community": 76,
@@ -3922,8 +3922,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "package_dependencies_ai_sdk_google",
-      "community": 6,
-      "community_name": "dependencies",
+      "community": 129,
+      "community_name": "@ai-sdk/google",
       "norm_label": "@ai-sdk/google"
     },
     {
@@ -3933,8 +3933,8 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "ai_sdk_google",
-      "community": 6,
-      "community_name": "dependencies",
+      "community": 129,
+      "community_name": "@ai-sdk/google",
       "norm_label": "@ai-sdk/google"
     },
     {
@@ -4120,8 +4120,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "package_dependencies_ai",
-      "community": 129,
-      "community_name": "ai",
+      "community": 6,
+      "community_name": "dependencies",
       "norm_label": "ai"
     },
     {
@@ -4131,8 +4131,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "ai",
-      "community": 129,
-      "community_name": "ai",
+      "community": 6,
+      "community_name": "dependencies",
       "norm_label": "ai"
     },
     {
@@ -12801,7 +12801,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/index.tsx",
-      "source_location": "L273",
+      "source_location": "L266",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_index",
