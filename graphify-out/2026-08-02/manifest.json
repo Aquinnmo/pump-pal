@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "app/(tabs)/analytics.tsx": {
-    "mtime": 1785682948.2050447,
-    "ast_hash": "d05994bf699650f868c54708e4edf335",
+    "mtime": 1785687590.4927256,
+    "ast_hash": "5d347829a0f1e456409ea2be998e2feb",
     "semantic_hash": ""
   },
   "app/(tabs)/index.tsx": {
@@ -75,8 +75,8 @@
     "semantic_hash": ""
   },
   "app/modal.tsx": {
-    "mtime": 1785684247.61873,
-    "ast_hash": "10bd1c459311aeb69982d2c582df3fba",
+    "mtime": 1785684731.842452,
+    "ast_hash": "c04699a351f405962e2199a05ae34f84",
     "semantic_hash": ""
   },
   "app/set-split.tsx": {
@@ -365,13 +365,13 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785682948.2040448,
-    "ast_hash": "7a191392562076a74a3dafcb9d5934dd",
+    "mtime": 1785687474.8670003,
+    "ast_hash": "76331abf2c8356a213512479c90c9452",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1785645496.9591775,
-    "ast_hash": "7d86fe89114a3daee1b9bd20bbb5252e",
+    "mtime": 1785687485.982921,
+    "ast_hash": "3a4ddf36e6c058e804a7e000d53e29f2",
     "semantic_hash": ""
   },
   "docs/firestore-data-refactor.md": {
@@ -470,8 +470,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785682948.2040448,
-    "ast_hash": "9ee3c8d511d563342f8da31ebdfd3c9f",
+    "mtime": 1785687481.135885,
+    "ast_hash": "8cf7ed28e15745f414b0da4544f948de",
     "semantic_hash": ""
   },
   "constants/muscles.ts": {
@@ -515,8 +515,8 @@
     "semantic_hash": ""
   },
   "docs/data-model/users.md": {
-    "mtime": 1785684247.882739,
-    "ast_hash": "b663f2a1ab71bf39fa9beb0a22d91835",
+    "mtime": 1785684652.041555,
+    "ast_hash": "50ffa323bb83da294367561c9998f7f9",
     "semantic_hash": ""
   },
   "docs/data-model/workouts.md": {
@@ -525,8 +525,8 @@
     "semantic_hash": ""
   },
   "app/active-workout.tsx": {
-    "mtime": 1785684229.539321,
-    "ast_hash": "ef2a5dc83ef39d56eccd93613cf667b7",
+    "mtime": 1785684749.012111,
+    "ast_hash": "f2895a1574a81f182498963ba7dc7e8a",
     "semantic_hash": ""
   },
   "app/planned-workouts.tsx": {
@@ -575,8 +575,8 @@
     "semantic_hash": ""
   },
   "constants/ai-config.ts": {
-    "mtime": 1785684247.7507346,
-    "ast_hash": "c5e6508f3a325474be95885f39c477be",
+    "mtime": 1785684651.9046245,
+    "ast_hash": "844bd278be9d8397cb1ec35c55bdc4ea",
     "semantic_hash": ""
   },
   "utils/muscle-analysis.ts": {
@@ -585,8 +585,8 @@
     "semantic_hash": ""
   },
   "utils/workout-suggestions.ts": {
-    "mtime": 1785684371.4549222,
-    "ast_hash": "02c2c74b58fdd7d4013d28ee15f7109a",
+    "mtime": 1785684652.1884804,
+    "ast_hash": "eea827aff020ec3fe62f36e13a3a6491",
     "semantic_hash": ""
   },
   "app.config.js": {
@@ -747,6 +747,16 @@
   "components/timber-tab-icon.tsx": {
     "mtime": 1785682948.2070448,
     "ast_hash": "2c96b7061c3bdbf04f7948c70ac7d0e1",
+    "semantic_hash": ""
+  },
+  "docs/purpose.md": {
+    "mtime": 1785687346.814695,
+    "ast_hash": "a2389e726ab7239f0f8d7b8814ff2701",
+    "semantic_hash": ""
+  },
+  "docs/design-language.md": {
+    "mtime": 1785687563.174102,
+    "ast_hash": "adffa225d9e7362be11d372e568585f0",
     "semantic_hash": ""
   }
 }

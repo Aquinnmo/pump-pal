@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "app/(tabs)/analytics.tsx": {
-    "mtime": 1785682948.2050447,
-    "ast_hash": "d05994bf699650f868c54708e4edf335",
+    "mtime": 1785687590.4927256,
+    "ast_hash": "5d347829a0f1e456409ea2be998e2feb",
     "semantic_hash": ""
   },
   "app/(tabs)/index.tsx": {
@@ -365,13 +365,13 @@
     "semantic_hash": ""
   },
   "CLAUDE.md": {
-    "mtime": 1785682948.2040448,
-    "ast_hash": "7a191392562076a74a3dafcb9d5934dd",
+    "mtime": 1785688158.8113205,
+    "ast_hash": "b00f589a61cf87b2a1e430da91df0eb5",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1785645496.9591775,
-    "ast_hash": "7d86fe89114a3daee1b9bd20bbb5252e",
+    "mtime": 1785687485.982921,
+    "ast_hash": "3a4ddf36e6c058e804a7e000d53e29f2",
     "semantic_hash": ""
   },
   "docs/firestore-data-refactor.md": {
@@ -470,8 +470,8 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785682948.2040448,
-    "ast_hash": "9ee3c8d511d563342f8da31ebdfd3c9f",
+    "mtime": 1785688162.611784,
+    "ast_hash": "8ab6ce616567f4bf0eaf6c086ea2aef8",
     "semantic_hash": ""
   },
   "constants/muscles.ts": {
@@ -747,6 +747,16 @@
   "components/timber-tab-icon.tsx": {
     "mtime": 1785682948.2070448,
     "ast_hash": "2c96b7061c3bdbf04f7948c70ac7d0e1",
+    "semantic_hash": ""
+  },
+  "docs/purpose.md": {
+    "mtime": 1785687346.814695,
+    "ast_hash": "a2389e726ab7239f0f8d7b8814ff2701",
+    "semantic_hash": ""
+  },
+  "docs/design-language.md": {
+    "mtime": 1785688145.8794131,
+    "ast_hash": "dcf141c3c57748f195ce18118a05a010",
     "semantic_hash": ""
   }
 }

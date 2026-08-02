@@ -26,9 +26,16 @@ import {
 import { LineChart } from "react-native-chart-kit";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const MAX_CHART_LABELS = 6;
+const MAX_CHART_LABELS = 4;
+const CHART_Y_AXIS_GUTTER = 46;
 const FADE_HEIGHT = 24;
 const SCROLL_EDGE_THRESHOLD = 4;
+
+type StrengthHistoryPoint = {
+  dateLabel: string;
+  timestamp: number;
+  estimatedOneRepMax: number;
+};
 
 const chartConfig = {
   backgroundColor: "#171717",
@@ -48,6 +55,14 @@ const chartConfig = {
   },
   propsForLabels: {
     fontSize: 13,
+  },
+  propsForHorizontalLabels: {
+    fill: "#969696",
+    fontSize: 12,
+  },
+  propsForVerticalLabels: {
+    fill: "#858585",
+    fontSize: 12,
   },
 };
 
@@ -108,14 +123,12 @@ export default function AnalyticsScreen() {
     maxWeights,
     maxReps,
     maxDuration,
-    chartData,
-    allExercises,
     weightedExercises,
     bodyweightExerciseList,
     durationExerciseList,
     heaviestLift,
-    bodyweightExercises,
-    durationExercises,
+    strengthHistories,
+    eligibleStrengthExercises,
   } = useMemo(() => {
     if (workouts.length === 0) {
       return {
@@ -124,14 +137,12 @@ export default function AnalyticsScreen() {
         maxWeights: {} as Record<string, number>,
         maxReps: {} as Record<string, number>,
         maxDuration: {} as Record<string, number>,
-        chartData: null,
-        allExercises: [] as string[],
         weightedExercises: [] as string[],
         bodyweightExerciseList: [] as string[],
         durationExerciseList: [] as string[],
         heaviestLift: null as { exercise: string; weight: number } | null,
-        bodyweightExercises: new Set<string>(),
-        durationExercises: new Set<string>(),
+        strengthHistories: {} as Record<string, StrengthHistoryPoint[]>,
+        eligibleStrengthExercises: [] as string[],
       };
     }
 
@@ -139,8 +150,10 @@ export default function AnalyticsScreen() {
     const maxW: Record<string, number> = {};
     const maxR: Record<string, number> = {};
     const maxD: Record<string, number> = {};
-    const exerciseHistory: Record<string, { date: string; score: number }[]> =
-      {};
+    const strengthHistoryByDay: Record<
+      string,
+      Record<string, StrengthHistoryPoint>
+    > = {};
     const bodyweightExerciseSet = new Set<string>();
     const durationExerciseSet = new Set<string>();
     let heaviest: { exercise: string; weight: number } | null = null;
@@ -150,6 +163,11 @@ export default function AnalyticsScreen() {
     workouts.forEach((workout) => {
       const date = toDateObj(workout.date);
       const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`;
+      const dayKey = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0"),
+      ].join("-");
 
       if (workout.name) {
         workoutTypeCounts[workout.name] =
@@ -166,7 +184,6 @@ export default function AnalyticsScreen() {
           bodyweightExerciseSet.add(name);
         if (isDurationExercise(performedExercise))
           durationExerciseSet.add(name);
-        if (!exerciseHistory[name]) exerciseHistory[name] = [];
 
         performedExercise.sets.forEach((set) => {
           const isDuration =
@@ -187,18 +204,29 @@ export default function AnalyticsScreen() {
             }
           }
 
-          const score = isDuration
-            ? (set.durationSeconds ?? 0)
-            : set.bodyweight
-              ? (set.reps ?? 0)
-              : (set.weight ?? 0) * (1 + (set.reps ?? 0) / 30);
-          const existingDay = exerciseHistory[name].find(
-            (history) => history.date === dateLabel,
-          );
-          if (existingDay) {
-            existingDay.score = Math.max(existingDay.score, score);
-          } else {
-            exerciseHistory[name].push({ date: dateLabel, score });
+          const weight = set.weight ?? 0;
+          const reps = set.reps ?? 0;
+          const isValidWeightedSet =
+            !isDuration &&
+            !set.bodyweight &&
+            Number.isFinite(weight) &&
+            Number.isFinite(reps) &&
+            weight > 0 &&
+            reps > 0;
+          if (!isValidWeightedSet) return;
+
+          const estimatedOneRepMax = weight * (1 + reps / 30);
+          if (!strengthHistoryByDay[name]) strengthHistoryByDay[name] = {};
+          const existingDay = strengthHistoryByDay[name][dayKey];
+          if (
+            !existingDay ||
+            estimatedOneRepMax > existingDay.estimatedOneRepMax
+          ) {
+            strengthHistoryByDay[name][dayKey] = {
+              dateLabel,
+              timestamp: date.getTime(),
+              estimatedOneRepMax,
+            };
           }
         });
       });
@@ -239,28 +267,15 @@ export default function AnalyticsScreen() {
     const duration = allExerciseNames.filter((name) =>
       durationExerciseSet.has(name),
     );
-    const targetExercise = selectedExercise || favorite;
-    let data = null;
-
-    if (
-      targetExercise &&
-      exerciseHistory[targetExercise] &&
-      exerciseHistory[targetExercise].length > 1
-    ) {
-      const history = exerciseHistory[targetExercise];
-      const labelCount = Math.min(MAX_CHART_LABELS, history.length);
-      const shownIndices = new Set(
-        Array.from({ length: labelCount }, (_, index) =>
-          Math.round((index * (history.length - 1)) / (labelCount - 1)),
-        ),
-      );
-      data = {
-        labels: history.map((historyItem, index) =>
-          shownIndices.has(index) ? historyItem.date : "",
-        ),
-        datasets: [{ data: history.map((historyItem) => historyItem.score) }],
-      };
-    }
+    const strengthHistories = Object.fromEntries(
+      Object.entries(strengthHistoryByDay).map(([name, historyByDay]) => [
+        name,
+        Object.values(historyByDay).sort((a, b) => a.timestamp - b.timestamp),
+      ]),
+    ) as Record<string, StrengthHistoryPoint[]>;
+    const eligibleStrengthExercises = Object.keys(strengthHistories)
+      .filter((name) => strengthHistories[name].length >= 2)
+      .sort();
 
     return {
       favoriteExercise: favorite,
@@ -268,20 +283,69 @@ export default function AnalyticsScreen() {
       maxWeights: maxW,
       maxReps: maxR,
       maxDuration: maxD,
-      chartData: data,
-      allExercises: allExerciseNames,
       weightedExercises: weighted,
       bodyweightExerciseList: bodyweight,
       durationExerciseList: duration,
       heaviestLift: heaviest,
-      bodyweightExercises: bodyweightExerciseSet,
-      durationExercises: durationExerciseSet,
+      strengthHistories,
+      eligibleStrengthExercises,
     };
-  }, [workouts, selectedExercise]);
+  }, [workouts]);
+
+  const defaultStrengthExercise =
+    heaviestLift && eligibleStrengthExercises.includes(heaviestLift.exercise)
+      ? heaviestLift.exercise
+      : (eligibleStrengthExercises[0] ?? null);
+  const activeStrengthExercise =
+    selectedExercise && eligibleStrengthExercises.includes(selectedExercise)
+      ? selectedExercise
+      : defaultStrengthExercise;
+  const strengthHistory = activeStrengthExercise
+    ? strengthHistories[activeStrengthExercise]
+    : null;
+  const strengthChartData = useMemo(() => {
+    if (!strengthHistory) return null;
+
+    const labelCount = Math.min(MAX_CHART_LABELS, strengthHistory.length);
+    const shownIndices = new Set(
+      Array.from({ length: labelCount }, (_, index) =>
+        Math.round((index * (strengthHistory.length - 1)) / (labelCount - 1)),
+      ),
+    );
+    return {
+      labels: strengthHistory.map(() => ""),
+      dateLabels: strengthHistory
+        .filter((_, index) => shownIndices.has(index))
+        .map((historyItem) => historyItem.dateLabel),
+      datasets: [
+        {
+          data: strengthHistory.map(
+            (historyItem) => historyItem.estimatedOneRepMax,
+          ),
+        },
+      ],
+    };
+  }, [strengthHistory]);
+  const strengthSummary = useMemo(() => {
+    if (!strengthHistory) return null;
+
+    const current = strengthHistory.at(-1)!;
+    const record = strengthHistory.reduce(
+      (best, point) =>
+        point.estimatedOneRepMax > best.estimatedOneRepMax ? point : best,
+      strengthHistory[0],
+    );
+    return {
+      current,
+      record,
+      change:
+        current.estimatedOneRepMax - strengthHistory[0].estimatedOneRepMax,
+    };
+  }, [strengthHistory]);
 
   useEffect(() => {
-    if (!selectedExercise && favoriteExercise)
-      setSelectedExercise(favoriteExercise);
+    if (selectedExercise !== activeStrengthExercise)
+      setSelectedExercise(activeStrengthExercise);
     if (!selectedMaxExercise && weightedExercises.length > 0)
       setSelectedMaxExercise(weightedExercises[0]);
     if (!selectedMaxRepsExercise && bodyweightExerciseList.length > 0) {
@@ -291,8 +355,8 @@ export default function AnalyticsScreen() {
       setSelectedLongestDurationExercise(durationExerciseList[0]);
     }
   }, [
-    favoriteExercise,
     selectedExercise,
+    activeStrengthExercise,
     selectedMaxExercise,
     selectedMaxRepsExercise,
     selectedLongestDurationExercise,
@@ -301,20 +365,7 @@ export default function AnalyticsScreen() {
     durationExerciseList,
   ]);
 
-  const chartWidth = Math.max(244, Math.min(width - 40, 720) - 36);
-  const strengthDescription =
-    selectedExercise && durationExercises.has(selectedExercise)
-      ? "Max set duration in seconds over time"
-      : selectedExercise && bodyweightExercises.has(selectedExercise)
-        ? "Max reps per session over time"
-        : "Estimated 1RM over time";
-  const strengthUnit =
-    selectedExercise && durationExercises.has(selectedExercise)
-      ? "seconds"
-      : selectedExercise && bodyweightExercises.has(selectedExercise)
-        ? "repetitions"
-        : "estimated pounds";
-  const latestChartValue = chartData?.datasets[0]?.data.at(-1);
+  const chartWidth = Math.max(240, Math.min(width - 40, 720) - 36);
 
   if (loading && workouts.length === 0) {
     return (
@@ -443,51 +494,136 @@ export default function AnalyticsScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
-              <Text style={styles.eyebrow}>YOUR PROGRESS</Text>
-              <Text style={styles.sectionTitle}>Strength-O-Meter</Text>
+              <Text style={styles.sectionTitle}>Estimated 1RM</Text>
               <Text style={styles.sectionSubtitle} selectable>
-                {strengthDescription}
+                Best weighted set from each training day
               </Text>
             </View>
             <View style={styles.featurePanel}>
-              <Dropdown
-                options={allExercises}
-                value={selectedExercise}
-                onSelect={setSelectedExercise}
-                placeholder="Select an exercise"
-                accessibilityLabel="Exercise for Strength-O-Meter"
-              />
-
-              {chartData && chartData.labels.length > 0 ? (
-                <View
-                  accessible
-                  accessibilityRole="image"
-                  accessibilityLabel={`${selectedExercise ?? "Selected exercise"}. ${strengthDescription}. ${chartData.datasets[0].data.length} sessions shown. Latest value ${Math.round(latestChartValue ?? 0)} ${strengthUnit}.`}
-                  style={styles.chartFrame}
-                >
-                  <LineChart
-                    data={chartData}
-                    width={chartWidth}
-                    height={232}
-                    chartConfig={chartConfig}
-                    bezier
-                    withOuterLines={false}
-                    style={styles.chart}
+              {strengthSummary && strengthChartData ? (
+                <>
+                  <Dropdown
+                    options={eligibleStrengthExercises}
+                    value={activeStrengthExercise}
+                    onSelect={setSelectedExercise}
+                    placeholder="Select an exercise"
+                    accessibilityLabel="Exercise for Strength-O-Meter"
                   />
-                </View>
+
+                  <View
+                    accessible
+                    accessibilityLabel={`Estimated 1RM summary for ${activeStrengthExercise}. Current ${formatPounds(strengthSummary.current.estimatedOneRepMax)} on ${strengthSummary.current.dateLabel}. All-time record ${formatPounds(strengthSummary.record.estimatedOneRepMax)}. Change since first session ${formatSignedPounds(strengthSummary.change)}.`}
+                    style={styles.strengthSummary}
+                  >
+                    <View style={styles.strengthPrimaryHeader}>
+                      <Text style={styles.strengthMetricLabel}>Latest</Text>
+                      <Text style={styles.strengthCurrentDetail} selectable>
+                        {strengthSummary.current.dateLabel}
+                      </Text>
+                    </View>
+                    <Text style={styles.strengthCurrentValue} selectable>
+                      {formatPounds(strengthSummary.current.estimatedOneRepMax)}
+                    </Text>
+                    <View style={styles.strengthSecondaryMetrics}>
+                      <View style={styles.strengthSecondaryMetric}>
+                        <Text style={styles.strengthMetricLabel}>
+                          Personal record
+                        </Text>
+                        <Text
+                          style={[styles.strengthSecondaryValue]}
+                          selectable
+                        >
+                          {formatPounds(
+                            strengthSummary.record.estimatedOneRepMax,
+                          )}
+                        </Text>
+                        <Text style={styles.strengthMetricDetail} selectable>
+                          {strengthSummary.record.dateLabel}
+                        </Text>
+                      </View>
+                      <View style={styles.strengthMetricDivider} />
+                      <View style={styles.strengthSecondaryMetric}>
+                        <Text style={styles.strengthMetricLabel}>Progress</Text>
+                        <Text
+                          style={[
+                            styles.strengthSecondaryValue,
+                            strengthSummary.change > 0 &&
+                              styles.strengthPositiveValue,
+                            strengthSummary.change < 0 &&
+                              styles.strengthNegativeValue,
+                          ]}
+                          selectable
+                        >
+                          {formatSignedPounds(strengthSummary.change)}
+                        </Text>
+                        <Text style={styles.strengthMetricDetail} selectable>
+                          Since first session
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
+                  <View style={styles.chartSection}>
+                    <View
+                      accessible
+                      accessibilityRole="image"
+                      accessibilityLabel={`${activeStrengthExercise}. Estimated 1RM trend across ${strengthChartData.datasets[0].data.length} logged days. Current ${formatPounds(strengthSummary.current.estimatedOneRepMax)}. Record ${formatPounds(strengthSummary.record.estimatedOneRepMax)}. Change since first session ${formatSignedPounds(strengthSummary.change)}.`}
+                      style={styles.chartContent}
+                    >
+                      <View style={styles.chartHeading}>
+                        <Text style={styles.chartTitle}>Lift history</Text>
+                        <Text style={styles.chartUnit} selectable>
+                          lbs
+                        </Text>
+                      </View>
+                      <View style={styles.chartFrame}>
+                        <LineChart
+                          data={strengthChartData}
+                          width={chartWidth}
+                          height={208}
+                          chartConfig={chartConfig}
+                          withOuterLines={false}
+                          withVerticalLines={false}
+                          withVerticalLabels={false}
+                          yLabelsOffset={6}
+                          segments={3}
+                          style={styles.chart}
+                        />
+                      </View>
+                      <View style={styles.chartDateLabels}>
+                        {strengthChartData.dateLabels.map((label, index) => (
+                          <Text
+                            key={`${label}-${index}`}
+                            selectable
+                            numberOfLines={1}
+                            style={[
+                              styles.chartDateLabel,
+                              index === 0 && styles.chartDateLabelFirst,
+                              index ===
+                                strengthChartData.dateLabels.length - 1 &&
+                                styles.chartDateLabelLast,
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                  </View>
+                </>
               ) : (
-                <View style={styles.chartEmpty}>
+                <View style={styles.strengthEmpty}>
                   <Ionicons
                     name="trending-up-outline"
                     size={28}
                     color="#6f6f6f"
                   />
-                  <Text style={styles.chartEmptyTitle} selectable>
-                    One more workout needed
+                  <Text style={styles.strengthEmptyTitle} selectable>
+                    Build your Strength-O-Meter
                   </Text>
-                  <Text style={styles.chartEmptyText} selectable>
-                    Log this exercise in at least two sessions to see progress
-                    over time.
+                  <Text style={styles.strengthEmptyText} selectable>
+                    Log valid weighted sets for the same exercise on two
+                    different days to unlock its estimated 1RM trend.
                   </Text>
                 </View>
               )}
@@ -758,6 +894,15 @@ function formatDuration(seconds: number) {
   return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
+function formatPounds(value: number) {
+  return `${Math.round(value)} lbs`;
+}
+
+function formatSignedPounds(value: number) {
+  const rounded = Math.round(value);
+  return `${rounded > 0 ? "+" : ""}${rounded} lbs`;
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -819,14 +964,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   sectionHeading: {
-    gap: 4,
-  },
-  eyebrow: {
-    color: "#e56f6f",
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "800",
-    letterSpacing: 1.4,
+    gap: 2,
   },
   sectionTitle: {
     color: "#f5f5f5",
@@ -853,10 +991,104 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderCurve: "continuous",
     borderWidth: 1,
-    borderColor: "#382424",
+    borderColor: "#2b2b2b",
     backgroundColor: "#171717",
     padding: 18,
     gap: 18,
+  },
+  strengthSummary: {
+    paddingHorizontal: 2,
+  },
+  strengthPrimaryHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  strengthMetricLabel: {
+    color: "#aaa",
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
+  strengthCurrentValue: {
+    color: "#e54242",
+    fontSize: 36,
+    lineHeight: 44,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+    letterSpacing: -0.9,
+    paddingTop: 2,
+  },
+  strengthCurrentDetail: {
+    color: "#999",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  strengthSecondaryMetrics: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#343434",
+  },
+  strengthSecondaryMetric: {
+    flex: 1,
+    gap: 2,
+  },
+  strengthMetricDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 45,
+    backgroundColor: "#343434",
+    marginHorizontal: 12,
+  },
+  strengthSecondaryValue: {
+    color: "#f5f5f5",
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  strengthRecordValue: {
+    color: "#e54242",
+  },
+  strengthMetricDetail: {
+    color: "#888",
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  strengthPositiveValue: {
+    color: "#81cf9b",
+  },
+  strengthNegativeValue: {
+    color: "#ee8c8c",
+  },
+  chartSection: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#303030",
+    paddingTop: 18,
+  },
+  chartContent: {
+    gap: 8,
+  },
+  chartHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  chartTitle: {
+    color: "#e8e8e8",
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: "700",
+  },
+  chartUnit: {
+    color: "#858585",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
   },
   divider: {
     height: StyleSheet.hairlineWidth,
@@ -928,30 +1160,49 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   chartFrame: {
-    alignItems: "center",
-    overflow: "hidden",
-    borderRadius: 14,
-    borderCurve: "continuous",
+    width: "100%",
+    alignItems: "flex-start",
+    backgroundColor: "#171717",
   },
   chart: {
-    borderRadius: 14,
-    paddingRight: 8,
+    paddingTop: 24,
+    paddingRight: CHART_Y_AXIS_GUTTER,
   },
-  chartEmpty: {
-    minHeight: 190,
+  chartDateLabels: {
+    minHeight: 18,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    paddingLeft: CHART_Y_AXIS_GUTTER,
+  },
+  chartDateLabel: {
+    maxWidth: 72,
+    color: "#858585",
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: "center",
+  },
+  chartDateLabelFirst: {
+    textAlign: "left",
+  },
+  chartDateLabelLast: {
+    textAlign: "right",
+  },
+  strengthEmpty: {
+    minHeight: 164,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
     gap: 8,
   },
-  chartEmptyTitle: {
+  strengthEmptyTitle: {
     color: "#e8e8e8",
     fontSize: 18,
     lineHeight: 24,
     fontWeight: "700",
     textAlign: "center",
   },
-  chartEmptyText: {
+  strengthEmptyText: {
     color: "#969696",
     fontSize: 15,
     lineHeight: 21,

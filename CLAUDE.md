@@ -21,6 +21,15 @@ npm run migration:test    # runs scripts/migration/convert-legacy-workout.test.j
 
 YOU ARE NEVER ALLOWED TO RUN A LOCAL BUILD `npx expo run:android` or anything similar. ALL DEV BUILDS WILL BE CREATED BY THE USER
 
+## Source-of-truth docs
+
+Read these before changing the app. They take precedence over patterns you find in the code.
+
+- **[docs/purpose.md](docs/purpose.md)** — why Timber exists, what it optimizes for, non-goals, and the decision rules for judging a change. Consult before adding, removing, or reshaping a feature.
+- **[docs/design-language.md](docs/design-language.md)** — color/type/spacing tokens, component recipes, motion, copy voice, accessibility. Consult before writing any UI. It is prescriptive, not descriptive: the code has known drift, listed in its appendix. Use the spec's values, not whatever the neighbouring file happens to do.
+  - **Hard rule:** its [off-limits list](docs/design-language.md#off-limits-generic-ai-generated-design) names generic AI-generated design tropes (gradient/glass surfaces, sparkle-as-AI, bento stat grids, "elevate your fitness journey" copy). These are banned by default. If a request calls for one, do **not** silently comply and do **not** silently substitute — stop, name the pattern, and use `AskUserQuestion` to offer non-trope alternatives. Implement it only if the user explicitly picks it after seeing them, then record the exception.
+- **[docs/data-model/README.md](docs/data-model/README.md)** — Firestore schema as it exists today.
+
 ## User workflow override
 
 These rules override the generated Beads session-completion protocol below unless the user explicitly says otherwise in the current conversation.
@@ -47,7 +56,7 @@ Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React
 
 `config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example`), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
 
-The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/firestore-data-refactor.md`. The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
+The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/data-model/README.md` (`docs/firestore-data-refactor.md` is migration history, not the current schema). The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
 
 ### Migration scripts (`scripts/migration/`, `migration/`)
 

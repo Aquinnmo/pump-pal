@@ -281,8 +281,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "app_expo_ios",
-      "community": 121,
-      "community_name": "ios",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "ios"
     },
     {
@@ -292,8 +292,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "app_ios_supportstablet",
-      "community": 121,
-      "community_name": "ios",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "supportstablet"
     },
     {
@@ -303,8 +303,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "app_ios_bundleidentifier",
-      "community": 121,
-      "community_name": "ios",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "bundleidentifier"
     },
     {
@@ -314,8 +314,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "app_ios_infoplist",
-      "community": 121,
-      "community_name": "ios",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "infoplist"
     },
     {
@@ -325,8 +325,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "app_infoplist_itsappusesnonexemptencryption",
-      "community": 121,
-      "community_name": "ios",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "itsappusesnonexemptencryption"
     },
     {
@@ -336,8 +336,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "app_expo_android",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "android"
     },
     {
@@ -347,8 +347,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "app_android_adaptiveicon",
-      "community": 88,
-      "community_name": "adaptiveIcon",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "adaptiveicon"
     },
     {
@@ -358,8 +358,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "app_adaptiveicon_backgroundcolor",
-      "community": 88,
-      "community_name": "adaptiveIcon",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "backgroundcolor"
     },
     {
@@ -369,8 +369,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "app_adaptiveicon_foregroundimage",
-      "community": 88,
-      "community_name": "adaptiveIcon",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "foregroundimage"
     },
     {
@@ -380,8 +380,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "app_adaptiveicon_backgroundimage",
-      "community": 88,
-      "community_name": "adaptiveIcon",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "backgroundimage"
     },
     {
@@ -391,8 +391,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "app_adaptiveicon_monochromeimage",
-      "community": 88,
-      "community_name": "adaptiveIcon",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "monochromeimage"
     },
     {
@@ -402,8 +402,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "app_android_edgetoedgeenabled",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "edgetoedgeenabled"
     },
     {
@@ -413,8 +413,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "app_android_softwarekeyboardlayoutmode",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "softwarekeyboardlayoutmode"
     },
     {
@@ -424,8 +424,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "app_android_predictivebackgestureenabled",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "predictivebackgestureenabled"
     },
     {
@@ -435,8 +435,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "app_android_package",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "package"
     },
     {
@@ -446,8 +446,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "app_android_permissions",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "permissions"
     },
     {
@@ -457,8 +457,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "ref_android_permission_post_notifications",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "android.permission.post_notifications"
     },
     {
@@ -468,8 +468,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "ref_android_permission_post_promoted_notifications",
-      "community": 15,
-      "community_name": "android",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "android.permission.post_promoted_notifications"
     },
     {
@@ -479,8 +479,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "app_expo_web",
-      "community": 27,
-      "community_name": "web",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "web"
     },
     {
@@ -490,8 +490,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "app_web_output",
-      "community": 27,
-      "community_name": "web",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "output"
     },
     {
@@ -501,8 +501,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "app_web_name",
-      "community": 27,
-      "community_name": "web",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "name"
     },
     {
@@ -512,8 +512,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "app_web_description",
-      "community": 27,
-      "community_name": "web",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "description"
     },
     {
@@ -523,8 +523,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "app_web_favicon",
-      "community": 27,
-      "community_name": "web",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "favicon"
     },
     {
@@ -534,8 +534,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "app_expo_plugins",
-      "community": 77,
-      "community_name": "plugins",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "plugins"
     },
     {
@@ -545,8 +545,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_router",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "expo-router"
     },
     {
@@ -567,8 +567,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_localization",
-      "community": 77,
-      "community_name": "plugins",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "expo-localization"
     },
     {
@@ -578,8 +578,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_web_browser",
-      "community": 77,
-      "community_name": "plugins",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "expo-web-browser"
     },
     {
@@ -589,8 +589,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "app_expo_experiments",
-      "community": 131,
-      "community_name": "experiments",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "experiments"
     },
     {
@@ -600,8 +600,8 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "app_experiments_typedroutes",
-      "community": 131,
-      "community_name": "experiments",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "typedroutes"
     },
     {
@@ -611,8 +611,8 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "app_experiments_reactcompiler",
-      "community": 131,
-      "community_name": "experiments",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "reactcompiler"
     },
     {
@@ -622,8 +622,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "app_expo_extra",
-      "community": 129,
-      "community_name": "extra",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "extra"
     },
     {
@@ -633,8 +633,8 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "app_extra_router",
-      "community": 129,
-      "community_name": "extra",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "router"
     },
     {
@@ -644,8 +644,8 @@
       "source_location": "L64",
       "_origin": "ast",
       "id": "app_extra_eas",
-      "community": 129,
-      "community_name": "extra",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "eas"
     },
     {
@@ -655,8 +655,8 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "app_eas_projectid",
-      "community": 129,
-      "community_name": "extra",
+      "community": 3,
+      "community_name": "expo",
       "norm_label": "projectid"
     },
     {
@@ -710,8 +710,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_layout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "(auth)/_layout.tsx"
     },
     {
@@ -721,8 +721,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "app_auth_layout_authlayout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "authlayout()"
     },
     {
@@ -930,85 +930,118 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_analytics",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "analytics.tsx"
+    },
+    {
+      "label": "StrengthHistoryPoint",
+      "file_type": "code",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L34",
+      "_origin": "ast",
+      "id": "app_tabs_analytics_strengthhistorypoint",
+      "community": 27,
+      "community_name": "analytics.tsx",
+      "norm_label": "strengthhistorypoint"
     },
     {
       "label": "chartConfig",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L33",
+      "source_location": "L40",
       "_origin": "ast",
       "id": "app_tabs_analytics_chartconfig",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "chartconfig"
     },
     {
       "label": "AnalyticsScreen()",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L54",
+      "source_location": "L69",
       "_origin": "ast",
       "id": "app_tabs_analytics_analyticsscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "analyticsscreen()"
     },
     {
       "label": "AnalyticsLayout()",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L569",
+      "source_location": "L705",
       "_origin": "ast",
       "id": "app_tabs_analytics_analyticslayout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "analyticslayout()"
     },
     {
       "label": "HighlightRow()",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L674",
+      "source_location": "L810",
       "_origin": "ast",
       "id": "app_tabs_analytics_highlightrow",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "highlightrow()"
     },
     {
       "label": "PersonalBestRow()",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L709",
+      "source_location": "L845",
       "_origin": "ast",
       "id": "app_tabs_analytics_personalbestrow",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "personalbestrow()"
     },
     {
       "label": "formatDuration()",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L756",
+      "source_location": "L892",
       "_origin": "ast",
       "id": "app_tabs_analytics_formatduration",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "formatduration()"
+    },
+    {
+      "label": "formatPounds()",
+      "file_type": "code",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L897",
+      "_origin": "ast",
+      "id": "app_tabs_analytics_formatpounds",
+      "community": 27,
+      "community_name": "analytics.tsx",
+      "norm_label": "formatpounds()"
+    },
+    {
+      "label": "formatSignedPounds()",
+      "file_type": "code",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L901",
+      "_origin": "ast",
+      "id": "app_tabs_analytics_formatsignedpounds",
+      "community": 27,
+      "community_name": "analytics.tsx",
+      "norm_label": "formatsignedpounds()"
     },
     {
       "label": "styles",
       "file_type": "code",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L761",
+      "source_location": "L906",
       "_origin": "ast",
       "id": "app_tabs_analytics_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 27,
+      "community_name": "analytics.tsx",
       "norm_label": "styles"
     },
     {
@@ -1018,8 +1051,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_index",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "index.tsx"
     },
     {
@@ -1029,8 +1062,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "app_tabs_index_homescreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "homescreen()"
     },
     {
@@ -1040,8 +1073,8 @@
       "source_location": "L273",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "styles"
     },
     {
@@ -1216,8 +1249,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_settings",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settings.tsx"
     },
     {
@@ -1227,8 +1260,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "app_tabs_settings_settingsscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settingsscreen()"
     },
     {
@@ -1238,8 +1271,8 @@
       "source_location": "L121",
       "_origin": "ast",
       "id": "app_tabs_settings_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1249,8 +1282,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_workouts",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workouts.tsx"
     },
     {
@@ -1260,8 +1293,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_tabs_workouts_workoutsscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "workoutsscreen()"
     },
     {
@@ -1271,8 +1304,8 @@
       "source_location": "L219",
       "_origin": "ast",
       "id": "app_tabs_workouts_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "styles"
     },
     {
@@ -1282,8 +1315,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_layout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "app/_layout.tsx"
     },
     {
@@ -1293,8 +1326,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "app_layout_unstable_settings",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "unstable_settings"
     },
     {
@@ -1304,8 +1337,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "app_layout_rootlayoutnav",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "rootlayoutnav()"
     },
     {
@@ -1315,8 +1348,8 @@
       "source_location": "L90",
       "_origin": "ast",
       "id": "app_layout_rootlayout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "rootlayout()"
     },
     {
@@ -1414,8 +1447,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_planned_workouts",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "planned-workouts.tsx"
     },
     {
@@ -1425,8 +1458,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "app_planned_workouts_queueordercachekey",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "queueordercachekey()"
     },
     {
@@ -1436,8 +1469,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_planned_workouts_plannedworkoutsscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "plannedworkoutsscreen()"
     },
     {
@@ -1447,8 +1480,8 @@
       "source_location": "L301",
       "_origin": "ast",
       "id": "app_planned_workouts_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "styles"
     },
     {
@@ -1458,8 +1491,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_set_split",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "set-split.tsx"
     },
     {
@@ -1469,8 +1502,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "app_set_split_setsplitscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "setsplitscreen()"
     },
     {
@@ -1480,8 +1513,8 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "app_set_split_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "styles"
     },
     {
@@ -1491,8 +1524,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_settings_account",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settings-account.tsx"
     },
     {
@@ -1502,8 +1535,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "app_settings_account_settingsaccountscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settingsaccountscreen()"
     },
     {
@@ -1513,8 +1546,8 @@
       "source_location": "L243",
       "_origin": "ast",
       "id": "app_settings_account_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1524,8 +1557,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_settings_app",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settings-app.tsx"
     },
     {
@@ -1535,8 +1568,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "app_settings_app_settingsappscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settingsappscreen()"
     },
     {
@@ -1546,8 +1579,8 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "app_settings_app_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1656,8 +1689,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_settings_split",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "settings-split.tsx"
     },
     {
@@ -1667,8 +1700,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "app_settings_split_settingssplitscreen",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "settingssplitscreen()"
     },
     {
@@ -1678,8 +1711,8 @@
       "source_location": "L146",
       "_origin": "ast",
       "id": "app_settings_split_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "styles"
     },
     {
@@ -1689,8 +1722,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_external_link",
-      "community": 77,
-      "community_name": "plugins",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "external-link.tsx"
     },
     {
@@ -1700,8 +1733,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "components_external_link_props",
-      "community": 77,
-      "community_name": "plugins",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "props"
     },
     {
@@ -1711,8 +1744,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "components_external_link_externallink",
-      "community": 77,
-      "community_name": "plugins",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "externallink()"
     },
     {
@@ -1832,8 +1865,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_muscle_insight_cards",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscle-insight-cards.tsx"
     },
     {
@@ -1843,8 +1876,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_props",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "props"
     },
     {
@@ -1854,8 +1887,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_insightscache",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "insightscache"
     },
     {
@@ -1865,8 +1898,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_refreshcache",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "refreshcache"
     },
     {
@@ -1876,8 +1909,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_todaykey",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "todaykey()"
     },
     {
@@ -1887,8 +1920,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_muscleinsightcards",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscleinsightcards()"
     },
     {
@@ -1898,8 +1931,8 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_insightrow",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "insightrow()"
     },
     {
@@ -1909,8 +1942,8 @@
       "source_location": "L306",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_styles",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -2294,8 +2327,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_ui_dropdown",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "dropdown.tsx"
     },
     {
@@ -2305,8 +2338,8 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdownprops",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "dropdownprops"
     },
     {
@@ -2316,8 +2349,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdown",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "dropdown()"
     },
     {
@@ -2327,8 +2360,8 @@
       "source_location": "L169",
       "_origin": "ast",
       "id": "components_ui_dropdown_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "styles"
     },
     {
@@ -2602,8 +2635,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_ui_toast",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "toast.tsx"
     },
     {
@@ -2613,8 +2646,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "components_ui_toast_toastprops",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "toastprops"
     },
     {
@@ -2624,8 +2657,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "components_ui_toast_toast",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "toast()"
     },
     {
@@ -2635,8 +2668,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "components_ui_toast_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -2723,8 +2756,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_workout_card",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout-card.tsx"
     },
     {
@@ -2734,8 +2767,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "components_workout_card_workoutcardprops",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutcardprops"
     },
     {
@@ -2745,8 +2778,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_workout_card_workoutcard",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutcard()"
     },
     {
@@ -2756,8 +2789,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "components_workout_card_styles",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "styles"
     },
     {
@@ -2833,8 +2866,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "config_firebase",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "firebase.ts"
     },
     {
@@ -2844,8 +2877,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "config_firebase_firebaseconfig",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "firebaseconfig"
     },
     {
@@ -2855,8 +2888,8 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "config_firebase_auth",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "auth"
     },
     {
@@ -2866,8 +2899,8 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "config_firebase_db",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "db"
     },
     {
@@ -2877,8 +2910,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_ai_config",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "ai-config.ts"
     },
     {
@@ -2888,8 +2921,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "constants_ai_config_aiproviderid",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "aiproviderid"
     },
     {
@@ -2899,8 +2932,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "constants_ai_config_ai_provider",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "ai_provider"
     },
     {
@@ -2910,8 +2943,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "constants_ai_config_ai_model",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "ai_model"
     },
     {
@@ -2921,8 +2954,8 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "constants_ai_config_ai_max_retries",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "ai_max_retries"
     },
     {
@@ -2932,8 +2965,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "constants_ai_config_temporary_ai_daily_limit",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 26,
+      "community_name": "active-workout.tsx",
       "norm_label": "temporary_ai_daily_limit"
     },
     {
@@ -2954,8 +2987,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "constants_ai_config_googleprovider",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "googleprovider"
     },
     {
@@ -2965,8 +2998,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "constants_ai_config_openaiprovider",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "openaiprovider"
     },
     {
@@ -2976,8 +3009,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "constants_ai_config_providerregistry",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "providerregistry"
     },
     {
@@ -2987,8 +3020,8 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "constants_ai_config_getaimodel",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "getaimodel()"
     },
     {
@@ -3075,8 +3108,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_muscles",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscles.ts"
     },
     {
@@ -3086,8 +3119,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_muscles_muscles",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscles"
     },
     {
@@ -3097,8 +3130,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "constants_muscles_muscleid",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscleid"
     },
     {
@@ -3108,8 +3141,8 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "constants_muscles_muscle_set",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscle_set"
     },
     {
@@ -3119,8 +3152,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "constants_muscles_ismuscleid",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "ismuscleid()"
     },
     {
@@ -3130,8 +3163,8 @@
       "source_location": "L39",
       "_origin": "ast",
       "id": "constants_muscles_musclelabel",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "musclelabel()"
     },
     {
@@ -3141,8 +3174,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "constants_muscles_muscle_regions",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscle_regions"
     },
     {
@@ -3196,8 +3229,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_options",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "split-options.ts"
     },
     {
@@ -3207,8 +3240,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_options_split_options",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "split_options"
     },
     {
@@ -3218,8 +3251,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "constants_split_options_splitoption",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "splitoption"
     },
     {
@@ -3229,8 +3262,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "constants_split_options_issplitoption",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "issplitoption()"
     },
     {
@@ -3295,8 +3328,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "context_auth_context",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "auth-context.tsx"
     },
     {
@@ -3306,8 +3339,8 @@
       "source_location": "L12",
       "_origin": "ast",
       "id": "context_auth_context_authcontexttype",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "authcontexttype"
     },
     {
@@ -3317,8 +3350,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "context_auth_context_authcontext",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "authcontext"
     },
     {
@@ -3328,8 +3361,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "context_auth_context_authprovider",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "authprovider()"
     },
     {
@@ -3339,8 +3372,8 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "context_auth_context_useauth",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "useauth()"
     },
     {
@@ -4054,7 +4087,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "package_dependencies_ai_sdk_openai",
-      "community": 89,
+      "community": 121,
       "community_name": "@ai-sdk/openai",
       "norm_label": "@ai-sdk/openai"
     },
@@ -4065,7 +4098,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "ai_sdk_openai",
-      "community": 89,
+      "community": 121,
       "community_name": "@ai-sdk/openai",
       "norm_label": "@ai-sdk/openai"
     },
@@ -4274,7 +4307,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "package_dependencies_expo_constants",
-      "community": 90,
+      "community": 89,
       "community_name": "expo-constants",
       "norm_label": "expo-constants"
     },
@@ -4285,7 +4318,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "expo_constants",
-      "community": 90,
+      "community": 89,
       "community_name": "expo-constants",
       "norm_label": "expo-constants"
     },
@@ -4956,7 +4989,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "package_dependencies_react_native_web",
-      "community": 132,
+      "community": 131,
       "community_name": "react-native-web",
       "norm_label": "react-native-web"
     },
@@ -4967,7 +5000,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "react_native_web",
-      "community": 132,
+      "community": 131,
       "community_name": "react-native-web",
       "norm_label": "react-native-web"
     },
@@ -8146,8 +8179,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "types_user_injury",
-      "community": 1,
-      "community_name": "settings-injuries.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "injury"
     },
     {
@@ -8234,8 +8267,8 @@
       "source_location": "L43",
       "_origin": "ast",
       "id": "types_workout_workout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout"
     },
     {
@@ -8333,8 +8366,8 @@
       "source_location": "L132",
       "_origin": "ast",
       "id": "types_workout_draftexerciserow",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "draftexerciserow"
     },
     {
@@ -8344,8 +8377,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_alert",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "alert.ts"
     },
     {
@@ -8355,8 +8388,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "utils_alert_showalert",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 81,
+      "community_name": "set-split.tsx",
       "norm_label": "showalert()"
     },
     {
@@ -8366,8 +8399,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_create_pending_exercise",
-      "community": 24,
-      "community_name": "workout.ts",
+      "community": 26,
+      "community_name": "active-workout.tsx",
       "norm_label": "create-pending-exercise.ts"
     },
     {
@@ -8377,8 +8410,8 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "utils_create_pending_exercise_reserveexerciseid",
-      "community": 24,
-      "community_name": "workout.ts",
+      "community": 26,
+      "community_name": "active-workout.tsx",
       "norm_label": "reserveexerciseid()"
     },
     {
@@ -8388,8 +8421,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "utils_create_pending_exercise_creatependingexercise",
-      "community": 24,
-      "community_name": "workout.ts",
+      "community": 26,
+      "community_name": "active-workout.tsx",
       "norm_label": "creatependingexercise()"
     },
     {
@@ -8399,8 +8432,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_daily_name",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "daily-name.ts"
     },
     {
@@ -8410,8 +8443,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_daily_name_todayutc",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "todayutc()"
     },
     {
@@ -8421,8 +8454,8 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "utils_daily_name_generaterandomname",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "generaterandomname()"
     },
     {
@@ -8432,8 +8465,8 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "utils_daily_name_getdailyname",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 0,
+      "community_name": "pushup-challenge.tsx",
       "norm_label": "getdailyname()"
     },
     {
@@ -8487,8 +8520,8 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "utils_exercise_catalog_slugify",
-      "community": 24,
-      "community_name": "workout.ts",
+      "community": 26,
+      "community_name": "active-workout.tsx",
       "norm_label": "slugify()"
     },
     {
@@ -8564,8 +8597,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_injuries",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "injuries.ts"
     },
     {
@@ -8597,8 +8630,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "utils_injuries_injurycoversdate",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "injurycoversdate()"
     },
     {
@@ -8630,8 +8663,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_muscle_analysis",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscle-analysis.ts"
     },
     {
@@ -8641,8 +8674,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "utils_muscle_analysis_muscleinsights",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscleinsights"
     },
     {
@@ -8652,8 +8685,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "utils_muscle_analysis_muscleinsightsschema",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscleinsightsschema"
     },
     {
@@ -8663,8 +8696,8 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "utils_muscle_analysis_normalizeinsightlist",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "normalizeinsightlist()"
     },
     {
@@ -8674,8 +8707,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "utils_muscle_analysis_normalizemuscleinsights",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "normalizemuscleinsights()"
     },
     {
@@ -8685,8 +8718,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "utils_muscle_analysis_musclevolumestat",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "musclevolumestat"
     },
     {
@@ -8696,8 +8729,8 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "utils_muscle_analysis_computemusclevolume",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "computemusclevolume()"
     },
     {
@@ -8707,8 +8740,8 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "utils_muscle_analysis_analyzemuscles",
-      "community": 14,
-      "community_name": "muscle-analysis.ts",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "analyzemuscles()"
     },
     {
@@ -8784,8 +8817,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_predict_next_workout",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "predict-next-workout.ts"
     },
     {
@@ -8795,8 +8828,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_predict_next_workout_predictworkoutaftername",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "predictworkoutaftername()"
     },
     {
@@ -8806,8 +8839,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "utils_predict_next_workout_predictnextworkoutname",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "predictnextworkoutname()"
     },
     {
@@ -8938,8 +8971,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_conversion",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout-conversion.ts"
     },
     {
@@ -8960,8 +8993,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "utils_workout_conversion_expanddrafttosets",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "expanddrafttosets()"
     },
     {
@@ -8993,8 +9026,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "utils_workout_conversion_exerciselabel",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "exerciselabel()"
     },
     {
@@ -9004,8 +9037,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "utils_workout_conversion_isdurationexercise",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "isdurationexercise()"
     },
     {
@@ -9015,8 +9048,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "utils_workout_conversion_fmtduration",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "fmtduration()"
     },
     {
@@ -9026,8 +9059,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "utils_workout_conversion_holdsuffix",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "holdsuffix()"
     },
     {
@@ -9037,8 +9070,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "utils_workout_conversion_weightsuffix",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "weightsuffix()"
     },
     {
@@ -9048,8 +9081,8 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "utils_workout_conversion_samedisplayedset",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "samedisplayedset()"
     },
     {
@@ -9059,8 +9092,8 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercisesetgroups",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "summarizeperformedexercisesetgroups()"
     },
     {
@@ -9070,8 +9103,8 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercise",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "summarizeperformedexercise()"
     },
     {
@@ -9081,8 +9114,8 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "utils_workout_conversion_workoutvolume",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutvolume()"
     },
     {
@@ -9092,8 +9125,8 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "utils_workout_conversion_workouttotalreps",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workouttotalreps()"
     },
     {
@@ -9103,8 +9136,8 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "utils_workout_conversion_todateobj",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "todateobj()"
     },
     {
@@ -9268,8 +9301,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_suggestions",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "workout-suggestions.ts"
     },
     {
@@ -9279,8 +9312,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "utils_workout_suggestions_generatesplitworkoutnames",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "generatesplitworkoutnames()"
     },
     {
@@ -9290,8 +9323,8 @@
       "source_location": "L51",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexercise",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "suggestedexercise"
     },
     {
@@ -9301,8 +9334,8 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexerciseschema",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "suggestedexerciseschema"
     },
     {
@@ -9323,8 +9356,8 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "utils_workout_suggestions_formatactiveinjuries",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "formatactiveinjuries()"
     },
     {
@@ -9334,8 +9367,8 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestworkoutcompletion",
-      "community": 26,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "workout-suggestions.ts",
       "norm_label": "suggestworkoutcompletion()"
     },
     {
@@ -9493,10 +9526,21 @@
       "norm_label": "graphify"
     },
     {
-      "label": "User workflow override",
+      "label": "Source-of-truth docs",
       "file_type": "document",
       "source_file": "AGENTS.md",
       "source_location": "L14",
+      "_origin": "ast",
+      "id": "agents_source_of_truth_docs",
+      "community": 17,
+      "community_name": "AGENTS.md",
+      "norm_label": "source-of-truth docs"
+    },
+    {
+      "label": "User workflow override",
+      "file_type": "document",
+      "source_file": "AGENTS.md",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "agents_user_workflow_override",
       "community": 17,
@@ -9507,7 +9551,7 @@
       "label": "Beads Issue Tracker",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L25",
+      "source_location": "L34",
       "_origin": "ast",
       "id": "agents_beads_issue_tracker",
       "community": 17,
@@ -9518,7 +9562,7 @@
       "label": "Quick Reference",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L29",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "agents_quick_reference",
       "community": 17,
@@ -9529,7 +9573,7 @@
       "label": "Rules",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L38",
+      "source_location": "L47",
       "_origin": "ast",
       "id": "agents_rules",
       "community": 17,
@@ -9540,7 +9584,7 @@
       "label": "Agent Context Profiles",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L46",
+      "source_location": "L55",
       "_origin": "ast",
       "id": "agents_agent_context_profiles",
       "community": 17,
@@ -9551,7 +9595,7 @@
       "label": "Session Completion",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L54",
+      "source_location": "L63",
       "_origin": "ast",
       "id": "agents_session_completion",
       "community": 17,
@@ -9562,9 +9606,9 @@
       "label": "Beads Issue Tracker",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L81",
+      "source_location": "L90",
       "_origin": "ast",
-      "id": "agents_beads_issue_tracker_81",
+      "id": "agents_beads_issue_tracker_90",
       "community": 17,
       "community_name": "AGENTS.md",
       "norm_label": "beads issue tracker"
@@ -9573,9 +9617,9 @@
       "label": "Quick Reference",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L85",
+      "source_location": "L94",
       "_origin": "ast",
-      "id": "agents_quick_reference_85",
+      "id": "agents_quick_reference_94",
       "community": 17,
       "community_name": "AGENTS.md",
       "norm_label": "quick reference"
@@ -9584,12 +9628,342 @@
       "label": "Rules",
       "file_type": "document",
       "source_file": "AGENTS.md",
-      "source_location": "L95",
+      "source_location": "L104",
       "_origin": "ast",
-      "id": "agents_rules_95",
+      "id": "agents_rules_104",
       "community": 17,
       "community_name": "AGENTS.md",
       "norm_label": "rules"
+    },
+    {
+      "label": "design-language.md",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "docs_design_language",
+      "community": 7,
+      "community_name": "data-model/README.md",
+      "norm_label": "design-language.md"
+    },
+    {
+      "label": "Timber Design Language",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "docs_design_language_timber_design_language",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "timber design language"
+    },
+    {
+      "label": "The principle",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L14",
+      "_origin": "ast",
+      "id": "docs_design_language_the_principle",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "the principle"
+    },
+    {
+      "label": "Off-limits: generic AI-generated design",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L27",
+      "_origin": "ast",
+      "id": "docs_design_language_off_limits_generic_ai_generated_design",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "off-limits: generic ai-generated design"
+    },
+    {
+      "label": "Surface and color",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L45",
+      "_origin": "ast",
+      "id": "docs_design_language_surface_and_color",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "surface and color"
+    },
+    {
+      "label": "Layout",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "docs_design_language_layout",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "layout"
+    },
+    {
+      "label": "Iconography and motion",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L69",
+      "_origin": "ast",
+      "id": "docs_design_language_iconography_and_motion",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "iconography and motion"
+    },
+    {
+      "label": "Copy",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L80",
+      "_origin": "ast",
+      "id": "docs_design_language_copy",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "copy"
+    },
+    {
+      "label": "If one is requested",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L91",
+      "_origin": "ast",
+      "id": "docs_design_language_if_one_is_requested",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "if one is requested"
+    },
+    {
+      "label": "Sanctioned exceptions",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L118",
+      "_origin": "ast",
+      "id": "docs_design_language_sanctioned_exceptions",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "sanctioned exceptions"
+    },
+    {
+      "label": "Two zones",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L136",
+      "_origin": "ast",
+      "id": "docs_design_language_two_zones",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "two zones"
+    },
+    {
+      "label": "Color",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L161",
+      "_origin": "ast",
+      "id": "docs_design_language_color",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "color"
+    },
+    {
+      "label": "Destructive actions are not color-coded",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L185",
+      "_origin": "ast",
+      "id": "docs_design_language_destructive_actions_are_not_color_coded",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "destructive actions are not color-coded"
+    },
+    {
+      "label": "Tinted surfaces are a recipe, not new tokens",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L202",
+      "_origin": "ast",
+      "id": "docs_design_language_tinted_surfaces_are_a_recipe_not_new_tokens",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "tinted surfaces are a recipe, not new tokens"
+    },
+    {
+      "label": "Typography",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L218",
+      "_origin": "ast",
+      "id": "docs_design_language_typography",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "typography"
+    },
+    {
+      "label": "Numerals",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L247",
+      "_origin": "ast",
+      "id": "docs_design_language_numerals",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "numerals"
+    },
+    {
+      "label": "Spacing, radius, depth",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L260",
+      "_origin": "ast",
+      "id": "docs_design_language_spacing_radius_depth",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "spacing, radius, depth"
+    },
+    {
+      "label": "Component canon",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L300",
+      "_origin": "ast",
+      "id": "docs_design_language_component_canon",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "component canon"
+    },
+    {
+      "label": "Motion",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L346",
+      "_origin": "ast",
+      "id": "docs_design_language_motion",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "motion"
+    },
+    {
+      "label": "Haptics",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L374",
+      "_origin": "ast",
+      "id": "docs_design_language_haptics",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "haptics"
+    },
+    {
+      "label": "Copy voice",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L389",
+      "_origin": "ast",
+      "id": "docs_design_language_copy_voice",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "copy voice"
+    },
+    {
+      "label": "Accessibility",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L426",
+      "_origin": "ast",
+      "id": "docs_design_language_accessibility",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "accessibility"
+    },
+    {
+      "label": "Appendix: known drift",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L444",
+      "_origin": "ast",
+      "id": "docs_design_language_appendix_known_drift",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "appendix: known drift"
+    },
+    {
+      "label": "Structural",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L450",
+      "_origin": "ast",
+      "id": "docs_design_language_structural",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "structural"
+    },
+    {
+      "label": "Verbatim duplication",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L463",
+      "_origin": "ast",
+      "id": "docs_design_language_verbatim_duplication",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "verbatim duplication"
+    },
+    {
+      "label": "Color",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L476",
+      "_origin": "ast",
+      "id": "docs_design_language_color_476",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "color"
+    },
+    {
+      "label": "Typography and spacing",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L507",
+      "_origin": "ast",
+      "id": "docs_design_language_typography_and_spacing",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "typography and spacing"
+    },
+    {
+      "label": "Motion and a11y",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L521",
+      "_origin": "ast",
+      "id": "docs_design_language_motion_and_a11y",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "motion and a11y"
+    },
+    {
+      "label": "Generic-design tropes present in the tree",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L531",
+      "_origin": "ast",
+      "id": "docs_design_language_generic_design_tropes_present_in_the_tree",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "generic-design tropes present in the tree"
+    },
+    {
+      "label": "Copy",
+      "file_type": "document",
+      "source_file": "docs/design-language.md",
+      "source_location": "L547",
+      "_origin": "ast",
+      "id": "docs_design_language_copy_547",
+      "community": 86,
+      "community_name": "Timber Design Language",
+      "norm_label": "copy"
     },
     {
       "label": "dev-build.md",
@@ -9711,6 +10085,127 @@
       "community": 70,
       "community_name": "Dev Build Guide (Android)",
       "norm_label": "which command when \u2014 cheat sheet"
+    },
+    {
+      "label": "purpose.md",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "docs_purpose",
+      "community": 7,
+      "community_name": "data-model/README.md",
+      "norm_label": "purpose.md"
+    },
+    {
+      "label": "Why Timber Exists",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L1",
+      "_origin": "ast",
+      "id": "docs_purpose_why_timber_exists",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "why timber exists"
+    },
+    {
+      "label": "Thesis",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L11",
+      "_origin": "ast",
+      "id": "docs_purpose_thesis",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "thesis"
+    },
+    {
+      "label": "Why \"painless\" is load-bearing, not a nicety",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L21",
+      "_origin": "ast",
+      "id": "docs_purpose_why_painless_is_load_bearing_not_a_nicety",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "why \"painless\" is load-bearing, not a nicety"
+    },
+    {
+      "label": "How the product already embodies this",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L44",
+      "_origin": "ast",
+      "id": "docs_purpose_how_the_product_already_embodies_this",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "how the product already embodies this"
+    },
+    {
+      "label": "What the insights are for",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L62",
+      "_origin": "ast",
+      "id": "docs_purpose_what_the_insights_are_for",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "what the insights are for"
+    },
+    {
+      "label": "The deterministic-first rule",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L74",
+      "_origin": "ast",
+      "id": "docs_purpose_the_deterministic_first_rule",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "the deterministic-first rule"
+    },
+    {
+      "label": "Non-goals",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L93",
+      "_origin": "ast",
+      "id": "docs_purpose_non_goals",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "non-goals"
+    },
+    {
+      "label": "Decision rules",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L114",
+      "_origin": "ast",
+      "id": "docs_purpose_decision_rules",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "decision rules"
+    },
+    {
+      "label": "Known tensions",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L136",
+      "_origin": "ast",
+      "id": "docs_purpose_known_tensions",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "known tensions"
+    },
+    {
+      "label": "A note on the name",
+      "file_type": "document",
+      "source_file": "docs/purpose.md",
+      "source_location": "L159",
+      "_origin": "ast",
+      "id": "docs_purpose_a_note_on_the_name",
+      "community": 88,
+      "community_name": "Why Timber Exists",
+      "norm_label": "a note on the name"
     },
     {
       "label": ".beads/README.md",
@@ -10092,9 +10587,9 @@
       "source_file": "docs/data-model/README.md",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 87,
+      "community": 7,
       "norm_label": "pump pal data model",
-      "community_name": "Pump Pal Data Model",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_readme_pump_pal_data_model"
     },
     {
@@ -10103,9 +10598,9 @@
       "source_file": "docs/data-model/README.md",
       "source_location": "L12",
       "_origin": "ast",
-      "community": 87,
+      "community": 7,
       "norm_label": "collections",
-      "community_name": "Pump Pal Data Model",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_readme_collections"
     },
     {
@@ -10114,9 +10609,9 @@
       "source_file": "docs/data-model/README.md",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 87,
+      "community": 7,
       "norm_label": "conventions used throughout",
-      "community_name": "Pump Pal Data Model",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_readme_conventions_used_throughout"
     },
     {
@@ -10246,9 +10741,9 @@
       "source_file": "docs/data-model/legacy.md",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 86,
+      "community": 7,
       "norm_label": "legacy workout subcollection",
-      "community_name": "Legacy workout subcollection",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_legacy_legacy_workout_subcollection"
     },
     {
@@ -10257,9 +10752,9 @@
       "source_file": "docs/data-model/legacy.md",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 86,
+      "community": 7,
       "norm_label": "shape (historical reference only)",
-      "community_name": "Legacy workout subcollection",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_legacy_shape_historical_reference_only"
     },
     {
@@ -10268,9 +10763,9 @@
       "source_file": "docs/data-model/legacy.md",
       "source_location": "L43",
       "_origin": "ast",
-      "community": 86,
+      "community": 7,
       "norm_label": "the only remaining live touchpoint: account deletion",
-      "community_name": "Legacy workout subcollection",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_legacy_the_only_remaining_live_touchpoint_account_deletion"
     },
     {
@@ -10279,9 +10774,9 @@
       "source_file": "docs/data-model/legacy.md",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 86,
+      "community": 7,
       "norm_label": "do not delete this data outside of account deletion",
-      "community_name": "Legacy workout subcollection",
+      "community_name": "data-model/README.md",
       "id": "docs_data_model_legacy_do_not_delete_this_data_outside_of_account_deletion"
     },
     {
@@ -10499,9 +10994,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L34",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "canonical collections",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_canonical_collections"
     },
     {
@@ -10510,9 +11005,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`exercises/{exerciseid}`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_exercises_exerciseid"
     },
     {
@@ -10521,9 +11016,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L78",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`exercisevariation`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_exercisevariation"
     },
     {
@@ -10532,9 +11027,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L122",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`exercisecatalogmeta/current`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_exercisecatalogmeta_current"
     },
     {
@@ -10543,9 +11038,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L142",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`workouts/{workoutid}`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_workouts_workoutid"
     },
     {
@@ -10554,9 +11049,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L168",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`migrationsource`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_migrationsource"
     },
     {
@@ -10565,9 +11060,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L180",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`performedexercise`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_performedexercise"
     },
     {
@@ -10576,9 +11071,9 @@
       "source_file": "docs/firestore-data-refactor.md",
       "source_location": "L198",
       "_origin": "ast",
-      "community": 81,
+      "community": 38,
       "norm_label": "`performedset`",
-      "community_name": "Canonical Collections",
+      "community_name": "Pump Pal Firestore Data Refactor",
       "id": "docs_firestore_data_refactor_performedset"
     },
     {
@@ -12730,7 +13225,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L569",
+      "source_location": "L705",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12741,7 +13236,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L54",
+      "source_location": "L69",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12752,7 +13247,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L33",
+      "source_location": "L40",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12763,7 +13258,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L756",
+      "source_location": "L892",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12774,7 +13269,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L674",
+      "source_location": "L897",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics",
+      "target": "app_tabs_analytics_formatpounds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L901",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics",
+      "target": "app_tabs_analytics_formatsignedpounds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L810",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12785,7 +13302,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L709",
+      "source_location": "L845",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12796,7 +13313,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L761",
+      "source_location": "L34",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics",
+      "target": "app_tabs_analytics_strengthhistorypoint",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L906",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics",
@@ -12976,7 +13504,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L552",
+      "source_location": "L688",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -12987,9 +13515,33 @@
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L515",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics_analyticsscreen",
+      "target": "app_tabs_analytics_formatpounds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "app/(tabs)/analytics.tsx",
+      "source_location": "L515",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "app_tabs_analytics_analyticsscreen",
+      "target": "app_tabs_analytics_formatsignedpounds",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L55",
+      "source_location": "L70",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -13001,7 +13553,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L161",
+      "source_location": "L179",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -13013,7 +13565,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L167",
+      "source_location": "L185",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -13025,7 +13577,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "app/(tabs)/analytics.tsx",
-      "source_location": "L151",
+      "source_location": "L164",
       "weight": 1.0,
       "_origin": "ast",
       "source": "app_tabs_analytics_analyticsscreen",
@@ -29819,7 +30371,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L46",
+      "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
       "source": "agents",
@@ -29830,7 +30382,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L25",
+      "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
       "source": "agents",
@@ -29841,11 +30393,11 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L81",
+      "source_location": "L90",
       "weight": 1.0,
       "_origin": "ast",
       "source": "agents",
-      "target": "agents_beads_issue_tracker_81",
+      "target": "agents_beads_issue_tracker_90",
       "confidence_score": 1.0
     },
     {
@@ -29863,7 +30415,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L54",
+      "source_location": "L63",
       "weight": 1.0,
       "_origin": "ast",
       "source": "agents",
@@ -29878,18 +30430,51 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "agents",
-      "target": "agents_user_workflow_override",
+      "target": "agents_source_of_truth_docs",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L29",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "agents_beads_issue_tracker",
-      "target": "agents_quick_reference",
+      "source": "agents",
+      "target": "agents_user_workflow_override",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "agents",
+      "target": "docs_data_model_readme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L19",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "agents",
+      "target": "docs_design_language",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "agents",
+      "target": "docs_purpose",
       "confidence_score": 1.0
     },
     {
@@ -29900,6 +30485,17 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "agents_beads_issue_tracker",
+      "target": "agents_quick_reference",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "AGENTS.md",
+      "source_location": "L47",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "agents_beads_issue_tracker",
       "target": "agents_rules",
       "confidence_score": 1.0
     },
@@ -29907,22 +30503,363 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L85",
+      "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "agents_beads_issue_tracker_81",
-      "target": "agents_quick_reference_85",
+      "source": "agents_beads_issue_tracker_90",
+      "target": "agents_quick_reference_94",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "AGENTS.md",
-      "source_location": "L95",
+      "source_location": "L104",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "agents_beads_issue_tracker_81",
-      "target": "agents_rules_95",
+      "source": "agents_beads_issue_tracker_90",
+      "target": "agents_rules_104",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language",
+      "target": "docs_data_model_readme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language",
+      "target": "docs_design_language_timber_design_language",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language",
+      "target": "docs_purpose",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L426",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_accessibility",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L444",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_appendix_known_drift",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L161",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_color",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L300",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_component_canon",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L389",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_copy_voice",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L346",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_motion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L27",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_off_limits_generic_ai_generated_design",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L260",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_spacing_radius_depth",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L14",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_the_principle",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L136",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_two_zones",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L218",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_timber_design_language",
+      "target": "docs_design_language_typography",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L80",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_off_limits_generic_ai_generated_design",
+      "target": "docs_design_language_copy",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L69",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_off_limits_generic_ai_generated_design",
+      "target": "docs_design_language_iconography_and_motion",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L91",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_off_limits_generic_ai_generated_design",
+      "target": "docs_design_language_if_one_is_requested",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_off_limits_generic_ai_generated_design",
+      "target": "docs_design_language_layout",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L118",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_off_limits_generic_ai_generated_design",
+      "target": "docs_design_language_sanctioned_exceptions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L45",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_off_limits_generic_ai_generated_design",
+      "target": "docs_design_language_surface_and_color",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L185",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_color",
+      "target": "docs_design_language_destructive_actions_are_not_color_coded",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L202",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_color",
+      "target": "docs_design_language_tinted_surfaces_are_a_recipe_not_new_tokens",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L247",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_typography",
+      "target": "docs_design_language_numerals",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L374",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_motion",
+      "target": "docs_design_language_haptics",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L476",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_color_476",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L547",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_copy_547",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L531",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_generic_design_tropes_present_in_the_tree",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L521",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_motion_and_a11y",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L450",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_structural",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L507",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_typography_and_spacing",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/design-language.md",
+      "source_location": "L463",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_design_language_appendix_known_drift",
+      "target": "docs_design_language_verbatim_duplication",
       "confidence_score": 1.0
     },
     {
@@ -30033,6 +30970,127 @@
       "_origin": "ast",
       "source": "docs_dev_build_testing_the_workout_notification",
       "target": "docs_dev_build_testing_the_android_16_live_update_pixel_api_36",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose",
+      "target": "docs_data_model_readme",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose",
+      "target": "docs_purpose_why_timber_exists",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L159",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_a_note_on_the_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_decision_rules",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_how_the_product_already_embodies_this",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L136",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_known_tensions",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L93",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_non_goals",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_thesis",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L62",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_what_the_insights_are_for",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_why_timber_exists",
+      "target": "docs_purpose_why_painless_is_load_bearing_not_a_nicety",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "docs/purpose.md",
+      "source_location": "L74",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "docs_purpose_what_the_insights_are_for",
+      "target": "docs_purpose_the_deterministic_first_rule",
       "confidence_score": 1.0
     },
     {
@@ -31071,5 +32129,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ffdc437d538b4fa560dd3f0b30ab318b549b17d7"
+  "built_at_commit": "05e298ece8e48af9e7667b7e543cdfd74e2da115"
 }
