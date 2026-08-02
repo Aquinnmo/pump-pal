@@ -1,7 +1,7 @@
 # Graph Report - pump-pal  (2026-08-02)
 
 ## Corpus Check
-- 135 files · ~82,521 words
+- 135 files · ~82,581 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -138,7 +138,7 @@
 - @react-navigation/elements
 - @react-navigation/native
 - zod
-- @ai-sdk/google
+- ai
 
 ## God Nodes (most connected - your core abstractions)
 1. `useAuth()` - 37 edges
@@ -195,7 +195,7 @@ Nodes (22): firestoreTimestamp(), timestampShapeToIso(), buildPlan(), compareTot
 
 ### Community 6 - "dependencies"
 Cohesion: 0.18
-Nodes (11): ai, expo, expo-font, expo-linking, dependencies, ai, expo, expo-font (+3 more)
+Nodes (11): @ai-sdk/google, expo, expo-font, expo-linking, dependencies, @ai-sdk/google, expo, expo-font (+3 more)
 
 ### Community 8 - "build-v2-migration.js"
 Cohesion: 0.12
@@ -365,7 +365,7 @@ Nodes (3): updates, SettingsAppScreen(), url
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `dependencies` connect `dependencies` to `@ai-sdk/google`, `settings-injuries.tsx`, `scripts`, `@ai-sdk/openai`, `expo-constants`, `expo-dev-client`, `expo-file-system`, `expo-haptics`, `expo-image`, `expo-insights`, `expo-linear-gradient`, `expo-localization`, `expo-navigation-bar`, `expo-router`, `expo-sharing`, `expo-splash-screen`, `expo-status-bar`, `expo-symbols`, `expo-system-ui`, `expo-updates`, `@expo/vector-icons`, `expo-web-browser`, `firebase`, `@notifee/react-native`, `react-dom`, `@react-native-async-storage/async-storage`, `react-native-chart-kit`, `@react-native-community/datetimepicker`, `react-native-gesture-handler`, `react-native-get-random-values`, `react-native-reanimated`, `react-native-reorderable-list`, `react-native-safe-area-context`, `react-native-screens`, `react-native-svg`, `react-native-web`, `react-native-webview`, `react-native-worklets`, `@react-navigation/bottom-tabs`, `@react-navigation/elements`, `@react-navigation/native`, `zod`?**
+- **Why does `dependencies` connect `dependencies` to `ai`, `settings-injuries.tsx`, `scripts`, `@ai-sdk/openai`, `expo-constants`, `expo-dev-client`, `expo-file-system`, `expo-haptics`, `expo-image`, `expo-insights`, `expo-linear-gradient`, `expo-localization`, `expo-navigation-bar`, `expo-router`, `expo-sharing`, `expo-splash-screen`, `expo-status-bar`, `expo-symbols`, `expo-system-ui`, `expo-updates`, `@expo/vector-icons`, `expo-web-browser`, `firebase`, `@notifee/react-native`, `react-dom`, `@react-native-async-storage/async-storage`, `react-native-chart-kit`, `@react-native-community/datetimepicker`, `react-native-gesture-handler`, `react-native-get-random-values`, `react-native-reanimated`, `react-native-reorderable-list`, `react-native-safe-area-context`, `react-native-screens`, `react-native-svg`, `react-native-web`, `react-native-webview`, `react-native-worklets`, `@react-navigation/bottom-tabs`, `@react-navigation/elements`, `@react-navigation/native`, `zod`?**
   _High betweenness centrality (0.111) - this node is a cross-community bridge._
 - **Why does `react` connect `settings-injuries.tsx` to `modal.tsx`, `dependencies`?**
   _High betweenness centrality (0.098) - this node is a cross-community bridge._
