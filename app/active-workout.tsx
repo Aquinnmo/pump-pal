@@ -669,6 +669,9 @@ export default function ActiveWorkoutScreen() {
           onFinish={handleFinishPress}
           onEdit={() => setMode("editor")}
           onOpenPlateCalc={() => setShowPlateCalc(true)}
+          onUpdateSet={updateSet}
+          onIncrementSet={incrementSet}
+          onDecrementSet={decrementSet}
         />
       ) : (
       <ReorderableList

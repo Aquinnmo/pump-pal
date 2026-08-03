@@ -1,3 +1,4 @@
+import { SetField, SetFields } from "@/components/workout/set-fields";
 import { DraftExerciseRow } from "@/types/workout";
 import { flattenSets, nextSetIndex } from "@/utils/wear-state";
 import { Ionicons } from "@expo/vector-icons";
@@ -5,7 +6,8 @@ import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
-  FlatList,
+  LayoutChangeEvent,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -19,7 +21,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Android live notification use, so all three surfaces always agree on "next set" —
 // no cursor logic lives here.
 
-const CARD_WIDTH = 150;
 const CARD_GAP = 8;
 
 type FocusViewProps = {
@@ -30,13 +31,10 @@ type FocusViewProps = {
   onFinish: () => void;
   onEdit: () => void;
   onOpenPlateCalc: () => void;
+  onUpdateSet: (index: number, setIdx: number, field: SetField, value: string) => void;
+  onIncrementSet: (index: number, setIdx: number) => void;
+  onDecrementSet: (index: number, setIdx: number) => void;
 };
-
-function formatMSS(totalSeconds: number): string {
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
-}
 
 type CardState = "complete" | "in-progress" | "not-started";
 
@@ -48,9 +46,16 @@ export function FocusView({
   onFinish,
   onEdit,
   onOpenPlateCalc,
+  onUpdateSet,
+  onIncrementSet,
+  onDecrementSet,
 }: FocusViewProps) {
   const insets = useSafeAreaInsets();
-  const listRef = useRef<FlatList<DraftExerciseRow>>(null);
+  const listRef = useRef<ScrollView>(null);
+  // Cards size to their own text, so their offsets can't be computed up front —
+  // each one reports its layout here and the bar centres the current one from that.
+  const cardLayouts = useRef<Record<string, { x: number; width: number }>>({});
+  const barWidth = useRef(0);
 
   const flat = useMemo(() => flattenSets(exercises), [exercises]);
   const nextIdx = useMemo(() => nextSetIndex(flat.map((f) => f.set)), [flat]);
@@ -69,14 +74,22 @@ export function FocusView({
     ? rows.findIndex((r) => r.uid === exercises[current.rowIndex].uid)
     : -1;
 
-  useEffect(() => {
-    if (currentRowIndex < 0) return;
-    listRef.current?.scrollToIndex({
-      index: currentRowIndex,
-      viewPosition: 0.5,
-      animated: true,
+  const currentUid = currentRowIndex >= 0 ? rows[currentRowIndex].uid : null;
+
+  const centerCurrent = (animated: boolean) => {
+    if (!currentUid) return;
+    const card = cardLayouts.current[currentUid];
+    if (!card || barWidth.current === 0) return;
+    listRef.current?.scrollTo({
+      x: Math.max(0, card.x + card.width / 2 - barWidth.current / 2),
+      animated,
     });
-  }, [currentRowIndex]);
+  };
+
+  useEffect(() => {
+    centerCurrent(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUid]);
 
   const cardState = (row: DraftExerciseRow, rowIndex: number): CardState => {
     if (row.sets.length > 0 && row.sets.every((s) => s.completed)) return "complete";
@@ -96,75 +109,77 @@ export function FocusView({
 
   const currentRow = current ? exercises[current.rowIndex] : null;
   const currentSet = current?.set ?? null;
-  const isDuration = currentRow?.exerciseType === "Sets of Duration";
 
   return (
     <View style={styles.container}>
-      <FlatList
-        ref={listRef}
-        data={rows}
-        horizontal
-        keyExtractor={(item) => item.uid}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.barContent}
-        getItemLayout={(_, index) => ({
-          length: CARD_WIDTH + CARD_GAP,
-          offset: (CARD_WIDTH + CARD_GAP) * index,
-          index,
-        })}
-        onScrollToIndexFailed={({ index }) => {
-          // Rare timing edge (list not yet measured) — retry once next frame rather
-          // than silently leaving the bar off-center.
-          requestAnimationFrame(() =>
-            listRef.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true }),
-          );
-        }}
-        renderItem={({ item, index }) => {
-          const state = done ? "complete" : cardState(item, index);
-          return (
-            <View
-              style={[
-                styles.exCard,
-                state === "in-progress" && styles.exCardInProgress,
-                state === "complete" && styles.exCardComplete,
-              ]}
-            >
-              <Text style={styles.exCardText} numberOfLines={1} ellipsizeMode="tail">
-                {item.label} x
-                <Text style={styles.tabularNums}>{item.sets.length}</Text>
-              </Text>
-            </View>
-          );
-        }}
-      />
+      <View style={styles.bar}>
+        <ScrollView
+          ref={listRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.barContent}
+          onLayout={(e: LayoutChangeEvent) => {
+            barWidth.current = e.nativeEvent.layout.width;
+            centerCurrent(false);
+          }}
+        >
+          {rows.map((item, index) => {
+            const state = done ? "complete" : cardState(item, index);
+            return (
+              <View
+                key={item.uid}
+                onLayout={(e: LayoutChangeEvent) => {
+                  const { x, width } = e.nativeEvent.layout;
+                  cardLayouts.current[item.uid] = { x, width };
+                  if (item.uid === currentUid) centerCurrent(false);
+                }}
+                style={[
+                  styles.exCard,
+                  state === "in-progress" && styles.exCardInProgress,
+                  state === "complete" && styles.exCardComplete,
+                ]}
+              >
+                <Text style={styles.exCardText} numberOfLines={1}>
+                  {item.label} x
+                  <Text style={styles.tabularNums}>{item.sets.length}</Text>
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       <View style={styles.infoZone}>
         {done ? (
-          <>
+          <View style={styles.doneZone}>
             <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
             <Text style={[styles.metric, styles.tabularNums]}>
               {completedCount}/{totalCount}
             </Text>
-          </>
+          </View>
         ) : (
           <>
-            <Text style={styles.eyebrow}>
-              SET <Text style={styles.tabularNums}>{current!.setIndex + 1}</Text> OF{" "}
-              <Text style={styles.tabularNums}>{currentRow!.sets.length}</Text>
-            </Text>
-            <Text style={[styles.metric, styles.tabularNums]}>
-              {isDuration
-                ? formatMSS(
-                    (Number(currentSet!.durationMinutes) || 0) * 60 +
-                      (Number(currentSet!.durationSeconds) || 0),
-                  )
-                : currentRow!.bodyweight || currentSet!.weight.trim() === ""
-                  ? `${currentSet!.reps} reps`
-                  : `${currentSet!.reps} × ${currentSet!.weight} lbs`}
-            </Text>
-            <Text style={styles.exerciseLabel} numberOfLines={1}>
-              {currentRow!.label}
-            </Text>
+            <View style={styles.setHeaderRow}>
+              <Text style={styles.eyebrow}>
+                SET <Text style={styles.tabularNums}>{current!.setIndex + 1}</Text> OF{" "}
+                <Text style={styles.tabularNums}>{currentRow!.sets.length}</Text>
+              </Text>
+              <Text style={styles.exerciseLabel} numberOfLines={1}>
+                {currentRow!.label}
+              </Text>
+            </View>
+            <View style={styles.setFieldsRow}>
+              <SetFields
+                set={currentSet!}
+                exerciseType={currentRow!.exerciseType}
+                bodyweight={currentRow!.bodyweight}
+                onUpdate={(field, v) =>
+                  onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
+                }
+                onIncrement={() => onIncrementSet(current!.rowIndex, current!.setIndex)}
+                onDecrement={() => onDecrementSet(current!.rowIndex, current!.setIndex)}
+              />
+            </View>
           </>
         )}
       </View>
@@ -178,9 +193,16 @@ export function FocusView({
         {done && saving ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.completeButtonText}>
-            {done ? "Finish Workout" : "Complete Set"}
-          </Text>
+          <>
+            <Ionicons
+              name={done ? "checkmark-sharp" : "arrow-forward"}
+              size={56}
+              color="#fff"
+            />
+            <Text style={styles.completeButtonText}>
+              {done ? "Finish Workout" : "Complete Set"}
+            </Text>
+          </>
         )}
       </TouchableOpacity>
 
@@ -205,9 +227,13 @@ export function FocusView({
           <Ionicons name="create-outline" size={16} color="#888" />
           <Text style={styles.pillText}>Edit workout</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.pill} onPress={onOpenPlateCalc} activeOpacity={0.8}>
-          <Ionicons name="calculator-outline" size={16} color="#888" />
-          <Text style={styles.pillText}>Plate calculator</Text>
+        <TouchableOpacity
+          style={[styles.pill, styles.pillAccent]}
+          onPress={onOpenPlateCalc}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="calculator-outline" size={16} color="#e54242" />
+          <Text style={[styles.pillText, styles.pillTextAccent]}>Plate calculator</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -222,20 +248,31 @@ const styles = StyleSheet.create({
   tabularNums: {
     fontVariant: ["tabular-nums"],
   },
+  bar: {
+    // Bleed past the screen gutter so the strip scrolls edge to edge; the gutter is
+    // restored as content padding so the first/last card still line up with the rest.
+    marginHorizontal: -20,
+    paddingVertical: 12,
+    backgroundColor: "#151515",
+    borderBottomWidth: 1,
+    borderBottomColor: "#1e1e1e",
+  },
   barContent: {
     gap: CARD_GAP,
-    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: "center",
   },
   exCard: {
-    width: CARD_WIDTH,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    // No fixed width — each card hugs its own label. A very long exercise name is
+    // capped so one card can't take the whole bar; the strip scrolls either way.
+    maxWidth: 220,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 14,
     borderCurve: "continuous",
     backgroundColor: "#1c1c1c",
     borderWidth: 1,
     borderColor: "#2a2a2a",
-    justifyContent: "center",
   },
   exCardInProgress: {
     backgroundColor: "rgba(229, 66, 66, 0.08)",
@@ -246,13 +283,26 @@ const styles = StyleSheet.create({
     borderColor: "rgba(229, 66, 66, 0.35)",
   },
   exCardText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
+    lineHeight: 14 * 1.4,
     color: "#fff",
   },
   infoZone: {
-    alignItems: "center",
+    // Sits on the page itself — only the exercise strip above is banded chrome.
     paddingVertical: 16,
+  },
+  doneZone: {
+    alignItems: "center",
+  },
+  setHeaderRow: {
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 12,
+  },
+  setFieldsRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   eyebrow: {
     fontSize: 12,
@@ -260,7 +310,6 @@ const styles = StyleSheet.create({
     color: "#888",
     letterSpacing: 1.4,
     textTransform: "uppercase",
-    marginBottom: 8,
   },
   metric: {
     fontSize: 24,
@@ -268,20 +317,24 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     lineHeight: 24 * 1.2,
     color: "#fff",
+    marginTop: 8,
   },
   exerciseLabel: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 14 * 1.4,
-    color: "#888",
-    marginTop: 8,
+    flexShrink: 1,
+    fontSize: 24,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    lineHeight: 24 * 1.2,
+    color: "#fff",
   },
   completeButton: {
     flex: 1,
+    marginTop: 16,
     backgroundColor: "#e54242",
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
     shadowColor: "#e54242",
     shadowOpacity: 0.22,
     shadowRadius: 12,
@@ -291,15 +344,18 @@ const styles = StyleSheet.create({
   completeButtonText: {
     color: "#fff",
     fontWeight: "800",
-    fontSize: 16,
+    fontSize: 24,
+    letterSpacing: -0.5,
   },
   undoButton: {
+    // Info blue, not the accent — stepping back is not the same class of action as
+    // completing a set, and the accent is the screen's single action colour.
     minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#1c1c1c",
+    backgroundColor: "rgba(96, 165, 250, 0.08)",
     borderWidth: 1,
-    borderColor: "#2a2a2a",
+    borderColor: "rgba(96, 165, 250, 0.24)",
     borderRadius: 14,
     marginTop: 12,
   },
@@ -309,7 +365,7 @@ const styles = StyleSheet.create({
   undoButtonText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#888",
+    color: "#60a5fa",
   },
   undoButtonTextDisabled: {
     color: "#666",
@@ -331,9 +387,18 @@ const styles = StyleSheet.create({
     borderColor: "#2a2a2a",
     borderRadius: 999,
   },
+  // Carries over the outlined look the plate-calc FAB had in the editor, so the
+  // control stays recognisable as the same tool across both views.
+  pillAccent: {
+    backgroundColor: "#271515",
+    borderColor: "#e54242",
+  },
   pillText: {
     fontSize: 14,
     fontWeight: "600",
     color: "#888",
+  },
+  pillTextAccent: {
+    color: "#e54242",
   },
 });
