@@ -16,13 +16,23 @@ import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { showAlert } from "@/utils/alert";
 import { createPendingExercise } from "@/utils/create-pending-exercise";
 import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
+import { describeUpNext } from "@/utils/up-next";
+import { subscribeLiveUpdateNotificationActions } from "@/utils/live-update-notification-actions";
+import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/utils/workout-action";
+import { buildWorkoutNotificationPresentation } from "@/utils/workout-notification-model";
+import { setScreenOwnsWorkoutActions } from "@/utils/wear-action-task";
+import {
+  applyWearAction,
+  buildWearActiveState,
+  buildWearIdleState,
+  WearAction,
+} from "@/utils/wear-state";
+import { pushWearState, subscribeWearActions } from "@/utils/wear-sync";
 import {
   buildPerformedExercise,
   collapseSetsToDraft,
   recentExercisesForDay,
   toDateObj,
-  workoutTotalReps,
-  workoutVolume,
 } from "@/utils/workout-conversion";
 import {
   dismissWorkoutNotification,
@@ -106,6 +116,7 @@ export default function ActiveWorkoutScreen() {
   const [cameFromPlan, setCameFromPlan] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const exercisesRef = useRef<DraftExerciseRow[]>([]);
 
   const [workoutName, setWorkoutName] = useState("");
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
@@ -137,6 +148,7 @@ export default function ActiveWorkoutScreen() {
     workoutHistory,
     workoutName: effectiveWorkoutName,
   });
+  exercisesRef.current = exercises;
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -390,43 +402,22 @@ export default function ActiveWorkoutScreen() {
         /* best-effort autosave */
       });
 
+      // Mirror the same snapshot to the watch. Debounced with the save on purpose:
+      // the watch shows what the doc holds, so they can never disagree.
+      pushWearState(
+        buildWearActiveState(workoutId, effectiveWorkoutName, exercises),
+      );
+
       // Refresh the live Android notification with completed-set metrics.
       if (startedAt) {
-        const started = exercises.filter((ex) => ex.label.trim() !== "");
-        const completed: PerformedExercise[] = started
-          .map((ex, order) =>
-            buildPerformedExercise(
-              { ...ex, sets: ex.sets.filter((s) => s.completed) },
-              order,
-            ),
-          )
-          .filter((pe) => pe.sets.length > 0);
-        const metricsSource = { performedExercises: completed } as Workout;
-        // Current exercise = the one owning the next set after the last completed
-        // set (in workout order). No completed sets yet → the very first set.
-        const flat: { label: string; completed: boolean }[] = [];
-        started.forEach((ex) =>
-          ex.sets.forEach((s) =>
-            flat.push({ label: ex.label, completed: !!s.completed }),
-          ),
+        showWorkoutNotification(
+          buildWorkoutNotificationPresentation({
+            workoutId,
+            workoutName: effectiveWorkoutName,
+            startedAt,
+            rows: exercises,
+          }),
         );
-        let lastCompleted = -1;
-        flat.forEach((f, i) => {
-          if (f.completed) lastCompleted = i;
-        });
-        const currentExercise = flat[lastCompleted + 1]?.label ?? null;
-        showWorkoutNotification({
-          name: effectiveWorkoutName || "Workout in progress",
-          startedAt,
-          sets: completed.reduce((n, pe) => n + pe.sets.length, 0),
-          totalReps: workoutTotalReps(metricsSource),
-          volume: workoutVolume(metricsSource),
-          currentExercise,
-          segments: started.map((ex) => ({
-            sets: ex.sets.length,
-            started: ex.sets.some((s) => s.completed),
-          })),
-        });
       }
     }, 800);
     return () => clearTimeout(t);
@@ -465,6 +456,9 @@ export default function ActiveWorkoutScreen() {
         updatedAt: serverTimestamp(),
       });
       await dismissWorkoutNotification();
+      // Clear the watch immediately; the Home screen pushes the real Up Next copy a
+      // moment later when it regains focus.
+      pushWearState(buildWearIdleState(describeUpNext({})));
       router.replace("/(tabs)");
     } catch (err: any) {
       showAlert("Error", "Could not finish workout. " + err.message);
@@ -481,6 +475,44 @@ export default function ActiveWorkoutScreen() {
       finishWorkout();
     }
   };
+
+  // Watch actions land here whenever the app process is alive (otherwise the headless
+  // task in utils/wear-action-task.ts handles them). Routing them through the same
+  // draft state as a tap gets the autosave, notification and watch push for free, and
+  // the resulting state push doubles as the watch's ack.
+  const finishRef = useRef(finishWorkout);
+  finishRef.current = finishWorkout;
+
+  useEffect(() => {
+    if (!workoutId) return;
+    // Claim the actions so the root layout's fallback handler stands down; otherwise
+    // both would apply the same set and it would land twice.
+    setScreenOwnsWorkoutActions(true);
+    const applyRemoteAction = (action: WearAction | LiveUpdateNotificationAction) => {
+      // A stale watch acting on a workout that already ended must not touch this one.
+      if ("workoutId" in action && action.workoutId !== workoutId) return;
+      if (action.action === "startWorkout") return;
+      if (
+        "expectedCompletedSets" in action &&
+        !matchesExpectedCompletedSets(exercisesRef.current, action)
+      ) return;
+      if (action.action === "finishWorkout") {
+        finishRef.current();
+        return;
+      }
+      setExercises((prev) => {
+        if ("expectedCompletedSets" in action && !matchesExpectedCompletedSets(prev, action)) return prev;
+        return applyWearAction(prev, action);
+      });
+    };
+    const unsubscribeWear = subscribeWearActions(applyRemoteAction);
+    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(applyRemoteAction);
+    return () => {
+      setScreenOwnsWorkoutActions(false);
+      unsubscribeWear();
+      unsubscribeNotification();
+    };
+  }, [workoutId, setExercises]);
 
   const discardWorkout = async () => {
     if (!workoutId) return;
@@ -504,6 +536,9 @@ export default function ActiveWorkoutScreen() {
         await deleteDoc(doc(db, "workouts", workoutId));
       }
       await dismissWorkoutNotification();
+      // Clear the watch immediately; the Home screen pushes the real Up Next copy a
+      // moment later when it regains focus.
+      pushWearState(buildWearIdleState(describeUpNext({})));
       router.replace("/(tabs)");
     } catch (err: any) {
       showAlert("Error", "Could not discard workout. " + err.message);

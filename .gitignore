@@ -60,3 +60,13 @@ migration/*.snapshot.json
 
 # Beads / Dolt files (added by bd init)
 .beads/proxieddb/
+
+# graphify
+graphify-out/
+android/
+
+# Gradle output for local Expo modules
+/modules/*/android/.gradle/
+/modules/*/android/build/
+/modules/*/android/.cxx/
+/modules/*/android/local.properties

@@ -10,8 +10,8 @@
     "semantic_hash": ""
   },
   "app.json": {
-    "mtime": 1785682948.2040448,
-    "ast_hash": "b939833aad6c9d344c43fafa2ee04885",
+    "mtime": 1785766019.7647102,
+    "ast_hash": "87aed36b574be72ef3416743c50232c7",
     "semantic_hash": ""
   },
   "app/(auth)/_layout.tsx": {
@@ -45,13 +45,13 @@
     "semantic_hash": ""
   },
   "app/(tabs)/analytics.tsx": {
-    "mtime": 1785729591.3400986,
+    "mtime": 1785730654.5285053,
     "ast_hash": "454d36e17d429e85a4b058293075b5af",
     "semantic_hash": ""
   },
   "app/(tabs)/index.tsx": {
-    "mtime": 1785682948.2050447,
-    "ast_hash": "21f1e59bd761be4a675e5e6bffcf8b7c",
+    "mtime": 1785770713.6295643,
+    "ast_hash": "a8e0cd6f2793ec0f5a90fab56aa2f2f7",
     "semantic_hash": ""
   },
   "app/(tabs)/pushup-challenge.tsx": {
@@ -70,8 +70,8 @@
     "semantic_hash": ""
   },
   "app/_layout.tsx": {
-    "mtime": 1785726059.3741426,
-    "ast_hash": "dde5bd7fae20ed176825919e735049b1",
+    "mtime": 1785787556.903453,
+    "ast_hash": "57705c8cf71b629d1f8cc2a3606444ce",
     "semantic_hash": ""
   },
   "app/modal.tsx": {
@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "components/muscle-insight-cards.tsx": {
-    "mtime": 1785682948.2070448,
-    "ast_hash": "e70eebdd1e1e095ab2dde3766637b03a",
+    "mtime": 1785730654.5290034,
+    "ast_hash": "bd165ebd669c241b9c3b8d4058bfdcb7",
     "semantic_hash": ""
   },
   "components/parallax-scroll-view.tsx": {
@@ -245,8 +245,8 @@
     "semantic_hash": "fc4fd2be2f27e89d30af9520eab9544f"
   },
   "package.json": {
-    "mtime": 1785727790.9903219,
-    "ast_hash": "88768e5ffe0cab6ae329c4bf3d034b9a",
+    "mtime": 1785787647.030462,
+    "ast_hash": "8192f09b56f957f6da507d0926de15fd",
     "semantic_hash": ""
   },
   "scripts/build-exercise-inventory.js": {
@@ -355,8 +355,8 @@
     "semantic_hash": ""
   },
   "utils/workout-conversion.ts": {
-    "mtime": 1785645496.9946637,
-    "ast_hash": "991e8e49422bdab301f43745df1772b3",
+    "mtime": 1785770249.2887475,
+    "ast_hash": "6fbe86c6641c2fd6486079d3b28e83da",
     "semantic_hash": ""
   },
   "vercel.json": {
@@ -525,8 +525,8 @@
     "semantic_hash": ""
   },
   "app/active-workout.tsx": {
-    "mtime": 1785688611.5380204,
-    "ast_hash": "f2895a1574a81f182498963ba7dc7e8a",
+    "mtime": 1785787572.7768855,
+    "ast_hash": "30c0ebf7239f728bab48aed7df147f78",
     "semantic_hash": ""
   },
   "app/planned-workouts.tsx": {
@@ -615,18 +615,18 @@
     "semantic_hash": ""
   },
   "utils/workout-notification.android.ts": {
-    "mtime": 1785682948.22689,
-    "ast_hash": "09fc63d3305300f2fdd3ed25b94d5677",
+    "mtime": 1785787346.1240475,
+    "ast_hash": "298679fdf0c50447971b509277f0a329",
     "semantic_hash": ""
   },
   "utils/workout-notification.ts": {
-    "mtime": 1785682948.226938,
-    "ast_hash": "852ef5e0d2e0a8c4ee153e2a8c8260a2",
+    "mtime": 1785787345.988046,
+    "ast_hash": "79da270cb120bf1da3e1daef58a91379",
     "semantic_hash": ""
   },
   "docs/dev-build.md": {
-    "mtime": 1785682948.2080448,
-    "ast_hash": "c2d1cedfc8b88715066e9b8c2dc50ca2",
+    "mtime": 1785787647.1624634,
+    "ast_hash": "2facd5c7809ccb4d83b0364fcd2bbf25",
     "semantic_hash": ""
   },
   "components/ui/date-field.tsx": {
@@ -645,8 +645,8 @@
     "semantic_hash": ""
   },
   "hooks/use-draft-exercises.ts": {
-    "mtime": 1785682948.2255769,
-    "ast_hash": "5ac78c50a8f8b5e65df9879eb4d6b50e",
+    "mtime": 1785770260.5519605,
+    "ast_hash": "0cfcdf62a441c94e792e081fe7b56775",
     "semantic_hash": ""
   },
   "components/ui/plate-calculator.tsx": {
@@ -655,13 +655,13 @@
     "semantic_hash": ""
   },
   "modules/live-update-notification/android/build.gradle": {
-    "mtime": 1785682948.2255769,
-    "ast_hash": "e5b8dab6150003d9c2e12ead6577bab8",
+    "mtime": 1785787448.4642246,
+    "ast_hash": "c6862112f4598e16fd2ae148df3a456f",
     "semantic_hash": ""
   },
   "modules/live-update-notification/android/src/main/java/com/aquinnmo/timber/liveupdate/LiveUpdateNotificationModule.kt": {
-    "mtime": 1785682948.2255769,
-    "ast_hash": "107b971a7c43d8253c62b494497527ec",
+    "mtime": 1785787448.7182276,
+    "ast_hash": "37f45769ad27d8c8b17c0bed38f33f0f",
     "semantic_hash": ""
   },
   "modules/live-update-notification/expo-module.config.json": {
@@ -670,18 +670,18 @@
     "semantic_hash": ""
   },
   "modules/live-update-notification/index.ts": {
-    "mtime": 1785682948.2255769,
-    "ast_hash": "200fba6c3c0b4da9fc75961b456cce1a",
+    "mtime": 1785787448.334223,
+    "ast_hash": "10bf9c55b8b19852fbb81a222237b030",
     "semantic_hash": ""
   },
   "modules/live-update-notification/src/LiveUpdateNotification.types.ts": {
-    "mtime": 1785682948.2255769,
-    "ast_hash": "a00141e5ffdce55937fcbf480a217875",
+    "mtime": 1785787346.251049,
+    "ast_hash": "bc21090cde4ee5261151e5f8aa2a195d",
     "semantic_hash": ""
   },
   "modules/live-update-notification/src/LiveUpdateNotificationModule.ts": {
-    "mtime": 1785682948.2255769,
-    "ast_hash": "d6413507fc452c3879f58947927d7add",
+    "mtime": 1785787448.1962216,
+    "ast_hash": "36078eedb136814cc9d2feec9a9efa4a",
     "semantic_hash": ""
   },
   "scripts/generate-ic-stat-timber.js": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "docs/design-language.md": {
-    "mtime": 1785726059.3750849,
-    "ast_hash": "4227c4e679fc3ffc6826206eeacc17ca",
+    "mtime": 1785730654.5296934,
+    "ast_hash": "f9aa4c9c44be38b9d529d60ede783c5f",
     "semantic_hash": ""
   },
   "components/muscle-load-map.tsx": {
-    "mtime": 1785728992.934258,
-    "ast_hash": "6b371834228e7a431f470c32aee0821e",
+    "mtime": 1785730654.5291057,
+    "ast_hash": "eae3ba7e0e15e75cbd011f7771831a49",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.test.ts": {
@@ -775,23 +775,23 @@
     "semantic_hash": ""
   },
   "utils/muscle-load.test.ts": {
-    "mtime": 1785728980.9141424,
+    "mtime": 1785730654.5472121,
     "ast_hash": "06ad93c6a7b8fb12e1cfe41b0bd783fa",
     "semantic_hash": ""
   },
   "utils/muscle-load.ts": {
-    "mtime": 1785727519.8895602,
+    "mtime": 1785730654.5473,
     "ast_hash": "4deefb00f3e3a5af13e0c980310bd59d",
     "semantic_hash": ""
   },
   "app/muscle-load.tsx": {
-    "mtime": 1785726059.3743324,
-    "ast_hash": "fe0048b1df9acbd7a07089bae82b5fb9",
+    "mtime": 1785730654.5286949,
+    "ast_hash": "3079153602cceb13a6bcfe2f11e3fc0e",
     "semantic_hash": ""
   },
   "components/muscle-load-summary.tsx": {
-    "mtime": 1785729761.3451374,
-    "ast_hash": "da144fca19064bd25350204be979b65e",
+    "mtime": 1785730654.5291898,
+    "ast_hash": "8995249fa231725298f395acdc15bfed",
     "semantic_hash": ""
   },
   "scripts/migration/review-pending-exercises.js": {
@@ -825,48 +825,248 @@
     "semantic_hash": ""
   },
   "components/development-progress.tsx": {
-    "mtime": 1785729397.2773154,
-    "ast_hash": "10df165032f7a9074e5fc3d39ffd7e71",
+    "mtime": 1785730654.528889,
+    "ast_hash": "812ca379ccec2548e7392579810e1e24",
     "semantic_hash": ""
   },
   "components/muscle-map.tsx": {
-    "mtime": 1785727917.4409633,
+    "mtime": 1785730654.5293155,
     "ast_hash": "366dfea2a9ff0ceed4bf1b6820166697",
     "semantic_hash": ""
   },
   "utils/muscle-development.test.ts": {
-    "mtime": 1785729254.7178774,
+    "mtime": 1785730654.547034,
     "ast_hash": "1f3198ed04fe9dc06069ffb31e99bf90",
     "semantic_hash": ""
   },
   "utils/muscle-development.ts": {
-    "mtime": 1785729254.449852,
+    "mtime": 1785730654.5471213,
     "ast_hash": "8c60c92811d0e26dd2386d578c968dd7",
     "semantic_hash": ""
   },
   "utils/muscle-map-scale.ts": {
-    "mtime": 1785727519.6635568,
+    "mtime": 1785730654.547353,
     "ast_hash": "65157bf96f5fcde3189fe130466bb404",
     "semantic_hash": ""
   },
   "app/development-progress.tsx": {
-    "mtime": 1785728737.0077572,
-    "ast_hash": "f45e32c14849e5e3f7ef5e5efb713c75",
+    "mtime": 1785730654.5285873,
+    "ast_hash": "05c8a4abb8e1b664fc3f9a63c2af795d",
     "semantic_hash": ""
   },
   "components/development-progress-summary.tsx": {
-    "mtime": 1785729761.4691389,
+    "mtime": 1785730654.5288122,
     "ast_hash": "9f097ad5c0fea89f00b49d4000f2b9e8",
     "semantic_hash": ""
   },
   "components/muscle-map-legend.tsx": {
-    "mtime": 1785728953.7608821,
+    "mtime": 1785730654.5292478,
     "ast_hash": "874c2d8e5c6abeb10e0c4d2cc0dabcf4",
     "semantic_hash": ""
   },
   "components/analytics-navigation-row.tsx": {
-    "mtime": 1785729761.2281363,
+    "mtime": 1785730654.5287592,
     "ast_hash": "c7a576b6d71744d6a0bf8811b48387b6",
+    "semantic_hash": ""
+  },
+  "components/ui/fading-scroll-view.tsx": {
+    "mtime": 1785730654.529392,
+    "ast_hash": "fb40b04118f2cee9fbbe68177a9aff1e",
+    "semantic_hash": ""
+  },
+  "app/up-next.tsx": {
+    "mtime": 1785770390.6682148,
+    "ast_hash": "abae78dda42ddc61fd0c444e9c7c0eb3",
+    "semantic_hash": ""
+  },
+  "index.js": {
+    "mtime": 1785787449.0942318,
+    "ast_hash": "013452ba244a1dc5f6ccd03ba6244b78",
+    "semantic_hash": ""
+  },
+  "utils/split-names.ts": {
+    "mtime": 1785766076.4075038,
+    "ast_hash": "5c52e1b30bc73c20759325415fa034f8",
+    "semantic_hash": ""
+  },
+  "utils/up-next.test.ts": {
+    "mtime": 1785766262.4605207,
+    "ast_hash": "378ca8fd862f76a7d193834621f31b52",
+    "semantic_hash": ""
+  },
+  "utils/up-next.ts": {
+    "mtime": 1785766243.244119,
+    "ast_hash": "8929e71a98c988424d25cd7d6e27bc88",
+    "semantic_hash": ""
+  },
+  "utils/widget-up-next.tsx": {
+    "mtime": 1785766137.3320644,
+    "ast_hash": "e663b3cb31056da249508ef90fdf3ff4",
+    "semantic_hash": ""
+  },
+  "widgets/up-next-widget.tsx": {
+    "mtime": 1785766038.8756132,
+    "ast_hash": "a72f4c1275546a9a315432ea61840504",
+    "semantic_hash": ""
+  },
+  "widgets/widget-task-handler.tsx": {
+    "mtime": 1785766045.1870377,
+    "ast_hash": "549d674f05e8b4e92058ec9fa9b6844b",
+    "semantic_hash": ""
+  },
+  ".vscode/launch.json": {
+    "mtime": 1785766842.4898505,
+    "ast_hash": "c357b0bbe445c2af5e73587878b64d98",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/android/build.gradle": {
+    "mtime": 1785770411.0754266,
+    "ast_hash": "ed8914158d22b68a2ca2ef800685faf9",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/android/src/main/java/com/aquinnmo/timber/wearsync/WearActionTaskService.kt": {
+    "mtime": 1785771027.7244475,
+    "ast_hash": "172f3417c780f89163f72481ab71166d",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/android/src/main/java/com/aquinnmo/timber/wearsync/WearMessageService.kt": {
+    "mtime": 1785770452.5408568,
+    "ast_hash": "fa51b895bdcc998a377c5a7a8a3a8d4a",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/android/src/main/java/com/aquinnmo/timber/wearsync/WearSyncModule.kt": {
+    "mtime": 1785770441.9797473,
+    "ast_hash": "c744b74aa61f82d019233a8b5d46d736",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/expo-module.config.json": {
+    "mtime": 1785770405.5043688,
+    "ast_hash": "385d7fc3d88c46a8ba25b7562589f454",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/index.ts": {
+    "mtime": 1785770465.871995,
+    "ast_hash": "81b747cb24c6ece0e42f3a5332eddb00",
+    "semantic_hash": ""
+  },
+  "modules/wear-sync/src/WearSyncModule.ts": {
+    "mtime": 1785770464.7689836,
+    "ast_hash": "62b68b60ff2a975b8be19c4bb57f7cba",
+    "semantic_hash": ""
+  },
+  "utils/up-next-target.ts": {
+    "mtime": 1785770380.2321067,
+    "ast_hash": "4bd05290ff168c23200fbc0f83464bc9",
+    "semantic_hash": ""
+  },
+  "utils/wear-action-task.ts": {
+    "mtime": 1785787572.65263,
+    "ast_hash": "82d94986b7db70abe2f3dd29c4d67e91",
+    "semantic_hash": ""
+  },
+  "utils/wear-state.test.ts": {
+    "mtime": 1785770978.7292802,
+    "ast_hash": "d6b4627c032b63e01005352a885336f7",
+    "semantic_hash": ""
+  },
+  "utils/wear-state.ts": {
+    "mtime": 1785770972.7961845,
+    "ast_hash": "9df742caeb9ea29ea7cddd84a93a2459",
+    "semantic_hash": ""
+  },
+  "utils/wear-sync.android.ts": {
+    "mtime": 1785770486.3742077,
+    "ast_hash": "d5247d5713fb2243fc3b6bd38514f40c",
+    "semantic_hash": ""
+  },
+  "utils/wear-sync.ts": {
+    "mtime": 1785770481.4151154,
+    "ast_hash": "735033fc74cdc66e8bed1bf35e9e22d8",
+    "semantic_hash": ""
+  },
+  "wear/app/build.gradle.kts": {
+    "mtime": 1785770900.1353636,
+    "ast_hash": "305c397749bfe6102c2f1c89d11544d2",
+    "semantic_hash": ""
+  },
+  "wear/app/src/main/java/com/aquinnmo/timber/wear/MainActivity.kt": {
+    "mtime": 1785770877.1900582,
+    "ast_hash": "7c34b80453ae7a942a908f4b8173c4d3",
+    "semantic_hash": ""
+  },
+  "wear/app/src/main/java/com/aquinnmo/timber/wear/Protocol.kt": {
+    "mtime": 1785770856.0087292,
+    "ast_hash": "d7781c778d71697c45aa31eec3e66513",
+    "semantic_hash": ""
+  },
+  "wear/app/src/main/java/com/aquinnmo/timber/wear/WearApp.kt": {
+    "mtime": 1785770945.1669,
+    "ast_hash": "50c2214e5e96591af52063577262225c",
+    "semantic_hash": ""
+  },
+  "wear/build.gradle.kts": {
+    "mtime": 1785770783.1466746,
+    "ast_hash": "166a523421718315101b1aa46e3bb192",
+    "semantic_hash": ""
+  },
+  "wear/settings.gradle.kts": {
+    "mtime": 1785770781.7786605,
+    "ast_hash": "f4853f700413a45990ae88d16a7a2321",
+    "semantic_hash": ""
+  },
+  "wear/README.md": {
+    "mtime": 1785771044.8428042,
+    "ast_hash": "2f3f8c4891725215373d663cda5f4c90",
+    "semantic_hash": ""
+  },
+  "utils/workout-notification-model.test.ts": {
+    "mtime": 1785787269.2791502,
+    "ast_hash": "e7f1c66df49a17170031a4ff12554c7c",
+    "semantic_hash": ""
+  },
+  "utils/workout-notification-model.ts": {
+    "mtime": 1785787269.1381485,
+    "ast_hash": "3ae6bbce7009a094fbc60ac0cb39589d",
+    "semantic_hash": ""
+  },
+  "docs/wear-os-setup.md": {
+    "mtime": 1785784311.1328466,
+    "ast_hash": "af1df67bd9623eafd0d1901ff183d5cd",
+    "semantic_hash": ""
+  },
+  "modules/live-update-notification/android/src/main/java/com/aquinnmo/timber/liveupdate/LiveUpdateNotificationActionReceiver.kt": {
+    "mtime": 1785787448.844229,
+    "ast_hash": "4824f0051d6ea5505968aece93eda449",
+    "semantic_hash": ""
+  },
+  "modules/live-update-notification/android/src/main/java/com/aquinnmo/timber/liveupdate/LiveUpdateNotificationActionTaskService.kt": {
+    "mtime": 1785787448.9702303,
+    "ast_hash": "b10d065803012070d1565bab0ebf20f9",
+    "semantic_hash": ""
+  },
+  "utils/live-update-notification-action-task.ts": {
+    "mtime": 1785787556.63945,
+    "ast_hash": "1d2ca55b5a1d92d1f6d9e22084b6b87a",
+    "semantic_hash": ""
+  },
+  "utils/live-update-notification-actions.android.ts": {
+    "mtime": 1785787556.3934474,
+    "ast_hash": "46d6a7721d9c46f98000b9dca74f3466",
+    "semantic_hash": ""
+  },
+  "utils/live-update-notification-actions.ts": {
+    "mtime": 1785787556.2824461,
+    "ast_hash": "aa409a96c862022dadbebe091ac8040d",
+    "semantic_hash": ""
+  },
+  "utils/workout-action.ts": {
+    "mtime": 1785787556.1574447,
+    "ast_hash": "afcc8393175339eb9654c24026122800",
+    "semantic_hash": ""
+  },
+  "utils/workout-action.test.ts": {
+    "mtime": 1785787646.9034605,
+    "ast_hash": "9a20b3d25581ad4d96f66447137097f2",
     "semantic_hash": ""
   }
 }

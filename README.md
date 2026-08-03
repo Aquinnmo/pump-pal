@@ -4,6 +4,11 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 
 ## Setup
 
+> Setting up a Mac from scratch to run this on an iPhone? Use
+> **[docs/ios-setup.md](docs/ios-setup.md)** instead — `bash scripts/ios/setup.sh`
+> handles Xcode, Homebrew, Node, CocoaPods, `.env`, and the device build.
+> Android dev builds are covered in [docs/dev-build.md](docs/dev-build.md).
+
 1. Install dependencies
 
    ```bash

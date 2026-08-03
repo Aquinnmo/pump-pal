@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Placeholder launcher icon: the app accent (#e54242) behind a dumbbell glyph.
+     Swap for the phone app's icon assets when they get exported at watch sizes. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+  android:width="48dp"
+  android:height="48dp"
+  android:viewportWidth="48"
+  android:viewportHeight="48">
+  <path
+    android:fillColor="#E54242"
+    android:pathData="M24,0L24,0A24,24 0 0 1 48,24L48,24A24,24 0 0 1 24,48L24,48A24,24 0 0 1 0,24L0,24A24,24 0 0 1 24,0Z" />
+  <path
+    android:fillColor="#FFFFFF"
+    android:pathData="M12,19h4v10h-4z M18,21h12v6h-12z M32,19h4v10h-4z" />
+</vector>

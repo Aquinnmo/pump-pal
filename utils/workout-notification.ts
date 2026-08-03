@@ -2,17 +2,10 @@
 // workout-notification.android.ts and Metro serves it only on Android.
 // (Notifee is Android-only here — see docs/... / issue pump-pal-8ew.)
 
-export type WorkoutSegment = { sets: number; started: boolean };
+import type { WorkoutNotificationPresentation } from '@/utils/workout-notification-model';
 
-export type WorkoutNotificationData = {
-  name: string;
-  startedAt: Date;
-  sets: number;
-  totalReps: number;
-  volume: number;
-  currentExercise: string | null;
-  segments: WorkoutSegment[];
-};
+export type WorkoutSegment = WorkoutNotificationPresentation['segments'][number];
+export type WorkoutNotificationData = WorkoutNotificationPresentation;
 
 export async function ensureWorkoutChannel(): Promise<string> {
   return 'active-workout';

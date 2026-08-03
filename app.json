@@ -53,7 +53,26 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-localization",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/with-notifee-maven",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "UpNext",
+              "label": "Up next",
+              "description": "Start your next workout",
+              "minWidth": "250dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 0
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,6 +1,6 @@
 import { ExercisePickerSelection } from '@/components/ui/exercise-picker';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
-import { collapseSetsToDraft, makeUid } from '@/utils/workout-conversion';
+import { cascadeSetField, collapseSetsToDraft, makeUid } from '@/utils/workout-conversion';
 import { useMemo, useState } from 'react';
 import { reorderItems } from 'react-native-reorderable-list';
 
@@ -14,26 +14,7 @@ import { reorderItems } from 'react-native-reorderable-list';
 // when defined, so omitting it here keeps logged/planned docs clean.
 // Exercise selection also lives here so every editor uses the planning behavior: prefer
 // the latest matching exercise from the same workout day, then fall back to any day.
-// An edit to a set cascades forward: the new value overwrites each following set that
-// still held the old value, stopping at the first set the user deliberately made
-// different so pyramids / drop sets survive. Completed sets are a record of what was
-// actually lifted — they are skipped, not overwritten, and do not stop the run.
-function cascadeSetField<K extends keyof DraftSet>(
-  sets: DraftSet[],
-  from: number,
-  field: K,
-  value: DraftSet[K]
-): DraftSet[] {
-  const previous = sets[from][field];
-  const next = sets.slice();
-  next[from] = { ...next[from], [field]: value };
-  for (let si = from + 1; si < next.length; si++) {
-    if (next[si].completed) continue;
-    if (next[si][field] !== previous) break;
-    next[si] = { ...next[si], [field]: value };
-  }
-  return next;
-}
+// The forward-cascade rule for set edits lives in utils/workout-conversion.ts.
 
 type DraftExerciseOptions = {
   trackCompletion?: boolean;

@@ -41,3 +41,8 @@ android {
     abortOnError false
   }
 }
+
+dependencies {
+  // HeadlessJsTaskService delivers notification actions when the app process is dead.
+  implementation "com.facebook.react:react-android"
+}

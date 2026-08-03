@@ -140,32 +140,50 @@ when you:
 ### Testing the Android 16 Live Update (Pixel, API 36+)
 
 9. **Start a workout with three exercises that have different set counts**
-   (e.g. 2 / 4 / 3 sets) → a status-bar chip appears, and pulling it down
-   shows a progress bar with **three grey ovals**, widths proportional to
-   each exercise's set count.
-10. **Complete one set on the second exercise** → only that oval turns
-    **fully red** — the whole oval flips on the first completed set, not
-    partially as more of its sets complete. That's by design.
-11. **Lock the phone** → the notification shows prominently on the lock
-    screen and on the **Always-On Display**, with a legible small icon.
-12. **Keep logging sets across the 800ms autosave refreshes** → the
+   (e.g. 2 / 4 / 3 sets) → the compact status-bar chip reads `0/9 · elapsed
+   time`; Android owns the live timer. Pulling it down shows the unchanged
+   progress bar with **three grey ovals**, widths proportional to each
+   exercise's set count, and one **Complete set** control beneath it.
+   Start a workout with no nonblank exercise rows as a separate boundary case:
+   it has no current-set detail and **no controls**.
+10. **Check the AOD/lock screen** → the header reads `Logging Push Workout`
+    (without doubling a name that already ends in “Workout”), and the detail
+    reads the current set, for example `Bench Press · Set 1 · 135 lbs` or
+    `Plank · Set 1 · 0:45`. Bodyweight, zero weight, and zero/irrelevant
+    duration are omitted rather than shown as placeholders.
+11. **Tap Complete set once** → the chip becomes `1/9 · elapsed time`; the
+    control row becomes **Complete set** and **Undo set**. The segmented bar
+    must look and behave exactly as it did before this feature: the exercise
+    oval flips fully red on its first completed set, not partially.
+12. **Tap Undo set** → only the most recently completed set clears, the compact
+    count returns, and the previous current-set detail/control state returns.
+13. **Complete every sequential current set** → after the final one, no current
+    detail row appears and the controls become **Finish workout** and **Undo
+    set**. Tap **Finish workout** → completed sets persist, the native Live
+    Update and Notifee notification are both dismissed, and Wear returns idle.
+14. **Foreground, background, and killed delivery** — repeat Complete, Undo,
+    and final Finish with the workout screen open, the app backgrounded, and
+    the app swiped away. Each action must change exactly one sequential set;
+    a malformed/stale notification action must not change the workout.
+15. **Keep logging sets across the 800ms autosave refreshes** → the
     chronometer keeps ticking (OS-driven) with **no repeated sound** — only
     the initial post should make noise.
-13. **Finish**, **Discard**, or navigate **Home** → both the status-bar chip
-    and the notification disappear.
-14. **Promotion check** — confirm the OS actually granted promotion:
+16. **Permission denial** — disable notification permission in Settings → the
+    workout still logs normally and action taps are unavailable; no crash.
+17. **Promotion check** — confirm the OS actually granted promotion:
     ```bash
     adb shell dumpsys notification --noredact | grep -i PROMOTED_ONGOING
     ```
-15. **Fallback path** — disable promoted notifications for Timber (system
+18. **Fallback path** — disable promoted notifications for Timber (system
     Settings → Apps → Timber → Notifications → promoted notifications off),
-    or test on a pre-Android-16 device → the old Notifee notification appears
-    instead. Confirm **no crash and no duplicate**. This is the subtlest part
-    of the feature: two surfaces (the native `LiveUpdateNotification` module
-    and Notifee) post this notification, and
-    `utils/workout-notification.android.ts` is what keeps them mutually
-    exclusive — a regression there shows up as two notifications instead of
-    one, not as a crash.
+    or test on a pre-Android-16 device → the Notifee notification uses the
+    same `Logging … Workout` title and current-set detail, with its existing
+    chronometer, but has **no action controls**. Confirm no crash and no
+    duplicate notification. This is the subtlest part of the feature: two
+    surfaces (the native `LiveUpdateNotification` module and Notifee) post this
+    notification, and `utils/workout-notification.android.ts` keeps them
+    mutually exclusive — a regression shows up as two notifications instead
+    of one, not as a crash.
 
 **Check on-device — neither of these can be verified from source:**
 
