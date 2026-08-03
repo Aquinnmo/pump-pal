@@ -2,6 +2,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { PlateCalculator } from "@/components/ui/plate-calculator";
 import { Toast } from "@/components/ui/toast";
 import { ExerciseCard } from "@/components/workout/exercise-card";
+import { FocusView } from "@/components/workout/focus-view";
 import { db } from "@/config/firebase";
 import {
   formatAIError,
@@ -25,6 +26,8 @@ import {
   applyWearAction,
   buildWearActiveState,
   buildWearIdleState,
+  flattenSets,
+  nextSetIndex,
   WearAction,
 } from "@/utils/wear-state";
 import { pushWearState, subscribeWearActions } from "@/utils/wear-sync";
@@ -47,6 +50,7 @@ import {
 } from "@/utils/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   addDoc,
@@ -66,6 +70,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -117,6 +122,12 @@ export default function ActiveWorkoutScreen() {
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const exercisesRef = useRef<DraftExerciseRow[]>([]);
+  // Focus (single-set-at-a-time) is the default view for a workout that already has
+  // exercises; a blank/new workout opens straight into the editor. Local state — no
+  // new route — so hydration, autosave and watch/notification ownership stay owned
+  // by this one screen.
+  const [mode, setMode] = useState<"focus" | "editor">("editor");
+  const [hasEnteredFocus, setHasEnteredFocus] = useState(false);
 
   const [workoutName, setWorkoutName] = useState("");
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
@@ -184,11 +195,17 @@ export default function ActiveWorkoutScreen() {
           }
           const data = snap.data() as Workout;
           setWorkoutName(data.name || "");
+          const hasExercises =
+            !!data.performedExercises && data.performedExercises.length > 0;
           setExercises(
-            data.performedExercises && data.performedExercises.length > 0
+            hasExercises
               ? data.performedExercises.map(collapseSetsToDraft)
               : [blankRow()],
           );
+          if (hasExercises) {
+            setMode("focus");
+            setHasEnteredFocus(true);
+          }
           // queueOrder is only ever set on docs that passed through the planned
           // queue — it's left in place through the in_progress transition, so
           // its presence tells us how "discard" should behave even on resume.
@@ -456,6 +473,7 @@ export default function ActiveWorkoutScreen() {
         updatedAt: serverTimestamp(),
       });
       await dismissWorkoutNotification();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
       // moment later when it regains focus.
       pushWearState(buildWearIdleState(describeUpNext({})));
@@ -474,6 +492,53 @@ export default function ActiveWorkoutScreen() {
     } else {
       finishWorkout();
     }
+  };
+
+  // focus is the default reading view once a workout has exercises; an emptied-out
+  // workout (every row removed in the editor) falls back to the editor automatically
+  // rather than showing an empty focus screen.
+  const focusUsable = mode === "focus" && exercises.some((ex) => ex.label.trim() !== "");
+
+  const enterFocus = () => {
+    setHasEnteredFocus(true);
+    setMode("focus");
+  };
+
+  // Android hardware back while in the editor-reached-from-focus should return to
+  // focus rather than pop the route — Discard is still reachable from focus's header.
+  useEffect(() => {
+    if (mode !== "editor" || !hasEnteredFocus) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      setMode("focus");
+      return true;
+    });
+    return () => sub.remove();
+  }, [mode, hasEnteredFocus]);
+
+  // Same cursor derivation the watch/notification use, reused here to prefill the
+  // plate calculator for the current set rather than inventing a second cursor.
+  const currentFlat = useMemo(() => flattenSets(exercises), [exercises]);
+  const currentFlatIdx = useMemo(
+    () => nextSetIndex(currentFlat.map((f) => f.set)),
+    [currentFlat],
+  );
+  const currentFlatSet = currentFlatIdx !== -1 ? currentFlat[currentFlatIdx] : null;
+  const currentFlatRow = currentFlatSet ? exercises[currentFlatSet.rowIndex] : null;
+  const plateWeightPrefillable =
+    mode === "focus" &&
+    !!currentFlatRow &&
+    currentFlatRow.exerciseType !== "Sets of Duration" &&
+    !currentFlatRow.bodyweight &&
+    currentFlatSet!.set.weight.trim() !== "";
+
+  const handleCompleteSet = () => {
+    if (!workoutId) return;
+    setExercises((prev) => applyWearAction(prev, { action: "completeSet", workoutId }));
+  };
+
+  const handleUndoSet = () => {
+    if (!workoutId) return;
+    setExercises((prev) => applyWearAction(prev, { action: "uncompleteSet", workoutId }));
   };
 
   // Watch actions land here whenever the app process is alive (otherwise the headless
@@ -568,12 +633,18 @@ export default function ActiveWorkoutScreen() {
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-        <TouchableOpacity
-          onPress={() => setShowDiscardConfirm(true)}
-          hitSlop={8}
-        >
-          <Text style={styles.discardText}>Discard</Text>
-        </TouchableOpacity>
+        {mode === "editor" && hasEnteredFocus ? (
+          <TouchableOpacity onPress={enterFocus} hitSlop={8}>
+            <Text style={styles.discardText}>‹ Focus</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => setShowDiscardConfirm(true)}
+            hitSlop={8}
+          >
+            <Text style={styles.discardText}>Discard</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
             {effectiveWorkoutName || "Active Workout"}
@@ -589,6 +660,17 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
       </View>
 
+      {focusUsable ? (
+        <FocusView
+          exercises={exercises}
+          saving={saving}
+          onCompleteSet={handleCompleteSet}
+          onUndo={handleUndoSet}
+          onFinish={handleFinishPress}
+          onEdit={() => setMode("editor")}
+          onOpenPlateCalc={() => setShowPlateCalc(true)}
+        />
+      ) : (
       <ReorderableList
         data={exercises}
         keyExtractor={(item) => item.uid}
@@ -728,8 +810,9 @@ export default function ActiveWorkoutScreen() {
           </>
         }
       />
+      )}
 
-      {!showFinishConfirm && !showLogConfirm && !showDiscardConfirm && (
+      {!focusUsable && !showFinishConfirm && !showLogConfirm && !showDiscardConfirm && (
         <TouchableOpacity
           style={[styles.plateCalcFab, { bottom: Math.max(insets.bottom, 20) }]}
           onPress={() => setShowPlateCalc(true)}
@@ -742,6 +825,13 @@ export default function ActiveWorkoutScreen() {
       <PlateCalculator
         visible={showPlateCalc}
         onClose={() => setShowPlateCalc(false)}
+        initialTarget={plateWeightPrefillable ? currentFlatSet!.set.weight : undefined}
+        onApplyWeight={
+          plateWeightPrefillable
+            ? (total) =>
+                updateSet(currentFlatSet!.rowIndex, currentFlatSet!.setIndex, "weight", String(total))
+            : undefined
+        }
       />
 
       {showFinishConfirm && (

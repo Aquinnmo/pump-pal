@@ -1,6 +1,6 @@
 import { PLATE_DENOMS, PlateCounts, platesWeight, solvePlates } from '@/utils/plate-math';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Modal,
@@ -31,13 +31,21 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : String(Number(n.to
 type PlateCalculatorProps = {
   visible: boolean;
   onClose: () => void;
+  // Seeds the target field whenever the calculator opens — used by focus mode to
+  // prefill the current set's weight. The component stays mounted across opens, so
+  // re-seeding happens in an effect keyed off `visible` rather than at mount.
+  initialTarget?: string;
+  // When supplied, renders an extra primary button that writes the solved total back
+  // through the caller's normal set-update path (so cascade rules still apply) and
+  // closes the sheet. Omit for the plain FAB usage, which behaves exactly as today.
+  onApplyWeight?: (total: number) => void;
 };
 
 // One-view plate calculator. Barbell mode shows plates per side on top of a bar weight;
 // machine mode shows the plates hung on the machine on top of its starting weight.
 // Plate counts are the source of truth — the target field just seeds them, so the total
 // stays honest after you nudge the steppers.
-export function PlateCalculator({ visible, onClose }: PlateCalculatorProps) {
+export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight }: PlateCalculatorProps) {
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<Mode>('barbell');
   const [barWeight, setBarWeight] = useState('45');
@@ -70,6 +78,16 @@ export function PlateCalculator({ visible, onClose }: PlateCalculatorProps) {
     setMode(m);
     solveFor(target, m, barWeight, baseWeight);
   };
+
+  useEffect(() => {
+    if (!visible) return;
+    if (!initialTarget || initialTarget.trim() === '' || Number.isNaN(parseFloat(initialTarget))) return;
+    setTarget(initialTarget);
+    solveFor(initialTarget, mode, barWeight, baseWeight);
+    // Re-seed only when the sheet opens with a new target — not on every keystroke
+    // inside it, which would fight the user's own edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialTarget]);
 
   const bump = (denom: number, delta: number) =>
     setCounts((c) => ({ ...c, [denom]: Math.max(0, (c[denom] ?? 0) + delta) }));
@@ -162,6 +180,18 @@ export function PlateCalculator({ visible, onClose }: PlateCalculatorProps) {
                 <Text style={styles.resultNote}>Closest loadable to a {fmt(num(target))} lb target</Text>
               )}
             </View>
+
+            {onApplyWeight && (
+              <TouchableOpacity
+                style={styles.applyButton}
+                onPress={() => {
+                  onApplyWeight(total);
+                  onClose();
+                }}
+                activeOpacity={0.8}>
+                <Text style={styles.applyButtonText}>Use {fmt(total)} lbs for this set</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </KeyboardAvoidingView>
       </View>
@@ -321,5 +351,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#e54242',
     marginTop: 6,
+  },
+  applyButton: {
+    backgroundColor: '#e54242',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
   },
 });

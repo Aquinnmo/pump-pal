@@ -52,11 +52,11 @@ export function buildWearIdleState(copy: WearIdle, ts = Date.now()): WearState {
   return { ts, mode: 'idle', idle: { label: copy.label, name: copy.name, action: copy.action } };
 }
 
-type FlatSet = { rowIndex: number; setIndex: number; set: DraftSet };
+export type FlatSet = { rowIndex: number; setIndex: number; set: DraftSet };
 
 // Only rows the user has actually picked an exercise for count — a blank trailing
 // row is an editing affordance on the phone, not a set to do.
-function flattenSets(rows: DraftExerciseRow[]): FlatSet[] {
+export function flattenSets(rows: DraftExerciseRow[]): FlatSet[] {
   const flat: FlatSet[] = [];
   rows.forEach((row, rowIndex) => {
     if (row.label.trim() === '') return;
