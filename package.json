@@ -28,7 +28,9 @@
     "migration:mapping:draft": "node scripts/migration/generate-mapping-draft.js",
     "migration:mapping:validate": "node scripts/migration/validate-mapping.js",
     "migration:dry-run": "node scripts/migration/dry-run-conversion.js",
-    "migration:write:workouts": "node scripts/migration/write-migrated-workouts.js"
+    "migration:write:workouts": "node scripts/migration/write-migrated-workouts.js",
+    "push-pixel": "APP_VARIANT=development npx expo prebuild --clean --platform android && APP_VARIANT=development npx expo run:android;",
+    "push-pixel:fresh": "adb uninstall com.aquinnmo.timber.dev || true; npm run push-pixel"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.12",
