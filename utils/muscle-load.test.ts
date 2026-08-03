@@ -4,6 +4,7 @@ import type { CatalogExercise, PerformedSet, Workout } from '@/types/workout';
 import {
   computeMuscleLoad,
   muscleLoadColor,
+  muscleLoadPercentage,
   MUSCLE_LOAD_SATURATION_SCORE,
 } from '@/utils/muscle-load';
 
@@ -189,10 +190,19 @@ function testCatalogAvailabilityAndColor(): void {
   assert.equal(muscleLoadColor(-1), '#60a5fa');
 }
 
+function testPercentageBoundaries(): void {
+  assert.equal(muscleLoadPercentage(-1), 0);
+  assert.equal(muscleLoadPercentage(0), 0);
+  assert.equal(muscleLoadPercentage(4), 50);
+  assert.equal(muscleLoadPercentage(MUSCLE_LOAD_SATURATION_SCORE), 100);
+  assert.equal(muscleLoadPercentage(100), 100);
+}
+
 testExactMappingAndCoverage();
 testMetricsAndHistoricalNormalization();
 testDecayAndBoundaries();
 testStableRowsAndContributorOrder();
 testCatalogAvailabilityAndColor();
+testPercentageBoundaries();
 
 console.log('muscle-load tests passed');

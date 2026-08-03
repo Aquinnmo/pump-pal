@@ -270,3 +270,13 @@ export function muscleLoadColor(score: number): string {
   const blue = channel(0xfa, 0x42, ratio);
   return `#${[red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
 }
+
+/**
+ * Converts an internal recent-load score to the fixed user-facing scale.
+ * This is a workload indicator, not a recovery or biological-fatigue score.
+ */
+export function muscleLoadPercentage(score: number): number {
+  return Math.round(
+    Math.min(Math.max(score / MUSCLE_LOAD_SATURATION_SCORE, 0), 1) * 100
+  );
+}
