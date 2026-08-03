@@ -233,49 +233,55 @@ export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
         accessibilityLabel={selectedAccessibility(selectedStat)}
         style={styles.details}
       >
-        <View style={styles.detailsHeader}>
-          <View style={styles.detailsHeading}>
-            <Text style={styles.muscleName} selectable>
-              {muscleLabel(selectedMuscle)}
+        <View style={styles.snapshot}>
+          <Text style={styles.score} selectable>
+            {muscleLoadPercentage(selectedStat.score)}%
+          </Text>
+          <View style={styles.lastWorked}>
+            <Text style={styles.lastWorkedLabel}>Last worked</Text>
+            <Text style={styles.lastWorkedValue} selectable>
+              {relativeDate(selectedStat.lastWorkedAt)}
             </Text>
-          </View>
-          <View style={styles.scoreBlock}>
-            <Text style={styles.score} selectable>
-              {muscleLoadPercentage(selectedStat.score)}%
-            </Text>
-            <Text style={styles.scoreLabel}>RECENT LOAD</Text>
           </View>
         </View>
-        <Text style={styles.lastWorked} selectable>
-          Last worked: {relativeDate(selectedStat.lastWorkedAt)}
-        </Text>
 
         {selectedStat.contributors.length > 0 ? (
-          <View style={styles.contributors}>
-            <Text style={styles.contributorsTitle}>Top contributors</Text>
-            {selectedStat.contributors.slice(0, 3).map((contributor) => (
-              <View
-                key={`${contributor.exerciseId}:${contributor.variationId ?? "parent"}:${contributor.label}`}
-                style={styles.contributorRow}
-              >
-                <Text
-                  numberOfLines={1}
-                  style={styles.contributorLabel}
-                  selectable
-                >
-                  {contributor.label}
-                </Text>
-                <Text style={styles.contributorScore} selectable>
-                  {muscleLoadPercentage(contributor.score)}%
-                </Text>
-              </View>
-            ))}
-          </View>
+          <>
+            <View style={styles.divider} />
+            <Text style={styles.sectionTitle}>Top contributors</Text>
+            <View style={styles.contributors}>
+              {selectedStat.contributors
+                .slice(0, 3)
+                .map((contributor, index) => (
+                  <View
+                    key={`${contributor.exerciseId}:${contributor.variationId ?? "parent"}:${contributor.label}`}
+                    style={[
+                      styles.contributorRow,
+                      index > 0 && styles.contributorRowDivider,
+                    ]}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      style={styles.contributorLabel}
+                      selectable
+                    >
+                      {contributor.label}
+                    </Text>
+                    <Text style={styles.contributorScore} selectable>
+                      {muscleLoadPercentage(contributor.score)}%
+                    </Text>
+                  </View>
+                ))}
+            </View>
+          </>
         ) : (
-          <Text style={styles.noContributors} selectable>
-            No mapped exercises contributed to this muscle in the current
-            window.
-          </Text>
+          <>
+            <View style={styles.divider} />
+            <Text style={styles.noContributors} selectable>
+              No mapped exercises contributed to this muscle in the current
+              window.
+            </Text>
+          </>
         )}
       </View>
     </View>
@@ -349,60 +355,62 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   details: {
-    backgroundColor: "#151515",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    borderRadius: 10,
-    padding: 16,
-    gap: 12,
+    gap: 16,
   },
-  detailsHeader: {
+  snapshot: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 16,
   },
-  detailsHeading: { flex: 1, gap: 4 },
-  muscleName: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    lineHeight: 22,
-  },
-  status: { color: "#888", fontSize: 14, fontWeight: "500", lineHeight: 20 },
-  scoreBlock: { alignItems: "flex-end" },
   score: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "700",
+    color: "#e54242",
+    fontSize: 36,
+    fontWeight: "800",
     fontVariant: ["tabular-nums"],
-    lineHeight: 29,
-  },
-  scoreLabel: {
-    color: "#888",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.4,
+    letterSpacing: -0.9,
+    lineHeight: 44,
   },
   lastWorked: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  lastWorkedLabel: {
     color: "#888",
     fontSize: 14,
     fontWeight: "500",
     lineHeight: 20,
   },
+  lastWorkedValue: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 21,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#2a2a2a",
+  },
+  sectionTitle: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+    lineHeight: 21,
+  },
   contributors: {
     gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#2a2a2a",
-    paddingTop: 12,
   },
-  contributorsTitle: { color: "#fff", fontSize: 14, fontWeight: "700" },
   contributorRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: 12,
     minHeight: 24,
+  },
+  contributorRowDivider: {
+    borderTopWidth: 1,
+    borderTopColor: "#2a2a2a",
+    paddingTop: 8,
   },
   contributorLabel: { flex: 1, color: "#888", fontSize: 14, fontWeight: "500" },
   contributorScore: {

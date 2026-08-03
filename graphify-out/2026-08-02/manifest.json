@@ -760,8 +760,8 @@
     "semantic_hash": ""
   },
   "components/muscle-load-map.tsx": {
-    "mtime": 1785725076.7192829,
-    "ast_hash": "afd2d00fcbf3c2ba95291a29da93e00e",
+    "mtime": 1785725760.857141,
+    "ast_hash": "60b84bb6c264108f5ec4074f0bda0ce8",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.test.ts": {
@@ -790,8 +790,8 @@
     "semantic_hash": ""
   },
   "components/muscle-load-summary.tsx": {
-    "mtime": 1785716015.6934555,
-    "ast_hash": "69a3421b580a921cf420c100661fdb0b",
+    "mtime": 1785725250.064819,
+    "ast_hash": "db27e2d67744827b6929e56c11ab0bcc",
     "semantic_hash": ""
   },
   "scripts/migration/review-pending-exercises.js": {

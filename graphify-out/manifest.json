@@ -750,18 +750,18 @@
     "semantic_hash": ""
   },
   "docs/purpose.md": {
-    "mtime": 1785688611.5392134,
-    "ast_hash": "a2389e726ab7239f0f8d7b8814ff2701",
+    "mtime": 1785725825.8069189,
+    "ast_hash": "d85d6f2cc815f4c3c70f29a5a593b026",
     "semantic_hash": ""
   },
   "docs/design-language.md": {
-    "mtime": 1785688611.5391293,
-    "ast_hash": "92d6c853804a23cf322c111a74b359b6",
+    "mtime": 1785725873.2944734,
+    "ast_hash": "4227c4e679fc3ffc6826206eeacc17ca",
     "semantic_hash": ""
   },
   "components/muscle-load-map.tsx": {
-    "mtime": 1785725076.7192829,
-    "ast_hash": "afd2d00fcbf3c2ba95291a29da93e00e",
+    "mtime": 1785725852.9052367,
+    "ast_hash": "797bbf39b81ff14ded938b90b0eac3f9",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.test.ts": {
