@@ -10,11 +10,14 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "generate:icons": "node scripts/generate-icons.js",
+    "generate:muscle-map": "node scripts/generate-muscle-pebble-map.js",
     "build:web": "npx expo export -p web",
-    "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js && node scripts/migration/canonical-muscles.test.js && node scripts/migration/catalog-seed.test.js",
+    "test:muscle-load": "tsx utils/muscle-load.test.ts && node scripts/generate-muscle-pebble-map.test.js && tsx constants/muscle-map-paths.test.ts",
+    "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js && node scripts/migration/canonical-muscles.test.js && node scripts/migration/catalog-seed.test.js && node scripts/migration/review-pending-exercises.test.js",
     "migration:inventory": "node scripts/migration/legacy-inventory.js",
     "migration:firestore:snapshot": "node scripts/migration/firestore-readonly-snapshot.js",
     "migration:seed:exercises": "node scripts/migration/seed-exercise-catalog.js",
+    "migration:review:exercises": "node scripts/migration/review-pending-exercises.js",
     "migration:mapping:draft": "node scripts/migration/generate-mapping-draft.js",
     "migration:mapping:validate": "node scripts/migration/validate-mapping.js",
     "migration:dry-run": "node scripts/migration/dry-run-conversion.js",
@@ -73,6 +76,7 @@
     "eslint": "^9.25.0",
     "eslint-config-expo": "~10.0.0",
     "sharp": "^0.35.3",
+    "tsx": "^4.23.4",
     "typescript": "~5.9.2"
   },
   "private": true

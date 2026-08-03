@@ -18,6 +18,13 @@ weaknesses.**
 Two halves. Ingestion is the constraint; insight is the payoff. Friction is the
 enemy of both. Every feature should be traceable to one half or the other.
 
+## Simple by design
+
+Timber is not trying to explain everything to the user. It should make the most
+useful insights as accessible and simple as possible, without burying them in
+detail or asking the user to do interpretive work the product can do for them.
+The simpler the app, the better.
+
 ## Why "painless" is load-bearing, not a nicety
 
 This is the section that makes the rest of the doc decidable. There are two

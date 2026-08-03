@@ -1,4 +1,5 @@
 import { MuscleInsightCards } from "@/components/muscle-insight-cards";
+import { MuscleLoadSummary } from "@/components/muscle-load-summary";
 import { Dropdown } from "@/components/ui/dropdown";
 import { db } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
@@ -462,6 +463,10 @@ export default function AnalyticsScreen() {
         <>
           <View style={styles.section}>
             <MuscleInsightCards workouts={workouts} />
+          </View>
+
+          <View style={styles.section}>
+            <MuscleLoadSummary workouts={workouts} />
           </View>
 
           <View style={styles.section}>

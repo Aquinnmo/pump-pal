@@ -239,7 +239,9 @@ user's accessibility text settings. Don't add one.
 | eyebrow | 12 | 700 | +1.4, uppercase | small labels above a value |
 
 Six steps. `13`, `16`, `20`, `21`, `28` and up are drift in the tool zone; the
-arrival zone keeps its 38 display as the one documented exception.
+arrival zone keeps its 38 display as the one documented exception. The selected
+muscle-load percentage is the one tool-zone exception: it is the screen's
+defining metric and uses `36 / 800 / -0.9` tracking.
 
 There is no `400`/normal weight in Timber — body text is 500 or heavier. On dark
 backgrounds at these sizes, 400 reads thin and washed out.
