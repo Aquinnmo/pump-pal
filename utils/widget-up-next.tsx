@@ -1,4 +1,7 @@
-import { UpNextWidget } from '@/widgets/up-next-widget';
+import {
+  isUpNextWidgetCompact,
+  UpNextWidget,
+} from '@/widgets/up-next-widget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { requestWidgetUpdate } from 'react-native-android-widget';
@@ -43,7 +46,12 @@ export async function syncUpNextWidget(next: WidgetUpNext): Promise<void> {
     await AsyncStorage.setItem(KEY, JSON.stringify(next));
     await requestWidgetUpdate({
       widgetName: 'UpNext',
-      renderWidget: () => <UpNextWidget {...next} />,
+      renderWidget: (widgetInfo) => (
+        <UpNextWidget
+          {...next}
+          compact={isUpNextWidgetCompact(widgetInfo)}
+        />
+      ),
     });
   } catch (err) {
     console.warn('Up Next widget sync failed', err);
