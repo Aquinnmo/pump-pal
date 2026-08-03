@@ -105,8 +105,8 @@
     "semantic_hash": ""
   },
   "components/muscle-insight-cards.tsx": {
-    "mtime": 1785730354.5645096,
-    "ast_hash": "615661fd1c290363624fc64c142c6e42",
+    "mtime": 1785682948.2070448,
+    "ast_hash": "e70eebdd1e1e095ab2dde3766637b03a",
     "semantic_hash": ""
   },
   "components/parallax-scroll-view.tsx": {
@@ -755,13 +755,13 @@
     "semantic_hash": ""
   },
   "docs/design-language.md": {
-    "mtime": 1785730209.832386,
-    "ast_hash": "f9aa4c9c44be38b9d529d60ede783c5f",
+    "mtime": 1785726059.3750849,
+    "ast_hash": "4227c4e679fc3ffc6826206eeacc17ca",
     "semantic_hash": ""
   },
   "components/muscle-load-map.tsx": {
-    "mtime": 1785729989.8371255,
-    "ast_hash": "eae3ba7e0e15e75cbd011f7771831a49",
+    "mtime": 1785728992.934258,
+    "ast_hash": "6b371834228e7a431f470c32aee0821e",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.test.ts": {
@@ -785,13 +785,13 @@
     "semantic_hash": ""
   },
   "app/muscle-load.tsx": {
-    "mtime": 1785730209.579943,
-    "ast_hash": "3079153602cceb13a6bcfe2f11e3fc0e",
+    "mtime": 1785726059.3743324,
+    "ast_hash": "fe0048b1df9acbd7a07089bae82b5fb9",
     "semantic_hash": ""
   },
   "components/muscle-load-summary.tsx": {
-    "mtime": 1785729907.4741747,
-    "ast_hash": "8995249fa231725298f395acdc15bfed",
+    "mtime": 1785729761.3451374,
+    "ast_hash": "da144fca19064bd25350204be979b65e",
     "semantic_hash": ""
   },
   "scripts/migration/review-pending-exercises.js": {
@@ -825,8 +825,8 @@
     "semantic_hash": ""
   },
   "components/development-progress.tsx": {
-    "mtime": 1785730030.447081,
-    "ast_hash": "812ca379ccec2548e7392579810e1e24",
+    "mtime": 1785729397.2773154,
+    "ast_hash": "10df165032f7a9074e5fc3d39ffd7e71",
     "semantic_hash": ""
   },
   "components/muscle-map.tsx": {
@@ -850,8 +850,8 @@
     "semantic_hash": ""
   },
   "app/development-progress.tsx": {
-    "mtime": 1785730209.6909442,
-    "ast_hash": "05c8a4abb8e1b664fc3f9a63c2af795d",
+    "mtime": 1785728737.0077572,
+    "ast_hash": "f45e32c14849e5e3f7ef5e5efb713c75",
     "semantic_hash": ""
   },
   "components/development-progress-summary.tsx": {
@@ -867,11 +867,6 @@
   "components/analytics-navigation-row.tsx": {
     "mtime": 1785729761.2281363,
     "ast_hash": "c7a576b6d71744d6a0bf8811b48387b6",
-    "semantic_hash": ""
-  },
-  "components/ui/fading-scroll-view.tsx": {
-    "mtime": 1785730209.4619417,
-    "ast_hash": "fb40b04118f2cee9fbbe68177a9aff1e",
     "semantic_hash": ""
   }
 }

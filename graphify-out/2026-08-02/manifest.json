@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "app/(tabs)/analytics.tsx": {
-    "mtime": 1785697340.3681047,
-    "ast_hash": "c8a9c4a7b3125042f450b4200fc5be15",
+    "mtime": 1785728736.7289596,
+    "ast_hash": "80d790b79bb3683c13d91d614cdf37ea",
     "semantic_hash": ""
   },
   "app/(tabs)/index.tsx": {
@@ -70,7 +70,7 @@
     "semantic_hash": ""
   },
   "app/_layout.tsx": {
-    "mtime": 1785697513.7731323,
+    "mtime": 1785726059.3741426,
     "ast_hash": "dde5bd7fae20ed176825919e735049b1",
     "semantic_hash": ""
   },
@@ -245,8 +245,8 @@
     "semantic_hash": "fc4fd2be2f27e89d30af9520eab9544f"
   },
   "package.json": {
-    "mtime": 1785718403.2976933,
-    "ast_hash": "8e88abf8c9e29805126c409d62bc1144",
+    "mtime": 1785727790.9903219,
+    "ast_hash": "88768e5ffe0cab6ae329c4bf3d034b9a",
     "semantic_hash": ""
   },
   "scripts/build-exercise-inventory.js": {
@@ -750,78 +750,118 @@
     "semantic_hash": ""
   },
   "docs/purpose.md": {
-    "mtime": 1785688611.5392134,
-    "ast_hash": "a2389e726ab7239f0f8d7b8814ff2701",
+    "mtime": 1785726059.375188,
+    "ast_hash": "d85d6f2cc815f4c3c70f29a5a593b026",
     "semantic_hash": ""
   },
   "docs/design-language.md": {
-    "mtime": 1785688611.5391293,
-    "ast_hash": "92d6c853804a23cf322c111a74b359b6",
+    "mtime": 1785726059.3750849,
+    "ast_hash": "4227c4e679fc3ffc6826206eeacc17ca",
     "semantic_hash": ""
   },
   "components/muscle-load-map.tsx": {
-    "mtime": 1785725760.857141,
-    "ast_hash": "60b84bb6c264108f5ec4074f0bda0ce8",
+    "mtime": 1785728992.934258,
+    "ast_hash": "6b371834228e7a431f470c32aee0821e",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.test.ts": {
-    "mtime": 1785725091.7708466,
+    "mtime": 1785726059.3745513,
     "ast_hash": "41ad7007f7ae8eccd4018e82bcefe637",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.ts": {
-    "mtime": 1785725059.0545352,
+    "mtime": 1785726059.374649,
     "ast_hash": "2276f9629d46334b6cf6adb37a84e0d1",
     "semantic_hash": ""
   },
   "utils/muscle-load.test.ts": {
-    "mtime": 1785697340.1591024,
-    "ast_hash": "d35adde035e349c49f4491150e9972a5",
+    "mtime": 1785728980.9141424,
+    "ast_hash": "06ad93c6a7b8fb12e1cfe41b0bd783fa",
     "semantic_hash": ""
   },
   "utils/muscle-load.ts": {
-    "mtime": 1785697340.051101,
-    "ast_hash": "47b5024e1a313316bb6f6029044abafd",
+    "mtime": 1785727519.8895602,
+    "ast_hash": "4deefb00f3e3a5af13e0c980310bd59d",
     "semantic_hash": ""
   },
   "app/muscle-load.tsx": {
-    "mtime": 1785697535.8133888,
+    "mtime": 1785726059.3743324,
     "ast_hash": "fe0048b1df9acbd7a07089bae82b5fb9",
     "semantic_hash": ""
   },
   "components/muscle-load-summary.tsx": {
-    "mtime": 1785725250.064819,
+    "mtime": 1785726059.3743324,
     "ast_hash": "db27e2d67744827b6929e56c11ab0bcc",
     "semantic_hash": ""
   },
   "scripts/migration/review-pending-exercises.js": {
-    "mtime": 1785716612.6370037,
+    "mtime": 1785726059.3954244,
     "ast_hash": "d2c83bb9edee7f2a0ef8b2f814d24212",
     "semantic_hash": ""
   },
   "scripts/migration/review-pending-exercises.test.js": {
-    "mtime": 1785716617.8540664,
+    "mtime": 1785726059.3955514,
     "ast_hash": "83116e454158f7f1e3cc3b0419e3d05e",
     "semantic_hash": ""
   },
   "constants/muscle-map.generated.ts": {
-    "mtime": 1785724994.4637558,
+    "mtime": 1785726059.3748772,
     "ast_hash": "d95e79ca9df3fd72008966356c420cf6",
     "semantic_hash": ""
   },
   "scripts/generate-muscle-pebble-map.js": {
-    "mtime": 1785724983.0163872,
+    "mtime": 1785726059.39505,
     "ast_hash": "022715062f3b7a40ca50348173fd2545",
     "semantic_hash": ""
   },
   "scripts/generate-muscle-pebble-map.test.js": {
-    "mtime": 1785724612.042444,
+    "mtime": 1785726059.3952122,
     "ast_hash": "2afc23e333dc2ef21288723b74eb0b13",
     "semantic_hash": ""
   },
   ".claude/settings.local.json": {
     "mtime": 1785723623.6381454,
     "ast_hash": "384a36cf4396a470104b9d7429383b01",
+    "semantic_hash": ""
+  },
+  "components/development-progress.tsx": {
+    "mtime": 1785729254.5878534,
+    "ast_hash": "0afa893103a1c4d9524759c1ce815985",
+    "semantic_hash": ""
+  },
+  "components/muscle-map.tsx": {
+    "mtime": 1785727917.4409633,
+    "ast_hash": "366dfea2a9ff0ceed4bf1b6820166697",
+    "semantic_hash": ""
+  },
+  "utils/muscle-development.test.ts": {
+    "mtime": 1785729254.7178774,
+    "ast_hash": "1f3198ed04fe9dc06069ffb31e99bf90",
+    "semantic_hash": ""
+  },
+  "utils/muscle-development.ts": {
+    "mtime": 1785729254.449852,
+    "ast_hash": "8c60c92811d0e26dd2386d578c968dd7",
+    "semantic_hash": ""
+  },
+  "utils/muscle-map-scale.ts": {
+    "mtime": 1785727519.6635568,
+    "ast_hash": "65157bf96f5fcde3189fe130466bb404",
+    "semantic_hash": ""
+  },
+  "app/development-progress.tsx": {
+    "mtime": 1785728737.0077572,
+    "ast_hash": "f45e32c14849e5e3f7ef5e5efb713c75",
+    "semantic_hash": ""
+  },
+  "components/development-progress-summary.tsx": {
+    "mtime": 1785728766.8661664,
+    "ast_hash": "9f58b8dc0796850ef187a6533bce635a",
+    "semantic_hash": ""
+  },
+  "components/muscle-map-legend.tsx": {
+    "mtime": 1785728953.7608821,
+    "ast_hash": "874c2d8e5c6abeb10e0c4d2cc0dabcf4",
     "semantic_hash": ""
   }
 }

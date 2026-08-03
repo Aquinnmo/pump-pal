@@ -1,3 +1,4 @@
+import { DevelopmentProgressSummary } from "@/components/development-progress-summary";
 import { MuscleInsightCards } from "@/components/muscle-insight-cards";
 import { MuscleLoadSummary } from "@/components/muscle-load-summary";
 import { Dropdown } from "@/components/ui/dropdown";
@@ -466,7 +467,14 @@ export default function AnalyticsScreen() {
           </View>
 
           <View style={styles.section}>
-            <MuscleLoadSummary workouts={workouts} />
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Your Body</Text>
+            </View>
+            <View style={styles.bodyNavigationPanel}>
+              <MuscleLoadSummary workouts={workouts} />
+              <View style={styles.bodyNavigationDivider} />
+              <DevelopmentProgressSummary workouts={workouts} />
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -990,6 +998,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2b2b2b",
     backgroundColor: "#181818",
+  },
+  bodyNavigationPanel: {
+    overflow: "hidden",
+    borderRadius: 14,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    backgroundColor: "#1c1c1c",
+  },
+  bodyNavigationDivider: {
+    height: 1,
+    marginHorizontal: 16,
+    backgroundColor: "#2a2a2a",
   },
   featurePanel: {
     overflow: "hidden",

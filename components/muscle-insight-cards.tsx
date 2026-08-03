@@ -126,7 +126,7 @@ export function MuscleInsightCards({ workouts }: Props) {
       : "Daily limit reached";
 
   return (
-    <>
+    <View style={styles.container}>
       <View style={styles.sectionHeader}>
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>AI INSIGHTS</Text>
@@ -227,9 +227,8 @@ export function MuscleInsightCards({ workouts }: Props) {
         ) : (
           <View style={styles.insightsPanel}>
             <InsightRow
-              icon="shield-checkmark-outline"
+              icon="medkit-outline"
               title="Over Trained"
-              description="Muscles due for recovery"
               muscles={insights.overTrained}
               color="#e86d6d"
             />
@@ -237,27 +236,24 @@ export function MuscleInsightCards({ workouts }: Props) {
             <InsightRow
               icon="barbell-outline"
               title="Under Trained"
-              description="Muscles you should focus on"
               muscles={insights.underTrained}
               color="#69b9e8"
             />
           </View>
         )
       ) : null}
-    </>
+    </View>
   );
 }
 
 function InsightRow({
   icon,
   title,
-  description,
   muscles,
   color,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
-  description: string;
   muscles: string[];
   color: string;
 }) {
@@ -267,7 +263,7 @@ function InsightRow({
     <View
       style={styles.insightRow}
       accessible
-      accessibilityLabel={`${title}. ${description}. ${summary}.`}
+      accessibilityLabel={`${title}. ${summary}.`}
     >
       <View
         style={[
@@ -279,11 +275,10 @@ function InsightRow({
       </View>
       <View style={styles.insightCopy}>
         <Text style={styles.insightTitle}>{title}</Text>
-        <Text style={styles.insightDescription}>{description}</Text>
         <View style={styles.muscleList}>
           {muscles.length === 0 ? (
             <Text style={styles.noneText} selectable>
-              None detected
+              No muscles detected
             </Text>
           ) : (
             muscles.map((muscle) => (
@@ -304,6 +299,9 @@ function InsightRow({
 }
 
 const styles = StyleSheet.create({
+  container: {
+    gap: 12,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -345,9 +343,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#533030",
     backgroundColor: "#211717",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 7,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
   },
   refreshButtonDisabled: {
     borderColor: "#303030",
@@ -367,7 +365,7 @@ const styles = StyleSheet.create({
   },
   insightsPanel: {
     overflow: "hidden",
-    borderRadius: 18,
+    borderRadius: 14,
     borderCurve: "continuous",
     borderWidth: 1,
     borderColor: "#382727",
@@ -377,13 +375,13 @@ const styles = StyleSheet.create({
     minHeight: 112,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 18,
+    borderRadius: 14,
     borderCurve: "continuous",
     borderWidth: 1,
     borderColor: "#294438",
     backgroundColor: "#17201c",
-    padding: 18,
-    gap: 14,
+    padding: 16,
+    gap: 12,
   },
   balancedIconFrame: {
     width: 48,
@@ -409,11 +407,10 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   insightRow: {
-    minHeight: 138,
     flexDirection: "row",
     alignItems: "flex-start",
-    padding: 18,
-    gap: 14,
+    padding: 16,
+    gap: 12,
   },
   iconFrame: {
     width: 48,
@@ -427,7 +424,7 @@ const styles = StyleSheet.create({
   },
   insightCopy: {
     flex: 1,
-    gap: 3,
+    gap: 8,
   },
   insightTitle: {
     color: "#f3f3f3",
@@ -435,19 +432,13 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: "800",
   },
-  insightDescription: {
-    color: "#999",
-    fontSize: 15,
-    lineHeight: 21,
-  },
   muscleList: {
-    paddingTop: 9,
-    gap: 7,
+    gap: 8,
   },
   muscleRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
+    gap: 8,
   },
   muscleMarker: {
     width: 7,
@@ -469,36 +460,36 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: StyleSheet.hairlineWidth,
-    marginHorizontal: 18,
+    marginHorizontal: 16,
     backgroundColor: "#3a3030",
   },
   statusPanel: {
     minHeight: 108,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 18,
+    borderRadius: 14,
     borderCurve: "continuous",
     borderWidth: 1,
     borderColor: "#382727",
     backgroundColor: "#191717",
-    padding: 18,
-    gap: 14,
+    padding: 16,
+    gap: 12,
   },
   errorPanel: {
     minHeight: 124,
     flexDirection: "row",
     alignItems: "flex-start",
-    borderRadius: 18,
+    borderRadius: 14,
     borderCurve: "continuous",
     borderWidth: 1,
     borderColor: "#4a2929",
     backgroundColor: "#211616",
-    padding: 18,
-    gap: 14,
+    padding: 16,
+    gap: 12,
   },
   statusCopy: {
     flex: 1,
-    gap: 3,
+    gap: 4,
   },
   statusTitle: {
     color: "#ededed",
@@ -517,7 +508,7 @@ const styles = StyleSheet.create({
     lineHeight: 21,
   },
   retryText: {
-    paddingTop: 5,
+    paddingTop: 4,
     color: "#f08a8a",
     fontSize: 15,
     lineHeight: 21,

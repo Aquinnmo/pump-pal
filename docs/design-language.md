@@ -340,6 +340,13 @@ Selected state: accent-tinted background per the
 [tint recipe](#tinted-surfaces-are-a-recipe-not-new-tokens), radius 10, accent
 text.
 
+**Scrollable page** — every vertically scrollable page uses 24pt top and bottom
+scroll-edge fades to signal content beyond the viewport. Each fade is visible
+only while overflow exists in its direction, does not intercept touches, and
+uses the screen background into transparent rather than a decorative color.
+Use `components/ui/fading-scroll-view.tsx`; the Analytics page is the reference
+behavior. This is expected page chrome, not an optional per-screen treatment.
+
 **Empty state** — title, one line of subtitle, **and the action that fixes it**.
 The "no workouts yet" state in `app/(tabs)/analytics.tsx` is the model: "Your progress starts with one
 workout" / "Log a session and Timber will turn it into records, trends, and
