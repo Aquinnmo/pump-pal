@@ -1,7 +1,7 @@
 import { PLATE_DENOMS, PlateCounts, platesWeight, solvePlates } from '@/utils/plate-math';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Mode = 'barbell' | 'machine';
@@ -140,25 +140,25 @@ export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight
 
           <Text style={styles.plateHeading}>{mode === 'barbell' ? 'Plates per side' : 'Plates loaded'}</Text>
 
-          <ScrollView style={styles.plateList} keyboardShouldPersistTaps="handled">
+          <View style={styles.plateList}>
             {PLATE_DENOMS.map((d) => {
               const c = counts[d] ?? 0;
               return (
                 <View key={d} style={[styles.plateRow, c === 0 && styles.plateRowEmpty]}>
                   <Text style={[styles.plateLabel, c === 0 && styles.plateLabelEmpty]}>{fmt(d)} lb</Text>
                   <View style={styles.stepper}>
-                    <TouchableOpacity onPress={() => bump(d, -1)} hitSlop={10} disabled={c === 0}>
-                      <Ionicons name="remove-circle" size={26} color={c === 0 ? '#3a3a3a' : '#e54242'} />
+                    <TouchableOpacity onPress={() => bump(d, -1)} hitSlop={12} disabled={c === 0}>
+                      <Ionicons name="remove-circle" size={24} color={c === 0 ? '#3a3a3a' : '#e54242'} />
                     </TouchableOpacity>
                     <Text style={[styles.plateCount, c === 0 && styles.plateCountEmpty]}>{c}</Text>
-                    <TouchableOpacity onPress={() => bump(d, 1)} hitSlop={10}>
-                      <Ionicons name="add-circle" size={26} color="#e54242" />
+                    <TouchableOpacity onPress={() => bump(d, 1)} hitSlop={12}>
+                      <Ionicons name="add-circle" size={24} color="#e54242" />
                     </TouchableOpacity>
                   </View>
                 </View>
               );
             })}
-          </ScrollView>
+          </View>
 
           <View style={styles.resultBlock}>
             <Text style={styles.resultTotal}>{fmt(total)} lbs</Text>
@@ -282,19 +282,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   plateList: {
-    flexShrink: 1,
+    // All eight denominations have to fit without scrolling — the row metrics below
+    // are sized so the full list clears the sheet on a Pixel-height screen.
+    gap: 4,
   },
   plateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 10,
     backgroundColor: 'rgba(229, 66, 66, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(229, 66, 66, 0.35)',
-    marginBottom: 6,
   },
   plateRowEmpty: {
     backgroundColor: '#141414',

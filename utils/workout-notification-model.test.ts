@@ -40,7 +40,20 @@ assert.deepEqual([weighted.completedSets, weighted.totalSets], [3, 21]);
 assert.equal(weighted.title, 'Logging Push Workout');
 assert.equal(weighted.detail, 'Incline Press · Set 1 · 135 lbs');
 assert.deepEqual(weighted.actions, ['completeSet', 'uncompleteSet']);
-assert.deepEqual(weighted.segments, [{ sets: 3, started: true }, { sets: 18, started: false }]);
+assert.deepEqual(weighted.segments, [
+  { sets: 3, started: true, completed: true },
+  { sets: 18, started: false, completed: false },
+]);
+
+// Partly-logged exercises are the amber state on the AOD: started but not completed.
+const partial = present([
+  row('Squat', [set({ completed: true }), set()]),
+  row('Lunge', [set(), set()]),
+]);
+assert.deepEqual(partial.segments, [
+  { sets: 2, started: true, completed: false },
+  { sets: 2, started: false, completed: false },
+]);
 
 assert.equal(present([row('Bench', [set()])], 'Upper Workout').title, 'Logging Upper Workout');
 assert.equal(present([row('Bench', [set()])], '').title, 'Logging Workout');

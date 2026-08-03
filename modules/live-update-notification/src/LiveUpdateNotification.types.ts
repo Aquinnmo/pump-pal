@@ -1,6 +1,7 @@
 export type LiveUpdateSegment = {
   sets: number;
   started: boolean;
+  completed: boolean;
 };
 
 export type LiveUpdateNotificationPayload = {

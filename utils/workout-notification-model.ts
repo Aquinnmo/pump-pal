@@ -10,7 +10,10 @@ export type WorkoutNotificationAction =
 
 export type WorkoutNotificationSegment = {
   sets: number;
+  // started but not completed is the partially-done state the AOD paints amber;
+  // completed is the finished state it paints with the accent.
   started: boolean;
+  completed: boolean;
 };
 
 export type WorkoutNotificationPresentation = {
@@ -111,6 +114,7 @@ export function buildWorkoutNotificationPresentation({
     segments: activeRows.map((row) => ({
       sets: row.sets.length,
       started: row.sets.some((set) => set.completed),
+      completed: row.sets.length > 0 && row.sets.every((set) => set.completed),
     })),
     actions,
   };

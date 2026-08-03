@@ -17,7 +17,8 @@ import expo.modules.kotlin.records.Record
 private const val TAG = "LiveUpdateNotification"
 private const val CHANNEL_ID = "active-workout" // created by Notifee, see utils/workout-notification.android.ts
 private const val NOTIFICATION_ID = 4242
-private const val COLOR_STARTED = 0xFFE54242.toInt() // app/(tabs)/_layout.tsx:9
+private const val COLOR_COMPLETE = 0xFFE54242.toInt() // app/(tabs)/_layout.tsx:9
+private const val COLOR_IN_PROGRESS = 0xFFFBBF24.toInt() // partially-done exercise
 private const val COLOR_PENDING = 0xFF555555.toInt() // app/(tabs)/_layout.tsx:10
 
 // Notification.EXTRA_REQUEST_PROMOTED_ONGOING is only in the android-36.1 SDK; this
@@ -28,6 +29,7 @@ private const val EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoi
 class LiveUpdateSegment : Record {
   @Field val sets: Int = 0
   @Field val started: Boolean = false
+  @Field val completed: Boolean = false
 }
 
 class LiveUpdateNotificationPayload : Record {
@@ -86,7 +88,13 @@ class LiveUpdateNotificationModule : Module() {
         .setProgressSegments(
           payload.segments.map { segment ->
             Notification.ProgressStyle.Segment(segment.sets)
-              .setColor(if (segment.started) COLOR_STARTED else COLOR_PENDING)
+              .setColor(
+                when {
+                  segment.completed -> COLOR_COMPLETE
+                  segment.started -> COLOR_IN_PROGRESS
+                  else -> COLOR_PENDING
+                }
+              )
           }
         )
         .setProgress(payload.progress)

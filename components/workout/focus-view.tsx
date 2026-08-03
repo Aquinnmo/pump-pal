@@ -38,6 +38,19 @@ type FocusViewProps = {
 
 type CardState = "complete" | "in-progress" | "not-started";
 
+const ACCENT = "#e54242";
+// Amber for partially-logged exercises. Matches the AOD notification's
+// COLOR_IN_PROGRESS in LiveUpdateNotificationModule.kt — keep the two in step.
+const IN_PROGRESS = "#fbbf24";
+
+// The card you are on takes a solid border in its own state colour, so "where am I"
+// and "how done is it" stay readable as two separate signals.
+const CURRENT_BORDER: Record<CardState, { borderColor: string }> = {
+  complete: { borderColor: ACCENT },
+  "in-progress": { borderColor: IN_PROGRESS },
+  "not-started": { borderColor: "#888" },
+};
+
 export function FocusView({
   exercises,
   saving,
@@ -91,9 +104,11 @@ export function FocusView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUid]);
 
-  const cardState = (row: DraftExerciseRow, rowIndex: number): CardState => {
+  // Strictly about how much of the exercise is logged — being the exercise you are
+  // currently on is a separate axis, drawn as the border emphasis below.
+  const cardState = (row: DraftExerciseRow): CardState => {
     if (row.sets.length > 0 && row.sets.every((s) => s.completed)) return "complete";
-    if (row.sets.some((s) => s.completed) || rowIndex === currentRowIndex) return "in-progress";
+    if (row.sets.some((s) => s.completed)) return "in-progress";
     return "not-started";
   };
 
@@ -123,23 +138,28 @@ export function FocusView({
             centerCurrent(false);
           }}
         >
-          {rows.map((item, index) => {
-            const state = done ? "complete" : cardState(item, index);
+          {rows.map((item) => {
+            const state = done ? "complete" : cardState(item);
+            const isCurrent = item.uid === currentUid;
             return (
               <View
                 key={item.uid}
                 onLayout={(e: LayoutChangeEvent) => {
                   const { x, width } = e.nativeEvent.layout;
                   cardLayouts.current[item.uid] = { x, width };
-                  if (item.uid === currentUid) centerCurrent(false);
+                  if (isCurrent) centerCurrent(false);
                 }}
                 style={[
                   styles.exCard,
                   state === "in-progress" && styles.exCardInProgress,
                   state === "complete" && styles.exCardComplete,
+                  isCurrent && CURRENT_BORDER[state],
                 ]}
               >
-                <Text style={styles.exCardText} numberOfLines={1}>
+                <Text
+                  style={[styles.exCardText, !isCurrent && styles.exCardTextMuted]}
+                  numberOfLines={1}
+                >
                   {item.label} x
                   <Text style={styles.tabularNums}>{item.sets.length}</Text>
                 </Text>
@@ -271,12 +291,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderCurve: "continuous",
     backgroundColor: "#1c1c1c",
-    borderWidth: 1,
+    // 2px on every card, not just the current one, so promoting a card to the
+    // current state doesn't reflow the strip by a pixel.
+    borderWidth: 2,
     borderColor: "#2a2a2a",
   },
   exCardInProgress: {
-    backgroundColor: "rgba(229, 66, 66, 0.08)",
-    borderColor: "rgba(229, 66, 66, 0.24)",
+    backgroundColor: "rgba(251, 191, 36, 0.08)",
+    borderColor: "rgba(251, 191, 36, 0.24)",
   },
   exCardComplete: {
     backgroundColor: "rgba(229, 66, 66, 0.08)",
@@ -287,6 +309,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     lineHeight: 14 * 1.4,
     color: "#fff",
+  },
+  exCardTextMuted: {
+    color: "#888",
   },
   infoZone: {
     // Sits on the page itself — only the exercise strip above is banded chrome.
