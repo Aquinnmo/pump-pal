@@ -14,7 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import Svg, { ClipPath, Defs, G, Path } from "react-native-svg";
+import Svg, { G, Path } from "react-native-svg";
 
 interface MuscleLoadMapProps {
   result: MuscleLoadResult;
@@ -93,20 +93,21 @@ export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
           height={mapHeight}
           viewBox={`0 0 ${MUSCLE_MAP_VIEWBOX.width} ${MUSCLE_MAP_VIEWBOX.height}`}
         >
-          <Defs>
-            {BODY_SILHOUETTES.map((silhouette) => (
-              <ClipPath key={silhouette.view} id={`body-${silhouette.view}`}>
-                <Path d={silhouette.d} />
-              </ClipPath>
-            ))}
-          </Defs>
           {BODY_SILHOUETTES.map((silhouette) => {
             const view = silhouette.view;
             return (
-              <G key={view} clipPath={`url(#body-${view})`}>
-                {/* Fill only: the silhouette is a union of overlapping
-                    subpaths, so stroking it draws every internal seam. */}
-                <Path d={silhouette.d} fill="#3a3a3a" />
+              <G key={view}>
+                {/* One flat-filled Path per body part, no clip and no stroke:
+                    the parts overlap, so a single combined path leaves the
+                    union up to the fill rule (holes where parts cross) and a
+                    stroke would draw every internal seam. */}
+                {silhouette.d.split(/(?=M)/).map((part, index) => (
+                  <Path
+                    key={`${view}-part-${index}`}
+                    d={part}
+                    fill="#2b2b2b"
+                  />
+                ))}
                 {MUSCLE_PEBBLES.filter((pebble) => pebble.view === view).map(
                   (pebble) => {
                     const muscle = pebble.muscle;

@@ -760,13 +760,13 @@
     "semantic_hash": ""
   },
   "components/muscle-load-map.tsx": {
-    "mtime": 1785718402.6766858,
-    "ast_hash": "dcf1a993b0c130eb6d3d501cca047102",
+    "mtime": 1785723128.1218352,
+    "ast_hash": "2d46414c04693db1d9077b80a50018cd",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.test.ts": {
-    "mtime": 1785718402.9916894,
-    "ast_hash": "16e445a8a7f5dd744bc1b9a7ec791d94",
+    "mtime": 1785719826.4797845,
+    "ast_hash": "a09288538006ece99879b86d88177db8",
     "semantic_hash": ""
   },
   "constants/muscle-map-paths.ts": {
@@ -805,18 +805,23 @@
     "semantic_hash": ""
   },
   "constants/muscle-map.generated.ts": {
-    "mtime": 1785718673.1628726,
-    "ast_hash": "3a7e53fec6a47d1dbdc7d5845a4f7523",
+    "mtime": 1785724025.456682,
+    "ast_hash": "88f5fa9d3c536439270adab39c85ffe8",
     "semantic_hash": ""
   },
   "scripts/generate-muscle-pebble-map.js": {
-    "mtime": 1785718667.4808054,
-    "ast_hash": "b7f538b662fab72a5f263e5ee16bf896",
+    "mtime": 1785724025.3224688,
+    "ast_hash": "67c81174c4b52163bfaba52973b19ab3",
     "semantic_hash": ""
   },
   "scripts/generate-muscle-pebble-map.test.js": {
-    "mtime": 1785718635.555429,
-    "ast_hash": "0caec54383fcfa5ce56e9be17774411d",
+    "mtime": 1785724055.411916,
+    "ast_hash": "b5f83e7cd462c07bd2259463a8a5f86a",
+    "semantic_hash": ""
+  },
+  ".claude/settings.local.json": {
+    "mtime": 1785723623.6381454,
+    "ast_hash": "384a36cf4396a470104b9d7429383b01",
     "semantic_hash": ""
   }
 }

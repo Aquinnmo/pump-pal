@@ -490,8 +490,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "app_web_output",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "output"
     },
     {
@@ -534,8 +534,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "app_expo_plugins",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "plugins"
     },
     {
@@ -545,8 +545,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_router",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "expo-router"
     },
     {
@@ -567,8 +567,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_localization",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "expo-localization"
     },
     {
@@ -578,8 +578,8 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "ref_expo_web_browser",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "expo-web-browser"
     },
     {
@@ -710,8 +710,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_layout",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "(auth)/_layout.tsx"
     },
     {
@@ -721,8 +721,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "app_auth_layout_authlayout",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "authlayout()"
     },
     {
@@ -732,7 +732,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_auth_phone_auth",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "phone-auth.tsx"
     },
@@ -743,7 +743,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "app_auth_phone_auth_region_to_calling_code",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "region_to_calling_code"
     },
@@ -754,7 +754,7 @@
       "source_location": "L63",
       "_origin": "ast",
       "id": "app_auth_phone_auth_getcallingcode",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "getcallingcode()"
     },
@@ -765,7 +765,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "id": "app_auth_phone_auth_phoneauthscreen",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "phoneauthscreen()"
     },
@@ -776,7 +776,7 @@
       "source_location": "L204",
       "_origin": "ast",
       "id": "app_auth_phone_auth_styles",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
@@ -788,7 +788,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_in",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "sign-in.tsx"
     },
     {
@@ -799,7 +799,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_in_signinscreen",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "signinscreen()"
     },
     {
@@ -810,7 +810,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_in_styles",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -821,7 +821,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_up",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "sign-up.tsx"
     },
     {
@@ -832,7 +832,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_up_signupscreen",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "signupscreen()"
     },
     {
@@ -843,7 +843,7 @@
       "_origin": "ast",
       "id": "app_auth_sign_up_styles",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -854,7 +854,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "welcome.tsx"
     },
     {
@@ -865,7 +865,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_slide",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "slide"
     },
     {
@@ -876,7 +876,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_slides",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "slides"
     },
     {
@@ -887,7 +887,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_welcomescreen",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "welcomescreen()"
     },
     {
@@ -898,7 +898,7 @@
       "_origin": "ast",
       "id": "app_auth_welcome_styles",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -930,8 +930,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_analytics",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "analytics.tsx"
     },
     {
@@ -941,8 +941,8 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "app_tabs_analytics_strengthhistorypoint",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "strengthhistorypoint"
     },
     {
@@ -952,8 +952,8 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "app_tabs_analytics_chartconfig",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "chartconfig"
     },
     {
@@ -963,8 +963,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "app_tabs_analytics_analyticsscreen",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "analyticsscreen()"
     },
     {
@@ -974,8 +974,8 @@
       "source_location": "L710",
       "_origin": "ast",
       "id": "app_tabs_analytics_analyticslayout",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "analyticslayout()"
     },
     {
@@ -985,8 +985,8 @@
       "source_location": "L815",
       "_origin": "ast",
       "id": "app_tabs_analytics_highlightrow",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "highlightrow()"
     },
     {
@@ -996,8 +996,8 @@
       "source_location": "L850",
       "_origin": "ast",
       "id": "app_tabs_analytics_personalbestrow",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "personalbestrow()"
     },
     {
@@ -1007,8 +1007,8 @@
       "source_location": "L897",
       "_origin": "ast",
       "id": "app_tabs_analytics_formatduration",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "formatduration()"
     },
     {
@@ -1018,8 +1018,8 @@
       "source_location": "L902",
       "_origin": "ast",
       "id": "app_tabs_analytics_formatpounds",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "formatpounds()"
     },
     {
@@ -1029,8 +1029,8 @@
       "source_location": "L906",
       "_origin": "ast",
       "id": "app_tabs_analytics_formatsignedpounds",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "formatsignedpounds()"
     },
     {
@@ -1040,8 +1040,8 @@
       "source_location": "L911",
       "_origin": "ast",
       "id": "app_tabs_analytics_styles",
-      "community": 71,
-      "community_name": "analytics.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "styles"
     },
     {
@@ -1051,8 +1051,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_tabs_index",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "index.tsx"
     },
     {
@@ -1062,8 +1062,8 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "app_tabs_index_homescreen",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "homescreen()"
     },
     {
@@ -1073,8 +1073,8 @@
       "source_location": "L273",
       "_origin": "ast",
       "id": "app_tabs_index_styles",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "styles"
     },
     {
@@ -1359,7 +1359,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_active_workout",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "active-workout.tsx"
     },
@@ -1370,7 +1370,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "app_active_workout_formatelapsed",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "formatelapsed()"
     },
@@ -1381,7 +1381,7 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "app_active_workout_workouttimer",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "workouttimer()"
     },
@@ -1392,7 +1392,7 @@
       "source_location": "L96",
       "_origin": "ast",
       "id": "app_active_workout_activeworkoutscreen",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "activeworkoutscreen()"
     },
@@ -1403,7 +1403,7 @@
       "source_location": "L809",
       "_origin": "ast",
       "id": "app_active_workout_styles",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "styles"
     },
@@ -1414,7 +1414,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_modal",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "modal.tsx"
     },
@@ -1425,7 +1425,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "id": "app_modal_addworkoutmodal",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "addworkoutmodal()"
     },
@@ -1436,7 +1436,7 @@
       "source_location": "L847",
       "_origin": "ast",
       "id": "app_modal_styles",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "styles"
     },
@@ -1447,8 +1447,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_muscle_load",
-      "community": 14,
-      "community_name": "useAuth",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscle-load.tsx"
     },
     {
@@ -1458,8 +1458,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "app_muscle_load_muscleloadscreen",
-      "community": 14,
-      "community_name": "useAuth",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "muscleloadscreen()"
     },
     {
@@ -1469,8 +1469,8 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "app_muscle_load_statepanel",
-      "community": 14,
-      "community_name": "useAuth",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "statepanel()"
     },
     {
@@ -1480,8 +1480,8 @@
       "source_location": "L159",
       "_origin": "ast",
       "id": "app_muscle_load_styles",
-      "community": 14,
-      "community_name": "useAuth",
+      "community": 24,
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -1491,8 +1491,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_planned_workouts",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "planned-workouts.tsx"
     },
     {
@@ -1502,8 +1502,8 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "app_planned_workouts_queueordercachekey",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "queueordercachekey()"
     },
     {
@@ -1513,8 +1513,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "app_planned_workouts_plannedworkoutsscreen",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "plannedworkoutsscreen()"
     },
     {
@@ -1524,8 +1524,8 @@
       "source_location": "L301",
       "_origin": "ast",
       "id": "app_planned_workouts_styles",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "styles"
     },
     {
@@ -1536,7 +1536,7 @@
       "_origin": "ast",
       "id": "app_set_split",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "set-split.tsx"
     },
     {
@@ -1546,8 +1546,8 @@
       "source_location": "L22",
       "_origin": "ast",
       "id": "app_set_split_setsplitscreen",
-      "community": 77,
-      "community_name": "set-split.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "setsplitscreen()"
     },
     {
@@ -1558,7 +1558,7 @@
       "_origin": "ast",
       "id": "app_set_split_styles",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "styles"
     },
     {
@@ -1601,8 +1601,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "app_settings_app",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settings-app.tsx"
     },
     {
@@ -1612,8 +1612,8 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "app_settings_app_settingsappscreen",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "settingsappscreen()"
     },
     {
@@ -1623,8 +1623,8 @@
       "source_location": "L205",
       "_origin": "ast",
       "id": "app_settings_app_styles",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -1734,7 +1734,7 @@
       "_origin": "ast",
       "id": "app_settings_split",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "settings-split.tsx"
     },
     {
@@ -1745,7 +1745,7 @@
       "_origin": "ast",
       "id": "app_settings_split_settingssplitscreen",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "settingssplitscreen()"
     },
     {
@@ -1756,7 +1756,7 @@
       "_origin": "ast",
       "id": "app_settings_split_styles",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "styles"
     },
     {
@@ -1766,8 +1766,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_external_link",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "external-link.tsx"
     },
     {
@@ -1777,8 +1777,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "components_external_link_props",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "props"
     },
     {
@@ -1788,8 +1788,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "components_external_link_externallink",
-      "community": 99,
-      "community_name": "expo-router",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "externallink()"
     },
     {
@@ -1799,7 +1799,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "firebase-recaptcha-modal.tsx"
     },
@@ -1810,7 +1810,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_firebaserecaptchaverifiermodalref",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "firebaserecaptchaverifiermodalref"
     },
@@ -1821,7 +1821,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_props",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "props"
     },
@@ -1832,7 +1832,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_buildhtml",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "buildhtml()"
     },
@@ -1843,7 +1843,7 @@
       "source_location": "L71",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_firebaserecaptchaverifiermodal",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "firebaserecaptchaverifiermodal"
     },
@@ -1854,7 +1854,7 @@
       "source_location": "L153",
       "_origin": "ast",
       "id": "components_firebase_recaptcha_modal_styles",
-      "community": 138,
+      "community": 76,
       "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
@@ -1909,7 +1909,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_muscle_insight_cards",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "muscle-insight-cards.tsx"
     },
@@ -1920,7 +1920,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_props",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "props"
     },
@@ -1931,7 +1931,7 @@
       "source_location": "L26",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_insightscache",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "insightscache"
     },
@@ -1942,7 +1942,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_refreshcache",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "refreshcache"
     },
@@ -1953,7 +1953,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_todaykey",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "todaykey()"
     },
@@ -1964,7 +1964,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_muscleinsightcards",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "muscleinsightcards()"
     },
@@ -1975,7 +1975,7 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_insightrow",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "insightrow()"
     },
@@ -1986,7 +1986,7 @@
       "source_location": "L306",
       "_origin": "ast",
       "id": "components_muscle_insight_cards_styles",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "styles"
     },
@@ -2273,7 +2273,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timber-auth-shell.tsx"
     },
     {
@@ -2284,7 +2284,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberauthshellprops",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberauthshellprops"
     },
     {
@@ -2295,7 +2295,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberbrandprops",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberbrandprops"
     },
     {
@@ -2306,7 +2306,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberauthshell",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberauthshell()"
     },
     {
@@ -2317,7 +2317,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberbrand",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberbrand()"
     },
     {
@@ -2328,7 +2328,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_timberauthstyles",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberauthstyles"
     },
     {
@@ -2339,7 +2339,7 @@
       "_origin": "ast",
       "id": "components_timber_auth_shell_styles",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "styles"
     },
     {
@@ -2350,7 +2350,7 @@
       "_origin": "ast",
       "id": "components_timber_logo",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timber-logo.tsx"
     },
     {
@@ -2361,7 +2361,7 @@
       "_origin": "ast",
       "id": "components_timber_logo_logs",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "logs"
     },
     {
@@ -2372,7 +2372,7 @@
       "_origin": "ast",
       "id": "components_timber_logo_props",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "props"
     },
     {
@@ -2383,7 +2383,7 @@
       "_origin": "ast",
       "id": "components_timber_logo_timberlogo",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "timberlogo()"
     },
     {
@@ -2493,7 +2493,7 @@
       "_origin": "ast",
       "id": "components_ui_drag_handle",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "drag-handle.tsx"
     },
     {
@@ -2504,7 +2504,7 @@
       "_origin": "ast",
       "id": "components_ui_drag_handle_draghandle",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draghandle()"
     },
     {
@@ -2515,7 +2515,7 @@
       "_origin": "ast",
       "id": "components_ui_drag_handle_styles",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -2526,7 +2526,7 @@
       "_origin": "ast",
       "id": "components_ui_dropdown",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "dropdown.tsx"
     },
     {
@@ -2537,7 +2537,7 @@
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdownprops",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "dropdownprops"
     },
     {
@@ -2548,7 +2548,7 @@
       "_origin": "ast",
       "id": "components_ui_dropdown_dropdown",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "dropdown()"
     },
     {
@@ -2559,7 +2559,7 @@
       "_origin": "ast",
       "id": "components_ui_dropdown_styles",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "styles"
     },
     {
@@ -2570,7 +2570,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise-picker.tsx"
     },
     {
@@ -2581,7 +2581,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_compareexerciselabels",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "compareexerciselabels()"
     },
     {
@@ -2592,7 +2592,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerselection",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisepickerselection"
     },
     {
@@ -2603,7 +2603,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheethandle",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "sheethandle"
     },
     {
@@ -2614,7 +2614,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheetprops",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "sheetprops"
     },
     {
@@ -2625,7 +2625,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_sheet",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "sheet"
     },
     {
@@ -2636,7 +2636,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepickerprops",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisepickerprops"
     },
     {
@@ -2647,7 +2647,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_exercisepicker",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisepicker()"
     },
     {
@@ -2658,7 +2658,7 @@
       "_origin": "ast",
       "id": "components_ui_exercise_picker_styles",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -2833,8 +2833,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_ui_toast",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "toast.tsx"
     },
     {
@@ -2844,8 +2844,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "components_ui_toast_toastprops",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "toastprops"
     },
     {
@@ -2855,8 +2855,8 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "components_ui_toast_toast",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "toast()"
     },
     {
@@ -2866,8 +2866,8 @@
       "source_location": "L83",
       "_origin": "ast",
       "id": "components_ui_toast_styles",
-      "community": 142,
-      "community_name": "settings-app.tsx",
+      "community": 14,
+      "community_name": "useAuth",
       "norm_label": "styles"
     },
     {
@@ -2954,8 +2954,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "components_workout_card",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout-card.tsx"
     },
     {
@@ -2966,7 +2966,7 @@
       "_origin": "ast",
       "id": "components_workout_card_workoutcardprops",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "workoutcardprops"
     },
     {
@@ -2976,8 +2976,8 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "components_workout_card_workoutcard",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutcard()"
     },
     {
@@ -2987,8 +2987,8 @@
       "source_location": "L235",
       "_origin": "ast",
       "id": "components_workout_card_styles",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "styles"
     },
     {
@@ -2999,7 +2999,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise-card.tsx"
     },
     {
@@ -3010,7 +3010,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_exercise_types",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise_types"
     },
     {
@@ -3021,7 +3021,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_setfield",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "setfield"
     },
     {
@@ -3032,7 +3032,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_exercisecardprops",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisecardprops"
     },
     {
@@ -3043,7 +3043,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_exercisecard",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisecard()"
     },
     {
@@ -3054,7 +3054,7 @@
       "_origin": "ast",
       "id": "components_workout_exercise_card_styles",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "styles"
     },
     {
@@ -3108,7 +3108,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_ai_config",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "ai-config.ts"
     },
@@ -3119,7 +3119,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "constants_ai_config_aiproviderid",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "aiproviderid"
     },
@@ -3130,7 +3130,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "constants_ai_config_ai_provider",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "ai_provider"
     },
@@ -3141,7 +3141,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "constants_ai_config_ai_model",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "ai_model"
     },
@@ -3152,7 +3152,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "constants_ai_config_ai_max_retries",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "ai_max_retries"
     },
@@ -3163,7 +3163,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "constants_ai_config_temporary_ai_daily_limit",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "temporary_ai_daily_limit"
     },
@@ -3174,7 +3174,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "constants_ai_config_formataierror",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "formataierror()"
     },
@@ -3185,7 +3185,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "constants_ai_config_googleprovider",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "googleprovider"
     },
@@ -3196,7 +3196,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "constants_ai_config_openaiprovider",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "openaiprovider"
     },
@@ -3207,7 +3207,7 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "constants_ai_config_providerregistry",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "providerregistry"
     },
@@ -3218,7 +3218,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "id": "constants_ai_config_getaimodel",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "getaimodel()"
     },
@@ -3314,7 +3314,7 @@
       "label": "represented",
       "file_type": "code",
       "source_file": "constants/muscle-map-paths.test.ts",
-      "source_location": "L28",
+      "source_location": "L27",
       "_origin": "ast",
       "id": "constants_muscle_map_paths_test_represented",
       "community": 15,
@@ -3537,8 +3537,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_options",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "split-options.ts"
     },
     {
@@ -3549,7 +3549,7 @@
       "_origin": "ast",
       "id": "constants_split_options_split_options",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "split_options"
     },
     {
@@ -3560,7 +3560,7 @@
       "_origin": "ast",
       "id": "constants_split_options_splitoption",
       "community": 77,
-      "community_name": "set-split.tsx",
+      "community_name": "planned-workouts.tsx",
       "norm_label": "splitoption"
     },
     {
@@ -3570,8 +3570,8 @@
       "source_location": "L11",
       "_origin": "ast",
       "id": "constants_split_options_issplitoption",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "issplitoption()"
     },
     {
@@ -3581,7 +3581,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "constants_split_workout_names",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "split-workout-names.ts"
     },
@@ -3592,7 +3592,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "constants_split_workout_names_split_workout_names",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "split_workout_names"
     },
@@ -3758,7 +3758,7 @@
       "_origin": "ast",
       "id": "hooks_use_draft_exercises",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "use-draft-exercises.ts"
     },
     {
@@ -3769,7 +3769,7 @@
       "_origin": "ast",
       "id": "hooks_use_draft_exercises_cascadesetfield",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "cascadesetfield()"
     },
     {
@@ -3780,7 +3780,7 @@
       "_origin": "ast",
       "id": "hooks_use_draft_exercises_draftexerciseoptions",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draftexerciseoptions"
     },
     {
@@ -3790,8 +3790,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "hooks_use_draft_exercises_findlastperformed",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "muscle-load.ts",
       "norm_label": "findlastperformed()"
     },
     {
@@ -3801,7 +3801,7 @@
       "source_location": "L65",
       "_origin": "ast",
       "id": "hooks_use_draft_exercises_usedraftexercises",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "usedraftexercises()"
     },
@@ -3813,7 +3813,7 @@
       "_origin": "ast",
       "id": "hooks_use_exercise_catalog",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "use-exercise-catalog.ts"
     },
     {
@@ -3824,7 +3824,7 @@
       "_origin": "ast",
       "id": "hooks_use_exercise_catalog_useexercisecatalog",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "useexercisecatalog()"
     },
     {
@@ -4604,7 +4604,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "package_dependencies_ai",
-      "community": 129,
+      "community": 99,
       "community_name": "ai",
       "norm_label": "ai"
     },
@@ -4615,7 +4615,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "ai",
-      "community": 129,
+      "community": 99,
       "community_name": "ai",
       "norm_label": "ai"
     },
@@ -4648,8 +4648,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "package_dependencies_expo_constants",
-      "community": 6,
-      "community_name": "dependencies",
+      "community": 115,
+      "community_name": "expo-constants",
       "norm_label": "expo-constants"
     },
     {
@@ -4659,8 +4659,8 @@
       "source_location": "L38",
       "_origin": "ast",
       "id": "expo_constants",
-      "community": 6,
-      "community_name": "dependencies",
+      "community": 115,
+      "community_name": "expo-constants",
       "norm_label": "expo-constants"
     },
     {
@@ -5330,8 +5330,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "package_dependencies_react_native_web",
-      "community": 131,
-      "community_name": "react-native-web",
+      "community": 6,
+      "community_name": "dependencies",
       "norm_label": "react-native-web"
     },
     {
@@ -5341,8 +5341,8 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "react_native_web",
-      "community": 131,
-      "community_name": "react-native-web",
+      "community": 6,
+      "community_name": "dependencies",
       "norm_label": "react-native-web"
     },
     {
@@ -6416,7 +6416,7 @@
       "label": "fs",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L10",
+      "source_location": "L17",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_fs",
       "community": 3,
@@ -6427,7 +6427,7 @@
       "label": "path",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L11",
+      "source_location": "L18",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_path",
       "community": 3,
@@ -6435,21 +6435,10 @@
       "norm_label": "path"
     },
     {
-      "label": "VIEW_BOUNDS",
-      "file_type": "code",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L15",
-      "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_view_bounds",
-      "community": 3,
-      "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "view_bounds"
-    },
-    {
       "label": "CENTERS",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L16",
+      "source_location": "L22",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_centers",
       "community": 3,
@@ -6460,7 +6449,7 @@
       "label": "VIEWS",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L17",
+      "source_location": "L23",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_views",
       "community": 3,
@@ -6471,7 +6460,7 @@
       "label": "CANONICAL_MUSCLES",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L18",
+      "source_location": "L24",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_canonical_muscles",
       "community": 3,
@@ -6479,21 +6468,87 @@
       "norm_label": "canonical_muscles"
     },
     {
-      "label": "seededRandom()",
+      "label": "fmt()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L27",
+      "source_location": "L35",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_seededrandom",
+      "id": "scripts_generate_muscle_pebble_map_fmt",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "seededrandom()"
+      "norm_label": "fmt()"
+    },
+    {
+      "label": "emitPath()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L46",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_emitpath",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "emitpath()"
+    },
+    {
+      "label": "ellipsePoints()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L57",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_ellipsepoints",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "ellipsepoints()"
+    },
+    {
+      "label": "ovoidPoints()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L72",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_ovoidpoints",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "ovoidpoints()"
+    },
+    {
+      "label": "squirclePoints()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L86",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_squirclepoints",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "squirclepoints()"
+    },
+    {
+      "label": "capsulePoints()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L101",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_capsulepoints",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "capsulepoints()"
+    },
+    {
+      "label": "shapePoints()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L114",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_shapepoints",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "shapepoints()"
     },
     {
       "label": "ellipsePath()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L35",
+      "source_location": "L132",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_ellipsepath",
       "community": 3,
@@ -6504,7 +6559,7 @@
       "label": "capsulePath()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L41",
+      "source_location": "L136",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_capsulepath",
       "community": 3,
@@ -6515,7 +6570,7 @@
       "label": "torsoPath()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L59",
+      "source_location": "L148",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_torsopath",
       "community": 3,
@@ -6526,7 +6581,7 @@
       "label": "silhouetteParts()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L65",
+      "source_location": "L154",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_silhouetteparts",
       "community": 3,
@@ -6537,7 +6592,7 @@
       "label": "partPath()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L91",
+      "source_location": "L180",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_partpath",
       "community": 3,
@@ -6545,21 +6600,10 @@
       "norm_label": "partpath()"
     },
     {
-      "label": "pointInPart()",
-      "file_type": "code",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L97",
-      "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_pointinpart",
-      "community": 3,
-      "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "pointinpart()"
-    },
-    {
       "label": "pointInSilhouette()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L118",
+      "source_location": "L186",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_pointinsilhouette",
       "community": 3,
@@ -6567,98 +6611,65 @@
       "norm_label": "pointinsilhouette()"
     },
     {
-      "label": "HALF_SEEDS",
+      "label": "O()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L125",
+      "source_location": "L214",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_half_seeds",
+      "id": "scripts_generate_muscle_pebble_map_o",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "half_seeds"
+      "norm_label": "o()"
     },
     {
-      "label": "initialSeeds()",
+      "label": "S()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L151",
+      "source_location": "L215",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_initialseeds",
+      "id": "scripts_generate_muscle_pebble_map_s",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "initialseeds()"
+      "norm_label": "s()"
     },
     {
-      "label": "clipHalfPlane()",
+      "label": "C()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L173",
+      "source_location": "L216",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_cliphalfplane",
+      "id": "scripts_generate_muscle_pebble_map_c",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "cliphalfplane()"
+      "norm_label": "c()"
     },
     {
-      "label": "cellsForSeeds()",
+      "label": "PEBBLE_SPECS",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L191",
+      "source_location": "L218",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_cellsforseeds",
+      "id": "scripts_generate_muscle_pebble_map_pebble_specs",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "cellsforseeds()"
+      "norm_label": "pebble_specs"
     },
     {
-      "label": "polygonCentroid()",
+      "label": "shapePath()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L213",
+      "source_location": "L293",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_polygoncentroid",
+      "id": "scripts_generate_muscle_pebble_map_shapepath",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "polygoncentroid()"
-    },
-    {
-      "label": "relaxSeeds()",
-      "file_type": "code",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L229",
-      "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_relaxseeds",
-      "community": 3,
-      "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "relaxseeds()"
-    },
-    {
-      "label": "fmt()",
-      "file_type": "code",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L245",
-      "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_fmt",
-      "community": 3,
-      "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "fmt()"
-    },
-    {
-      "label": "polygonPath()",
-      "file_type": "code",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L250",
-      "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_polygonpath",
-      "community": 3,
-      "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "polygonpath()"
+      "norm_label": "shapepath()"
     },
     {
       "label": "generateMap()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L254",
+      "source_location": "L301",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_generatemap",
       "community": 3,
@@ -6666,10 +6677,32 @@
       "norm_label": "generatemap()"
     },
     {
+      "label": "pointInTile()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L341",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_pointintile",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "pointintile()"
+    },
+    {
+      "label": "coverage()",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L359",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_coverage",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "coverage()"
+    },
+    {
       "label": "renderTypeScript()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L277",
+      "source_location": "L373",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_rendertypescript",
       "community": 3,
@@ -6680,7 +6713,7 @@
       "label": "previewColor()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L296",
+      "source_location": "L392",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_previewcolor",
       "community": 3,
@@ -6691,7 +6724,7 @@
       "label": "renderPreview()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L302",
+      "source_location": "L398",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_renderpreview",
       "community": 3,
@@ -6702,7 +6735,7 @@
       "label": "writeOutputs()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L315",
+      "source_location": "L415",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_writeoutputs",
       "community": 3,
@@ -6732,21 +6765,21 @@
       "norm_label": "assert"
     },
     {
-      "label": "{\n  CANONICAL_MUSCLES,\n  VIEWS,\n  generateMap,\n  pointInSilhouette,\n  renderTypeScript,\n}",
+      "label": "{\n  CANONICAL_MUSCLES,\n  CENTERS,\n  HEIGHT,\n  VIEWS,\n  coverage,\n  generateMap,\n  renderTypeScript,\n}",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
       "source_location": "L2",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_test_canonical_muscles_views_generatemap_pointinsilhouette_rendertypescript",
+      "id": "scripts_generate_muscle_pebble_map_test_canonical_muscles_centers_height_views_coverage_generatemap_rendertypescript",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "{\n  canonical_muscles,\n  views,\n  generatemap,\n  pointinsilhouette,\n  rendertypescript,\n}"
+      "norm_label": "{\n  canonical_muscles,\n  centers,\n  height,\n  views,\n  coverage,\n  generatemap,\n  rendertypescript,\n}"
     },
     {
       "label": "first",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L10",
+      "source_location": "L12",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_test_first",
       "community": 3,
@@ -6757,7 +6790,7 @@
       "label": "second",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L11",
+      "source_location": "L13",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_test_second",
       "community": 3,
@@ -6765,21 +6798,32 @@
       "norm_label": "second"
     },
     {
-      "label": "pointInConvexPolygon()",
+      "label": "pathBounds()",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L14",
+      "source_location": "L18",
       "_origin": "ast",
-      "id": "scripts_generate_muscle_pebble_map_test_pointinconvexpolygon",
+      "id": "scripts_generate_muscle_pebble_map_test_pathbounds",
       "community": 3,
       "community_name": "generate-muscle-pebble-map.js",
-      "norm_label": "pointinconvexpolygon()"
+      "norm_label": "pathbounds()"
+    },
+    {
+      "label": "pebblesById",
+      "file_type": "code",
+      "source_file": "scripts/generate-muscle-pebble-map.test.js",
+      "source_location": "L31",
+      "_origin": "ast",
+      "id": "scripts_generate_muscle_pebble_map_test_pebblesbyid",
+      "community": 3,
+      "community_name": "generate-muscle-pebble-map.js",
+      "norm_label": "pebblesbyid"
     },
     {
       "label": "represented",
       "file_type": "code",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L52",
+      "source_location": "L56",
       "_origin": "ast",
       "id": "scripts_generate_muscle_pebble_map_test_represented",
       "community": 3,
@@ -7178,8 +7222,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "convert-legacy-workout.js"
     },
     {
@@ -7189,8 +7233,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_durationseconds",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "durationseconds()"
     },
     {
@@ -7200,8 +7244,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_convertlegacyexercise",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "convertlegacyexercise()"
     },
     {
@@ -7211,8 +7255,8 @@
       "source_location": "L46",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_convertlegacyworkout",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "convertlegacyworkout()"
     },
     {
@@ -7222,8 +7266,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_test",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "convert-legacy-workout.test.js"
     },
     {
@@ -7233,8 +7277,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_test_assert",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "assert"
     },
     {
@@ -7244,8 +7288,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_test_convertlegacyworkout",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "{ convertlegacyworkout }"
     },
     {
@@ -7255,8 +7299,8 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_test_mappingsbylegacyname",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "mappingsbylegacyname"
     },
     {
@@ -7266,8 +7310,8 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "scripts_migration_convert_legacy_workout_test_convertedworkout_report",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "{ convertedworkout, report }"
     },
     {
@@ -7277,8 +7321,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "dry-run-conversion.js"
     },
     {
@@ -7288,8 +7332,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_fs",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "fs"
     },
     {
@@ -7299,8 +7343,8 @@
       "source_location": "L2",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_path",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "path"
     },
     {
@@ -7310,8 +7354,8 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_convertlegacyworkout",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "{ convertlegacyworkout }"
     },
     {
@@ -7321,8 +7365,8 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_readjson",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "readjson()"
     },
     {
@@ -7332,8 +7376,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_flattensnapshot",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "flattensnapshot()"
     },
     {
@@ -7343,8 +7387,8 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_indexmappings",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "indexmappings()"
     },
     {
@@ -7354,8 +7398,8 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_oldtotals",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "oldtotals()"
     },
     {
@@ -7365,8 +7409,8 @@
       "source_location": "L56",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_newtotals",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "newtotals()"
     },
     {
@@ -7376,8 +7420,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_comparetotals",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "comparetotals()"
     },
     {
@@ -7387,8 +7431,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_formatmarkdown",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "formatmarkdown()"
     },
     {
@@ -7398,8 +7442,8 @@
       "source_location": "L119",
       "_origin": "ast",
       "id": "scripts_migration_dry_run_conversion_run",
-      "community": 26,
-      "community_name": "dry-run-conversion.js",
+      "community": 5,
+      "community_name": "write-migrated-workouts.js",
       "norm_label": "run()"
     },
     {
@@ -7486,8 +7530,8 @@
       "source_location": "L37",
       "_origin": "ast",
       "id": "scripts_migration_firestore_readonly_snapshot_requestjson",
-      "community": 46,
-      "community_name": "firestore-readonly-snapshot.js",
+      "community": 19,
+      "community_name": "seed-exercise-catalog.js",
       "norm_label": "requestjson()"
     },
     {
@@ -7497,8 +7541,8 @@
       "source_location": "L67",
       "_origin": "ast",
       "id": "scripts_migration_firestore_readonly_snapshot_getaccesstoken",
-      "community": 46,
-      "community_name": "firestore-readonly-snapshot.js",
+      "community": 19,
+      "community_name": "seed-exercise-catalog.js",
       "norm_label": "getaccesstoken()"
     },
     {
@@ -7530,8 +7574,8 @@
       "source_location": "L112",
       "_origin": "ast",
       "id": "scripts_migration_firestore_readonly_snapshot_fieldstojs",
-      "community": 46,
-      "community_name": "firestore-readonly-snapshot.js",
+      "community": 13,
+      "community_name": "review-pending-exercises.js",
       "norm_label": "fieldstojs()"
     },
     {
@@ -8036,8 +8080,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_valid_tracking_modes",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "valid_tracking_modes"
     },
     {
@@ -8102,8 +8146,8 @@
       "source_location": "L66",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_documenturl",
-      "community": 46,
-      "community_name": "firestore-readonly-snapshot.js",
+      "community": 13,
+      "community_name": "review-pending-exercises.js",
       "norm_label": "documenturl()"
     },
     {
@@ -8113,8 +8157,8 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_getdocument",
-      "community": 46,
-      "community_name": "firestore-readonly-snapshot.js",
+      "community": 13,
+      "community_name": "review-pending-exercises.js",
       "norm_label": "getdocument()"
     },
     {
@@ -8124,8 +8168,8 @@
       "source_location": "L77",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_deletedocument",
-      "community": 46,
-      "community_name": "firestore-readonly-snapshot.js",
+      "community": 13,
+      "community_name": "review-pending-exercises.js",
       "norm_label": "deletedocument()"
     },
     {
@@ -8157,8 +8201,8 @@
       "source_location": "L101",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_unique",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "unique()"
     },
     {
@@ -8168,8 +8212,8 @@
       "source_location": "L105",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_parsecommalist",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "parsecommalist()"
     },
     {
@@ -8179,8 +8223,8 @@
       "source_location": "L109",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_slugify",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "slugify()"
     },
     {
@@ -8190,8 +8234,8 @@
       "source_location": "L113",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_muscleerrors",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "muscleerrors()"
     },
     {
@@ -8201,8 +8245,8 @@
       "source_location": "L122",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_buildvariation",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "buildvariation()"
     },
     {
@@ -8212,8 +8256,8 @@
       "source_location": "L130",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_buildapprovedexercise",
-      "community": 137,
-      "community_name": "review-pending-exercises.test.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "buildapprovedexercise()"
     },
     {
@@ -8223,8 +8267,8 @@
       "source_location": "L150",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_addexercisetocatalog",
-      "community": 137,
-      "community_name": "review-pending-exercises.test.js",
+      "community": 13,
+      "community_name": "review-pending-exercises.js",
       "norm_label": "addexercisetocatalog()"
     },
     {
@@ -8278,8 +8322,8 @@
       "source_location": "L201",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_askchoice",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "askchoice()"
     },
     {
@@ -8289,8 +8333,8 @@
       "source_location": "L213",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_askmuscles",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "askmuscles()"
     },
     {
@@ -8300,8 +8344,8 @@
       "source_location": "L222",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_asktrackingmodes",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "asktrackingmodes()"
     },
     {
@@ -8311,8 +8355,8 @@
       "source_location": "L231",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_askvariation",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "askvariation()"
     },
     {
@@ -8322,8 +8366,8 @@
       "source_location": "L251",
       "_origin": "ast",
       "id": "scripts_migration_review_pending_exercises_promptapprovedexercise",
-      "community": 13,
-      "community_name": "review-pending-exercises.js",
+      "community": 71,
+      "community_name": "promptApprovedExercise",
       "norm_label": "promptapprovedexercise()"
     },
     {
@@ -9521,8 +9565,8 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "types_user_injury",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "injury"
     },
     {
@@ -9544,7 +9588,7 @@
       "_origin": "ast",
       "id": "types_workout",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "workout.ts"
     },
     {
@@ -9555,7 +9599,7 @@
       "_origin": "ast",
       "id": "types_workout_trackingmode",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "trackingmode"
     },
     {
@@ -9565,8 +9609,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "types_workout_performedset",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "muscle-load.ts",
       "norm_label": "performedset"
     },
     {
@@ -9576,8 +9620,8 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "types_workout_performedexercise",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 15,
+      "community_name": "muscle-load.ts",
       "norm_label": "performedexercise"
     },
     {
@@ -9588,7 +9632,7 @@
       "_origin": "ast",
       "id": "types_workout_migrationsource",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "migrationsource"
     },
     {
@@ -9598,7 +9642,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "types_workout_workoutstatus",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "workoutstatus"
     },
@@ -9610,7 +9654,7 @@
       "_origin": "ast",
       "id": "types_workout_workout",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "workout"
     },
     {
@@ -9621,7 +9665,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisevariation",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisevariation"
     },
     {
@@ -9632,7 +9676,7 @@
       "_origin": "ast",
       "id": "types_workout_catalogexercise",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "catalogexercise"
     },
     {
@@ -9643,7 +9687,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisecatalogmeta",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisecatalogmeta"
     },
     {
@@ -9654,7 +9698,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisesearchoption",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisesearchoption"
     },
     {
@@ -9665,7 +9709,7 @@
       "_origin": "ast",
       "id": "types_workout_exerciseref",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exerciseref"
     },
     {
@@ -9676,7 +9720,7 @@
       "_origin": "ast",
       "id": "types_workout_recentexercise",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "recentexercise"
     },
     {
@@ -9687,7 +9731,7 @@
       "_origin": "ast",
       "id": "types_workout_exercisetype",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercisetype"
     },
     {
@@ -9698,7 +9742,7 @@
       "_origin": "ast",
       "id": "types_workout_draftset",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draftset"
     },
     {
@@ -9709,7 +9753,7 @@
       "_origin": "ast",
       "id": "types_workout_draftexerciserow",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "draftexerciserow"
     },
     {
@@ -9719,8 +9763,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_alert",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "alert.ts"
     },
     {
@@ -9730,8 +9774,8 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "utils_alert_showalert",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "showalert()"
     },
     {
@@ -9742,7 +9786,7 @@
       "_origin": "ast",
       "id": "utils_create_pending_exercise",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "create-pending-exercise.ts"
     },
     {
@@ -9753,7 +9797,7 @@
       "_origin": "ast",
       "id": "utils_create_pending_exercise_reserveexerciseid",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "reserveexerciseid()"
     },
     {
@@ -9764,7 +9808,7 @@
       "_origin": "ast",
       "id": "utils_create_pending_exercise_creatependingexercise",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "creatependingexercise()"
     },
     {
@@ -9774,7 +9818,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_daily_name",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "daily-name.ts"
     },
@@ -9785,7 +9829,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_daily_name_todayutc",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "todayutc()"
     },
@@ -9796,7 +9840,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "utils_daily_name_generaterandomname",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "generaterandomname()"
     },
@@ -9807,7 +9851,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "id": "utils_daily_name_getdailyname",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "getdailyname()"
     },
@@ -9819,7 +9863,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "exercise-catalog.ts"
     },
     {
@@ -9830,7 +9874,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_readcache",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "readcache()"
     },
     {
@@ -9841,7 +9885,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_writecache",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "writecache()"
     },
     {
@@ -9852,7 +9896,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_loadcatalog",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "loadcatalog()"
     },
     {
@@ -9863,7 +9907,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_slugify",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "slugify()"
     },
     {
@@ -9874,7 +9918,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_tokenize",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "tokenize()"
     },
     {
@@ -9885,7 +9929,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_buildsearchoptions",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "buildsearchoptions()"
     },
     {
@@ -9896,7 +9940,7 @@
       "_origin": "ast",
       "id": "utils_exercise_catalog_ranksearchoptions",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "ranksearchoptions()"
     },
     {
@@ -9907,7 +9951,7 @@
       "_origin": "ast",
       "id": "utils_firebase_errors",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "firebase-errors.ts"
     },
     {
@@ -9918,7 +9962,7 @@
       "_origin": "ast",
       "id": "utils_firebase_errors_firebase_error_map",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "firebase_error_map"
     },
     {
@@ -9929,7 +9973,7 @@
       "_origin": "ast",
       "id": "utils_firebase_errors_getfriendlyautherror",
       "community": 76,
-      "community_name": "timber-auth-shell.tsx",
+      "community_name": "phone-auth.tsx",
       "norm_label": "getfriendlyautherror()"
     },
     {
@@ -9939,8 +9983,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_injuries",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "injuries.ts"
     },
     {
@@ -9950,7 +9994,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "utils_injuries_getongoinginjuryids",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "getongoinginjuryids()"
     },
@@ -9961,7 +10005,7 @@
       "source_location": "L30",
       "_origin": "ast",
       "id": "utils_injuries_getongoinginjuries",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "getongoinginjuries()"
     },
@@ -9972,8 +10016,8 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "utils_injuries_injurycoversdate",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "injurycoversdate()"
     },
     {
@@ -9983,8 +10027,8 @@
       "source_location": "L58",
       "_origin": "ast",
       "id": "utils_injuries_applyinjurytohistory",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "applyinjurytohistory()"
     },
     {
@@ -10005,7 +10049,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_muscle_analysis",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "muscle-analysis.ts"
     },
@@ -10016,7 +10060,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "utils_muscle_analysis_muscleinsights",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "muscleinsights"
     },
@@ -10027,7 +10071,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "utils_muscle_analysis_muscleinsightsschema",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "muscleinsightsschema"
     },
@@ -10038,7 +10082,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "utils_muscle_analysis_normalizeinsightlist",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "normalizeinsightlist()"
     },
@@ -10049,7 +10093,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "utils_muscle_analysis_normalizemuscleinsights",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "normalizemuscleinsights()"
     },
@@ -10071,7 +10115,7 @@
       "source_location": "L55",
       "_origin": "ast",
       "id": "utils_muscle_analysis_computemusclevolume",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "computemusclevolume()"
     },
@@ -10082,7 +10126,7 @@
       "source_location": "L152",
       "_origin": "ast",
       "id": "utils_muscle_analysis_analyzemuscles",
-      "community": 90,
+      "community": 26,
       "community_name": "muscle-analysis.ts",
       "norm_label": "analyzemuscles()"
     },
@@ -10533,8 +10577,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_predict_next_workout",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "predict-next-workout.ts"
     },
     {
@@ -10544,8 +10588,8 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "utils_predict_next_workout_predictworkoutaftername",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "predictworkoutaftername()"
     },
     {
@@ -10555,8 +10599,8 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "utils_predict_next_workout_predictnextworkoutname",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "predictnextworkoutname()"
     },
     {
@@ -10687,8 +10731,8 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_conversion",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workout-conversion.ts"
     },
     {
@@ -10698,7 +10742,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "utils_workout_conversion_makeuid",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "makeuid()"
     },
@@ -10709,8 +10753,8 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "utils_workout_conversion_expanddrafttosets",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "expanddrafttosets()"
     },
     {
@@ -10720,7 +10764,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "utils_workout_conversion_collapsesetstodraft",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "collapsesetstodraft()"
     },
@@ -10731,7 +10775,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "id": "utils_workout_conversion_buildperformedexercise",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "buildperformedexercise()"
     },
@@ -10742,8 +10786,8 @@
       "source_location": "L84",
       "_origin": "ast",
       "id": "utils_workout_conversion_exerciselabel",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "exerciselabel()"
     },
     {
@@ -10753,8 +10797,8 @@
       "source_location": "L88",
       "_origin": "ast",
       "id": "utils_workout_conversion_isdurationexercise",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "isdurationexercise()"
     },
     {
@@ -10764,8 +10808,8 @@
       "source_location": "L93",
       "_origin": "ast",
       "id": "utils_workout_conversion_fmtduration",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "fmtduration()"
     },
     {
@@ -10775,8 +10819,8 @@
       "source_location": "L99",
       "_origin": "ast",
       "id": "utils_workout_conversion_holdsuffix",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "holdsuffix()"
     },
     {
@@ -10786,8 +10830,8 @@
       "source_location": "L103",
       "_origin": "ast",
       "id": "utils_workout_conversion_weightsuffix",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "weightsuffix()"
     },
     {
@@ -10797,8 +10841,8 @@
       "source_location": "L107",
       "_origin": "ast",
       "id": "utils_workout_conversion_samedisplayedset",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "samedisplayedset()"
     },
     {
@@ -10808,8 +10852,8 @@
       "source_location": "L117",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercisesetgroups",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "summarizeperformedexercisesetgroups()"
     },
     {
@@ -10819,8 +10863,8 @@
       "source_location": "L140",
       "_origin": "ast",
       "id": "utils_workout_conversion_summarizeperformedexercise",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "summarizeperformedexercise()"
     },
     {
@@ -10830,8 +10874,8 @@
       "source_location": "L172",
       "_origin": "ast",
       "id": "utils_workout_conversion_workoutvolume",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workoutvolume()"
     },
     {
@@ -10841,8 +10885,8 @@
       "source_location": "L181",
       "_origin": "ast",
       "id": "utils_workout_conversion_workouttotalreps",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 90,
+      "community_name": "workout-conversion.ts",
       "norm_label": "workouttotalreps()"
     },
     {
@@ -10852,8 +10896,8 @@
       "source_location": "L187",
       "_origin": "ast",
       "id": "utils_workout_conversion_todateobj",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 89,
+      "community_name": "toDateObj",
       "norm_label": "todateobj()"
     },
     {
@@ -10863,7 +10907,7 @@
       "source_location": "L195",
       "_origin": "ast",
       "id": "utils_workout_conversion_recentexercisesforday",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "recentexercisesforday()"
     },
@@ -10940,7 +10984,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "utils_workout_notification",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "workout-notification.ts"
     },
@@ -10951,7 +10995,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "utils_workout_notification_workoutsegment",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "workoutsegment"
     },
@@ -10973,7 +11017,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "utils_workout_notification_ensureworkoutchannel",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "ensureworkoutchannel()"
     },
@@ -10984,7 +11028,7 @@
       "source_location": "L21",
       "_origin": "ast",
       "id": "utils_workout_notification_requestnotificationpermission",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "requestnotificationpermission()"
     },
@@ -10995,7 +11039,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "utils_workout_notification_showworkoutnotification",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "showworkoutnotification()"
     },
@@ -11006,7 +11050,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "utils_workout_notification_dismissworkoutnotification",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "dismissworkoutnotification()"
     },
@@ -11018,7 +11062,7 @@
       "_origin": "ast",
       "id": "utils_workout_suggestions",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "workout-suggestions.ts"
     },
     {
@@ -11028,8 +11072,8 @@
       "source_location": "L15",
       "_origin": "ast",
       "id": "utils_workout_suggestions_generatesplitworkoutnames",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 77,
+      "community_name": "planned-workouts.tsx",
       "norm_label": "generatesplitworkoutnames()"
     },
     {
@@ -11040,7 +11084,7 @@
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexercise",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "suggestedexercise"
     },
     {
@@ -11051,7 +11095,7 @@
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexerciseschema",
       "community": 24,
-      "community_name": "active-workout.tsx",
+      "community_name": "workout.ts",
       "norm_label": "suggestedexerciseschema"
     },
     {
@@ -11061,7 +11105,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestedexercisestodraftrows",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "suggestedexercisestodraftrows()"
     },
@@ -11072,8 +11116,8 @@
       "source_location": "L102",
       "_origin": "ast",
       "id": "utils_workout_suggestions_formatactiveinjuries",
-      "community": 24,
-      "community_name": "active-workout.tsx",
+      "community": 1,
+      "community_name": "settings-injuries.tsx",
       "norm_label": "formatactiveinjuries()"
     },
     {
@@ -11083,7 +11127,7 @@
       "source_location": "L129",
       "_origin": "ast",
       "id": "utils_workout_suggestions_suggestworkoutcompletion",
-      "community": 24,
+      "community": 81,
       "community_name": "active-workout.tsx",
       "norm_label": "suggestworkoutcompletion()"
     },
@@ -20738,7 +20782,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "components/muscle-load-map.tsx",
-      "source_location": "L124",
+      "source_location": "L121",
       "weight": 1.0,
       "_origin": "ast",
       "source": "components_muscle_load_map_muscleloadmap",
@@ -23288,7 +23332,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "constants/muscle-map-paths.test.ts",
-      "source_location": "L28",
+      "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
       "source": "constants_muscle_map_paths_test",
@@ -27859,7 +27903,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L18",
+      "source_location": "L216",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map",
+      "target": "scripts_generate_muscle_pebble_map_c",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L24",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27870,7 +27925,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L41",
+      "source_location": "L136",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27878,22 +27933,21 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "indirect_call",
-      "confidence": "INFERRED",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L338",
+      "source_location": "L101",
       "weight": 1.0,
       "_origin": "ast",
-      "context": "collection",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_cellsforseeds",
-      "confidence_score": 0.5
+      "target": "scripts_generate_muscle_pebble_map_capsulepoints",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L16",
+      "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27901,21 +27955,22 @@
       "confidence_score": 1.0
     },
     {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L173",
+      "source_location": "L444",
       "weight": 1.0,
       "_origin": "ast",
+      "context": "collection",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_cliphalfplane",
-      "confidence_score": 1.0
+      "target": "scripts_generate_muscle_pebble_map_coverage",
+      "confidence_score": 0.5
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L35",
+      "source_location": "L132",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27926,7 +27981,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L245",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map",
+      "target": "scripts_generate_muscle_pebble_map_ellipsepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map",
+      "target": "scripts_generate_muscle_pebble_map_emitpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27937,7 +28014,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L10",
+      "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27948,7 +28025,7 @@
       "relation": "indirect_call",
       "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L339",
+      "source_location": "L445",
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
@@ -27960,29 +28037,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L125",
+      "source_location": "L214",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_half_seeds",
+      "target": "scripts_generate_muscle_pebble_map_o",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L151",
+      "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_initialseeds",
+      "target": "scripts_generate_muscle_pebble_map_ovoidpoints",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L91",
+      "source_location": "L180",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -27993,7 +28070,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L11",
+      "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -28004,18 +28081,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L97",
+      "source_location": "L218",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_pointinpart",
+      "target": "scripts_generate_muscle_pebble_map_pebble_specs",
       "confidence_score": 1.0
     },
     {
       "relation": "indirect_call",
       "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L340",
+      "source_location": "L446",
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
@@ -28024,32 +28101,22 @@
       "confidence_score": 0.5
     },
     {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
+      "relation": "indirect_call",
+      "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L213",
+      "source_location": "L447",
       "weight": 1.0,
       "_origin": "ast",
+      "context": "collection",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_polygoncentroid",
-      "confidence_score": 1.0
+      "target": "scripts_generate_muscle_pebble_map_pointintile",
+      "confidence_score": 0.5
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L250",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_polygonpath",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L296",
+      "source_location": "L392",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -28060,18 +28127,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L229",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_relaxseeds",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L302",
+      "source_location": "L398",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -28082,7 +28138,7 @@
       "relation": "indirect_call",
       "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L341",
+      "source_location": "L448",
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
@@ -28094,18 +28150,40 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L27",
+      "source_location": "L215",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_seededrandom",
+      "target": "scripts_generate_muscle_pebble_map_s",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L65",
+      "source_location": "L293",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map",
+      "target": "scripts_generate_muscle_pebble_map_shapepath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L114",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map",
+      "target": "scripts_generate_muscle_pebble_map_shapepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L154",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -28116,7 +28194,18 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L59",
+      "source_location": "L86",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map",
+      "target": "scripts_generate_muscle_pebble_map_squirclepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L148",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -28127,18 +28216,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L15",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map",
-      "target": "scripts_generate_muscle_pebble_map_view_bounds",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L17",
+      "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map",
@@ -28149,7 +28227,7 @@
       "relation": "indirect_call",
       "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L342",
+      "source_location": "L449",
       "weight": 1.0,
       "_origin": "ast",
       "context": "collection",
@@ -28178,6 +28256,18 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_test",
+      "target": "scripts_generate_muscle_pebble_map_centers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.test.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_test",
       "target": "scripts_generate_muscle_pebble_map_views",
       "confidence_score": 1.0
     },
@@ -28198,11 +28288,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L152",
+      "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_initialseeds",
-      "target": "scripts_generate_muscle_pebble_map_seededrandom",
+      "source": "scripts_generate_muscle_pebble_map_emitpath",
+      "target": "scripts_generate_muscle_pebble_map_fmt",
       "confidence_score": 1.0
     },
     {
@@ -28210,7 +28300,127 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L92",
+      "source_location": "L141",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_capsulepath",
+      "target": "scripts_generate_muscle_pebble_map_emitpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L133",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_ellipsepath",
+      "target": "scripts_generate_muscle_pebble_map_emitpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L294",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_shapepath",
+      "target": "scripts_generate_muscle_pebble_map_emitpath",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L133",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_ellipsepath",
+      "target": "scripts_generate_muscle_pebble_map_ellipsepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L123",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_shapepoints",
+      "target": "scripts_generate_muscle_pebble_map_ellipsepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L117",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_shapepoints",
+      "target": "scripts_generate_muscle_pebble_map_ovoidpoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L119",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_shapepoints",
+      "target": "scripts_generate_muscle_pebble_map_squirclepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L141",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_capsulepath",
+      "target": "scripts_generate_muscle_pebble_map_capsulepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L121",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_shapepoints",
+      "target": "scripts_generate_muscle_pebble_map_capsulepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L294",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_shapepath",
+      "target": "scripts_generate_muscle_pebble_map_shapepoints",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L181",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_partpath",
@@ -28222,19 +28432,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L49",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_capsulepath",
-      "target": "scripts_generate_muscle_pebble_map_fmt",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L93",
+      "source_location": "L182",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_partpath",
@@ -28246,7 +28444,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L94",
+      "source_location": "L183",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_partpath",
@@ -28258,7 +28456,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L257",
+      "source_location": "L304",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_generatemap",
@@ -28270,7 +28468,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L119",
+      "source_location": "L187",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_pointinsilhouette",
@@ -28282,7 +28480,7 @@
       "context": "argument",
       "confidence": "INFERRED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L257",
+      "source_location": "L304",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_generatemap",
@@ -28294,34 +28492,10 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L119",
+      "source_location": "L365",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_pointinsilhouette",
-      "target": "scripts_generate_muscle_pebble_map_pointinpart",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L239",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_relaxseeds",
-      "target": "scripts_generate_muscle_pebble_map_pointinsilhouette",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L2",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_test",
+      "source": "scripts_generate_muscle_pebble_map_coverage",
       "target": "scripts_generate_muscle_pebble_map_pointinsilhouette",
       "confidence_score": 1.0
     },
@@ -28330,95 +28504,11 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L262",
+      "source_location": "L324",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_generatemap",
-      "target": "scripts_generate_muscle_pebble_map_initialseeds",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L207",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_cellsforseeds",
-      "target": "scripts_generate_muscle_pebble_map_cliphalfplane",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L263",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_generatemap",
-      "target": "scripts_generate_muscle_pebble_map_cellsforseeds",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L232",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_relaxseeds",
-      "target": "scripts_generate_muscle_pebble_map_cellsforseeds",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L234",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_relaxseeds",
-      "target": "scripts_generate_muscle_pebble_map_polygoncentroid",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L262",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_generatemap",
-      "target": "scripts_generate_muscle_pebble_map_relaxseeds",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L251",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_polygonpath",
-      "target": "scripts_generate_muscle_pebble_map_fmt",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L270",
-      "weight": 1.0,
-      "_origin": "ast",
-      "source": "scripts_generate_muscle_pebble_map_generatemap",
-      "target": "scripts_generate_muscle_pebble_map_polygonpath",
+      "target": "scripts_generate_muscle_pebble_map_shapepath",
       "confidence_score": 1.0
     },
     {
@@ -28438,11 +28528,47 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L316",
+      "source_location": "L416",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_writeoutputs",
       "target": "scripts_generate_muscle_pebble_map_generatemap",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L367",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_coverage",
+      "target": "scripts_generate_muscle_pebble_map_pointintile",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.js",
+      "source_location": "L411",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_renderpreview",
+      "target": "scripts_generate_muscle_pebble_map_coverage",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.test.js",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_test",
+      "target": "scripts_generate_muscle_pebble_map_coverage",
       "confidence_score": 1.0
     },
     {
@@ -28462,7 +28588,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L318",
+      "source_location": "L418",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_writeoutputs",
@@ -28474,7 +28600,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L310",
+      "source_location": "L406",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_renderpreview",
@@ -28486,7 +28612,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.js",
-      "source_location": "L319",
+      "source_location": "L422",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_writeoutputs",
@@ -28512,14 +28638,14 @@
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_test",
-      "target": "scripts_generate_muscle_pebble_map_test_canonical_muscles_views_generatemap_pointinsilhouette_rendertypescript",
+      "target": "scripts_generate_muscle_pebble_map_test_canonical_muscles_centers_height_views_coverage_generatemap_rendertypescript",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L10",
+      "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_test",
@@ -28530,18 +28656,29 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L14",
+      "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_test",
-      "target": "scripts_generate_muscle_pebble_map_test_pointinconvexpolygon",
+      "target": "scripts_generate_muscle_pebble_map_test_pathbounds",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L52",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "scripts_generate_muscle_pebble_map_test",
+      "target": "scripts_generate_muscle_pebble_map_test_pebblesbyid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "scripts/generate-muscle-pebble-map.test.js",
+      "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_test",
@@ -28552,7 +28689,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "scripts/generate-muscle-pebble-map.test.js",
-      "source_location": "L11",
+      "source_location": "L13",
       "weight": 1.0,
       "_origin": "ast",
       "source": "scripts_generate_muscle_pebble_map_test",
@@ -38230,5 +38367,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "67b60e106e090d5954edb2a3f6b397267be2d1cc"
+  "built_at_commit": "dcf7925eee8075a16b4e7ca0350aca7841745576"
 }

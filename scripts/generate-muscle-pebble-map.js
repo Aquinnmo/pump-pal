@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 
 /*
- * Original, dependency-free body pebble generator for Timber.
+ * Original, dependency-free body tile generator for Timber.
  *
- * Each muscle is drawn as one or more hand-placed smooth pebbles (ellipses
- * and capsules) positioned anatomically on anterior/posterior figures.
- * Nothing is fetched and no anatomy or artwork package is involved.
+ * The figure is built entirely out of tiles. Muscles are ovoids — a shape
+ * grammar borrowed from Northwest Coast formline geometry: convex top, tight
+ * upper corners, shallow concave underside, uniform relief gaps between forms.
+ * Small filler muscles and the neutral structural tiles (head, neck, hands,
+ * knees, feet) use Material-ish squircles. Abstract geometry only — no crest
+ * or figure imagery.
+ *
+ * Geometry, layout, and silhouettes in this file were authored for this
+ * project. Nothing is fetched and no anatomy or artwork package is involved.
  */
 
 const fs = require('node:fs');
@@ -24,33 +30,123 @@ const CANONICAL_MUSCLES = [
   'gastrocnemius', 'soleus',
 ];
 
+const K = 0.5523; // circular bezier constant
+
 function fmt(value) {
   const rounded = Math.round(value * 100) / 100;
   return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace(/0$/, '');
 }
 
+/*
+ * Shapes are authored in local coordinates (origin at the tile centre) as a
+ * list of cubic segments, then emitted through one formatter that applies the
+ * tile's rotation and translation. Rotating here rather than via an SVG
+ * transform keeps the generated `d` self-contained.
+ */
+function emitPath(points, { cx, cy, angle = 0, scale = 1 }) {
+  const radians = (angle * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const place = ([px, py]) => {
+    const x = px * scale;
+    const y = py * scale;
+    return `${fmt(cx + x * cos - y * sin)} ${fmt(cy + x * sin + y * cos)}`;
+  };
+  const [start, ...curves] = points;
+  return `M${place(start)}${curves
+    .map(([c1, c2, end]) => `C${place(c1)} ${place(c2)} ${place(end)}`)
+    .join('')}Z`;
+}
+
+function ellipsePoints(rx, ry) {
+  return [
+    [-rx, 0],
+    [[-rx, ry * K], [-rx * K, ry], [0, ry]],
+    [[rx * K, ry], [rx, ry * K], [rx, 0]],
+    [[rx, -ry * K], [rx * K, -ry], [0, -ry]],
+    [[-rx * K, -ry], [-rx, -ry * K], [-rx, 0]],
+  ];
+}
+
+/*
+ * Formline ovoid: convex top, corners pulled tight (a lower control weight
+ * makes the turn happen closer to the corner), and an underside that sags
+ * upward instead of bulging down.
+ */
+function ovoidPoints(rx, ry, { corner = 0.48, base = 0.32, sag = 0.24 } = {}) {
+  const lift = ry * sag;
+  return [
+    [-rx, -ry * 0.08],
+    [[-rx, ry * base], [-rx * base, ry - lift], [0, ry - lift]],
+    [[rx * base, ry - lift], [rx, ry * base], [rx, -ry * 0.08]],
+    [[rx, -ry * corner], [rx * corner, -ry], [0, -ry]],
+    [[-rx * corner, -ry], [-rx, -ry * corner], [-rx, -ry * 0.08]],
+  ];
+}
+
+// Material-ish squircle: a rounded rectangle whose corner control points are
+// pulled toward the corner (higher `k`) so the sides run flatter than an
+// ellipse before turning.
+function squirclePoints(rx, ry, k = 0.78) {
+  const cx = rx * (1 - k);
+  const cy = ry * (1 - k);
+  return [
+    [-rx, -cy],
+    [[-rx, ry * k], [-rx * k, ry], [-cx, ry]],
+    [[cx, ry], [cx, ry], [cx, ry]],
+    [[rx * k, ry], [rx, ry * k], [rx, cy]],
+    [[rx, -cy], [rx, -cy], [rx, -cy]],
+    [[rx, -ry * k], [rx * k, -ry], [cx, -ry]],
+    [[-cx, -ry], [-cx, -ry], [-cx, -ry]],
+    [[-rx * k, -ry], [-rx, -ry * k], [-rx, -cy]],
+  ];
+}
+
+function capsulePoints(length, radius) {
+  const half = length / 2;
+  return [
+    [-radius, -half],
+    [[-radius, -half - radius * K], [-radius * K, -half - radius], [0, -half - radius]],
+    [[radius * K, -half - radius], [radius, -half - radius * K], [radius, -half]],
+    [[radius, half], [radius, half], [radius, half]],
+    [[radius, half + radius * K], [radius * K, half + radius], [0, half + radius]],
+    [[-radius * K, half + radius], [-radius, half + radius * K], [-radius, half]],
+    [[-radius, -half], [-radius, -half], [-radius, -half]],
+  ];
+}
+
+function shapePoints(shape) {
+  switch (shape.type) {
+    case 'ovoid':
+      return ovoidPoints(shape.rx, shape.ry, shape);
+    case 'squircle':
+      return squirclePoints(shape.rx, shape.ry, shape.k);
+    case 'capsule':
+      return capsulePoints(shape.len, shape.r);
+    default:
+      return ellipsePoints(shape.rx, shape.ry);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Backing silhouette. Unchanged: it defines the body outline the tiles are
+ * placed against and shows through the relief gaps between them.
+ * ------------------------------------------------------------------------ */
+
 function ellipsePath(cx, cy, rx, ry) {
-  // Keep the same winding direction as the torso and capsule primitives so
-  // overlapping subpaths form a non-zero union inside a single clip path.
-  return `M${fmt(cx - rx)} ${fmt(cy)}C${fmt(cx - rx)} ${fmt(cy + ry * 0.5523)} ${fmt(cx - rx * 0.5523)} ${fmt(cy + ry)} ${fmt(cx)} ${fmt(cy + ry)}C${fmt(cx + rx * 0.5523)} ${fmt(cy + ry)} ${fmt(cx + rx)} ${fmt(cy + ry * 0.5523)} ${fmt(cx + rx)} ${fmt(cy)}C${fmt(cx + rx)} ${fmt(cy - ry * 0.5523)} ${fmt(cx + rx * 0.5523)} ${fmt(cy - ry)} ${fmt(cx)} ${fmt(cy - ry)}C${fmt(cx - rx * 0.5523)} ${fmt(cy - ry)} ${fmt(cx - rx)} ${fmt(cy - ry * 0.5523)} ${fmt(cx - rx)} ${fmt(cy)}Z`;
+  return emitPath(ellipsePoints(rx, ry), { cx, cy });
 }
 
 function capsulePath(ax, ay, bx, by, radius) {
   const dx = bx - ax;
   const dy = by - ay;
   const length = Math.hypot(dx, dy);
-  const nx = (-dy / length) * radius;
-  const ny = (dx / length) * radius;
-  const k = 0.5523;
-  return [
-    `M${fmt(ax + nx)} ${fmt(ay + ny)}`,
-    `L${fmt(bx + nx)} ${fmt(by + ny)}`,
-    `C${fmt(bx + nx + (dx / length) * radius * k)} ${fmt(by + ny + (dy / length) * radius * k)} ${fmt(bx + (dx / length) * radius + nx * k)} ${fmt(by + (dy / length) * radius + ny * k)} ${fmt(bx + (dx / length) * radius)} ${fmt(by + (dy / length) * radius)}`,
-    `C${fmt(bx + (dx / length) * radius - nx * k)} ${fmt(by + (dy / length) * radius - ny * k)} ${fmt(bx - nx + (dx / length) * radius * k)} ${fmt(by - ny + (dy / length) * radius * k)} ${fmt(bx - nx)} ${fmt(by - ny)}`,
-    `L${fmt(ax - nx)} ${fmt(ay - ny)}`,
-    `C${fmt(ax - nx - (dx / length) * radius * k)} ${fmt(ay - ny - (dy / length) * radius * k)} ${fmt(ax - (dx / length) * radius - nx * k)} ${fmt(ay - (dy / length) * radius - ny * k)} ${fmt(ax - (dx / length) * radius)} ${fmt(ay - (dy / length) * radius)}`,
-    `C${fmt(ax - (dx / length) * radius + nx * k)} ${fmt(ay - (dy / length) * radius + ny * k)} ${fmt(ax + nx - (dx / length) * radius * k)} ${fmt(ay + ny - (dy / length) * radius * k)} ${fmt(ax + nx)} ${fmt(ay + ny)}Z`,
-  ].join('');
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI - 90;
+  return emitPath(capsulePoints(length, radius), {
+    cx: (ax + bx) / 2,
+    cy: (ay + by) / 2,
+    angle,
+  });
 }
 
 function torsoPath(cx, posterior) {
@@ -91,60 +187,291 @@ function partPath(part) {
   return torsoPath(part.cx, part.posterior);
 }
 
-// Shape shorthands. Coordinates are local: x is the offset from the figure
-// centerline (positive values sit on the figure's right half; mirrored specs
-// emit both signs). y is absolute within the 448-high viewbox.
-const E = (x, y, rx, ry) => ({ type: 'ellipse', x, y, rx, ry });
-const C = (ax, ay, bx, by, r) => ({ type: 'capsule', ax, ay, bx, by, r });
+function pointInSilhouette(view, x, y) {
+  return silhouetteParts(view).some((part) => {
+    if (part.type === 'ellipse') {
+      return ((x - part.cx) / part.rx) ** 2 + ((y - part.cy) / part.ry) ** 2 <= 1;
+    }
+    if (part.type === 'capsule') {
+      const dx = part.bx - part.ax;
+      const dy = part.by - part.ay;
+      const t = Math.max(0, Math.min(1, ((x - part.ax) * dx + (y - part.ay) * dy) / (dx * dx + dy * dy)));
+      return Math.hypot(x - (part.ax + dx * t), y - (part.ay + dy * t)) <= part.radius;
+    }
+    if (y < 62 || y > 243) return false;
+    const halfWidth = y < 90
+      ? 9 + (part.posterior ? 39 : 38) * ((y - 62) / 28)
+      : y < 165
+        ? (part.posterior ? 43 : 42) - 12 * ((y - 90) / 75)
+        : 31 - 3 * ((y - 165) / 45) + 4 * Math.max(0, (y - 210) / 33);
+    return Math.abs(x - part.cx) <= halfWidth;
+  });
+}
+
+/* ---------------------------------------------------------------------------
+ * Packing. Shapes below are authored generously — deliberately a little larger
+ * than their slot — and this pass shrinks each one about its own centre until
+ * it clears its neighbours by RELIEF_GAP and sits inside the silhouette. That
+ * keeps placement anatomical (nothing ever moves) while guaranteeing the even
+ * negative-space channel between forms, which hand-tuning never held onto.
+ * ------------------------------------------------------------------------ */
+
+const RELIEF_GAP = 2;
+const MIN_SCALE = 0.45;
+// Detail forms may fill their gap but must not balloon into anatomical
+// nonsense, so growth stops at half again their authored size.
+const MAX_SCALE = 1.7;
+const SHRINK_STEP = 0.975;
+// pointInSilhouette models the torso with straight-line half-widths while the
+// drawn outline is bezier, so demanding every outline sample land strictly
+// inside over-trims the tiles that sit against the body edge. Judge each sample
+// from slightly inside its own tile instead.
+const EDGE_TOLERANCE = 2;
+
+// Local outline samples. Every primitive scales linearly about its own origin,
+// so sampling once at scale 1 is enough — a scaled sample is just `point * s`.
+function outlineSamples(shape, perSegment = 12) {
+  const points = shapePoints(shape);
+  const [start, ...curves] = points;
+  const samples = [];
+  let from = start;
+  for (const [c1, c2, end] of curves) {
+    for (let step = 0; step < perSegment; step += 1) {
+      const t = step / perSegment;
+      const u = 1 - t;
+      samples.push([
+        u * u * u * from[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * end[0],
+        u * u * u * from[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * end[1],
+      ]);
+    }
+    from = end;
+  }
+  return samples;
+}
+
+function worldSamples(tile) {
+  if (tile.cachedScale === tile.scale) return tile.cached;
+  const radians = (tile.angle * Math.PI) / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  tile.cached = tile.local.map(([x, y]) => [
+    tile.cx + (x * tile.scale) * cos - (y * tile.scale) * sin,
+    tile.cy + (x * tile.scale) * sin + (y * tile.scale) * cos,
+  ]);
+  tile.cachedScale = tile.scale;
+  return tile.cached;
+}
+
+// Signed clearance: positive is the gap between outlines, negative means the
+// tiles intersect. Bounding circles reject the far pairs before any sampling.
+function clearance(a, b) {
+  const span = Math.hypot(a.cx - b.cx, a.cy - b.cy) - (a.radius * a.scale + b.radius * b.scale);
+  if (span > RELIEF_GAP) return span;
+  const aPoints = worldSamples(a);
+  const bPoints = worldSamples(b);
+  if (aPoints.some(([x, y]) => pointInTile(b, x, y))) return -1;
+  if (bPoints.some(([x, y]) => pointInTile(a, x, y))) return -1;
+  let nearest = Infinity;
+  for (const [ax, ay] of aPoints) {
+    for (const [bx, by] of bPoints) {
+      nearest = Math.min(nearest, Math.hypot(ax - bx, ay - by));
+    }
+  }
+  return nearest;
+}
+
+function shrink(tile) {
+  tile.scale *= SHRINK_STEP;
+  if (tile.partner) tile.partner.scale = tile.scale;
+}
+
+function packTiles(view, tiles) {
+  // Pull every tile inside the body first, so neighbour spacing is negotiated
+  // between shapes that already fit.
+  const escapes = (tile) => worldSamples(tile).some(([x, y]) => {
+    const span = Math.hypot(x - tile.cx, y - tile.cy) || 1;
+    const pull = Math.min(EDGE_TOLERANCE, span) / span;
+    return !pointInSilhouette(view, x + (tile.cx - x) * pull, y + (tile.cy - y) * pull);
+  });
+  for (const tile of tiles) {
+    while (tile.scale > MIN_SCALE && escapes(tile)) shrink(tile);
+  }
+
+  const area = (tile) => tile.radius * tile.radius * tile.scale * tile.scale;
+  for (let pass = 0; pass < 300; pass += 1) {
+    const crowded = new Set();
+    for (let i = 0; i < tiles.length; i += 1) {
+      for (let j = i + 1; j < tiles.length; j += 1) {
+        if (clearance(tiles[i], tiles[j]) >= RELIEF_GAP) continue;
+        // Shrink the bigger of the offending pair: the small tiles are the
+        // detail forms, and letting them evaporate under a large neighbour
+        // looks worse than trimming the anchor beside them.
+        const bigger = area(tiles[i]) >= area(tiles[j]) ? tiles[i] : tiles[j];
+        const other = bigger === tiles[i] ? tiles[j] : tiles[i];
+        crowded.add(bigger.scale > MIN_SCALE ? bigger : other);
+      }
+    }
+    if (crowded.size === 0) break;
+    let moved = false;
+    for (const tile of crowded) {
+      if (tile.scale <= MIN_SCALE) continue;
+      shrink(tile);
+      moved = true;
+    }
+    if (!moved) break;
+  }
+
+  growTiles(tiles, escapes);
+}
 
 /*
- * Hand-authored pebble layout. One entry per muscle (or neutral filler) per
- * view. `mirror: true` emits each shape twice, reflected across the figure
- * centerline. Shapes were placed against the silhouette dimensions above and
- * tuned so neighbouring pebbles keep a visible gap; the body clip path trims
- * any slight overhang at the silhouette edge.
+ * Authored sizes are only a seed. Once nothing overlaps, every tile inflates
+ * about its own centre until it is one relief gap from its neighbours or from
+ * the body edge — that is what closes the dead space without anyone
+ * hand-tuning radii against their neighbours' radii.
  */
+function growTiles(tiles, escapes) {
+  const fits = (tile) => !escapes(tile)
+    && tiles.every((other) => other === tile || clearance(tile, other) >= RELIEF_GAP);
+  for (let pass = 0; pass < 120; pass += 1) {
+    let grew = false;
+    for (const tile of tiles) {
+      if (tile.scale >= MAX_SCALE) continue;
+      const previous = tile.scale;
+      tile.scale = Math.min(MAX_SCALE, tile.scale / SHRINK_STEP);
+      if (tile.partner) tile.partner.scale = tile.scale;
+      if (fits(tile) && (!tile.partner || fits(tile.partner))) {
+        grew = true;
+        continue;
+      }
+      tile.scale = previous;
+      if (tile.partner) tile.partner.scale = previous;
+    }
+    if (!grew) return;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Tile layout. `x` is the offset from the figure centreline (mirrored specs
+ * emit both signs), `y` is absolute in the 448-high viewbox, `a` is rotation in
+ * degrees (positive = clockwise on the figure's right side; mirrored tiles get
+ * the negated angle so the pair stays symmetric).
+ * ------------------------------------------------------------------------ */
+
+const O = (x, y, rx, ry, a = 0, opts = {}) => ({ type: 'ovoid', x, y, rx, ry, a, ...opts });
+const S = (x, y, rx, ry, a = 0, k) => ({ type: 'squircle', x, y, rx, ry, a, k });
+const C = (x, y, len, r, a = 0) => ({ type: 'capsule', x, y, len, r, a });
+
 const PEBBLE_SPECS = {
   anterior: [
-    { muscle: 'upper traps', mirror: true, shapes: [C(10, 66, 30, 78, 5.5)] },
-    { muscle: 'side delts', mirror: true, shapes: [C(44, 86, 50, 102, 7)] },
-    { muscle: 'front delts', mirror: true, shapes: [E(33, 94, 7.5, 9)] },
-    { muscle: 'chest', mirror: true, shapes: [E(20, 114, 17, 15)] },
-    { muscle: 'biceps', mirror: true, shapes: [C(46, 116, 52, 148, 8)] },
-    { muscle: 'forearm flexors', mirror: true, shapes: [C(58, 168, 65, 210, 6.5)] },
-    { muscle: 'serratus anterior', mirror: true, shapes: [E(31, 141, 4.5, 8)] },
-    { muscle: 'upper abs', mirror: false, shapes: [C(-5, 139, 5, 139, 7.5), C(-5, 157, 5, 157, 7.5)] },
-    { muscle: 'lower abs', mirror: false, shapes: [C(-4, 177, 4, 177, 8.5)] },
-    { muscle: 'obliques', mirror: true, shapes: [C(20, 142, 19, 186, 5.5)] },
-    { muscle: 'hip flexors', mirror: true, shapes: [C(14, 198, 24, 212, 6)] },
-    { muscle: 'quads', mirror: true, shapes: [C(33, 246, 34, 318, 6.5), C(18, 252, 20, 322, 6)] },
-    { muscle: 'adductors', mirror: true, shapes: [C(7, 250, 8, 284, 4)] },
+    // Head and neck — neutral structure, same vocabulary.
+    { muscle: null, mirror: false, shapes: [O(0, 29, 15, 19.5, 0, { sag: 0.05 }), S(0, 59, 9.5, 9)] },
+
+    // Shoulder girdle. Sizes are budgeted against the silhouette: the shoulder
+    // ellipse reaches x±47, the upper-arm capsule runs (±40,88) to (±56,160).
+    { muscle: 'upper traps', mirror: true, shapes: [O(22, 77, 12, 8.5, -12)] },
+    { muscle: 'front delts', mirror: true, shapes: [O(30, 99, 12.5, 13, 6)] },
+    { muscle: 'side delts', mirror: true, shapes: [O(46, 105, 9.5, 14, 12)] },
+
+    // Chest and ribcage.
+    { muscle: 'chest', mirror: true, shapes: [O(18, 126, 17, 15, 3)] },
+    { muscle: 'serratus anterior', mirror: true, shapes: [O(26, 156, 7, 10, 12)] },
+
+    // Core column: two columns of blocks flanked by the obliques.
+    { muscle: 'upper abs', mirror: true, shapes: [S(8, 149, 7, 8.5), S(8, 169, 7, 8.5)] },
+    { muscle: 'lower abs', mirror: true, shapes: [S(8, 189, 7, 8.5), S(8, 208, 7, 8)] },
+    { muscle: 'obliques', mirror: true, shapes: [O(24, 186, 6.5, 15, 2)] },
+    { muscle: 'hip flexors', mirror: true, shapes: [O(18, 226, 11, 8, -10)] },
+
+    // Arms.
+    { muscle: 'biceps', mirror: true, shapes: [O(48, 133, 10, 19, 12)] },
+    { muscle: 'forearm flexors', mirror: true, shapes: [O(60, 182, 8, 20, 9), S(66, 213, 6.5, 9, 9)] },
+    { muscle: null, mirror: true, shapes: [S(68, 231, 7, 10, 9)] },
+
+    // Thighs: the capsule is ~34 wide, so it takes one outer and one inner
+    // column with the relief channel down the middle.
+    { muscle: 'quads', mirror: true, shapes: [O(28, 264, 8.5, 21, -2), O(30, 308, 8.5, 19, -3)] },
+    { muscle: 'adductors', mirror: true, shapes: [O(10, 268, 7, 21, -2), S(11, 308, 6.5, 17, -3)] },
+
+    // Knees, ankles, calves, feet.
+    { muscle: null, mirror: false, shapes: [S(0, 232, 9, 9)] },
+    { muscle: null, mirror: true, shapes: [O(23, 339, 11.5, 9.5, 0, { sag: 0.06 })] },
+    { muscle: 'gastrocnemius', mirror: true, shapes: [O(23.5, 368, 10, 16, -2)] },
+    { muscle: 'soleus', mirror: true, shapes: [S(24.5, 398, 9, 11, -2)] },
+    { muscle: null, mirror: true, shapes: [S(25.5, 419, 8, 5), S(28, 433, 15, 6)] },
   ],
   posterior: [
-    { muscle: 'upper traps', mirror: false, shapes: [E(0, 77, 6, 7)] },
-    { muscle: 'upper traps', mirror: true, shapes: [C(10, 66, 30, 78, 5.5)] },
-    { muscle: 'mid traps', mirror: false, shapes: [E(0, 98, 9, 13)] },
-    { muscle: 'lower traps', mirror: false, shapes: [E(0, 124, 7, 11)] },
-    { muscle: 'side delts', mirror: true, shapes: [C(44, 86, 50, 102, 7)] },
-    { muscle: 'rear delts', mirror: true, shapes: [E(33, 94, 7.5, 9)] },
-    { muscle: 'rotator cuff', mirror: true, shapes: [E(20, 98, 5.5, 6.5)] },
-    { muscle: 'upper back', mirror: true, shapes: [E(16, 116, 7, 9)] },
-    { muscle: 'lats', mirror: true, shapes: [C(30, 128, 19, 184, 8)] },
-    { muscle: 'lower back', mirror: true, shapes: [C(5, 158, 5, 198, 4)] },
-    { muscle: 'triceps', mirror: true, shapes: [C(46, 116, 52, 148, 8)] },
-    { muscle: 'forearm extensors', mirror: true, shapes: [C(58, 168, 65, 210, 6.5)] },
-    { muscle: 'glute medius', mirror: true, shapes: [E(26, 203, 7, 6.5)] },
-    { muscle: 'glutes', mirror: true, shapes: [E(15, 224, 13, 16)] },
-    { muscle: 'adductors', mirror: true, shapes: [C(6.5, 250, 7, 280, 4)] },
-    { muscle: 'hamstrings', mirror: true, shapes: [C(17, 266, 18, 322, 6), C(31, 260, 33, 320, 6.5)] },
-    { muscle: 'gastrocnemius', mirror: true, shapes: [E(17.5, 363, 5, 14), E(29.5, 361, 5, 13)] },
-    { muscle: 'soleus', mirror: true, shapes: [C(23, 390, 25, 408, 7)] },
+    { muscle: null, mirror: false, shapes: [O(0, 29, 15, 19.5, 0, { sag: 0.05 }), S(0, 59, 9.5, 9)] },
+
+    // Traps run down the spine; the paired yoke sits on the shoulder slope.
+    { muscle: 'upper traps', mirror: true, shapes: [O(22, 78, 12, 8.5, -12)] },
+    { muscle: 'mid traps', mirror: false, shapes: [O(0, 108, 11, 14)] },
+    { muscle: 'lower traps', mirror: false, shapes: [O(0, 140, 9, 13)] },
+
+    // Shoulder girdle.
+    { muscle: 'rear delts', mirror: true, shapes: [O(30, 99, 12.5, 13, 6)] },
+    { muscle: 'side delts', mirror: true, shapes: [O(46, 105, 9.5, 14, 12)] },
+    { muscle: 'rotator cuff', mirror: true, shapes: [O(22, 114, 7.5, 9, -8)] },
+
+    // Back.
+    { muscle: 'upper back', mirror: true, shapes: [O(22, 138, 7.5, 11, 4)] },
+    { muscle: 'lats', mirror: true, shapes: [O(24, 168, 8, 15, 5), O(23, 196, 7.5, 10, 3)] },
+    { muscle: 'lower back', mirror: false, shapes: [S(0, 170, 8, 13), S(0, 198, 8, 12)] },
+
+    // Arms.
+    { muscle: 'triceps', mirror: true, shapes: [O(48, 133, 10, 19, 12)] },
+    { muscle: 'forearm extensors', mirror: true, shapes: [O(60, 182, 8, 20, 9), S(66, 213, 6.5, 9, 9)] },
+    { muscle: null, mirror: true, shapes: [S(68, 231, 7, 10, 9)] },
+
+    // Hips.
+    { muscle: 'glute medius', mirror: true, shapes: [O(29, 217, 9, 8, -12)] },
+    { muscle: 'glutes', mirror: true, shapes: [O(16, 233, 13, 14, 2)] },
+
+    // Thighs.
+    { muscle: 'hamstrings', mirror: true, shapes: [O(28, 266, 8.5, 21, -2), O(30, 308, 8.5, 19, -3)] },
+    { muscle: 'adductors', mirror: true, shapes: [O(10, 268, 7, 21, -2), S(11, 308, 6.5, 17, -3)] },
+
+    // Knees, ankles, calves, feet.
+    { muscle: null, mirror: true, shapes: [O(23, 339, 11.5, 9.5, 0, { sag: 0.06 })] },
+    { muscle: 'gastrocnemius', mirror: true, shapes: [O(23.5, 368, 10, 16, -2)] },
+    { muscle: 'soleus', mirror: true, shapes: [S(24.5, 398, 9, 11, -2)] },
+    { muscle: null, mirror: true, shapes: [S(25.5, 419, 8, 5), S(28, 433, 15, 6)] },
   ],
 };
 
-function shapePath(shape, cx, sign) {
-  if (shape.type === 'ellipse') return ellipsePath(cx + shape.x * sign, shape.y, shape.rx, shape.ry);
-  return capsulePath(cx + shape.ax * sign, shape.ay, cx + shape.bx * sign, shape.by, shape.r);
+function layoutTiles(view) {
+  const cx = CENTERS[view];
+  const tiles = [];
+  const mirrorPairs = [];
+  let index = 0;
+  for (const spec of PEBBLE_SPECS[view]) {
+    for (const shape of spec.shapes) {
+      const local = outlineSamples(shape);
+      const radius = Math.max(...local.map(([x, y]) => Math.hypot(x, y)));
+      const made = (spec.mirror ? [-1, 1] : [1]).map((sign) => {
+        index += 1;
+        return {
+          id: `${view}-${String(index).padStart(2, '0')}`,
+          muscle: spec.muscle,
+          shape,
+          local,
+          radius,
+          scale: 1,
+          cx: cx + shape.x * sign,
+          cy: shape.y,
+          angle: (shape.a ?? 0) * sign,
+        };
+      });
+      if (made.length === 2) {
+        // Mirrored halves share a scale so packing can never break symmetry.
+        made[0].partner = made[1];
+        made[1].partner = made[0];
+        mirrorPairs.push([made[0].id, made[1].id]);
+      }
+      tiles.push(...made);
+    }
+  }
+  return { tiles, mirrorPairs };
 }
 
 function generateMap() {
@@ -155,29 +482,63 @@ function generateMap() {
   const pebbles = [];
   const raw = {};
   for (const view of VIEWS) {
-    const cx = CENTERS[view];
-    const mirrorPairs = [];
-    let index = 0;
-    const nextId = () => {
-      index += 1;
-      return `${view}-${String(index).padStart(2, '0')}`;
-    };
-    for (const spec of PEBBLE_SPECS[view]) {
-      for (const shape of spec.shapes) {
-        if (spec.mirror) {
-          const leftId = nextId();
-          const rightId = nextId();
-          pebbles.push({ id: leftId, view, muscle: spec.muscle, d: shapePath(shape, cx, -1) });
-          pebbles.push({ id: rightId, view, muscle: spec.muscle, d: shapePath(shape, cx, 1) });
-          mirrorPairs.push([leftId, rightId]);
-        } else {
-          pebbles.push({ id: nextId(), view, muscle: spec.muscle, d: shapePath(shape, cx, 1) });
-        }
-      }
+    const { tiles, mirrorPairs } = layoutTiles(view);
+    packTiles(view, tiles);
+    for (const tile of tiles) {
+      pebbles.push({
+        id: tile.id,
+        view,
+        muscle: tile.muscle,
+        d: emitPath(shapePoints(tile.shape), {
+          cx: tile.cx,
+          cy: tile.cy,
+          angle: tile.angle,
+          scale: tile.scale,
+        }),
+      });
     }
-    raw[view] = { mirrorPairs, count: index };
+    raw[view] = { mirrorPairs, placed: tiles, count: tiles.length };
   }
   return { silhouettes, pebbles, raw };
+}
+
+/*
+ * Approximate containment against the authored shapes (not the emitted path
+ * strings): ovoid and U-form outer edge as ellipses, squircle as a rounded
+ * rectangle, capsule exact. Only used by the coverage guard in the test, which
+ * needs a floor rather than an exact area.
+ */
+function pointInTile(tile, x, y) {
+  const radians = (-(tile.angle ?? 0) * Math.PI) / 180;
+  const scale = tile.scale ?? 1;
+  const dx = x - tile.cx;
+  const dy = y - tile.cy;
+  const lx = (dx * Math.cos(radians) - dy * Math.sin(radians)) / scale;
+  const ly = (dx * Math.sin(radians) + dy * Math.cos(radians)) / scale;
+  const { shape } = tile;
+  if (shape.type === 'capsule') {
+    const half = shape.len / 2;
+    const clamped = Math.max(-half, Math.min(half, ly));
+    return Math.hypot(lx, ly - clamped) <= shape.r;
+  }
+  if (shape.type === 'squircle') {
+    return Math.abs(lx) <= shape.rx && Math.abs(ly) <= shape.ry;
+  }
+  return (lx / shape.rx) ** 2 + (ly / shape.ry) ** 2 <= 1;
+}
+
+function coverage(generated, view, step = 2) {
+  let inside = 0;
+  let covered = 0;
+  const [minX, maxX] = view === 'anterior' ? [0, 180] : [180, 360];
+  for (let y = 2; y < HEIGHT; y += step) {
+    for (let x = minX + 2; x < maxX; x += step) {
+      if (!pointInSilhouette(view, x, y)) continue;
+      inside += 1;
+      if (generated.raw[view].placed.some((tile) => pointInTile(tile, x, y))) covered += 1;
+    }
+  }
+  return inside === 0 ? 0 : covered / inside;
 }
 
 function renderTypeScript(generated) {
@@ -213,9 +574,13 @@ function renderPreview(generated, mode = 'mixed') {
   ]));
   const paths = generated.pebbles.map((pebble) => {
     const selected = mode === 'selected' && pebble.muscle === selectedMuscle;
-    return `<path d="${pebble.d}" clip-path="url(#${pebble.view})" fill="${pebble.muscle ? previewColor(scores.get(pebble.muscle)) : '#4b4b4b'}"${selected ? ' class="selected"' : ''}><title>${pebble.muscle || 'neutral'}</title></path>`;
+    return `<path d="${pebble.d}" fill="${pebble.muscle ? previewColor(scores.get(pebble.muscle)) : '#4b4b4b'}"${selected ? ' class="selected"' : ''}><title>${pebble.muscle || 'neutral'}</title></path>`;
   }).join('');
-  return `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#181818;color:#eee;font:14px system-ui}main{max-width:720px;margin:auto;padding:20px}.frame{background:#242424;border:1px solid #404040;border-radius:12px;padding:12px}svg{display:block;width:100%;height:auto}path{stroke:#0f0f0f;stroke-width:2.15;stroke-linejoin:round;stroke-linecap:round}.body{stroke:none}.selected{stroke:#fff;stroke-width:3}h1{font-size:16px;margin:0 0 12px}.labels{display:flex;justify-content:space-around;color:#aaa}</style><main><h1>Hand-designed pebble body — ${mode} (hover a pebble for its muscle)</h1><div class="frame"><div class="labels"><span>Anterior</span><span>Posterior</span></div><svg viewBox="0 0 ${WIDTH} ${HEIGHT}"><defs>${generated.silhouettes.map((s) => `<clipPath id="${s.view}"><path d="${s.d}"/></clipPath>`).join('')}</defs>${generated.silhouettes.map((s) => `<path class="body" d="${s.d}" fill="#3a3a3a"/>`).join('')}${paths}</svg></div></main>`;
+  const body = generated.silhouettes
+    .map((s) => s.d.split(/(?=M)/).map((part) => `<path class="body" d="${part}" fill="#2b2b2b"/>`).join(''))
+    .join('');
+  const stats = VIEWS.map((view) => `${view} ${(coverage(generated, view) * 100).toFixed(0)}%`).join(' · ');
+  return `<!doctype html><meta charset="utf-8"><style>html,body{margin:0;background:#181818;color:#eee;font:14px system-ui}main{max-width:720px;margin:auto;padding:20px}.frame{background:#242424;border:1px solid #404040;border-radius:12px;padding:12px}svg{display:block;width:100%;height:auto}path{stroke:#0f0f0f;stroke-width:2.15;stroke-linejoin:round;stroke-linecap:round}.body{stroke:none}.selected{stroke:#fff;stroke-width:3}h1{font-size:16px;margin:0 0 12px}.labels{display:flex;justify-content:space-around;color:#aaa}</style><main><h1>Tiled body — ${mode} · coverage ${stats} (hover a tile for its muscle)</h1><div class="frame"><div class="labels"><span>Anterior</span><span>Posterior</span></div><svg viewBox="0 0 ${WIDTH} ${HEIGHT}">${body}${paths}</svg></div></main>`;
 }
 
 function writeOutputs(options = {}) {
@@ -236,17 +601,23 @@ if (require.main === module) {
     preview: previewArgument?.slice('--preview='.length),
     previewMode: previewModeArgument?.slice('--preview-mode='.length),
   });
-  process.stdout.write(`Generated ${generated.pebbles.length} pebbles. Preview: ${previewTarget}\n`);
+  const stats = VIEWS.map((view) => `${view} ${(coverage(generated, view) * 100).toFixed(1)}%`).join(', ');
+  process.stdout.write(`Generated ${generated.pebbles.length} tiles. Coverage: ${stats}. Preview: ${previewTarget}\n`);
 }
 
 module.exports = {
   CANONICAL_MUSCLES,
+  RELIEF_GAP,
+  clearance,
   CENTERS,
   HEIGHT,
   PEBBLE_SPECS,
   VIEWS,
   WIDTH,
+  coverage,
   generateMap,
+  pointInSilhouette,
+  pointInTile,
   renderTypeScript,
   writeOutputs,
 };

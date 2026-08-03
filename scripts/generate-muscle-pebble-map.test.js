@@ -3,7 +3,10 @@ const {
   CANONICAL_MUSCLES,
   CENTERS,
   HEIGHT,
+  RELIEF_GAP,
   VIEWS,
+  clearance,
+  coverage,
   generateMap,
   renderTypeScript,
 } = require('./generate-muscle-pebble-map');
@@ -54,5 +57,28 @@ for (const view of VIEWS) {
 
 const represented = new Set(first.pebbles.map((pebble) => pebble.muscle).filter(Boolean));
 assert.deepEqual([...represented].sort(), [...CANONICAL_MUSCLES].sort(), 'every canonical muscle must appear');
+
+// The whole figure is meant to read as tiles, not as shapes floating on a big
+// empty body. Approximate coverage (see pointInTile) is enough to catch a
+// layout edit that reopens the dead space.
+for (const view of VIEWS) {
+  const filled = coverage(first, view);
+  assert.ok(filled >= 0.6, `${view} tiles must cover >=60% of the body, got ${(filled * 100).toFixed(1)}%`);
+}
+
+// Tiles must nest, never stack: the packer earns its keep only if every pair
+// still holds the relief gap after it runs.
+for (const view of VIEWS) {
+  const tiles = first.raw[view].placed;
+  for (let i = 0; i < tiles.length; i += 1) {
+    for (let j = i + 1; j < tiles.length; j += 1) {
+      const gap = clearance(tiles[i], tiles[j]);
+      assert.ok(
+        gap >= RELIEF_GAP - 0.05,
+        `${tiles[i].id} and ${tiles[j].id} must stay ${RELIEF_GAP} apart, got ${gap.toFixed(2)}`,
+      );
+    }
+  }
+}
 
 console.log('muscle-map generator tests passed');
