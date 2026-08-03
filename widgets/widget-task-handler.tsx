@@ -1,6 +1,6 @@
 import { readWidgetUpNext } from '@/utils/widget-up-next';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import { isUpNextWidgetCompact, UpNextWidget } from './up-next-widget';
+import { getUpNextWidgetSize, UpNextWidget } from './up-next-widget';
 
 // Runs as a headless JS task, outside the app's React tree — no auth or Firestore
 // here. Content comes from the AsyncStorage cache the Home screen writes.
@@ -14,7 +14,7 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
       props.renderWidget(
         <UpNextWidget
           {...(await readWidgetUpNext())}
-          compact={isUpNextWidgetCompact(props.widgetInfo)}
+          size={getUpNextWidgetSize(props.widgetInfo)}
         />
       );
       break;

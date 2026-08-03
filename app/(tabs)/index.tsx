@@ -102,7 +102,12 @@ export default function HomeScreen() {
             plannedName: plannedQueue[0]?.name,
             predictedName: predictedNext,
           });
-          syncUpNextWidget({ label: copy.label, name: copy.name, action: copy.action });
+          syncUpNextWidget({
+            label: copy.label,
+            name: copy.name,
+            action: copy.action,
+            source: copy.source,
+          });
           // The watch gets the same copy — but only when nothing is live. A running
           // workout's watch state is the set-by-set one the active-workout screen
           // pushes, and overwriting it with "Resume" would lose the user's place.
