@@ -1,11 +1,6 @@
-import { muscleLabel } from "@/constants/muscles";
 import type { CatalogExercise, Workout } from "@/types/workout";
 import { loadCatalog } from "@/utils/exercise-catalog";
-import {
-  computeMuscleLoad,
-  muscleLoadPercentage,
-  type MuscleLoadResult,
-} from "@/utils/muscle-load";
+import { computeMuscleLoad } from "@/utils/muscle-load";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import {
@@ -25,20 +20,6 @@ import {
 
 interface MuscleLoadSummaryProps {
   workouts: Workout[];
-}
-
-function topMuscles(result: MuscleLoadResult) {
-  return [...result.muscles]
-    .sort(
-      (left, right) =>
-        right.score - left.score ||
-        (muscleLabel(left.muscle) < muscleLabel(right.muscle)
-          ? -1
-          : muscleLabel(left.muscle) > muscleLabel(right.muscle)
-            ? 1
-            : 0),
-    )
-    .slice(0, 3);
 }
 
 export function MuscleLoadSummary({ workouts }: MuscleLoadSummaryProps) {
@@ -63,7 +44,6 @@ export function MuscleLoadSummary({ workouts }: MuscleLoadSummaryProps) {
     () => (catalog ? computeMuscleLoad(workouts, catalog) : null),
     [catalog, workouts],
   );
-  const top = result ? topMuscles(result) : [];
   const noMappedWork =
     result != null && result.muscles.every((stat) => stat.score === 0);
   const hasPartialMapping = (result?.coverage.unmatchedExercises ?? 0) > 0;
@@ -98,31 +78,13 @@ export function MuscleLoadSummary({ workouts }: MuscleLoadSummaryProps) {
       "Recent muscle load. No mapped work in the past 7 days.";
   } else {
     body = (
-      <>
-        <View style={styles.rows}>
-          {top.map((stat) => (
-            <View key={stat.muscle} style={styles.row}>
-              <Text style={styles.muscle} selectable>
-                {muscleLabel(stat.muscle)}
-              </Text>
-            </View>
-          ))}
-        </View>
-        {hasPartialMapping && (
-          <Text style={styles.message} selectable>
-            Some recent exercises are not mapped yet.
-          </Text>
-        )}
-      </>
+      hasPartialMapping ? (
+        <Text style={styles.message} selectable>
+          Some recent exercises are not mapped yet.
+        </Text>
+      ) : null
     );
-    accessibilityLabel = `Recent muscle load. ${top
-      .map(
-        (stat) =>
-          `${muscleLabel(stat.muscle)} ${muscleLoadPercentage(stat.score)} percent`,
-      )
-      .join(
-        ". ",
-      )}.${hasPartialMapping ? " Some recent exercises are not mapped yet." : ""}`;
+    accessibilityLabel = `Recent muscle load.${hasPartialMapping ? " Some recent exercises are not mapped yet." : ""}`;
   }
 
   return (
@@ -134,11 +96,9 @@ export function MuscleLoadSummary({ workouts }: MuscleLoadSummaryProps) {
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
       <View style={styles.header}>
-        <View style={styles.heading}>
-          <Text style={styles.title} selectable>
-            Recent muscle load
-          </Text>
-        </View>
+        <Text style={styles.title} selectable>
+          Recent muscle load
+        </Text>
         <Ionicons name="chevron-forward" size={22} color="#888" />
       </View>
       {body}
@@ -164,35 +124,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  heading: { flex: 1, gap: 4 },
-  title: { color: "#fff", fontSize: 18, fontWeight: "700", lineHeight: 22 },
-  subtitle: { color: "#888", fontSize: 14, fontWeight: "500", lineHeight: 20 },
+  title: { flex: 1, color: "#fff", fontSize: 18, fontWeight: "700", lineHeight: 22 },
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     minHeight: 24,
-  },
-  rows: { gap: 8 },
-  row: {
-    minHeight: 24,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  muscle: {
-    flex: 1,
-    color: "#888",
-    fontSize: 15,
-    fontWeight: "500",
-    lineHeight: 21,
-  },
-  percentage: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-    fontVariant: ["tabular-nums"],
   },
   message: { color: "#888", fontSize: 14, fontWeight: "500", lineHeight: 20 },
 });

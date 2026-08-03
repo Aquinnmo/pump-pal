@@ -3,6 +3,7 @@ import {
   BODY_SILHOUETTES,
   MUSCLE_MAP_VIEWBOX,
   MUSCLE_PEBBLES,
+  muscleAtPoint,
 } from "@/constants/muscle-map-paths";
 import { muscleLabel, MUSCLES, type MuscleId } from "@/constants/muscles";
 import {
@@ -13,7 +14,13 @@ import {
 } from "@/utils/muscle-load";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import Svg, { G, Path } from "react-native-svg";
 
 interface MuscleLoadMapProps {
@@ -22,7 +29,6 @@ interface MuscleLoadMapProps {
 
 const MUSCLE_OPTIONS = MUSCLES.map(muscleLabel);
 const LOAD_LEGEND_STEPS = [0, 2, 4, 6, 8] as const;
-
 function statusFor(score: number): string {
   if (score === 0) return "Not worked recently";
   if (score < 2) return "Light recent load";
@@ -88,65 +94,80 @@ export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
         )}`}
         style={styles.mapFrame}
       >
-        <Svg
-          width={mapWidth}
-          height={mapHeight}
-          viewBox={`0 0 ${MUSCLE_MAP_VIEWBOX.width} ${MUSCLE_MAP_VIEWBOX.height}`}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Muscle map. Tap a muscle to select it."
+          onPress={(event) => {
+            const { locationX, locationY } = event.nativeEvent;
+            const muscle = muscleAtPoint(
+              (locationX / mapWidth) * MUSCLE_MAP_VIEWBOX.width,
+              (locationY / mapHeight) * MUSCLE_MAP_VIEWBOX.height,
+            );
+            if (muscle) setSelectedMuscle(muscle);
+          }}
+          style={{ width: mapWidth, height: mapHeight }}
         >
-          {BODY_SILHOUETTES.map((silhouette) => {
-            const view = silhouette.view;
-            return (
-              <G key={view}>
-                {/* One flat-filled Path per body part, no clip and no stroke:
+          <Svg
+            width={mapWidth}
+            height={mapHeight}
+            pointerEvents="none"
+            viewBox={`0 0 ${MUSCLE_MAP_VIEWBOX.width} ${MUSCLE_MAP_VIEWBOX.height}`}
+          >
+            {BODY_SILHOUETTES.map((silhouette) => {
+              const view = silhouette.view;
+              return (
+                <G key={view}>
+                  {/* One flat-filled Path per body part, no clip and no stroke:
                     the parts overlap, so a single combined path leaves the
                     union up to the fill rule (holes where parts cross) and a
                     stroke would draw every internal seam. */}
-                {silhouette.d.split(/(?=M)/).map((part, index) => (
-                  <Path
-                    key={`${view}-part-${index}`}
-                    d={part}
-                    fill="#2b2b2b"
-                  />
-                ))}
-                {MUSCLE_PEBBLES.filter((pebble) => pebble.view === view).map(
-                  (pebble) => {
-                    const muscle = pebble.muscle;
-                    const score = muscle
-                      ? statsByMuscle.get(muscle)?.score ?? 0
-                      : null;
-                    return (
-                      <Path
-                        key={pebble.id}
-                        d={pebble.d}
-                        fill={score == null ? "#4b4b4b" : muscleLoadColor(score)}
-                        stroke="#0f0f0f"
-                        strokeWidth={2.15}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        onPress={
-                          muscle ? () => setSelectedMuscle(muscle) : undefined
-                        }
-                      />
-                    );
-                  },
-                )}
-                {MUSCLE_PEBBLES.filter(
-                  (pebble) => pebble.view === view && pebble.muscle === selectedMuscle,
-                ).map((pebble) => (
-                  <Path
-                    key={`${pebble.id}-selection`}
-                    d={pebble.d}
-                    fill="none"
-                    stroke="#fff"
-                    strokeWidth={3}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ))}
-              </G>
-            );
-          })}
-        </Svg>
+                  {silhouette.d.split(/(?=M)/).map((part, index) => (
+                    <Path
+                      key={`${view}-part-${index}`}
+                      d={part}
+                      fill="#2b2b2b"
+                    />
+                  ))}
+                  {MUSCLE_PEBBLES.filter((pebble) => pebble.view === view).map(
+                    (pebble) => {
+                      const muscle = pebble.muscle;
+                      const score = muscle
+                        ? (statsByMuscle.get(muscle)?.score ?? 0)
+                        : null;
+                      return (
+                        <Path
+                          key={pebble.id}
+                          d={pebble.d}
+                          fill={
+                            score == null ? "#4b4b4b" : muscleLoadColor(score)
+                          }
+                          stroke="#0f0f0f"
+                          strokeWidth={2.15}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      );
+                    },
+                  )}
+                  {MUSCLE_PEBBLES.filter(
+                    (pebble) =>
+                      pebble.view === view && pebble.muscle === selectedMuscle,
+                  ).map((pebble) => (
+                    <Path
+                      key={`${pebble.id}-selection`}
+                      d={pebble.d}
+                      fill="none"
+                      stroke="#fff"
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ))}
+                </G>
+              );
+            })}
+          </Svg>
+        </Pressable>
       </View>
 
       <View

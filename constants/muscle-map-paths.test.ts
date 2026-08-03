@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {
   BODY_SILHOUETTES,
+  MUSCLE_MAP_VIEWBOX,
   MUSCLE_PEBBLES,
+  muscleAtPoint,
 } from '@/constants/muscle-map-paths';
 import { MUSCLES } from '@/constants/muscles';
 
@@ -47,6 +49,28 @@ for (const pebble of MUSCLE_PEBBLES) {
   assert.ok(/C/.test(pebble.d), `${pebble.id} must use smooth curve primitives`);
   assert.ok(!/NaN|Infinity/.test(pebble.d), `${pebble.id} coordinates must be finite`);
 }
+
+// Tapping a tile must select that tile's muscle. This is the whole
+// interaction, and it is invisible in the rendered SVG, so it gets a guard.
+for (const pebble of MUSCLE_PEBBLES) {
+  const { x, y, r } = pebble.hit;
+  assert.ok(Number.isFinite(x) && Number.isFinite(y), `${pebble.id} hit center must be finite`);
+  assert.ok(r > 0, `${pebble.id} hit radius must be positive`);
+  assert.ok(
+    x >= 0 && x <= MUSCLE_MAP_VIEWBOX.width && y >= 0 && y <= MUSCLE_MAP_VIEWBOX.height,
+    `${pebble.id} hit center must sit inside the viewbox`,
+  );
+  if (pebble.muscle) {
+    assert.equal(
+      muscleAtPoint(x, y),
+      pebble.muscle,
+      `tapping the center of ${pebble.id} must select ${pebble.muscle}`,
+    );
+  }
+}
+
+// A tap in the empty margin beside the figure must not select anything.
+assert.equal(muscleAtPoint(2, 2), null, 'taps off the body select nothing');
 
 assert.deepEqual(
   BODY_SILHOUETTES.map((silhouette) => silhouette.view).sort(),

@@ -495,6 +495,13 @@ function generateMap() {
           angle: tile.angle,
           scale: tile.scale,
         }),
+        // Tap target in viewbox units. react-native-svg's per-Path onPress is
+        // unreliable on Fabric, so the component hit-tests these circles itself.
+        hit: {
+          x: Number(fmt(tile.cx)),
+          y: Number(fmt(tile.cy)),
+          r: Number(fmt(tile.radius * tile.scale)),
+        },
       });
     }
     raw[view] = { mirrorPairs, placed: tiles, count: tiles.length };
@@ -554,7 +561,10 @@ function renderTypeScript(generated) {
   }
   lines.push('] as const;', '', 'export const MUSCLE_PEBBLES: readonly MusclePebble[] = [');
   for (const pebble of generated.pebbles) {
-    lines.push(`  { id: '${pebble.id}', view: '${pebble.view}', muscle: ${pebble.muscle ? `'${pebble.muscle}'` : 'null'}, d: '${pebble.d}' },`);
+    lines.push(
+      `  { id: '${pebble.id}', view: '${pebble.view}', muscle: ${pebble.muscle ? `'${pebble.muscle}'` : 'null'},` +
+        ` hit: { x: ${pebble.hit.x}, y: ${pebble.hit.y}, r: ${pebble.hit.r} }, d: '${pebble.d}' },`,
+    );
   }
   lines.push('] as const;', '');
   return `${lines.join('\n')}\n`;
