@@ -1,6 +1,7 @@
 import { isMuscleId, MUSCLES, type MuscleId } from '@/constants/muscles';
 import type { CatalogExercise, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
 import { exerciseLabel, toDateObj } from '@/utils/workout-conversion';
+import { muscleMapColor } from '@/utils/muscle-map-scale';
 
 export type MuscleLoadMetric = 'weight_reps' | 'reps' | 'duration' | 'distance' | 'calories';
 
@@ -258,17 +259,9 @@ export function computeMuscleLoad(
   };
 }
 
-function channel(from: number, to: number, ratio: number): number {
-  return Math.round(from + (to - from) * ratio);
-}
-
-/** Fixed absolute blue-to-red ramp; score 0 is blue and score 8+ is red. */
+/** Fixed absolute scale used to color the shared recent-load map. */
 export function muscleLoadColor(score: number): string {
-  const ratio = Math.min(Math.max(score / MUSCLE_LOAD_SATURATION_SCORE, 0), 1);
-  const red = channel(0x60, 0xe5, ratio);
-  const green = channel(0xa5, 0x42, ratio);
-  const blue = channel(0xfa, 0x42, ratio);
-  return `#${[red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+  return muscleMapColor(muscleLoadPercentage(score));
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   muscleLoadPercentage,
   MUSCLE_LOAD_SATURATION_SCORE,
 } from '@/utils/muscle-load';
+import { muscleMapColor } from '@/utils/muscle-map-scale';
 
 const NOW = new Date('2026-08-02T12:00:00.000Z').getTime();
 const DAY = 24 * 60 * 60 * 1000;
@@ -185,9 +186,17 @@ function testCatalogAvailabilityAndColor(): void {
   assert.equal(unavailable.catalogAvailable, false);
   assert.equal(unavailable.muscles.every((entry) => entry.score === 0), true);
   assert.equal(muscleLoadColor(0), '#60a5fa');
-  assert.equal(muscleLoadColor(MUSCLE_LOAD_SATURATION_SCORE), '#e54242');
-  assert.equal(muscleLoadColor(100), '#e54242');
+  assert.equal(muscleLoadColor(MUSCLE_LOAD_SATURATION_SCORE), '#f59e0b');
+  assert.equal(muscleLoadColor(100), '#f59e0b');
   assert.equal(muscleLoadColor(-1), '#60a5fa');
+}
+
+function testSharedPalette(): void {
+  assert.equal(muscleMapColor(0), '#60a5fa');
+  assert.equal(muscleMapColor(25), '#7497c1');
+  assert.equal(muscleMapColor(50), '#888888');
+  assert.equal(muscleMapColor(75), '#bf934a');
+  assert.equal(muscleMapColor(100), '#f59e0b');
 }
 
 function testPercentageBoundaries(): void {
@@ -204,5 +213,6 @@ testDecayAndBoundaries();
 testStableRowsAndContributorOrder();
 testCatalogAvailabilityAndColor();
 testPercentageBoundaries();
+testSharedPalette();
 
 console.log('muscle-load tests passed');

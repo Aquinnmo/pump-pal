@@ -1,34 +1,20 @@
-import { Dropdown } from "@/components/ui/dropdown";
+import { MuscleMap } from "@/components/muscle-map";
+import { MuscleMapLegend } from "@/components/muscle-map-legend";
+import { muscleLabel, type MuscleId } from "@/constants/muscles";
 import {
-  BODY_SILHOUETTES,
-  MUSCLE_MAP_VIEWBOX,
-  MUSCLE_PEBBLES,
-  muscleAtPoint,
-} from "@/constants/muscle-map-paths";
-import { muscleLabel, MUSCLES, type MuscleId } from "@/constants/muscles";
-import {
-  muscleLoadColor,
   muscleLoadPercentage,
   type MuscleLoadResult,
   type MuscleLoadStat,
 } from "@/utils/muscle-load";
+import { muscleMapColor } from "@/utils/muscle-map-scale";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
-import Svg, { G, Path } from "react-native-svg";
+import { StyleSheet, Text, View } from "react-native";
 
 interface MuscleLoadMapProps {
   result: MuscleLoadResult;
 }
 
-const MUSCLE_OPTIONS = MUSCLES.map(muscleLabel);
-const LOAD_LEGEND_STEPS = [0, 2, 4, 6, 8] as const;
 function statusFor(score: number): string {
   if (score === 0) return "Not worked recently";
   if (score < 2) return "Light recent load";
@@ -58,10 +44,19 @@ function selectedAccessibility(stat: MuscleLoadStat): string {
 }
 
 export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
-  const { width } = useWindowDimensions();
   const [selectedMuscle, setSelectedMuscle] = useState<MuscleId>("chest");
   const statsByMuscle = useMemo(
     () => new Map(result.muscles.map((stat) => [stat.muscle, stat])),
+    [result],
+  );
+  const scoresByMuscle = useMemo(
+    () =>
+      new Map(
+        result.muscles.map((stat) => [
+          stat.muscle,
+          muscleLoadPercentage(stat.score),
+        ]),
+      ),
     [result],
   );
   const selectedStat = statsByMuscle.get(selectedMuscle) ?? {
@@ -70,125 +65,23 @@ export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
     lastWorkedAt: null,
     contributors: [],
   };
-  const mapWidth = Math.max(232, Math.min(width - 72, 560));
-  const mapHeight =
-    (mapWidth * MUSCLE_MAP_VIEWBOX.height) / MUSCLE_MAP_VIEWBOX.width;
   const noMappedLoad = result.muscles.every((stat) => stat.score === 0);
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <Text style={styles.title} selectable>
-          Recent muscle load
-        </Text>
-      </View>
+      <MuscleMap
+        scores={scoresByMuscle}
+        selectedMuscle={selectedMuscle}
+        onSelectMuscle={setSelectedMuscle}
+        colorForScore={muscleMapColor}
+        accessibilityLabel={`Anterior and posterior muscle load map. Blue means light recent load, gray means moderate recent load, and amber means heavy recent load. Selected muscle: ${selectedAccessibility(selectedStat)}`}
+        dropdownAccessibilityLabel="Select a muscle on the recent load map"
+      />
 
-      <View style={styles.viewLabels}>
-        <Text style={styles.viewLabel}>Anterior</Text>
-        <Text style={styles.viewLabel}>Posterior</Text>
-      </View>
-      <View
-        accessible
-        accessibilityLabel={`Anterior and posterior muscle load map. Blue means 0 percent and red means 100 percent on the fixed recent-work scale. Selected muscle: ${selectedAccessibility(
-          selectedStat,
-        )}`}
-        style={styles.mapFrame}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Muscle map. Tap a muscle to select it."
-          onPress={(event) => {
-            const { locationX, locationY } = event.nativeEvent;
-            const muscle = muscleAtPoint(
-              (locationX / mapWidth) * MUSCLE_MAP_VIEWBOX.width,
-              (locationY / mapHeight) * MUSCLE_MAP_VIEWBOX.height,
-            );
-            if (muscle) setSelectedMuscle(muscle);
-          }}
-          style={{ width: mapWidth, height: mapHeight }}
-        >
-          <Svg
-            width={mapWidth}
-            height={mapHeight}
-            pointerEvents="none"
-            viewBox={`0 0 ${MUSCLE_MAP_VIEWBOX.width} ${MUSCLE_MAP_VIEWBOX.height}`}
-          >
-            {BODY_SILHOUETTES.map((silhouette) => {
-              const view = silhouette.view;
-              return (
-                <G key={view}>
-                  {/* One flat-filled Path per body part, no clip and no stroke:
-                    the parts overlap, so a single combined path leaves the
-                    union up to the fill rule (holes where parts cross) and a
-                    stroke would draw every internal seam. */}
-                  {silhouette.d.split(/(?=M)/).map((part, index) => (
-                    <Path
-                      key={`${view}-part-${index}`}
-                      d={part}
-                      fill="#2b2b2b"
-                    />
-                  ))}
-                  {MUSCLE_PEBBLES.filter((pebble) => pebble.view === view).map(
-                    (pebble) => {
-                      const muscle = pebble.muscle;
-                      const score = muscle
-                        ? (statsByMuscle.get(muscle)?.score ?? 0)
-                        : null;
-                      return (
-                        <Path
-                          key={pebble.id}
-                          d={pebble.d}
-                          fill={
-                            score == null ? "#4b4b4b" : muscleLoadColor(score)
-                          }
-                          stroke="#0f0f0f"
-                          strokeWidth={2.15}
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      );
-                    },
-                  )}
-                  {MUSCLE_PEBBLES.filter(
-                    (pebble) =>
-                      pebble.view === view && pebble.muscle === selectedMuscle,
-                  ).map((pebble) => (
-                    <Path
-                      key={`${pebble.id}-selection`}
-                      d={pebble.d}
-                      fill="none"
-                      stroke="#fff"
-                      strokeWidth={3}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  ))}
-                </G>
-              );
-            })}
-          </Svg>
-        </Pressable>
-      </View>
-
-      <View
-        accessible
-        accessibilityLabel="Muscle load legend. Blue is 0 percent. Red is 100 percent."
-        style={styles.legend}
-      >
-        <Text style={styles.legendLabel}>0%</Text>
-        <View style={styles.legendSteps}>
-          {LOAD_LEGEND_STEPS.map((step) => (
-            <View
-              key={step}
-              style={[
-                styles.legendStep,
-                { backgroundColor: muscleLoadColor(step) },
-              ]}
-            />
-          ))}
-        </View>
-        <Text style={styles.legendLabel}>100%</Text>
-      </View>
+      <MuscleMapLegend
+        accessibilityLabel="Muscle load legend. Blue is light recent load at 0 percent. Gray is moderate recent load at 50 percent. Amber is heavy recent load at 100 percent."
+        labels={["Light", "Moderate", "Heavy"]}
+      />
 
       {noMappedLoad && (
         <Text style={styles.emptyNote} selectable>
@@ -214,19 +107,6 @@ export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
           </Text>
         </View>
       )}
-
-      <Dropdown
-        options={MUSCLE_OPTIONS}
-        value={muscleLabel(selectedMuscle)}
-        onSelect={(label) => {
-          const muscle = MUSCLES.find(
-            (candidate) => muscleLabel(candidate) === label,
-          );
-          if (muscle) setSelectedMuscle(muscle);
-        }}
-        placeholder="Select a muscle"
-        accessibilityLabel="Select a muscle on the recent load map"
-      />
 
       <View
         accessible
@@ -301,35 +181,6 @@ const styles = StyleSheet.create({
   header: { gap: 4 },
   title: { color: "#fff", fontSize: 18, fontWeight: "700", lineHeight: 22 },
   subtitle: { color: "#888", fontSize: 14, fontWeight: "500", lineHeight: 20 },
-  viewLabels: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 24,
-  },
-  viewLabel: {
-    width: "50%",
-    color: "#888",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.4,
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-  mapFrame: { alignItems: "center", overflow: "hidden" },
-  legend: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  legendSteps: { flexDirection: "row", gap: 4 },
-  legendStep: { width: 20, height: 8, borderRadius: 999 },
-  legendLabel: {
-    color: "#888",
-    fontSize: 12,
-    fontWeight: "700",
-    fontVariant: ["tabular-nums"],
-  },
   emptyNote: {
     color: "#888",
     fontSize: 14,

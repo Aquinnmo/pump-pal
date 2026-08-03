@@ -1,14 +1,27 @@
-import { MuscleLoadMap } from '@/components/muscle-load-map';
-import { db } from '@/config/firebase';
-import { useAuth } from '@/context/auth-context';
-import type { CatalogExercise, Workout } from '@/types/workout';
-import { loadCatalog } from '@/utils/exercise-catalog';
-import { computeMuscleLoad } from '@/utils/muscle-load';
-import { Ionicons } from '@expo/vector-icons';
-import { router, Stack } from 'expo-router';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { MuscleLoadMap } from "@/components/muscle-load-map";
+import { FadingScrollView } from "@/components/ui/fading-scroll-view";
+import { db } from "@/config/firebase";
+import { useAuth } from "@/context/auth-context";
+import type { CatalogExercise, Workout } from "@/types/workout";
+import { loadCatalog } from "@/utils/exercise-catalog";
+import { computeMuscleLoad } from "@/utils/muscle-load";
+import { Ionicons } from "@expo/vector-icons";
+import { router, Stack } from "expo-router";
+import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 export default function MuscleLoadScreen() {
   const { user } = useAuth();
@@ -27,14 +40,18 @@ export default function MuscleLoadScreen() {
       const [snapshot, loadedCatalog] = await Promise.all([
         getDocs(
           query(
-            collection(db, 'workouts'),
-            where('userId', '==', user.uid),
-            orderBy('date', 'asc')
-          )
+            collection(db, "workouts"),
+            where("userId", "==", user.uid),
+            orderBy("date", "asc"),
+          ),
         ),
         loadCatalog(),
       ]);
-      setWorkouts(snapshot.docs.map((document) => ({ id: document.id, ...document.data() }) as Workout));
+      setWorkouts(
+        snapshot.docs.map(
+          (document) => ({ id: document.id, ...document.data() }) as Workout,
+        ),
+      );
       if (loadedCatalog.length === 0) {
         setCatalogUnavailable(true);
       } else {
@@ -52,12 +69,17 @@ export default function MuscleLoadScreen() {
 
   const result = useMemo(
     () => (workouts && catalog ? computeMuscleLoad(workouts, catalog) : null),
-    [catalog, workouts]
+    [catalog, workouts],
   );
 
   let content: ReactNode;
   if (!user) {
-    content = <StatePanel title="Sign in to view muscle load" message="Muscle load is based on your logged workouts." />;
+    content = (
+      <StatePanel
+        title="Sign in to view muscle load"
+        message="Muscle load is based on your logged workouts."
+      />
+    );
   } else if (workoutError) {
     content = (
       <StatePanel
@@ -80,7 +102,12 @@ export default function MuscleLoadScreen() {
     );
   } else if (result == null) {
     content = (
-      <View accessible accessibilityRole="progressbar" accessibilityLabel="Mapping your recent muscle work" style={styles.loading}>
+      <View
+        accessible
+        accessibilityRole="progressbar"
+        accessibilityLabel="Mapping your recent muscle work"
+        style={styles.loading}
+      >
         <ActivityIndicator color="#e54242" />
         <Text style={styles.loadingText} selectable>
           Mapping your recent work
@@ -94,7 +121,7 @@ export default function MuscleLoadScreen() {
         title="No workouts yet"
         message="Log a session and Timber will map the work across your muscles."
         action="Start a workout"
-        onAction={() => router.push('/active-workout')}
+        onAction={() => router.push("/active-workout")}
       />
     );
   } else {
@@ -105,23 +132,23 @@ export default function MuscleLoadScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Muscle load',
-          headerStyle: { backgroundColor: '#0f0f0f' },
-          headerTintColor: '#fff',
+          title: "Muscular Load",
+          headerStyle: { backgroundColor: "#0f0f0f" },
+          headerTintColor: "#fff",
           headerShadowVisible: false,
-          headerBackButtonDisplayMode: 'minimal',
-          contentStyle: { backgroundColor: '#0f0f0f' },
+          headerBackButtonDisplayMode: "minimal",
+          contentStyle: { backgroundColor: "#0f0f0f" },
         }}
       />
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={styles.content}>
+      <FadingScrollView contentContainerStyle={styles.content}>
         {content}
-      </ScrollView>
+      </FadingScrollView>
     </>
   );
 }
 
 function StatePanel({
-  icon = 'information-circle-outline',
+  icon = "information-circle-outline",
   title,
   message,
   action,
@@ -158,37 +185,54 @@ function StatePanel({
 
 const styles = StyleSheet.create({
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: 760,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 40,
   },
-  loading: { minHeight: 220, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  loadingText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  loading: {
+    minHeight: 220,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  loadingText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   statePanel: {
     minHeight: 220,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     gap: 12,
-    backgroundColor: '#1c1c1c',
+    backgroundColor: "#1c1c1c",
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "#2a2a2a",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     padding: 20,
   },
-  stateTitle: { color: '#fff', fontSize: 18, fontWeight: '700', lineHeight: 22, textAlign: 'center' },
-  stateMessage: { color: '#888', fontSize: 14, fontWeight: '500', lineHeight: 20, textAlign: 'center' },
+  stateTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+    lineHeight: 22,
+    textAlign: "center",
+  },
+  stateMessage: {
+    color: "#888",
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
+    textAlign: "center",
+  },
   action: {
     minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 14,
-    backgroundColor: '#e54242',
+    backgroundColor: "#e54242",
     paddingHorizontal: 16,
   },
-  actionText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  actionText: { color: "#fff", fontSize: 15, fontWeight: "700" },
   pressed: { opacity: 0.8 },
 });
