@@ -4,6 +4,9 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.graphics.drawable.Icon
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import expo.modules.kotlin.modules.Module
@@ -14,7 +17,8 @@ import expo.modules.kotlin.records.Record
 private const val TAG = "LiveUpdateNotification"
 private const val CHANNEL_ID = "active-workout" // created by Notifee, see utils/workout-notification.android.ts
 private const val NOTIFICATION_ID = 4242
-private const val COLOR_STARTED = 0xFFE54242.toInt() // app/(tabs)/_layout.tsx:9
+private const val COLOR_COMPLETE = 0xFFE54242.toInt() // app/(tabs)/_layout.tsx:9
+private const val COLOR_IN_PROGRESS = 0xFFFBBF24.toInt() // partially-done exercise
 private const val COLOR_PENDING = 0xFF555555.toInt() // app/(tabs)/_layout.tsx:10
 
 // Notification.EXTRA_REQUEST_PROMOTED_ONGOING is only in the android-36.1 SDK; this
@@ -25,20 +29,26 @@ private const val EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoi
 class LiveUpdateSegment : Record {
   @Field val sets: Int = 0
   @Field val started: Boolean = false
+  @Field val completed: Boolean = false
 }
 
 class LiveUpdateNotificationPayload : Record {
+  @Field val workoutId: String = ""
+  @Field val expectedCompletedSets: Int = -1
   @Field val title: String = ""
   @Field val text: String = ""
   @Field val startedAtMillis: Long = 0
   @Field val shortCriticalText: String = ""
   @Field val progress: Int = 0
   @Field val segments: List<LiveUpdateSegment> = emptyList()
+  @Field val actions: List<String> = emptyList()
 }
 
 class LiveUpdateNotificationModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("LiveUpdateNotification")
+
+    Events(EVENT_ACTION)
 
     Function("isSupported") {
       isSupported()
@@ -51,6 +61,10 @@ class LiveUpdateNotificationModule : Module() {
     Function("dismiss") {
       dismiss()
     }
+
+    // A live Expo module means JS can update the mounted workout draft directly.
+    OnCreate { instance = this@LiveUpdateNotificationModule }
+    OnDestroy { if (instance === this@LiveUpdateNotificationModule) instance = null }
   }
 
   private val notificationManager: NotificationManager?
@@ -74,7 +88,13 @@ class LiveUpdateNotificationModule : Module() {
         .setProgressSegments(
           payload.segments.map { segment ->
             Notification.ProgressStyle.Segment(segment.sets)
-              .setColor(if (segment.started) COLOR_STARTED else COLOR_PENDING)
+              .setColor(
+                when {
+                  segment.completed -> COLOR_COMPLETE
+                  segment.started -> COLOR_IN_PROGRESS
+                  else -> COLOR_PENDING
+                }
+              )
           }
         )
         .setProgress(payload.progress)
@@ -99,8 +119,12 @@ class LiveUpdateNotificationModule : Module() {
         .setShortCriticalText(payload.shortCriticalText)
         .setSmallIcon(smallIconRes)
         .setContentTitle(payload.title)
-        .setContentText(payload.text)
+      if (payload.text.isNotBlank()) builder.setContentText(payload.text)
       contentIntent?.let { builder.setContentIntent(it) }
+      payload.actions.forEach { action ->
+        notificationAction(context, smallIconRes, payload.workoutId, payload.expectedCompletedSets, action)
+          ?.let { builder.addAction(it) }
+      }
       builder.extras.putBoolean(EXTRA_REQUEST_PROMOTED_ONGOING, true)
 
       val notification = builder.build()
@@ -114,5 +138,55 @@ class LiveUpdateNotificationModule : Module() {
 
   private fun dismiss() {
     notificationManager?.cancel(NOTIFICATION_ID)
+  }
+
+  fun emitAction(json: String) {
+    sendEvent(EVENT_ACTION, mapOf("json" to json))
+  }
+
+  private fun notificationAction(
+    context: Context,
+    iconRes: Int,
+    workoutId: String,
+    expectedCompletedSets: Int,
+    action: String
+  ): Notification.Action? {
+    if (iconRes == 0 || workoutId.isBlank() || expectedCompletedSets < 0 || action !in KNOWN_ACTIONS) return null
+    val label = when (action) {
+      ACTION_COMPLETE -> "Complete set"
+      ACTION_UNCOMPLETE -> "Undo set"
+      ACTION_FINISH -> "Finish workout"
+      else -> return null
+    }
+    // Intent data is part of PendingIntent identity, making every workout/action/
+    // progress snapshot distinct even when request codes collide. A delayed tap on
+    // an older action therefore carries its old expected count and JS rejects it.
+    val intent = Intent(context, LiveUpdateNotificationActionReceiver::class.java)
+      .setData(Uri.parse("timber://notification-action/$workoutId/$action/$expectedCompletedSets"))
+      .putExtra(KEY_WORKOUT_ID, workoutId)
+      .putExtra(KEY_ACTION, action)
+      .putExtra(KEY_EXPECTED_COMPLETED_SETS, expectedCompletedSets)
+    val pendingIntent = PendingIntent.getBroadcast(
+      context,
+      action.hashCode(),
+      intent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    return Notification.Action.Builder(Icon.createWithResource(context, iconRes), label, pendingIntent).build()
+  }
+
+  companion object {
+    const val KEY_WORKOUT_ID = "workoutId"
+    const val KEY_ACTION = "action"
+    const val KEY_EXPECTED_COMPLETED_SETS = "expectedCompletedSets"
+    const val KEY_JSON = "json"
+    const val EVENT_ACTION = "onNotificationAction"
+    const val ACTION_COMPLETE = "completeSet"
+    const val ACTION_UNCOMPLETE = "uncompleteSet"
+    const val ACTION_FINISH = "finishWorkout"
+    val KNOWN_ACTIONS = setOf(ACTION_COMPLETE, ACTION_UNCOMPLETE, ACTION_FINISH)
+
+    @Volatile
+    var instance: LiveUpdateNotificationModule? = null
   }
 }

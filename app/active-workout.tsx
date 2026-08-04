@@ -2,6 +2,7 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { PlateCalculator } from "@/components/ui/plate-calculator";
 import { Toast } from "@/components/ui/toast";
 import { ExerciseCard } from "@/components/workout/exercise-card";
+import { FocusView } from "@/components/workout/focus-view";
 import { db } from "@/config/firebase";
 import {
   formatAIError,
@@ -16,13 +17,25 @@ import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { showAlert } from "@/utils/alert";
 import { createPendingExercise } from "@/utils/create-pending-exercise";
 import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
+import { describeUpNext } from "@/utils/up-next";
+import { subscribeLiveUpdateNotificationActions } from "@/utils/live-update-notification-actions";
+import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/utils/workout-action";
+import { buildWorkoutNotificationPresentation } from "@/utils/workout-notification-model";
+import { setScreenOwnsWorkoutActions } from "@/utils/wear-action-task";
+import {
+  applyWearAction,
+  buildWearActiveState,
+  buildWearIdleState,
+  flattenSets,
+  nextSetIndex,
+  WearAction,
+} from "@/utils/wear-state";
+import { pushWearState, subscribeWearActions } from "@/utils/wear-sync";
 import {
   buildPerformedExercise,
   collapseSetsToDraft,
   recentExercisesForDay,
   toDateObj,
-  workoutTotalReps,
-  workoutVolume,
 } from "@/utils/workout-conversion";
 import {
   dismissWorkoutNotification,
@@ -37,6 +50,7 @@ import {
 } from "@/utils/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   addDoc,
@@ -56,6 +70,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  BackHandler,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -106,6 +121,13 @@ export default function ActiveWorkoutScreen() {
   const [cameFromPlan, setCameFromPlan] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const exercisesRef = useRef<DraftExerciseRow[]>([]);
+  // Focus (single-set-at-a-time) is the default view for a workout that already has
+  // exercises; a blank/new workout opens straight into the editor. Local state — no
+  // new route — so hydration, autosave and watch/notification ownership stay owned
+  // by this one screen.
+  const [mode, setMode] = useState<"focus" | "editor">("editor");
+  const [hasEnteredFocus, setHasEnteredFocus] = useState(false);
 
   const [workoutName, setWorkoutName] = useState("");
   const [isCustomWorkoutName, setIsCustomWorkoutName] = useState(false);
@@ -137,6 +159,7 @@ export default function ActiveWorkoutScreen() {
     workoutHistory,
     workoutName: effectiveWorkoutName,
   });
+  exercisesRef.current = exercises;
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -172,11 +195,17 @@ export default function ActiveWorkoutScreen() {
           }
           const data = snap.data() as Workout;
           setWorkoutName(data.name || "");
+          const hasExercises =
+            !!data.performedExercises && data.performedExercises.length > 0;
           setExercises(
-            data.performedExercises && data.performedExercises.length > 0
+            hasExercises
               ? data.performedExercises.map(collapseSetsToDraft)
               : [blankRow()],
           );
+          if (hasExercises) {
+            setMode("focus");
+            setHasEnteredFocus(true);
+          }
           // queueOrder is only ever set on docs that passed through the planned
           // queue — it's left in place through the in_progress transition, so
           // its presence tells us how "discard" should behave even on resume.
@@ -293,8 +322,15 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!startedAt) return;
     (async () => {
-      await ensureWorkoutChannel();
-      await requestNotificationPermission();
+      try {
+        await ensureWorkoutChannel();
+        await requestNotificationPermission();
+      } catch (e) {
+        // Usually a JS bundle running on an older native binary (an `eas update`
+        // onto a build without Notifee / the Live Update module). Silent in
+        // release otherwise, and the notification then never appears at all.
+        console.warn("[workout-notification] setup failed", e);
+      }
     })();
   }, [startedAt]);
 
@@ -390,45 +426,32 @@ export default function ActiveWorkoutScreen() {
         /* best-effort autosave */
       });
 
-      // Refresh the live Android notification with completed-set metrics.
-      if (startedAt) {
-        const started = exercises.filter((ex) => ex.label.trim() !== "");
-        const completed: PerformedExercise[] = started
-          .map((ex, order) =>
-            buildPerformedExercise(
-              { ...ex, sets: ex.sets.filter((s) => s.completed) },
-              order,
-            ),
-          )
-          .filter((pe) => pe.sets.length > 0);
-        const metricsSource = { performedExercises: completed } as Workout;
-        // Current exercise = the one owning the next set after the last completed
-        // set (in workout order). No completed sets yet → the very first set.
-        const flat: { label: string; completed: boolean }[] = [];
-        started.forEach((ex) =>
-          ex.sets.forEach((s) =>
-            flat.push({ label: ex.label, completed: !!s.completed }),
-          ),
-        );
-        let lastCompleted = -1;
-        flat.forEach((f, i) => {
-          if (f.completed) lastCompleted = i;
-        });
-        const currentExercise = flat[lastCompleted + 1]?.label ?? null;
-        showWorkoutNotification({
-          name: effectiveWorkoutName || "Workout in progress",
-          startedAt,
-          sets: completed.reduce((n, pe) => n + pe.sets.length, 0),
-          totalReps: workoutTotalReps(metricsSource),
-          volume: workoutVolume(metricsSource),
-          currentExercise,
-          segments: started.map((ex) => ({
-            sets: ex.sets.length,
-            started: ex.sets.some((s) => s.completed),
-          })),
-        });
-      }
+      // Mirror the same snapshot to the watch. Debounced with the save on purpose:
+      // the watch shows what the doc holds, so they can never disagree.
+      pushWearState(
+        buildWearActiveState(workoutId, effectiveWorkoutName, exercises),
+      );
     }, 800);
+    return () => clearTimeout(t);
+  }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
+
+  // The notification is a live control surface, not a save artifact, so it redraws on
+  // its own short timer rather than riding the autosave above — a set tapped here or on
+  // the notification itself lands visibly at once, and the action PendingIntents (which
+  // carry expectedCompletedSets) re-arm immediately so a fast second tap isn't rejected.
+  // The 100ms only coalesces keystroke bursts: weight/duration feed the detail line.
+  useEffect(() => {
+    if (!workoutId || !startedAt || initializing) return;
+    const t = setTimeout(() => {
+      showWorkoutNotification(
+        buildWorkoutNotificationPresentation({
+          workoutId,
+          workoutName: effectiveWorkoutName,
+          startedAt,
+          rows: exercises,
+        }),
+      ).catch((e) => console.warn("[workout-notification] show failed", e));
+    }, 100);
     return () => clearTimeout(t);
   }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
 
@@ -465,6 +488,10 @@ export default function ActiveWorkoutScreen() {
         updatedAt: serverTimestamp(),
       });
       await dismissWorkoutNotification();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Clear the watch immediately; the Home screen pushes the real Up Next copy a
+      // moment later when it regains focus.
+      pushWearState(buildWearIdleState(describeUpNext({})));
       router.replace("/(tabs)");
     } catch (err: any) {
       showAlert("Error", "Could not finish workout. " + err.message);
@@ -481,6 +508,91 @@ export default function ActiveWorkoutScreen() {
       finishWorkout();
     }
   };
+
+  // focus is the default reading view once a workout has exercises; an emptied-out
+  // workout (every row removed in the editor) falls back to the editor automatically
+  // rather than showing an empty focus screen.
+  const focusUsable = mode === "focus" && exercises.some((ex) => ex.label.trim() !== "");
+
+  const enterFocus = () => {
+    setHasEnteredFocus(true);
+    setMode("focus");
+  };
+
+  // Android hardware back while in the editor-reached-from-focus should return to
+  // focus rather than pop the route — Discard is still reachable from focus's header.
+  useEffect(() => {
+    if (mode !== "editor" || !hasEnteredFocus) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      setMode("focus");
+      return true;
+    });
+    return () => sub.remove();
+  }, [mode, hasEnteredFocus]);
+
+  // Same cursor derivation the watch/notification use, reused here to prefill the
+  // plate calculator for the current set rather than inventing a second cursor.
+  const currentFlat = useMemo(() => flattenSets(exercises), [exercises]);
+  const currentFlatIdx = useMemo(
+    () => nextSetIndex(currentFlat.map((f) => f.set)),
+    [currentFlat],
+  );
+  const currentFlatSet = currentFlatIdx !== -1 ? currentFlat[currentFlatIdx] : null;
+  const currentFlatRow = currentFlatSet ? exercises[currentFlatSet.rowIndex] : null;
+  const plateWeightPrefillable =
+    mode === "focus" &&
+    !!currentFlatRow &&
+    currentFlatRow.exerciseType !== "Sets of Duration" &&
+    !currentFlatRow.bodyweight &&
+    currentFlatSet!.set.weight.trim() !== "";
+
+  const handleCompleteSet = () => {
+    if (!workoutId) return;
+    setExercises((prev) => applyWearAction(prev, { action: "completeSet", workoutId }));
+  };
+
+  const handleUndoSet = () => {
+    if (!workoutId) return;
+    setExercises((prev) => applyWearAction(prev, { action: "uncompleteSet", workoutId }));
+  };
+
+  // Watch actions land here whenever the app process is alive (otherwise the headless
+  // task in utils/wear-action-task.ts handles them). Routing them through the same
+  // draft state as a tap gets the autosave, notification and watch push for free, and
+  // the resulting state push doubles as the watch's ack.
+  const finishRef = useRef(finishWorkout);
+  finishRef.current = finishWorkout;
+
+  useEffect(() => {
+    if (!workoutId) return;
+    // Claim the actions so the root layout's fallback handler stands down; otherwise
+    // both would apply the same set and it would land twice.
+    setScreenOwnsWorkoutActions(true);
+    const applyRemoteAction = (action: WearAction | LiveUpdateNotificationAction) => {
+      // A stale watch acting on a workout that already ended must not touch this one.
+      if ("workoutId" in action && action.workoutId !== workoutId) return;
+      if (action.action === "startWorkout") return;
+      if (
+        "expectedCompletedSets" in action &&
+        !matchesExpectedCompletedSets(exercisesRef.current, action)
+      ) return;
+      if (action.action === "finishWorkout") {
+        finishRef.current();
+        return;
+      }
+      setExercises((prev) => {
+        if ("expectedCompletedSets" in action && !matchesExpectedCompletedSets(prev, action)) return prev;
+        return applyWearAction(prev, action);
+      });
+    };
+    const unsubscribeWear = subscribeWearActions(applyRemoteAction);
+    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(applyRemoteAction);
+    return () => {
+      setScreenOwnsWorkoutActions(false);
+      unsubscribeWear();
+      unsubscribeNotification();
+    };
+  }, [workoutId, setExercises]);
 
   const discardWorkout = async () => {
     if (!workoutId) return;
@@ -504,6 +616,9 @@ export default function ActiveWorkoutScreen() {
         await deleteDoc(doc(db, "workouts", workoutId));
       }
       await dismissWorkoutNotification();
+      // Clear the watch immediately; the Home screen pushes the real Up Next copy a
+      // moment later when it regains focus.
+      pushWearState(buildWearIdleState(describeUpNext({})));
       router.replace("/(tabs)");
     } catch (err: any) {
       showAlert("Error", "Could not discard workout. " + err.message);
@@ -533,12 +648,18 @@ export default function ActiveWorkoutScreen() {
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-        <TouchableOpacity
-          onPress={() => setShowDiscardConfirm(true)}
-          hitSlop={8}
-        >
-          <Text style={styles.discardText}>Discard</Text>
-        </TouchableOpacity>
+        {mode === "editor" && hasEnteredFocus ? (
+          <TouchableOpacity onPress={enterFocus} hitSlop={8}>
+            <Text style={styles.discardText}>‹ Focus</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={() => setShowDiscardConfirm(true)}
+            hitSlop={8}
+          >
+            <Text style={styles.discardText}>Discard</Text>
+          </TouchableOpacity>
+        )}
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
             {effectiveWorkoutName || "Active Workout"}
@@ -554,6 +675,20 @@ export default function ActiveWorkoutScreen() {
         </TouchableOpacity>
       </View>
 
+      {focusUsable ? (
+        <FocusView
+          exercises={exercises}
+          saving={saving}
+          onCompleteSet={handleCompleteSet}
+          onUndo={handleUndoSet}
+          onFinish={handleFinishPress}
+          onEdit={() => setMode("editor")}
+          onOpenPlateCalc={() => setShowPlateCalc(true)}
+          onUpdateSet={updateSet}
+          onIncrementSet={incrementSet}
+          onDecrementSet={decrementSet}
+        />
+      ) : (
       <ReorderableList
         data={exercises}
         keyExtractor={(item) => item.uid}
@@ -693,8 +828,9 @@ export default function ActiveWorkoutScreen() {
           </>
         }
       />
+      )}
 
-      {!showFinishConfirm && !showLogConfirm && !showDiscardConfirm && (
+      {!focusUsable && !showFinishConfirm && !showLogConfirm && !showDiscardConfirm && (
         <TouchableOpacity
           style={[styles.plateCalcFab, { bottom: Math.max(insets.bottom, 20) }]}
           onPress={() => setShowPlateCalc(true)}
@@ -707,6 +843,13 @@ export default function ActiveWorkoutScreen() {
       <PlateCalculator
         visible={showPlateCalc}
         onClose={() => setShowPlateCalc(false)}
+        initialTarget={plateWeightPrefillable ? currentFlatSet!.set.weight : undefined}
+        onApplyWeight={
+          plateWeightPrefillable
+            ? (total) =>
+                updateSet(currentFlatSet!.rowIndex, currentFlatSet!.setIndex, "weight", String(total))
+            : undefined
+        }
       />
 
       {showFinishConfirm && (

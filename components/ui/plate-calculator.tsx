@@ -1,17 +1,15 @@
 import { PLATE_DENOMS, PlateCounts, platesWeight, solvePlates } from '@/utils/plate-math';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Mode = 'barbell' | 'machine';
@@ -20,6 +18,8 @@ const MODES: { key: Mode; label: string }[] = [
   { key: 'barbell', label: 'Barbell' },
   { key: 'machine', label: 'Machine' },
 ];
+
+const DISMISS_THRESHOLD = 120;
 
 const num = (v: string) => {
   const n = parseFloat(v);
@@ -31,19 +31,74 @@ const fmt = (n: number) => (Number.isInteger(n) ? String(n) : String(Number(n.to
 type PlateCalculatorProps = {
   visible: boolean;
   onClose: () => void;
+  // Seeds the target field whenever the calculator opens — used by focus mode to
+  // prefill the current set's weight. The component stays mounted across opens, so
+  // re-seeding happens in an effect keyed off `visible` rather than at mount.
+  initialTarget?: string;
+  // When supplied, renders an extra primary button that writes the solved total back
+  // through the caller's normal set-update path (so cascade rules still apply) and
+  // closes the sheet. Omit for the plain FAB usage, which behaves exactly as today.
+  onApplyWeight?: (total: number) => void;
 };
 
 // One-view plate calculator. Barbell mode shows plates per side on top of a bar weight;
 // machine mode shows the plates hung on the machine on top of its starting weight.
 // Plate counts are the source of truth — the target field just seeds them, so the total
 // stays honest after you nudge the steppers.
-export function PlateCalculator({ visible, onClose }: PlateCalculatorProps) {
+export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight }: PlateCalculatorProps) {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const [mode, setMode] = useState<Mode>('barbell');
   const [barWeight, setBarWeight] = useState('45');
   const [baseWeight, setBaseWeight] = useState('0');
   const [target, setTarget] = useState('');
   const [counts, setCounts] = useState<PlateCounts>({});
+  const translateY = useSharedValue(0);
+  const overlayOpacity = useSharedValue(1);
+
+  const dismiss = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  const handleClose = useCallback(() => {
+    translateY.value = withTiming(screenHeight, { duration: 200 });
+    overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+      runOnJS(dismiss)();
+    });
+  }, [dismiss, overlayOpacity, screenHeight, translateY]);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (e.translationY > 0) {
+        translateY.value = e.translationY;
+        overlayOpacity.value = Math.max(0, 1 - e.translationY / (screenHeight * 0.4));
+      }
+    })
+    .onEnd((e) => {
+      if (e.translationY > DISMISS_THRESHOLD) {
+        translateY.value = withTiming(screenHeight, { duration: 200 });
+        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+          runOnJS(dismiss)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        overlayOpacity.value = withSpring(1);
+      }
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${0.7 * overlayOpacity.value})`,
+  }));
+
+  useEffect(() => {
+    if (!visible) return;
+    translateY.value = 0;
+    overlayOpacity.value = 1;
+  }, [overlayOpacity, translateY, visible]);
 
   const solveFor = (t: string, m: Mode, bar: string, base: string) => {
     if (t.trim() === '') return;
@@ -71,6 +126,16 @@ export function PlateCalculator({ visible, onClose }: PlateCalculatorProps) {
     solveFor(target, m, barWeight, baseWeight);
   };
 
+  useEffect(() => {
+    if (!visible) return;
+    if (!initialTarget || initialTarget.trim() === '' || Number.isNaN(parseFloat(initialTarget))) return;
+    setTarget(initialTarget);
+    solveFor(initialTarget, mode, barWeight, baseWeight);
+    // Re-seed only when the sheet opens with a new target — not on every keystroke
+    // inside it, which would fight the user's own edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, initialTarget]);
+
   const bump = (denom: number, delta: number) =>
     setCounts((c) => ({ ...c, [denom]: Math.max(0, (c[denom] ?? 0) + delta) }));
 
@@ -80,91 +145,111 @@ export function PlateCalculator({ visible, onClose }: PlateCalculatorProps) {
   const offTarget = target.trim() !== '' && num(target) !== total;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={onClose} />
-        <KeyboardAvoidingView style={styles.cardWrap} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={[styles.card, { paddingBottom: Math.max(20, insets.bottom) }]}>
-            <View style={styles.headerRow}>
-              <Text style={styles.title}>Plate Calculator</Text>
-              <TouchableOpacity onPress={onClose} hitSlop={8}>
-                <Ionicons name="close" size={24} color="#888" />
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={handleClose} />
+          <Animated.View
+            accessibilityViewIsModal
+            style={[styles.card, cardAnimatedStyle, { paddingBottom: Math.max(20, insets.bottom) }]}>
+            {/* Extends sheet background colour behind the Android nav bar */}
+            <View style={[styles.navBarFill, { height: insets.bottom }]} />
+            <GestureDetector gesture={panGesture}>
+              <Animated.View>
+                <View style={styles.headerRow}>
+                  <Text style={styles.title}>Plate Calculator</Text>
+                  <TouchableOpacity onPress={handleClose} hitSlop={8}>
+                    <Ionicons name="close" size={24} color="#888" />
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </GestureDetector>
+
+          <View style={styles.toggleRow}>
+            {MODES.map((m) => (
+              <TouchableOpacity
+                key={m.key}
+                style={[styles.toggleButton, mode === m.key && styles.toggleButtonActive]}
+                onPress={() => changeMode(m.key)}
+                activeOpacity={0.8}>
+                <Text style={[styles.toggleText, mode === m.key && styles.toggleTextActive]}>{m.label}</Text>
               </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.inputRow}>
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>{mode === 'barbell' ? 'Bar weight' : 'Starting weight'}</Text>
+              <TextInput
+                style={styles.numInput}
+                keyboardType="decimal-pad"
+                value={mode === 'barbell' ? barWeight : baseWeight}
+                onChangeText={mode === 'barbell' ? changeBar : changeBase}
+                placeholder="0"
+                placeholderTextColor="#555"
+              />
             </View>
-
-            <View style={styles.toggleRow}>
-              {MODES.map((m) => (
-                <TouchableOpacity
-                  key={m.key}
-                  style={[styles.toggleButton, mode === m.key && styles.toggleButtonActive]}
-                  onPress={() => changeMode(m.key)}
-                  activeOpacity={0.8}>
-                  <Text style={[styles.toggleText, mode === m.key && styles.toggleTextActive]}>{m.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.inputRow}>
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>{mode === 'barbell' ? 'Bar weight' : 'Starting weight'}</Text>
-                <TextInput
-                  style={styles.numInput}
-                  keyboardType="decimal-pad"
-                  value={mode === 'barbell' ? barWeight : baseWeight}
-                  onChangeText={mode === 'barbell' ? changeBar : changeBase}
-                  placeholder="0"
-                  placeholderTextColor="#555"
-                />
-              </View>
-              <View style={styles.field}>
-                <Text style={styles.fieldLabel}>Target weight</Text>
-                <TextInput
-                  style={styles.numInput}
-                  keyboardType="decimal-pad"
-                  value={target}
-                  onChangeText={changeTarget}
-                  placeholder="0"
-                  placeholderTextColor="#555"
-                />
-              </View>
-            </View>
-
-            <Text style={styles.plateHeading}>{mode === 'barbell' ? 'Plates per side' : 'Plates loaded'}</Text>
-
-            <ScrollView style={styles.plateList} keyboardShouldPersistTaps="handled">
-              {PLATE_DENOMS.map((d) => {
-                const c = counts[d] ?? 0;
-                return (
-                  <View key={d} style={[styles.plateRow, c === 0 && styles.plateRowEmpty]}>
-                    <Text style={[styles.plateLabel, c === 0 && styles.plateLabelEmpty]}>{fmt(d)} lb</Text>
-                    <View style={styles.stepper}>
-                      <TouchableOpacity onPress={() => bump(d, -1)} hitSlop={10} disabled={c === 0}>
-                        <Ionicons name="remove-circle" size={26} color={c === 0 ? '#3a3a3a' : '#e54242'} />
-                      </TouchableOpacity>
-                      <Text style={[styles.plateCount, c === 0 && styles.plateCountEmpty]}>{c}</Text>
-                      <TouchableOpacity onPress={() => bump(d, 1)} hitSlop={10}>
-                        <Ionicons name="add-circle" size={26} color="#e54242" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                );
-              })}
-            </ScrollView>
-
-            <View style={styles.resultBlock}>
-              <Text style={styles.resultTotal}>{fmt(total)} lbs</Text>
-              <Text style={styles.resultDetail}>
-                {mode === 'barbell'
-                  ? `${fmt(start)} lb bar + ${fmt(plateLoad)} lb per side`
-                  : `${fmt(start)} lb start + ${fmt(plateLoad)} lb in plates`}
-              </Text>
-              {offTarget && (
-                <Text style={styles.resultNote}>Closest loadable to a {fmt(num(target))} lb target</Text>
-              )}
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Target weight</Text>
+              <TextInput
+                style={styles.numInput}
+                keyboardType="decimal-pad"
+                value={target}
+                onChangeText={changeTarget}
+                placeholder="0"
+                placeholderTextColor="#555"
+              />
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </View>
+
+          <Text style={styles.plateHeading}>{mode === 'barbell' ? 'Plates per side' : 'Plates loaded'}</Text>
+
+          <View style={styles.plateList}>
+            {PLATE_DENOMS.map((d) => {
+              const c = counts[d] ?? 0;
+              return (
+                <View key={d} style={[styles.plateRow, c === 0 && styles.plateRowEmpty]}>
+                  <Text style={[styles.plateLabel, c === 0 && styles.plateLabelEmpty]}>{fmt(d)} lb</Text>
+                  <View style={styles.stepper}>
+                    <TouchableOpacity onPress={() => bump(d, -1)} hitSlop={12} disabled={c === 0}>
+                      <Ionicons name="remove-circle" size={24} color={c === 0 ? '#3a3a3a' : '#e54242'} />
+                    </TouchableOpacity>
+                    <Text style={[styles.plateCount, c === 0 && styles.plateCountEmpty]}>{c}</Text>
+                    <TouchableOpacity onPress={() => bump(d, 1)} hitSlop={12}>
+                      <Ionicons name="add-circle" size={24} color="#e54242" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          <View style={styles.resultBlock}>
+            <Text style={styles.resultTotal}>{fmt(total)} lbs</Text>
+            <Text style={styles.resultDetail}>
+              {mode === 'barbell'
+                ? `${fmt(start)} lb bar + ${fmt(plateLoad)} lb per side`
+                : `${fmt(start)} lb start + ${fmt(plateLoad)} lb in plates`}
+            </Text>
+            {offTarget && (
+              <Text style={styles.resultNote}>Closest loadable to a {fmt(num(target))} lb target</Text>
+            )}
+          </View>
+
+          {onApplyWeight && (
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={() => {
+                onApplyWeight(total);
+                onClose();
+              }}
+              activeOpacity={0.8}>
+              <Text style={styles.applyButtonText}>Use {fmt(total)} lbs for this set</Text>
+            </TouchableOpacity>
+          )}
+          </Animated.View>
+        </Animated.View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
@@ -175,14 +260,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
-  cardWrap: {
-    width: '100%',
+  navBarFill: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1c1c1c',
   },
   card: {
     backgroundColor: '#1c1c1c',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    borderWidth: 1,
+    borderTopWidth: 1,
     borderColor: '#2a2a2a',
     paddingHorizontal: 20,
     paddingTop: 18,
@@ -258,19 +347,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   plateList: {
-    flexShrink: 1,
+    // All eight denominations have to fit without scrolling — the row metrics below
+    // are sized so the full list clears the sheet on a Pixel-height screen.
+    gap: 4,
   },
   plateRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: 12,
     borderRadius: 10,
     backgroundColor: 'rgba(229, 66, 66, 0.08)',
     borderWidth: 1,
     borderColor: 'rgba(229, 66, 66, 0.35)',
-    marginBottom: 6,
   },
   plateRowEmpty: {
     backgroundColor: '#141414',
@@ -321,5 +411,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#e54242',
     marginTop: 6,
+  },
+  applyButton: {
+    backgroundColor: '#e54242',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
   },
 });

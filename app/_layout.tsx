@@ -1,6 +1,9 @@
 import { db } from '@/config/firebase';
 import { isSplitOption } from '@/constants/split-options';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { subscribeLiveUpdateNotificationActions } from '@/utils/live-update-notification-actions';
+import { handleWorkoutAction, screenOwnsWorkoutActions } from '@/utils/wear-action-task';
+import { subscribeWearActions } from '@/utils/wear-sync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -54,6 +57,28 @@ function RootLayoutNav() {
     checkSplit();
   }, [user, loading, segments]);
 
+  // Watch actions, for every case except "the active-workout screen is mounted" —
+  // that screen subscribes itself and applies them to its own draft state.
+  useEffect(() => {
+    if (!user) return;
+    const handleAction = (action: Parameters<typeof handleWorkoutAction>[0]) => {
+      if (action.action === 'startWorkout') {
+        // The watch's cached name can be stale, so re-resolve the real target. This
+        // also correctly resumes a workout that is already in progress.
+        router.push('/up-next');
+        return;
+      }
+      if (screenOwnsWorkoutActions()) return;
+      handleWorkoutAction(action, user.uid).catch((err) => console.warn('Workout action failed', err));
+    };
+    const unsubscribeWear = subscribeWearActions(handleAction);
+    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleAction);
+    return () => {
+      unsubscribeWear();
+      unsubscribeNotification();
+    };
+  }, [user]);
+
   useEffect(() => {
     if (loading || checkingSplit || onboardingSeen === null) return;
     const inAuthGroup = segments[0] === '(auth)';
@@ -77,6 +102,7 @@ function RootLayoutNav() {
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="planned-workouts" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="active-workout" options={{ headerShown: false, gestureEnabled: false }} />
+        <Stack.Screen name="up-next" options={{ headerShown: false }} />
         <Stack.Screen name="settings-split" options={{ headerShown: false }} />
         <Stack.Screen name="settings-injuries" options={{ headerShown: false }} />
         <Stack.Screen name="settings-account" options={{ headerShown: false }} />

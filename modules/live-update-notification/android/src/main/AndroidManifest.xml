@@ -1,2 +1,13 @@
-<manifest>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Explicit PendingIntents target this receiver only; no other app may invoke it. -->
+    <receiver
+      android:name=".LiveUpdateNotificationActionReceiver"
+      android:exported="false" />
+
+    <!-- Runs the JS action handler only when the Expo module has no live runtime. -->
+    <service
+      android:name=".LiveUpdateNotificationActionTaskService"
+      android:exported="false" />
+  </application>
 </manifest>

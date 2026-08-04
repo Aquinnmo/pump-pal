@@ -2,7 +2,9 @@ import { NativeModule, requireOptionalNativeModule } from 'expo';
 
 import type { LiveUpdateNotificationPayload } from './LiveUpdateNotification.types';
 
-declare class LiveUpdateNotificationNativeModule extends NativeModule {
+declare class LiveUpdateNotificationNativeModule extends NativeModule<{
+  onNotificationAction: (event: { json: string }) => void;
+}> {
   isSupported(): boolean;
   show(payload: LiveUpdateNotificationPayload): boolean;
   dismiss(): void;
@@ -25,4 +27,10 @@ export function show(payload: LiveUpdateNotificationPayload): boolean {
 
 export function dismiss(): void {
   nativeModule?.dismiss();
+}
+
+export function subscribeActions(onAction: (json: string) => void): () => void {
+  if (!nativeModule) return () => {};
+  const subscription = nativeModule.addListener('onNotificationAction', ({ json }) => onAction(json));
+  return () => subscription.remove();
 }

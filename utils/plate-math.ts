@@ -1,18 +1,18 @@
 // Plate math for the active-workout plate calculator. lb-only, matching the rest of
 // the app (see components/workout/exercise-card.tsx's hardcoded "Weight (lbs)").
 
-export const PLATE_DENOMS = [45, 35, 25, 10, 5, 2.5, 1, 0.5] as const;
+export const PLATE_DENOMS = [45, 35, 25, 10, 5, 2.5, 1, 0.5, 0.25] as const;
 
 export type PlateCounts = Record<number, number>;
 
-// Everything is solved in quarter-pound integers so 2.5 / 1.25 / 0.5 can't drift.
+// Everything is solved in quarter-pound integers so fractional plates cannot drift.
 const UNIT = 0.25;
 const MAX_LOAD = 2000;
 
 const DENOM_UNITS = PLATE_DENOMS.map((d) => Math.round(d / UNIT));
 
 /**
- * Fewest plates that hit `load`, snapped to the nearest 0.5 lb.
+ * Fewest plates that hit `load`, snapped to the nearest 0.25 lb.
  *
  * Min-count DP rather than greedy, because greedy overloads the bar on this set: 60 lb
  * greedily takes 45 + 10 + 5 where 35 + 25 is two plates. Denominations are walked
@@ -20,7 +20,7 @@ const DENOM_UNITS = PLATE_DENOMS.map((d) => Math.round(d / UNIT));
  * bigger plates.
  */
 export function solvePlates(load: number): PlateCounts {
-  const target = Math.max(0, Math.round(Math.min(load, MAX_LOAD) * 2) * 2);
+  const target = Math.max(0, Math.round(Math.min(load, MAX_LOAD) / UNIT));
   const counts: PlateCounts = {};
   if (target === 0) return counts;
 
@@ -38,7 +38,7 @@ export function solvePlates(load: number): PlateCounts {
     }
   }
 
-  // target is always even and the 0.5 lb plate is 2 units, so this is always reachable.
+  // The 0.25 lb plate is one unit, so every normalized target is reachable.
   if (best[target] === Infinity) return counts;
 
   for (let t = target; t > 0; t -= DENOM_UNITS[pick[t]]) {

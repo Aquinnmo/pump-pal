@@ -1,19 +1,18 @@
 import { db } from '@/config/firebase';
-import { isSplitOption } from '@/constants/split-options';
-import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
-import { generateSplitWorkoutNames } from '@/utils/workout-suggestions';
+import { loadSplitNames } from '@/utils/split-names';
 import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
+import { describeUpNext } from '@/utils/up-next';
+import { buildWearIdleState } from '@/utils/wear-state';
+import { pushWearState } from '@/utils/wear-sync';
 import { toDateObj } from '@/utils/workout-conversion';
 import { dismissWorkoutNotification } from '@/utils/workout-notification';
+import { syncUpNextWidget } from '@/utils/widget-up-next';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
 import {
   collection,
-  doc,
-  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -61,29 +60,9 @@ export default function HomeScreen() {
           const allFetched = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
 
           // Predict next workout type
-          const userSnap = await getDoc(doc(db, 'users', user.uid));
-          const userData = userSnap.data();
-          const splitType = userData?.workoutSplit?.type;
-          const customSplitDesc: string = userData?.workoutSplit?.custom ?? '';
-          let splitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
-
-          if (splitType === 'Other' && customSplitDesc) {
-            const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
-            const cached = await AsyncStorage.getItem(cacheKey);
-            if (cached) {
-              try { splitNames = JSON.parse(cached); } catch { /* ignore */ }
-            } else {
-              try {
-                const generated = await generateSplitWorkoutNames(customSplitDesc);
-                if (generated.length > 0) {
-                  splitNames = generated;
-                  await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
-                }
-              } catch { /* keep the card usable with its fallback label */ }
-            }
-          }
-
-          setNextWorkout(predictNextWorkoutName(splitNames, allFetched));
+          const splitNames = await loadSplitNames(user.uid);
+          const predictedNext = predictNextWorkoutName(splitNames, allFetched);
+          setNextWorkout(predictedNext);
 
           // An in-progress workout (crashed/backgrounded mid-session) takes priority over
           // everything else — Up Next becomes "Resume".
@@ -95,9 +74,10 @@ export default function HomeScreen() {
               limit(1)
             )
           );
-          setInProgress(
-            inProgressSnap.empty ? null : ({ id: inProgressSnap.docs[0].id, ...inProgressSnap.docs[0].data() } as Workout)
-          );
+          const liveWorkout = inProgressSnap.empty
+            ? null
+            : ({ id: inProgressSnap.docs[0].id, ...inProgressSnap.docs[0].data() } as Workout);
+          setInProgress(liveWorkout);
           // No live workout → clear any notification orphaned by a force-quit.
           if (inProgressSnap.empty) dismissWorkoutNotification();
 
@@ -115,6 +95,23 @@ export default function HomeScreen() {
           setNextWorkoutToPlan(
             predictWorkoutAfterName(splitNames, allFetched, plannedQueue[plannedQueue.length - 1]?.name)
           );
+
+          // Push the same copy to the home-screen widget (Android only, no-op elsewhere).
+          const copy = describeUpNext({
+            inProgressName: liveWorkout?.name,
+            plannedName: plannedQueue[0]?.name,
+            predictedName: predictedNext,
+          });
+          syncUpNextWidget({
+            label: copy.label,
+            name: copy.name,
+            action: copy.action,
+            source: copy.source,
+          });
+          // The watch gets the same copy — but only when nothing is live. A running
+          // workout's watch state is the set-by-set one the active-workout screen
+          // pushes, and overwriting it with "Resume" would lose the user's place.
+          if (!liveWorkout) pushWearState(buildWearIdleState(copy));
         } catch (err) {
           console.error(err);
         } finally {
@@ -148,9 +145,18 @@ export default function HomeScreen() {
     );
   }
 
-  const upNextName = inProgress?.name ?? nextPlan?.name ?? nextWorkout ?? 'Start a workout';
   const displayName = user?.displayName?.trim() || 'Athlete';
   const isCompact = height < 650;
+  const {
+    label: upNextEyebrow,
+    name: upNextName,
+    action: upNextAction,
+    source: upNextSource,
+  } = describeUpNext({
+    inProgressName: inProgress?.name,
+    plannedName: nextPlan?.name,
+    predictedName: nextWorkout,
+  });
   const upNextLabel = inProgress
     ? `Resume ${upNextName}, elapsed time ${formatElapsed(elapsed)}`
     : nextPlan
@@ -158,20 +164,6 @@ export default function HomeScreen() {
       : nextWorkout
         ? `Start suggested workout, ${upNextName}`
         : 'Start a custom workout';
-  const upNextAction = inProgress
-    ? 'Resume workout'
-    : nextPlan
-      ? 'Start planned workout'
-      : nextWorkout
-        ? 'Start workout'
-        : 'Choose your workout';
-  const upNextSource = inProgress
-    ? 'In progress'
-    : nextPlan
-      ? 'Planned'
-      : nextWorkout
-        ? 'Next in your split'
-        : 'New session';
 
   return (
     <View
@@ -211,7 +203,7 @@ export default function HomeScreen() {
             <View style={[styles.nextWorkoutContent, isCompact && styles.nextWorkoutContentCompact]}>
               <View style={styles.nextWorkoutHeader}>
                 <View style={styles.nextWorkoutContext}>
-                  <Text style={styles.nextWorkoutLabel}>{inProgress ? 'Resume' : 'Up next'}</Text>
+                  <Text style={styles.nextWorkoutLabel}>{upNextEyebrow}</Text>
                   <View style={styles.contextDivider} />
                   <Text style={styles.nextWorkoutSource} numberOfLines={1}>{upNextSource}</Text>
                 </View>

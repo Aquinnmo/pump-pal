@@ -1,13 +1,12 @@
 import { DragHandle } from '@/components/ui/drag-handle';
 import { Dropdown } from '@/components/ui/dropdown';
 import { ExercisePicker, ExercisePickerSelection } from '@/components/ui/exercise-picker';
+import { SetField, SetFields } from '@/components/workout/set-fields';
 import { DraftExerciseRow, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
-
-type SetField = 'weight' | 'durationMinutes' | 'durationSeconds';
 
 type ExerciseCardProps = {
   exercise: DraftExerciseRow;
@@ -97,59 +96,14 @@ export function ExerciseCard({
           )}
 
           <View style={styles.row}>
-            {ex.exerciseType === 'Sets of Duration' ? (
-              <>
-                <View style={styles.numField}>
-                  <Text style={styles.numLabel}>Minutes</Text>
-                  <TextInput
-                    style={styles.numInput}
-                    keyboardType="number-pad"
-                    value={String(set.durationMinutes)}
-                    onChangeText={(v) => onUpdateSet(i, si, 'durationMinutes', v)}
-                  />
-                </View>
-                <View style={styles.numField}>
-                  <Text style={styles.numLabel}>Seconds</Text>
-                  <TextInput
-                    style={styles.numInput}
-                    keyboardType="number-pad"
-                    value={String(set.durationSeconds)}
-                    onChangeText={(v) => onUpdateSet(i, si, 'durationSeconds', v)}
-                  />
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.numField}>
-                  <Text style={styles.numLabel}>Reps</Text>
-                  <View style={styles.incrementerContainerHorizontal}>
-                    <TouchableOpacity onPress={() => onDecrementSet(i, si)} hitSlop={10}>
-                      <Ionicons name="remove-circle" size={28} color="#e54242" />
-                    </TouchableOpacity>
-                    <Text style={styles.incrementerValue}>{set.reps}</Text>
-                    <TouchableOpacity onPress={() => onIncrementSet(i, si)} hitSlop={10}>
-                      <Ionicons name="add-circle" size={28} color="#e54242" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                {!ex.bodyweight && (
-                  <View style={styles.numField}>
-                    <Text style={styles.numLabel}>Weight (lbs)</Text>
-                    <View style={styles.weightInputContainer}>
-                      <TextInput
-                        style={[styles.numInput, styles.weightInput]}
-                        keyboardType="decimal-pad"
-                        value={set.weight}
-                        onChangeText={(v) => onUpdateSet(i, si, 'weight', v)}
-                        onBlur={() => {
-                          if (set.weight === '' || set.weight === '.') onUpdateSet(i, si, 'weight', '0');
-                        }}
-                      />
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
+            <SetFields
+              set={set}
+              exerciseType={ex.exerciseType}
+              bodyweight={ex.bodyweight}
+              onUpdate={(field, v) => onUpdateSet(i, si, field, v)}
+              onIncrement={() => onIncrementSet(i, si)}
+              onDecrement={() => onDecrementSet(i, si)}
+            />
             {ex.sets.length > 1 && (
               <View style={styles.deleteSetButton}>
                 <Text style={styles.deleteSetSpacer}> </Text>
@@ -268,15 +222,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  weightInputContainer: {
-    flex: 1,
-  },
-  weightInput: {
-    flex: 1,
-    justifyContent: 'center',
-    height: '100%',
-    paddingVertical: 0,
-  },
   addSetButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -293,42 +238,6 @@ const styles = StyleSheet.create({
     color: '#e54242',
     fontWeight: '600',
     fontSize: 15,
-  },
-  numField: {
-    flex: 1,
-  },
-  numLabel: {
-    fontSize: 11,
-    color: '#666',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  numInput: {
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 8,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#fff',
-    textAlign: 'center',
-  },
-  incrementerContainerHorizontal: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#1c1c1c',
-    borderWidth: 1,
-    borderColor: '#2e2e2e',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  incrementerValue: {
-    fontSize: 18,
-    color: '#fff',
-    fontWeight: '700',
-    paddingVertical: 4,
   },
   exerciseFooter: {
     flexDirection: 'row',

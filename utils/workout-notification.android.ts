@@ -12,16 +12,6 @@ const NOTIFICATION_ID = "active-workout";
 // never both post — that would show the user two notifications.
 let useLiveUpdate: boolean | null = null;
 
-function buildNotificationBody(data: WorkoutNotificationData): string {
-  const { name, sets, totalReps, volume } = data;
-  const parts = [
-    `${sets} set${sets === 1 ? "" : "s"}`,
-    `${totalReps} rep${totalReps === 1 ? "" : "s"}`,
-    `${volume} vol`,
-  ];
-  return name ? `${name} · ${parts.join(" · ")}` : parts.join(" · ");
-}
-
 export async function ensureWorkoutChannel(): Promise<string> {
   // DEFAULT importance = plays a sound when it first appears. Combined with
   // onlyAlertOnce below, it sounds once on start, not on every set update.
@@ -45,18 +35,19 @@ export async function requestNotificationPermission(): Promise<void> {
 export async function showWorkoutNotification(
   data: WorkoutNotificationData,
 ): Promise<void> {
-  const { startedAt, sets, currentExercise, segments } = data;
-  const title = currentExercise || "Workout In Progress";
-  const body = buildNotificationBody(data);
+  const { startedAt, completedSets, totalSets, segments, title, detail } = data;
 
   if (useLiveUpdate) {
     const posted = LiveUpdateNotification.show({
+      workoutId: data.workoutId,
+      expectedCompletedSets: completedSets,
       title,
-      text: body,
+      text: detail ?? '',
       startedAtMillis: startedAt.getTime(),
-      shortCriticalText: `${sets} set${sets === 1 ? "" : "s"}`,
-      progress: sets,
+      shortCriticalText: `${completedSets}/${totalSets}`,
+      progress: completedSets,
       segments,
+      actions: data.actions,
     });
     if (posted) {
       // ensureWorkoutChannel resolves useLiveUpdate asynchronously, so an
@@ -77,7 +68,7 @@ export async function showWorkoutNotification(
   await notifee.displayNotification({
     id: NOTIFICATION_ID,
     title,
-    body,
+    ...(detail ? { body: detail } : {}),
     android: {
       channelId: CHANNEL_ID,
       ongoing: true, // can't be swiped away mid-workout

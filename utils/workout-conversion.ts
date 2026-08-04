@@ -6,6 +6,29 @@ export function makeUid(): string {
   return `ex_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 }
 
+// An edit to a set cascades forward: the new value overwrites each following set that
+// still held the old value, stopping at the first set the user deliberately made
+// different so pyramids / drop sets survive. Completed sets are a record of what was
+// actually lifted — they are skipped, not overwritten, and do not stop the run.
+// Lives here rather than in use-draft-exercises so the watch bridge (utils/wear-state.ts)
+// can apply the same semantics without pulling React Native in.
+export function cascadeSetField<K extends keyof DraftSet>(
+  sets: DraftSet[],
+  from: number,
+  field: K,
+  value: DraftSet[K]
+): DraftSet[] {
+  const previous = sets[from][field];
+  const next = sets.slice();
+  next[from] = { ...next[from], [field]: value };
+  for (let si = from + 1; si < next.length; si++) {
+    if (next[si].completed) continue;
+    if (next[si][field] !== previous) break;
+    next[si] = { ...next[si], [field]: value };
+  }
+  return next;
+}
+
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
   return row.sets.map((draftSet, index) => {
     if (row.exerciseType === 'Sets of Duration') {
