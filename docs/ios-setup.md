@@ -1,150 +1,152 @@
 # Getting Timber on your iPhone
 
-This guide assumes you have a Mac and nothing else set up. The scripts handle
-everything — you mostly just answer prompts.
+There are two commands:
 
-Total time: **20–40 minutes**, most of it waiting on downloads.
+1. Run `bash scripts/ios/setup.sh` once to prepare the Mac.
+2. From then on, run `npm run install:apple` to update and install Timber.
 
----
+The installed app is a standalone Release build. It does not need the Mac or a
+development server after installation.
 
 ## Before you start
 
-**1. Install Xcode from the App Store.** It's about 10 GB, so start it now and
-read the rest while it downloads. Once it's installed, **open it once** and let
-it finish "installing components".
+Have all of these ready:
 
-**2. Get the settings block from Aidan.** It's ~10 lines of text starting with
-`EXPO_PUBLIC_FIREBASE_API_KEY=`. Copy it somewhere you can paste from later.
+- A Mac that supports the current Xcode release.
+- Xcode from the App Store. Open it once and let it finish installing
+  components.
+- This repository cloned onto the Mac.
+- The `.env` file from Aidan saved in the repository root.
+- An iPhone, USB cable, phone passcode, internet access, and enough free disk
+  space for Xcode and the build.
+- The Mac administrator password.
+- An Apple Account, including access to its two-factor authentication.
 
-**3. Have your iPhone and its USB cable handy.** You'll also need your own
-Apple ID — any free one works, you do *not* need a paid developer account.
+A paid Apple Developer membership is not required. Xcode calls an unpaid
+account a **Personal Team**. Apple limits Personal Teams to 10 active App IDs,
+3 devices, and 3 installed apps per device; their provisioning profiles expire
+after 7 days. See [Apple's developer account overview][apple-account].
 
----
+[apple-account]: https://developer.apple.com/help/account/basics/about-your-developer-account
 
-## First-time setup
+## One-time Mac setup
 
-Open **Terminal** (Cmd+Space, type "Terminal") and run:
+In Terminal, enter the cloned repository and run:
 
 ```bash
-git clone https://github.com/Aquinnmo/pump-pal.git
 cd pump-pal
 bash scripts/ios/setup.sh
 ```
 
-That's it. The script walks you through the rest:
+The setup script:
 
-| Step | What happens |
-| --- | --- |
-| Xcode check | Makes sure Xcode and its command line tools are ready |
-| Homebrew | Installs the package manager (asks first) |
-| Node.js | Installs Node via Homebrew |
-| Build tools | Installs CocoaPods and Watchman |
-| Settings | Asks you to paste the block Aidan sent |
-| Dependencies | Downloads the app's packages |
-| iPhone | Tells you when to plug the phone in |
-| Build | Compiles and installs the app (10–25 min the first time) |
+- checks Xcode, installs its command-line tools, selects the full Xcode
+  toolchain, and accepts the license;
+- installs Homebrew, Node.js 20 or newer, and CocoaPods when missing;
+- validates the supplied `.env`;
+- creates an ignored `.env.apple.local` file containing a stable, unique bundle
+  identifier for this clone; and
+- guides you through adding your Apple Account in Xcode → Settings → Accounts.
 
-The script asks before installing anything and is safe to stop with **Ctrl-C**
-and re-run later — it picks up where it left off.
+It does not install JavaScript packages or build the app. It is safe to stop
+with Ctrl-C and run again: the generated app identifier remains unchanged.
 
-### Two prompts that need your attention during the build
+## Install or update Timber
 
-- **"Select a device"** — pick your iPhone from the list, not a simulator.
-- **"Apple ID"** — sign in with **your own** Apple ID. This only signs the app
-  so your phone will run it. Aidan never sees your credentials.
-
-### One last step on the phone
-
-iOS won't open the app until you approve the developer:
-
-> **Settings → General → VPN & Device Management → tap your Apple ID → Trust**
-
-Then open Timber from your home screen.
-
----
-
-## Every time after that
+After setup, this is the only command to use:
 
 ```bash
-cd pump-pal
-bash scripts/ios/update.sh
+npm run install:apple
 ```
 
-It pulls the latest code, updates packages, and asks how to run:
+The installer:
 
-- **1) Just start it** — the normal choice. Takes ~30 seconds. Your phone
-  already has the app; this starts the server it talks to. Keep the terminal
-  window open while you use the app, and press Ctrl-C when you're done.
-- **2) Rebuild and reinstall** — takes 5–20 minutes. Use it when the app won't
-  open, crashes right after an update, or Aidan says a rebuild is needed.
+1. Verifies the one-time setup.
+2. Stops safely if tracked repo files were edited locally.
+3. Runs a fast-forward-only Git pull.
+4. Restarts itself if the pull updated the installer.
+5. Installs the exact dependencies from `package-lock.json` with `npm ci`.
+6. Builds a standalone Release app and installs it on the selected iPhone.
 
----
+Connect and unlock the iPhone before the build. Tap **Trust** if the phone asks
+whether to trust the Mac. On iOS 16 or newer, enable **Settings → Privacy &
+Security → Developer Mode**; the phone restarts and asks for confirmation.
+[Apple explains why Developer Mode is required here][developer-mode].
 
-## The 7-day thing
+During the build, select the connected iPhone rather than a simulator. If Xcode
+asks for a development team, choose the Personal Team for your Apple Account.
 
-Because the app is signed with a free Apple ID, **it stops working after 7
-days.** That's Apple's rule for free accounts, not a bug.
+[developer-mode]: https://developer.apple.com/documentation/Xcode/enabling-developer-mode-on-a-device
 
-When it happens, plug the phone in and run `bash scripts/ios/update.sh`, then
-choose **2) Rebuild**. Takes a few minutes and resets the clock.
+After installation, iOS may require one final approval:
 
-(If you get tired of this, a paid Apple Developer account — $99/year — extends
-it to a year.)
+> Settings → General → VPN & Device Management → your Apple Account → Trust
 
----
+You can then disconnect the phone, close Terminal, and use Timber normally.
 
-## If something goes wrong
+## Reinstall every 7 days with a free account
 
-**"Install Xcode first"**
-Xcode isn't in your Applications folder yet. Finish the App Store download,
-open Xcode once, then re-run the script.
-
-**"Xcode's licence hasn't been accepted"**
-The script offers to fix this — say yes and type your Mac password. Manually:
-`sudo xcodebuild -license accept`
-
-**"Developer Mode disabled" during the build**
-On the iPhone: **Settings → Privacy & Security → Developer Mode → On**. The
-phone restarts, which is expected. Then re-run the script.
-
-**Build fails with a signing or bundle identifier error**
-Usually means the app ID `com.aquinnmo.timber` is already claimed by another
-Apple account. Build under your own identifier instead:
+Apple's free Personal Team provisioning expires after 7 days. When Timber stops
+opening, reconnect and unlock the phone, then run:
 
 ```bash
-APP_VARIANT=development bash scripts/ios/setup.sh
+npm run install:apple
 ```
 
-This installs as "Timber Dev" with the identifier `com.aquinnmo.timber.dev`.
-If you use this, use the same prefix for updates too:
+The same command installs app updates whenever Aidan publishes new code. A paid
+Apple Developer membership has longer-lived signing and does not require the
+weekly Personal Team reinstall.
+
+## Troubleshooting
+
+### The installer reports local changes
+
+It deliberately stops before pulling. Do not discard or merge the files blindly.
+Send Aidan the displayed `git status` lines and ask what to do.
+
+Ignored files such as `.env`, `.env.apple.local`, `ios/`, and `node_modules/`
+do not trigger this check.
+
+### The one-time Apple setup is missing
+
+Run:
 
 ```bash
-APP_VARIANT=development bash scripts/ios/update.sh
+bash scripts/ios/setup.sh
 ```
 
-**The app opens but can't connect / stuck on a loading screen**
-Make sure `bash scripts/ios/update.sh` (option 1) is running in a terminal, and
-that the phone and Mac are on the same Wi-Fi network.
+This recreates `.env.apple.local` if necessary. Do not copy another person's
+`.env.apple.local`; its unique bundle identifier belongs to their installation.
 
-**`brew: command not found` in a new terminal**
-Close and reopen Terminal. The setup script adds Homebrew to your shell
-profile, but existing windows don't pick it up.
+### The phone does not appear
 
-**Anything else**
-Copy the last ~20 lines of terminal output and send them to Aidan. Don't try to
-fix build errors blind.
+Reconnect it by USB, unlock it, tap **Trust**, and confirm Developer Mode is on.
+If the phone runs a newer iOS release than Xcode supports, update Xcode and, if
+required by the App Store, macOS.
 
----
+### Signing or development-team error
+
+Open Xcode → Settings → Accounts and confirm the Apple Account is listed. During
+the next build, choose that account's Personal Team. If the error mentions the
+bundle identifier, rerun `bash scripts/ios/setup.sh`.
+
+### `.env` is missing or incomplete
+
+Ask Aidan for the current `.env`, save it in the repository root, and rerun the
+one-time setup. The installer revalidates it after every pull in case new keys
+were added.
+
+### Anything else
+
+Copy the last 20 lines of Terminal output and send them to Aidan.
 
 ## Notes for maintainers
 
-- `scripts/ios/_common.sh` holds shared helpers and the `.env` validator.
-  Run its check with `bash scripts/ios/_common.sh --self-test`.
-- `REQUIRED_ENV_KEYS` in that file lists only the Firebase keys, because
-  `config/firebase.ts` reads them with no fallback. The AI keys default to `''`
-  in `constants/ai-config.ts`, so a missing one degrades AI features instead of
-  crashing the app — update `REQUIRED_ENV_KEYS` if that ever changes.
-- `ios/` is not committed; `npx expo run:ios` prebuilds and pod-installs on its
-  own, which is why the scripts have no separate prebuild step.
-- The Wear OS module, the Android widget, and `wear/` are all Android-only and
-  are skipped by autolinking on iOS. No iOS-side work is needed for them.
+- `scripts/ios/_common.sh` contains shared setup, `.env`, and Apple bundle-ID
+  validation. Run `npm run test:ios-scripts` after editing it.
+- The recurring installer exports `TIMBER_IOS_BUNDLE_IDENTIFIER` from the
+  ignored `.env.apple.local` before Expo evaluates `app.config.js`.
+- `ios/` is generated and ignored. `npx expo run:ios` performs prebuild and pod
+  installation when necessary.
+- The installer uses `--configuration Release --no-bundler`, so the resulting
+  app embeds its JavaScript and does not start Metro.

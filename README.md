@@ -6,7 +6,8 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 
 > Setting up a Mac from scratch to run this on an iPhone? Use
 > **[docs/ios-setup.md](docs/ios-setup.md)** instead — `bash scripts/ios/setup.sh`
-> handles Xcode, Homebrew, Node, CocoaPods, `.env`, and the device build.
+> handles the one-time Mac setup. After that, `npm run install:apple` updates
+> the repo and installs a standalone copy on the connected iPhone.
 > Android dev builds are covered in [docs/dev-build.md](docs/dev-build.md).
 
 1. Install dependencies
@@ -83,6 +84,7 @@ Use `production` only for a store-ready build; Android production builds are nor
 ```bash
 npm run android      # start + open Android
 npm run ios          # start + open iOS
+npm run install:apple  # update + install standalone Timber on an iPhone
 npm run web          # start + open web
 npm run lint         # expo lint
 npm run build:web    # static web export to dist/ (used by Vercel, see vercel.json)

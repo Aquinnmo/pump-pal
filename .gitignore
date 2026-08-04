@@ -62,10 +62,11 @@ migration/*.snapshot.json
 .beads/proxieddb/
 
 # graphify
-graphify-out/
+graphify-out/*
 
 # Gradle output for local Expo modules
 /modules/*/android/.gradle/
 /modules/*/android/build/
 /modules/*/android/.cxx/
 /modules/*/android/local.properties
+graphify-out/.graphify_labels.json

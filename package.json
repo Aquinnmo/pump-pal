@@ -9,6 +9,7 @@
     "ios": "expo run:ios",
     "ios:setup": "bash scripts/ios/setup.sh",
     "ios:update": "bash scripts/ios/update.sh",
+    "install:apple": "bash scripts/ios/update.sh",
     "web": "expo start --web",
     "lint": "expo lint",
     "generate:icons": "node scripts/generate-icons.js",

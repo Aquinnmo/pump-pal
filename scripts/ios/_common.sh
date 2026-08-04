@@ -69,6 +69,9 @@ REQUIRED_ENV_KEYS=(
   EXPO_PUBLIC_FIREBASE_APP_ID
 )
 
+APPLE_CONFIG_FILE=".env.apple.local"
+APPLE_BUNDLE_KEY="TIMBER_IOS_BUNDLE_IDENTIFIER"
+
 # validate_env <file> [--quiet]
 # Exit 0 if every required key is present with a non-empty value.
 # Set ENV_LABEL to show something friendlier than the path in messages.
@@ -103,6 +106,54 @@ validate_env() {
     return 1
   fi
   return 0
+}
+
+# Read the locally generated iOS bundle identifier without sourcing the file.
+# This file is machine-generated, but treating it as data avoids executing an
+# accidentally edited value as shell code.
+read_apple_bundle_id() {
+  local file="$1" line value
+  [ -f "$file" ] || return 1
+  line=$(grep -E "^[[:space:]]*${APPLE_BUNDLE_KEY}=" "$file" | tail -n 1 || true)
+  [ -n "$line" ] || return 1
+  value="${line#*=}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  value="${value%\"}"; value="${value#\"}"
+  value="${value%\'}"; value="${value#\'}"
+  printf '%s\n' "$value"
+}
+
+# validate_apple_config <file> [--quiet]
+validate_apple_config() {
+  local file="$1" quiet="${2:-}" bundle_id
+  bundle_id=$(read_apple_bundle_id "$file" || true)
+  if [[ "$bundle_id" =~ ^com\.aquinnmo\.timber\.personal\.[a-f0-9]{12}$ ]]; then
+    return 0
+  fi
+  if [ "$quiet" != "--quiet" ]; then
+    warn "$file is missing or does not contain a valid setup-generated iOS app identifier."
+  fi
+  return 1
+}
+
+# Create the per-clone signing identity once and preserve it on later runs.
+ensure_apple_config() {
+  local file="$1" suffix
+  if validate_apple_config "$file" --quiet; then
+    return 0
+  fi
+  suffix=$(LC_ALL=C od -An -N6 -tx1 /dev/urandom | tr -d '[:space:]')
+  [ ${#suffix} -eq 12 ] || die "Could not generate a unique iOS app identifier."
+  (umask 077; printf '%s=%s\n' "$APPLE_BUNDLE_KEY" "com.aquinnmo.timber.personal.$suffix" > "$file") \
+    || die "Could not save the local Apple setup in $file."
+}
+
+load_apple_config() {
+  local file="$1"
+  validate_apple_config "$file" || return 1
+  TIMBER_IOS_BUNDLE_IDENTIFIER=$(read_apple_bundle_id "$file")
+  export TIMBER_IOS_BUNDLE_IDENTIFIER
 }
 
 # --- preflight ---------------------------------------------------------------
@@ -164,6 +215,26 @@ _self_test() {
   # A nonexistent file fails rather than erroring.
   validate_env "$dir/nope" --quiet; status=$?
   _assert "rejects a missing file" 1 $status
+
+  # Apple setup accepts only the generated bundle-ID shape.
+  printf '%s=%s\n' "$APPLE_BUNDLE_KEY" "com.aquinnmo.timber.personal.0123abcdef45" > "$dir/apple-valid"
+  validate_apple_config "$dir/apple-valid" --quiet; status=$?
+  _assert "accepts a setup-generated Apple bundle ID" 0 $status
+
+  validate_apple_config "$dir/apple-missing" --quiet; status=$?
+  _assert "rejects a missing Apple setup file" 1 $status
+
+  printf '%s=%s\n' "$APPLE_BUNDLE_KEY" "com.aquinnmo.timber" > "$dir/apple-malformed"
+  validate_apple_config "$dir/apple-malformed" --quiet; status=$?
+  _assert "rejects a malformed Apple bundle ID" 1 $status
+
+  ensure_apple_config "$dir/apple-generated"
+  local first_bundle second_bundle
+  first_bundle=$(read_apple_bundle_id "$dir/apple-generated")
+  ensure_apple_config "$dir/apple-generated"
+  second_bundle=$(read_apple_bundle_id "$dir/apple-generated")
+  if [ "$first_bundle" = "$second_bundle" ]; then status=0; else status=1; fi
+  _assert "preserves the generated Apple bundle ID" 0 $status
 
   # Every key in .env.example that we require is spelled correctly.
   if [ -f "$(dirname -- "${BASH_SOURCE[0]}")/../../.env.example" ]; then
