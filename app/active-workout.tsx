@@ -322,8 +322,15 @@ export default function ActiveWorkoutScreen() {
   useEffect(() => {
     if (!startedAt) return;
     (async () => {
-      await ensureWorkoutChannel();
-      await requestNotificationPermission();
+      try {
+        await ensureWorkoutChannel();
+        await requestNotificationPermission();
+      } catch (e) {
+        // Usually a JS bundle running on an older native binary (an `eas update`
+        // onto a build without Notifee / the Live Update module). Silent in
+        // release otherwise, and the notification then never appears at all.
+        console.warn("[workout-notification] setup failed", e);
+      }
     })();
   }, [startedAt]);
 
@@ -424,19 +431,27 @@ export default function ActiveWorkoutScreen() {
       pushWearState(
         buildWearActiveState(workoutId, effectiveWorkoutName, exercises),
       );
-
-      // Refresh the live Android notification with completed-set metrics.
-      if (startedAt) {
-        showWorkoutNotification(
-          buildWorkoutNotificationPresentation({
-            workoutId,
-            workoutName: effectiveWorkoutName,
-            startedAt,
-            rows: exercises,
-          }),
-        );
-      }
     }, 800);
+    return () => clearTimeout(t);
+  }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
+
+  // The notification is a live control surface, not a save artifact, so it redraws on
+  // its own short timer rather than riding the autosave above — a set tapped here or on
+  // the notification itself lands visibly at once, and the action PendingIntents (which
+  // carry expectedCompletedSets) re-arm immediately so a fast second tap isn't rejected.
+  // The 100ms only coalesces keystroke bursts: weight/duration feed the detail line.
+  useEffect(() => {
+    if (!workoutId || !startedAt || initializing) return;
+    const t = setTimeout(() => {
+      showWorkoutNotification(
+        buildWorkoutNotificationPresentation({
+          workoutId,
+          workoutName: effectiveWorkoutName,
+          startedAt,
+          rows: exercises,
+        }),
+      ).catch((e) => console.warn("[workout-notification] show failed", e));
+    }, 100);
     return () => clearTimeout(t);
   }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
 

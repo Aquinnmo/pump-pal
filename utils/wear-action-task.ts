@@ -142,12 +142,16 @@ async function applySetAction(
     .filter((row) => row.label.trim() !== '')
     .map((row, order) => buildPerformedExercise(row, order));
 
+  // Both surfaces show the applied action before the write is acked — waiting on a
+  // Firestore round trip to redraw a notification the user just tapped is the whole
+  // perceived delay. The write still awaits below, so the action queue stays serialized.
+  pushWearState(buildWearActiveState(workout.id, workout.name ?? '', next));
+  await refreshWorkoutNotification(workout, next);
+
   await updateDoc(doc(db, 'workouts', workout.id), {
     performedExercises,
     updatedAt: serverTimestamp(),
   });
-  pushWearState(buildWearActiveState(workout.id, workout.name ?? '', next));
-  await refreshWorkoutNotification(workout, next);
 }
 
 async function finishWorkout(

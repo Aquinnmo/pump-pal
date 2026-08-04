@@ -1,0 +1,21 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <!-- Google Play services delivers watch messages here. exported=true is required:
+         the caller is the Wearable service, not this app. It only accepts messages
+         from nodes paired to this phone, and the Data Layer already refuses to talk
+         to an app with a different package name or signing key. -->
+    <service
+      android:name=".WearMessageService"
+      android:exported="true">
+      <intent-filter>
+        <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+        <data android:scheme="wear" android:host="*" android:pathPrefix="/timber" />
+      </intent-filter>
+    </service>
+
+    <!-- Runs the JS action handler when the app process is not alive. -->
+    <service
+      android:name=".WearActionTaskService"
+      android:exported="false" />
+  </application>
+</manifest>

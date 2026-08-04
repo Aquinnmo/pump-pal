@@ -63,7 +63,6 @@ migration/*.snapshot.json
 
 # graphify
 graphify-out/
-android/
 
 # Gradle output for local Expo modules
 /modules/*/android/.gradle/

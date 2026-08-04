@@ -1,7 +1,15 @@
 import { PLATE_DENOMS, PlateCounts, platesWeight, solvePlates } from '@/utils/plate-math';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Mode = 'barbell' | 'machine';
@@ -10,6 +18,8 @@ const MODES: { key: Mode; label: string }[] = [
   { key: 'barbell', label: 'Barbell' },
   { key: 'machine', label: 'Machine' },
 ];
+
+const DISMISS_THRESHOLD = 120;
 
 const num = (v: string) => {
   const n = parseFloat(v);
@@ -37,11 +47,58 @@ type PlateCalculatorProps = {
 // stays honest after you nudge the steppers.
 export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight }: PlateCalculatorProps) {
   const insets = useSafeAreaInsets();
+  const { height: screenHeight } = useWindowDimensions();
   const [mode, setMode] = useState<Mode>('barbell');
   const [barWeight, setBarWeight] = useState('45');
   const [baseWeight, setBaseWeight] = useState('0');
   const [target, setTarget] = useState('');
   const [counts, setCounts] = useState<PlateCounts>({});
+  const translateY = useSharedValue(0);
+  const overlayOpacity = useSharedValue(1);
+
+  const dismiss = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  const handleClose = useCallback(() => {
+    translateY.value = withTiming(screenHeight, { duration: 200 });
+    overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+      runOnJS(dismiss)();
+    });
+  }, [dismiss, overlayOpacity, screenHeight, translateY]);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      if (e.translationY > 0) {
+        translateY.value = e.translationY;
+        overlayOpacity.value = Math.max(0, 1 - e.translationY / (screenHeight * 0.4));
+      }
+    })
+    .onEnd((e) => {
+      if (e.translationY > DISMISS_THRESHOLD) {
+        translateY.value = withTiming(screenHeight, { duration: 200 });
+        overlayOpacity.value = withTiming(0, { duration: 200 }, () => {
+          runOnJS(dismiss)();
+        });
+      } else {
+        translateY.value = withSpring(0, { damping: 20, stiffness: 300 });
+        overlayOpacity.value = withSpring(1);
+      }
+    });
+
+  const cardAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    backgroundColor: `rgba(0,0,0,${0.7 * overlayOpacity.value})`,
+  }));
+
+  useEffect(() => {
+    if (!visible) return;
+    translateY.value = 0;
+    overlayOpacity.value = 1;
+  }, [overlayOpacity, translateY, visible]);
 
   const solveFor = (t: string, m: Mode, bar: string, base: string) => {
     if (t.trim() === '') return;
@@ -88,18 +145,25 @@ export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight
   const offTarget = target.trim() !== '' && num(target) !== total;
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={onClose} />
-        <View style={[styles.card, { paddingBottom: Math.max(20, insets.bottom) }]}>
-          {/* Extends sheet background colour behind the Android nav bar */}
-          <View style={[styles.navBarFill, { height: insets.bottom }]} />
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Plate Calculator</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={24} color="#888" />
-            </TouchableOpacity>
-          </View>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
+          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={handleClose} />
+          <Animated.View
+            accessibilityViewIsModal
+            style={[styles.card, cardAnimatedStyle, { paddingBottom: Math.max(20, insets.bottom) }]}>
+            {/* Extends sheet background colour behind the Android nav bar */}
+            <View style={[styles.navBarFill, { height: insets.bottom }]} />
+            <GestureDetector gesture={panGesture}>
+              <Animated.View>
+                <View style={styles.headerRow}>
+                  <Text style={styles.title}>Plate Calculator</Text>
+                  <TouchableOpacity onPress={handleClose} hitSlop={8}>
+                    <Ionicons name="close" size={24} color="#888" />
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
+            </GestureDetector>
 
           <View style={styles.toggleRow}>
             {MODES.map((m) => (
@@ -183,8 +247,9 @@ export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight
               <Text style={styles.applyButtonText}>Use {fmt(total)} lbs for this set</Text>
             </TouchableOpacity>
           )}
-        </View>
-      </View>
+          </Animated.View>
+        </Animated.View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
