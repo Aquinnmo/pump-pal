@@ -220,4 +220,5 @@ when you:
 | First build / after native change (local)        | `$env:APP_VARIANT="development"; npx expo run:android` |
 | First build / after native change (cloud)        | `eas build --profile development --platform android`   |
 | Everyday JS work                                 | `npx expo start --dev-client`                          |
+| Preview (release) build onto the plugged-in phone | `npm run install:android`                             |
 | Web / non-native work (Notifee is a no-op there) | `npx expo start` (Expo Go still fine for web)          |

@@ -29,8 +29,9 @@
     "migration:mapping:validate": "node scripts/migration/validate-mapping.js",
     "migration:dry-run": "node scripts/migration/dry-run-conversion.js",
     "migration:write:workouts": "node scripts/migration/write-migrated-workouts.js",
-    "pixel": "APP_VARIANT=development npx expo prebuild --clean --platform android && APP_VARIANT=development npx expo run:android;",
-    "pixel:fresh": "adb uninstall com.aquinnmo.timber.dev; npm run pixel"
+    "development:android": "APP_VARIANT=development npx expo prebuild --clean --platform android && APP_VARIANT=development npx expo run:android;",
+    "freshDevelopment:android": "adb uninstall com.aquinnmo.timber.dev; npm run development:android",
+    "install:android": "npx expo prebuild --clean --platform android && npx expo run:android --variant release"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.12",
