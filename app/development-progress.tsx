@@ -1,11 +1,10 @@
 import { DevelopmentProgress } from '@/components/development-progress';
 import { FadingScrollView } from '@/components/ui/fading-scroll-view';
-import { db } from '@/config/firebase';
+import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import type { Workout } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -19,18 +18,7 @@ export default function DevelopmentProgressScreen() {
     setWorkouts(null);
     setWorkoutError(false);
     try {
-      const snapshot = await getDocs(
-        query(
-          collection(db, 'workouts'),
-          where('userId', '==', user.uid),
-          orderBy('date', 'asc'),
-        ),
-      );
-      setWorkouts(
-        snapshot.docs.map(
-          (document) => ({ id: document.id, ...document.data() }) as Workout,
-        ),
-      );
+      setWorkouts((await workoutRepository.getAll(user.uid)).map((record) => record.data));
     } catch (error) {
       console.error(error);
       setWorkoutError(true);

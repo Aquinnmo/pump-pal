@@ -1,12 +1,11 @@
 import { Toast } from '@/components/ui/toast';
-import { db } from '@/config/firebase';
+import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as Updates from 'expo-updates';
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -49,16 +48,13 @@ export default function SettingsAppScreen() {
         import('expo-sharing'),
       ]);
 
-      const workoutsSnap = await getDocs(
-        query(collection(db, 'workouts'), where('userId', '==', user.uid))
-      );
+      const workouts = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
 
       const rows: string[] = [
         ['Date', 'Workout', 'Notes', 'Exercise', 'Variation', 'Set', 'Reps', 'Weight (lbs)', 'Duration (sec)', 'Hold (sec)', 'Bodyweight'].join(','),
       ];
 
-      workoutsSnap.docs.forEach((d) => {
-        const w = d.data() as Workout;
+      workouts.forEach((w) => {
         const dateMs = toDateObj(w.date).getTime();
         const dateStr = new Date(dateMs).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         const name = `"${(w.name ?? '').replace(/"/g, '""')}"`;

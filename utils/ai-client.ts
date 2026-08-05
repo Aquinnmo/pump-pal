@@ -1,6 +1,7 @@
 import { auth } from '@/config/firebase';
 import type { AIOp, AIOpInput, AIResponse } from '@/shared/ai-contract';
 import { fetch as expoFetch } from 'expo/fetch';
+import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import { describeError } from './format-ai-error';
 
@@ -14,12 +15,35 @@ import { describeError } from './format-ai-error';
  */
 const BASE_URL = Platform.OS === 'web' ? '' : (process.env.EXPO_PUBLIC_API_BASE_URL ?? '');
 
+/**
+ * AI work is deliberately never queued.  A cached result remains useful while
+ * offline, but a new generation would be paid work that cannot be completed
+ * until there is a server connection.  Keeping this check at the one request
+ * seam makes that invariant hold for every AI feature.
+ */
+export class AIOfflineError extends Error {
+  constructor() {
+    super('AI needs a connection. Cached results are still available.');
+    this.name = 'AIOfflineError';
+  }
+}
+
+async function assertAIConnectivity(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const state = await NetInfo.fetch();
+  if (state.isConnected === false || state.isInternetReachable === false) {
+    throw new AIOfflineError();
+  }
+}
+
 export async function callAI<Op extends AIOp>(
   op: Op,
   input: AIOpInput<Op> = {} as AIOpInput<Op>
 ): Promise<AIResponse<Op>> {
   const user = auth.currentUser;
   if (!user) throw new Error('You must be signed in to use AI features.');
+
+  await assertAIConnectivity();
 
   // A relative URL can only resolve in a browser. Off the web an unset base URL
   // surfaces as an opaque network failure, so name the actual cause instead.

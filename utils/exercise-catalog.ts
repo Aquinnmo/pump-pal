@@ -1,7 +1,7 @@
-import { db } from '@/config/firebase';
+import { auth } from '@/config/firebase';
+import { catalogRepository } from '@/db/catalog-repository';
 import { CatalogExercise, ExerciseCatalogMeta, ExerciseSearchOption } from '@/types/workout';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 
 const CATALOG_CACHE_KEY = 'pumppal_catalog_v2';
 const CATALOG_VERSION_KEY = 'pumppal_catalog_version_v2';
@@ -22,9 +22,10 @@ async function writeCache(catalog: CatalogExercise[], version: number): Promise<
 }
 
 export async function loadCatalog(): Promise<CatalogExercise[]> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return [];
   try {
-    const metaSnap = await getDoc(doc(db, 'exerciseCatalogMeta', 'current'));
-    const meta = metaSnap.exists() ? (metaSnap.data() as ExerciseCatalogMeta) : null;
+    const meta = await catalogRepository.getMeta(uid);
     const cachedVersion = await AsyncStorage.getItem(CATALOG_VERSION_KEY);
 
     if (meta && cachedVersion !== null && Number(cachedVersion) === meta.version) {
@@ -32,9 +33,8 @@ export async function loadCatalog(): Promise<CatalogExercise[]> {
       if (cached) return cached;
     }
 
-    const snap = await getDocs(collection(db, 'exercises'));
-    const catalog = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as CatalogExercise)
+    const catalog = (await catalogRepository.getAll(uid))
+      .map((record) => record.data)
       .filter((ex) => ex.schemaVersion === 2 && !!ex.name && ex.status !== 'pending_review');
 
     if (meta) await writeCache(catalog, meta.version);

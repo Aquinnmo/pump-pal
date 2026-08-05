@@ -1,4 +1,5 @@
-import { auth, db } from '@/config/firebase';
+import { auth } from '@/config/firebase';
+import { workoutRepository } from '@/db/workout-repository';
 import { DraftExerciseRow, PerformedExercise, Workout } from '@/types/workout';
 import { getOngoingInjuryIds } from '@/utils/injuries';
 import { describeUpNext } from '@/utils/up-next';
@@ -13,17 +14,8 @@ import {
 } from '@/utils/workout-action';
 import { pushWearState } from '@/utils/wear-sync';
 import { buildPerformedExercise, collapseSetsToDraft, toDateObj } from '@/utils/workout-conversion';
-import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-} from 'firebase/firestore';
 
-// Applies a watch action against Firestore directly. Used on two paths:
+// Applies a watch action against the platform repository. Used on two paths:
 //   - the root layout, when the app is running but the active-workout screen (which
 //     owns the draft state) is not mounted;
 //   - the headless task below, when the app process is dead entirely.
@@ -49,9 +41,9 @@ export const setScreenOwnsWearActions = setScreenOwnsWorkoutActions;
 export const screenOwnsWearActions = screenOwnsWorkoutActions;
 
 async function loadOwnedWorkout(workoutId: string, uid: string): Promise<Workout | null> {
-  const snap = await getDoc(doc(db, 'workouts', workoutId));
-  if (!snap.exists()) return null;
-  const workout = { id: snap.id, ...snap.data() } as Workout;
+  const stored = await workoutRepository.getById(uid, workoutId);
+  if (!stored) return null;
+  const workout = stored.data;
   // Someone else's workout, or one that already ended — a stale watch must not touch it.
   if (workout.userId !== uid || workout.status !== 'in_progress') return null;
   return workout;
@@ -68,16 +60,11 @@ async function startWorkout(uid: string): Promise<void> {
   const target = await resolveUpNextTarget(uid);
 
   if (target.id) {
-    const snap = await getDoc(doc(db, 'workouts', target.id));
-    if (!snap.exists()) return pushIdleFallback();
-    const workout = { id: snap.id, ...snap.data() } as Workout;
-    if (workout.userId !== uid) return pushIdleFallback();
+    const stored = await workoutRepository.getById(uid, target.id);
+    if (!stored) return pushIdleFallback();
+    const workout = stored.data;
     if (workout.status === 'planned') {
-      await updateDoc(doc(db, 'workouts', target.id), {
-        status: 'in_progress',
-        startedAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      await workoutRepository.update(uid, target.id, { ...workout, status: 'in_progress', startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     }
     pushWearState(
       buildWearActiveState(
@@ -91,17 +78,16 @@ async function startWorkout(uid: string): Promise<void> {
 
   // Nothing live or planned: open a fresh session named after the split prediction.
   // It has no exercises yet, so the watch shows "empty" — they get picked on the phone.
-  const created = await addDoc(collection(db, 'workouts'), {
-    userId: uid,
+  const createdId = await workoutRepository.create(uid, {
     name: target.suggestion ?? '',
     performedExercises: [],
     status: 'in_progress',
-    startedAt: serverTimestamp(),
+    startedAt: new Date().toISOString(),
     schemaVersion: 2,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   });
-  pushWearState(buildWearActiveState(created.id, target.suggestion ?? '', []));
+  pushWearState(buildWearActiveState(createdId, target.suggestion ?? '', []));
 }
 
 async function refreshWorkoutNotification(workout: Workout, rows: DraftExerciseRow[]): Promise<void> {
@@ -143,15 +129,12 @@ async function applySetAction(
     .map((row, order) => buildPerformedExercise(row, order));
 
   // Both surfaces show the applied action before the write is acked — waiting on a
-  // Firestore round trip to redraw a notification the user just tapped is the whole
+  // remote round trip to redraw a notification the user just tapped is the whole
   // perceived delay. The write still awaits below, so the action queue stays serialized.
   pushWearState(buildWearActiveState(workout.id, workout.name ?? '', next));
   await refreshWorkoutNotification(workout, next);
 
-  await updateDoc(doc(db, 'workouts', workout.id), {
-    performedExercises,
-    updatedAt: serverTimestamp(),
-  });
+  await workoutRepository.update(uid, workout.id, { ...workout, performedExercises, updatedAt: new Date().toISOString() });
 }
 
 async function finishWorkout(
@@ -175,13 +158,14 @@ async function finishWorkout(
       sets: pe.sets.map(({ completed, ...rest }) => rest),
     }));
 
-  await updateDoc(doc(db, 'workouts', workout.id), {
+  await workoutRepository.update(uid, workout.id, {
+    ...workout,
     name: workout.name || 'Workout',
-    date: Timestamp.fromDate(new Date()),
+    date: new Date().toISOString(),
     performedExercises,
     status: 'completed',
     injuries: await getOngoingInjuryIds(uid),
-    updatedAt: serverTimestamp(),
+    updatedAt: new Date().toISOString(),
   });
   await dismissWorkoutNotification();
   pushIdleFallback();
@@ -204,7 +188,7 @@ async function applyWorkoutAction(
   }
 }
 
-// Firestore's read-modify-write path has no local transaction for this draft
+// The repository's read-modify-write path has no local transaction for this draft
 // conversion, so remote deliveries are queued to prevent two rapid taps from
 // applying against the same stale document snapshot.
 export function handleWorkoutAction(

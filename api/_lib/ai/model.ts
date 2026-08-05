@@ -1,44 +1,113 @@
 import { createGoogle } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createProviderRegistry, defaultSettingsMiddleware, wrapLanguageModel } from 'ai';
+import { defaultSettingsMiddleware, wrapLanguageModel } from 'ai';
 
 /**
  * Server-side model resolution. Deliberately reads NON-prefixed env vars: an
  * `EXPO_PUBLIC_` name would be inlined into the client bundle by Metro, which
  * is the leak this whole proxy exists to close.
  *
- * Unlike the old client version this does not pass `expo/fetch` — that
- * workaround existed because React Native's global fetch truncated Google
- * response bodies. Node's fetch does not.
+ * Provider, model, and reasoning effort are global server configuration —
+ * clients choose an *operation* (shared/ai-contract.ts), never a provider,
+ * model, or effort. No silent defaults: AI_PROVIDER and AI_MODEL are
+ * required; an unset or unsupported value fails at cold start with an
+ * actionable message, not a guessed fallback at request time.
+ *
+ * Only the selected provider's SDK client is constructed, so only its API
+ * key is read/required — the unselected provider's key is never touched.
  */
+
 type AIProviderId = 'google' | 'openai';
 
-const AI_PROVIDER = (process.env.AI_PROVIDER ?? 'google') as AIProviderId;
-const AI_MODEL = process.env.AI_MODEL ?? 'gemini-3.5-flash';
+/**
+ * Portable reasoning-effort vocabulary. `provider-default` means "don't set
+ * a reasoning option at all" (whatever the model does un-configured).
+ * `max` is OpenAI-only (the OpenAI SDK's own type supports it; Google's
+ * `thinkingLevel` tops out at `high`) — requesting it against `google` is a
+ * config error, not a silent clamp to `high`.
+ */
+type ReasoningEffort = 'provider-default' | 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+const REASONING_EFFORTS: ReasoningEffort[] = [
+  'provider-default',
+  'none',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+];
+const SUPPORTED_REASONING_BY_PROVIDER: Record<AIProviderId, ReasoningEffort[]> = {
+  openai: ['provider-default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+  // @ai-sdk/google's thinkingConfig.thinkingLevel only accepts these four;
+  // 'none' maps to thinkingConfig.thinkingBudget: 0 instead (see below).
+  google: ['provider-default', 'none', 'minimal', 'low', 'medium', 'high'],
+};
 
-// ponytail: hardcoded high effort, not an env var — nobody asked to tune this per-request yet.
-const OPENAI_REASONING_EFFORT = 'high';
+function required(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`Missing required env var: ${name}. Set it in the Vercel project environment.`);
+  return value;
+}
 
-const providerRegistry = createProviderRegistry({
-  google: createGoogle({ apiKey: process.env.GEMINI_API_KEY ?? '' }),
-  openai: createOpenAI({ apiKey: process.env.OPENAI_API_KEY ?? '' }),
-});
+const AI_PROVIDER_RAW = required('AI_PROVIDER');
+if (AI_PROVIDER_RAW !== 'google' && AI_PROVIDER_RAW !== 'openai') {
+  throw new Error(`Unsupported AI_PROVIDER "${AI_PROVIDER_RAW}". Must be "google" or "openai".`);
+}
+const AI_PROVIDER: AIProviderId = AI_PROVIDER_RAW;
 
-export function getAIModel() {
-  if (AI_PROVIDER !== 'google' && AI_PROVIDER !== 'openai') {
-    throw new Error(`Unsupported AI provider: ${AI_PROVIDER}`);
-  }
+const AI_MODEL = required('AI_MODEL');
 
-  const model = providerRegistry.languageModel(`${AI_PROVIDER}:${AI_MODEL}`);
+const AI_REASONING_EFFORT_RAW = process.env.AI_REASONING_EFFORT ?? 'provider-default';
+if (!REASONING_EFFORTS.includes(AI_REASONING_EFFORT_RAW as ReasoningEffort)) {
+  throw new Error(
+    `Unsupported AI_REASONING_EFFORT "${AI_REASONING_EFFORT_RAW}". Must be one of: ${REASONING_EFFORTS.join(', ')}.`
+  );
+}
+const AI_REASONING_EFFORT = AI_REASONING_EFFORT_RAW as ReasoningEffort;
+
+if (!SUPPORTED_REASONING_BY_PROVIDER[AI_PROVIDER].includes(AI_REASONING_EFFORT)) {
+  throw new Error(
+    `AI_REASONING_EFFORT "${AI_REASONING_EFFORT}" is not supported by AI_PROVIDER "${AI_PROVIDER}". ` +
+      `Supported for "${AI_PROVIDER}": ${SUPPORTED_REASONING_BY_PROVIDER[AI_PROVIDER].join(', ')}.`
+  );
+}
+
+const baseModel =
+  AI_PROVIDER === 'google'
+    ? createGoogle({ apiKey: required('GEMINI_API_KEY') })(AI_MODEL)
+    : createOpenAI({ apiKey: required('OPENAI_API_KEY') })(AI_MODEL);
+
+function applyReasoning() {
+  if (AI_REASONING_EFFORT === 'provider-default') return baseModel;
 
   if (AI_PROVIDER === 'openai') {
     return wrapLanguageModel({
-      model,
+      model: baseModel,
       middleware: defaultSettingsMiddleware({
-        settings: { providerOptions: { openai: { reasoningEffort: OPENAI_REASONING_EFFORT } } },
+        settings: { providerOptions: { openai: { reasoningEffort: AI_REASONING_EFFORT } } },
       }),
     });
   }
 
-  return model;
+  // google: 'none' disables thinking via an explicit zero budget; the other
+  // supported values map 1:1 onto thinkingLevel.
+  const thinkingConfig =
+    AI_REASONING_EFFORT === 'none'
+      ? { thinkingBudget: 0 }
+      : { thinkingLevel: AI_REASONING_EFFORT as 'minimal' | 'low' | 'medium' | 'high' };
+
+  return wrapLanguageModel({
+    model: baseModel,
+    middleware: defaultSettingsMiddleware({ settings: { providerOptions: { google: { thinkingConfig } } } }),
+  });
+}
+
+const resolvedModel = applyReasoning();
+
+/** For structured logging only (api/ai.ts) -- never the key, just which provider/model/effort served the request. */
+export const AI_MODEL_INFO = { provider: AI_PROVIDER, model: AI_MODEL, reasoningEffort: AI_REASONING_EFFORT };
+
+export function getAIModel() {
+  return resolvedModel;
 }

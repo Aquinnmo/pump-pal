@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '../shared/ai-contract.js';
 import { requireUid } from './_lib/auth.js';
+import { AI_MODEL_INFO } from './_lib/ai/model.js';
 import { generateDailyName, runPrompt } from './_lib/ai/prompts.js';
 import { getCachedDailyName, setCachedDailyName } from './_lib/store/daily-name.js';
 import { consumeQuota, refundQuota } from './_lib/store/quota.js';
@@ -22,57 +24,85 @@ import { consumeQuota, refundQuota } from './_lib/store/quota.js';
  * the native app is not a browser, so no preflight ever occurs.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  let claimedFor: string | null = null;
+  const requestId = randomUUID();
+  const start = Date.now();
+  let status = 500;
+  let op: string | undefined;
 
   try {
-    const uid = await requireUid(req.headers.authorization);
-
-    const { op, input } = (req.body ?? {}) as { op?: unknown; input?: unknown };
-    if (!isAIOp(op)) {
-      return res.status(400).json({ error: 'Unknown operation' });
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      status = 405;
+      return void res.status(status).json({ error: 'Method not allowed' });
     }
 
-    const parsed = AI_OPS[op].input.safeParse(input ?? {});
-    if (!parsed.success) {
-      return res.status(400).json({ error: `Invalid input for op "${op}"` });
+    let claimedFor: string | null = null;
+
+    try {
+      const uid = await requireUid(req.headers.authorization);
+
+      const body = (req.body ?? {}) as { op?: unknown; input?: unknown };
+      if (!isAIOp(body.op)) {
+        status = 400;
+        return void res.status(status).json({ error: 'Unknown operation' });
+      }
+      op = body.op;
+
+      const parsed = AI_OPS[body.op].input.safeParse(body.input ?? {});
+      if (!parsed.success) {
+        status = 400;
+        return void res.status(status).json({ error: `Invalid input for op "${body.op}"` });
+      }
+
+      if (body.op === 'daily-name') {
+        const cached = await getCachedDailyName();
+        const name = cached ?? (await setCachedDailyName(await generateDailyName()));
+        status = 200;
+        return void res.status(status).json({ data: { name }, remaining: null });
+      }
+
+      // Claimed before generating, not after, so parallel requests can't all slip
+      // through the cap. Refunded below if the generation itself fails.
+      const remaining = await consumeQuota(uid);
+      claimedFor = uid;
+
+      // `op` and `parsed.data` are correlated at runtime by the `isAIOp` guard
+      // and the matching `safeParse` above, but TS can't see that correlation
+      // across the two separate expressions — hence the cast.
+      type MeteredOp = Exclude<AIOp, 'daily-name'>;
+      const data = await runPrompt(body.op as MeteredOp, parsed.data as AIOpInput<MeteredOp>);
+      claimedFor = null;
+
+      status = 200;
+      return void res.status(status).json({ data, remaining });
+    } catch (e) {
+      if (claimedFor) await refundQuota(claimedFor);
+
+      status = (e as { status?: number }).status ?? 500;
+
+      // Provider errors can carry response bodies with request echoes and key
+      // hints. Log them server-side; return only a generic message to the client.
+      if (status >= 500) {
+        console.error(`[${requestId}] POST /api/ai failed:`, e);
+        return void res.status(status).json({ error: 'AI request failed. Please try again.' });
+      }
+
+      return void res.status(status).json({ error: (e as Error).message });
     }
-
-    if (op === 'daily-name') {
-      const cached = await getCachedDailyName();
-      const name = cached ?? (await setCachedDailyName(await generateDailyName()));
-      return res.status(200).json({ data: { name }, remaining: null });
-    }
-
-    // Claimed before generating, not after, so parallel requests can't all slip
-    // through the cap. Refunded below if the generation itself fails.
-    const remaining = await consumeQuota(uid);
-    claimedFor = uid;
-
-    // `op` and `parsed.data` are correlated at runtime by the `isAIOp` guard
-    // and the matching `safeParse` above, but TS can't see that correlation
-    // across the two separate expressions — hence the cast.
-    type MeteredOp = Exclude<AIOp, 'daily-name'>;
-    const data = await runPrompt(op as MeteredOp, parsed.data as AIOpInput<MeteredOp>);
-    claimedFor = null;
-
-    return res.status(200).json({ data, remaining });
-  } catch (e) {
-    if (claimedFor) await refundQuota(claimedFor);
-
-    const status = (e as { status?: number }).status ?? 500;
-
-    // Provider errors can carry response bodies with request echoes and key
-    // hints. Log them server-side; return only a generic message to the client.
-    if (status >= 500) {
-      console.error('POST /api/ai failed:', e);
-      return res.status(status).json({ error: 'AI request failed. Please try again.' });
-    }
-
-    return res.status(status).json({ error: (e as Error).message });
+  } finally {
+    // Structured, redacted: never log the request body, the generated
+    // output, or provider keys -- just enough to correlate a request with
+    // provider spend and latency.
+    console.log(
+      JSON.stringify({
+        requestId,
+        route: '/api/ai',
+        op,
+        status,
+        durationMs: Date.now() - start,
+        provider: AI_MODEL_INFO.provider,
+        model: AI_MODEL_INFO.model,
+      })
+    );
   }
 }

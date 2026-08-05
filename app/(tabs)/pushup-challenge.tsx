@@ -1,4 +1,4 @@
-import { db } from '@/config/firebase';
+import { pushupRepository } from '@/db/pushup-repository';
 import { useAuth } from '@/context/auth-context';
 import { getDailyName } from '@/utils/daily-name';
 import { syncStreakReminders } from '@/utils/streak-notification';
@@ -6,7 +6,6 @@ import { dayNumberOn } from '@/utils/streak-schedule';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from 'expo-router';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -431,18 +430,12 @@ export default function PushupChallengeScreen() {
     }).catch((e) => console.error('Failed to sync streak reminders', e));
   }, [data, loading, loaded]);
 
-  const docRef = user ? doc(db, 'users', user.uid, 'pushup-challenge', 'data') : null;
-
   const load = useCallback(async () => {
-    if (!docRef) return;
+    if (!user) return;
     setLoading(true);
     try {
-      const [snap, name] = await Promise.all([getDoc(docRef), getDailyName()]);
-      if (snap.exists()) {
-        setData(snap.data() as ChallengeData);
-      } else {
-        setData(null);
-      }
+      const [stored, name] = await Promise.all([pushupRepository.get(user.uid), getDailyName()]);
+      setData((stored?.data as ChallengeData | undefined) ?? null);
       setDailyName(name);
       setLoaded(true);
     } catch (e) {
@@ -461,16 +454,16 @@ export default function PushupChallengeScreen() {
   );
 
   const startChallenge = async () => {
-    if (!docRef) return;
+    if (!user) return;
     const today = toDateKey(new Date());
     const prev = data?.longestStreak ?? 0;
     const newData: ChallengeData = { startDate: today, days: [], longestStreak: prev };
-    await setDoc(docRef, newData);
+    await pushupRepository.upsert(user.uid, newData);
     setData(newData);
   };
 
   const completeTodayPushups = async () => {
-    if (!docRef || !data) return;
+    if (!user || !data) return;
     setSaving(true);
     try {
       const today = toDateKey(new Date());
@@ -526,7 +519,7 @@ export default function PushupChallengeScreen() {
             }),
           ]).start(() => resolve());
         }),
-        setDoc(docRef, updated).catch((e) => console.error('Failed to save pushup completion', e)),
+        pushupRepository.upsert(user.uid, updated).catch((e) => console.error('Failed to save pushup completion', e)),
       ]);
 
       setData(updated);
@@ -537,7 +530,7 @@ export default function PushupChallengeScreen() {
   };
 
   const undoTodayPushups = async () => {
-    if (!docRef || !data) return;
+    if (!user || !data) return;
     setSaving(true);
     try {
       const today = toDateKey(new Date());
@@ -548,7 +541,7 @@ export default function PushupChallengeScreen() {
       };
 
       // Save first, then update the swipe bar/state so the UI reflects the undone state.
-      await setDoc(docRef, updated).catch((e) => console.error('Failed to undo pushup completion', e));
+      await pushupRepository.upsert(user.uid, updated).catch((e) => console.error('Failed to undo pushup completion', e));
       setData(updated);
 
       // Wait a frame so the swipe bar update is applied in the UI, then run the fade animation.
@@ -574,11 +567,11 @@ export default function PushupChallengeScreen() {
   };
 
   const resetChallenge = async () => {
-    if (!docRef) return;
+    if (!user) return;
     const today = toDateKey(new Date());
     const prev = data?.longestStreak ?? 0;
     const newData: ChallengeData = { startDate: today, days: [], longestStreak: prev };
-    await setDoc(docRef, newData);
+    await pushupRepository.upsert(user.uid, newData);
     setData(newData);
   };
 

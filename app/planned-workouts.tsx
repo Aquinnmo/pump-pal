@@ -1,4 +1,5 @@
-import { db } from '@/config/firebase';
+import { profileRepository } from '@/db/profile-repository';
+import { workoutRepository } from '@/db/workout-repository';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
@@ -10,18 +11,6 @@ import { exerciseLabel, summarizePerformedExerciseSetGroups } from '@/utils/work
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-  writeBatch,
-} from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,27 +35,13 @@ export default function PlannedWorkoutsScreen() {
     if (!user) return;
     setLoading(true);
     try {
-      const [snapshot, userSnap, historySnap] = await Promise.all([
-        getDocs(
-          query(
-            collection(db, 'workouts'),
-            where('userId', '==', user.uid),
-            where('status', '==', 'planned'),
-            orderBy('queueOrder')
-          )
-        ),
-        getDoc(doc(db, 'users', user.uid)),
-        getDocs(
-          query(
-            collection(db, 'workouts'),
-            where('userId', '==', user.uid),
-            orderBy('date', 'desc'),
-            limit(30)
-          )
-        ),
+      const [plannedRecords, profile, allRecords] = await Promise.all([
+        workoutRepository.getByStatus(user.uid, 'planned'),
+        profileRepository.get(user.uid),
+        workoutRepository.getAll(user.uid),
       ]);
 
-      let loadedPlans = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      let loadedPlans = plannedRecords.map((record) => record.data).sort((a, b) => (a.queueOrder ?? Infinity) - (b.queueOrder ?? Infinity));
       const cachedOrderRaw = await AsyncStorage.getItem(queueOrderCacheKey(user.uid));
       if (cachedOrderRaw) {
         try {
@@ -75,11 +50,11 @@ export default function PlannedWorkoutsScreen() {
           const cached = cachedIds.map((id) => byId.get(id)).filter((p): p is Workout => !!p);
           const uncached = loadedPlans.filter((p) => !cachedIds.includes(p.id));
           loadedPlans = [...cached, ...uncached];
-        } catch { /* fall back to Firestore queueOrder */ }
+        } catch { /* fall back to stored queue order */ }
       }
-      const history = historySnap.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
-      const splitType = userSnap.data()?.workoutSplit?.type;
-      const customSplitDesc: string = userSnap.data()?.workoutSplit?.custom ?? '';
+      const history = allRecords.map((record) => record.data).filter((workout) => workout.status === 'completed').slice(0, 30);
+      const splitType = profile?.data.workoutSplit?.type;
+      const customSplitDesc: string = profile?.data.workoutSplit?.custom ?? '';
       let loadedSplitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
 
       if (splitType === 'Other' && customSplitDesc) {
@@ -113,13 +88,7 @@ export default function PlannedWorkoutsScreen() {
     const current = plansRef.current;
     if (current.length === 0) return;
     try {
-      const batch = writeBatch(db);
-      current.forEach((plan, index) => {
-        if (plan.queueOrder !== index) {
-          batch.update(doc(db, 'workouts', plan.id), { queueOrder: index });
-        }
-      });
-      await batch.commit();
+      await workoutRepository.reorderQueue(user.uid, current.map((plan) => plan.id));
       await AsyncStorage.removeItem(queueOrderCacheKey(user.uid));
     } catch (err) {
       console.error(err);
@@ -156,7 +125,8 @@ export default function PlannedWorkoutsScreen() {
 
   const handleDelete = async (planId: string) => {
     try {
-      await deleteDoc(doc(db, 'workouts', planId));
+      if (!user) return;
+      await workoutRepository.softDelete(user.uid, planId);
       setPlans((prev) => prev.filter((p) => p.id !== planId));
     } catch (err: any) {
       showAlert('Error', 'Could not delete plan. ' + err.message);

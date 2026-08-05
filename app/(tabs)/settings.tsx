@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/auth-context';
+import { useSyncStatus } from '@/db/use-sync-status';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -7,6 +8,7 @@ import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'r
 
 export default function SettingsScreen() {
   const { user } = useAuth();
+  const syncStatus = useSyncStatus();
 
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(true);
@@ -76,6 +78,15 @@ export default function SettingsScreen() {
       <TouchableOpacity style={styles.navRow} onPress={() => router.push('/settings-app')} activeOpacity={0.8}>
         <Ionicons name="cog-outline" size={20} color="#fff" style={styles.rowIcon} />
         <Text style={styles.navRowText}>App</Text>
+        <Ionicons name="chevron-forward" size={20} color="#888" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.navRow} onPress={() => router.push('/sync-status' as any)} activeOpacity={0.8}>
+        <Ionicons name="sync-outline" size={20} color="#fff" style={styles.rowIcon} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.navRowText}>Sync</Text>
+          <Text style={styles.syncDetail}>{syncStatus.state === 'conflict' ? 'Needs attention' : syncStatus.state === 'offline' ? 'Offline — changes saved locally' : syncStatus.state === 'syncing' ? 'Syncing' : 'Up to date'}</Text>
+        </View>
         <Ionicons name="chevron-forward" size={20} color="#888" />
       </TouchableOpacity>
 
@@ -182,10 +193,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   navRowText: {
-    flex: 1,
     fontSize: 15,
     color: '#fff',
     fontWeight: '600',
+  },
+  syncDetail: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 4,
   },
   attributionCard: {
     marginTop: 16,

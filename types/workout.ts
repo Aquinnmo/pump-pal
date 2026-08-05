@@ -1,5 +1,5 @@
-import { Timestamp } from 'firebase/firestore';
 import { MuscleId } from '@/constants/muscles';
+import { FlexibleTimestamp } from '@/types/timestamp';
 
 export type TrackingMode = 'reps' | 'duration' | 'distance' | 'calories';
 
@@ -44,16 +44,18 @@ export type Workout = {
   id: string;
   userId: string;
   name: string;
-  date: { seconds: number; nanoseconds: number } | Date | Timestamp;
+  // Planned and in-progress workouts intentionally have no date until they
+  // are finished; the canonical schema documents this as an omitted field.
+  date?: FlexibleTimestamp;
   notes?: string;
   performedExercises: PerformedExercise[];
   schemaVersion: 2;
   source?: MigrationSource;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: FlexibleTimestamp;
+  updatedAt?: FlexibleTimestamp;
   status?: WorkoutStatus;
   queueOrder?: number;
-  startedAt?: Timestamp;
+  startedAt?: FlexibleTimestamp;
   // Ids of the user's injuries that were ongoing when this workout was logged
   // (auto-attached on completion). Analytics/AI join these back to users/{uid}.injuries.
   injuries?: string[];
@@ -91,15 +93,15 @@ export type CatalogExercise = {
   schemaVersion: 2;
   status?: 'approved' | 'pending_review';
   createdBy?: string;
-  createdAt?: Timestamp;
-  updatedAt?: Timestamp;
+  createdAt?: FlexibleTimestamp;
+  updatedAt?: FlexibleTimestamp;
 };
 
 export type ExerciseCatalogMeta = {
   version: number;
   exerciseCount: number;
   schemaVersion: 2;
-  updatedAt?: Timestamp;
+  updatedAt?: FlexibleTimestamp;
 };
 
 export type ExerciseSearchOption = {

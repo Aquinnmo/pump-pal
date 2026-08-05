@@ -56,7 +56,7 @@ less insight; it is never acceptable to show a wrong one.
 | Cascade an edit forward through following sets, stopping at the first deliberately different one so pyramids and drop sets survive (`hooks/use-draft-exercises.ts:21`) | ingestion |
 | Exercise picker offers recents-for-this-day before it offers search (`components/ui/exercise-picker.tsx:319`) | ingestion |
 | Per-set completion checkbox; unchecked sets are dropped at finish (`app/active-workout.tsx:452-456`) | fidelity |
-| 800ms debounced autosave to Firestore (`app/active-workout.tsx:381-431`) | never lose data |
+| 800ms debounced autosave to the platform repository (SQLite + transactional outbox on native; API on web) (`app/active-workout.tsx`) | never lose data |
 | Live Android notification + Pixel Live Update showing current exercise and running totals (`utils/workout-notification.android.ts`, `modules/live-update-notification/`) | log without opening the app |
 | Plate calculator solves minimum plates per side (`utils/plate-math.ts`) | removes gym math |
 | Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`utils/muscle-analysis.ts:51`) | fidelity |

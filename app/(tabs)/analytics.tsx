@@ -2,7 +2,7 @@ import { DevelopmentProgressSummary } from "@/components/development-progress-su
 import { MuscleInsightCards } from "@/components/muscle-insight-cards";
 import { MuscleLoadSummary } from "@/components/muscle-load-summary";
 import { Dropdown } from "@/components/ui/dropdown";
-import { db } from "@/config/firebase";
+import { workoutRepository } from "@/db/workout-repository";
 import { useAuth } from "@/context/auth-context";
 import { Workout } from "@/types/workout";
 import {
@@ -13,7 +13,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -94,17 +93,7 @@ export default function AnalyticsScreen() {
     setLoading(true);
     setFetchError(false);
     try {
-      const workoutsQuery = query(
-        collection(db, "workouts"),
-        where("userId", "==", user.uid),
-        orderBy("date", "asc"),
-      );
-      const snapshot = await getDocs(workoutsQuery);
-      setWorkouts(
-        snapshot.docs.map(
-          (document) => ({ id: document.id, ...document.data() }) as Workout,
-        ),
-      );
+      setWorkouts((await workoutRepository.getAll(user.uid)).map((record) => record.data));
     } catch (error) {
       console.error(error);
       setFetchError(true);

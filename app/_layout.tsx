@@ -1,4 +1,4 @@
-import { db } from '@/config/firebase';
+import { profileRepository } from '@/db/profile-repository';
 import { isSplitOption } from '@/constants/split-options';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { subscribeLiveUpdateNotificationActions } from '@/utils/live-update-notification-actions';
@@ -7,7 +7,6 @@ import { subscribeWearActions } from '@/utils/wear-sync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
@@ -44,8 +43,8 @@ function RootLayoutNav() {
 
       setCheckingSplit(true);
       try {
-        const snapshot = await getDoc(doc(db, 'users', user.uid));
-        const splitType = snapshot.data()?.workoutSplit?.type;
+        const profile = await profileRepository.get(user.uid);
+        const splitType = profile?.data.workoutSplit?.type;
         setHasSplit(isSplitOption(splitType));
       } catch {
         setHasSplit(false);
@@ -107,6 +106,7 @@ function RootLayoutNav() {
         <Stack.Screen name="settings-injuries" options={{ headerShown: false }} />
         <Stack.Screen name="settings-account" options={{ headerShown: false }} />
         <Stack.Screen name="settings-app" options={{ headerShown: false }} />
+        <Stack.Screen name="sync-status" options={{ headerShown: true }} />
         <Stack.Screen name="muscle-load" options={{ title: 'Muscle load' }} />
       </Stack>
       <StatusBar style="light" />

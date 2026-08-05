@@ -88,25 +88,54 @@ async function getAccessToken(): Promise<string> {
 
 // ------------------------------------------------------------- value codec
 //
-// Small typed-value codec for the only two shapes this code touches: aiUsage
-// (a map of a string + a number) and name (a string). NOTE integerValue is a
-// STRING in the REST wire format.
+// Typed-value codec covering every shape the domain routes need: strings,
+// integers/doubles, booleans, null, nested maps, arrays, and timestamps.
+// NOTE integerValue is a STRING in the REST wire format; timestampValue is
+// an RFC3339 string (which is exactly the ISO-8601 UTC shape the wire
+// contract already uses, so decode passes it through unchanged as a string —
+// callers that need it typed as a Date-ish value convert at the route).
 
-type FirestoreValue =
+export type FirestoreValue =
+  | { nullValue: null }
   | { stringValue: string }
   | { integerValue: string }
+  | { doubleValue: number }
+  | { booleanValue: boolean }
+  | { timestampValue: string }
+  | { arrayValue: { values?: FirestoreValue[] } }
   | { mapValue: { fields?: Record<string, FirestoreValue> } };
 
+/** Marks a JS Date/ISO-string as a Firestore `timestampValue` write instead of a plain string. */
+export class FirestoreTimestamp {
+  constructor(public iso: string) {}
+}
+export function ts(iso: string): FirestoreTimestamp {
+  return new FirestoreTimestamp(iso);
+}
+
 function encodeValue(value: unknown): FirestoreValue {
+  if (value === null || value === undefined) return { nullValue: null };
+  if (value instanceof FirestoreTimestamp) return { timestampValue: value.iso };
   if (typeof value === 'string') return { stringValue: value };
-  if (typeof value === 'number') return { integerValue: String(Math.trunc(value)) };
-  if (value && typeof value === 'object') return { mapValue: { fields: encodeFields(value as Record<string, unknown>) } };
+  if (typeof value === 'boolean') return { booleanValue: value };
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+  }
+  if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeValue) } };
+  if (typeof value === 'object') return { mapValue: { fields: encodeFields(value as Record<string, unknown>) } };
   throw new Error(`Unsupported Firestore value: ${JSON.stringify(value)}`);
 }
 
-function decodeValue(value: FirestoreValue): string | number | Record<string, unknown> {
+export type DecodedValue = string | number | boolean | null | DecodedValue[] | { [k: string]: DecodedValue };
+
+function decodeValue(value: FirestoreValue): DecodedValue {
+  if ('nullValue' in value) return null;
   if ('stringValue' in value) return value.stringValue;
+  if ('timestampValue' in value) return value.timestampValue;
   if ('integerValue' in value) return Number(value.integerValue);
+  if ('doubleValue' in value) return value.doubleValue;
+  if ('booleanValue' in value) return value.booleanValue;
+  if ('arrayValue' in value) return (value.arrayValue.values ?? []).map(decodeValue);
   if ('mapValue' in value) return decodeFields(value.mapValue.fields ?? {});
   throw new Error(`Unsupported Firestore value: ${JSON.stringify(value)}`);
 }
@@ -115,17 +144,22 @@ export function encodeFields(obj: Record<string, unknown>): Record<string, Fires
   return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, encodeValue(v)]));
 }
 
-export function decodeFields(
-  fields: Record<string, FirestoreValue>
-): Record<string, string | number | Record<string, unknown>> {
+export function decodeFields(fields: Record<string, FirestoreValue>): Record<string, DecodedValue> {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, decodeValue(v)]));
 }
 
 // -------------------------------------------------------------- get / commit
 
 export interface FirestoreDoc {
-  fields: Record<string, string | number | Record<string, unknown>>;
+  /** Doc path relative to the documents root, e.g. `workouts/abc123`. */
+  path: string;
+  fields: Record<string, DecodedValue>;
   updateTime: string;
+}
+
+function docPath(name: string): string {
+  // name is the fully qualified `projects/.../documents/{path}`; keep only {path}.
+  return name.split('/documents/')[1] ?? name;
 }
 
 /** Reads a document by path (e.g. `users/{uid}`). Returns `undefined` for a missing doc rather than throwing. */
@@ -142,25 +176,32 @@ export async function getDoc(path: string, fieldPaths?: string[]): Promise<Fires
   if (res.status === 404) return undefined;
   if (!res.ok) throw new Error(`Firestore getDoc(${path}) failed: ${res.status} ${await res.text()}`);
 
-  const body = (await res.json()) as { fields?: Record<string, FirestoreValue>; updateTime: string };
-  return { fields: decodeFields(body.fields ?? {}), updateTime: body.updateTime };
+  const body = (await res.json()) as { name: string; fields?: Record<string, FirestoreValue>; updateTime: string };
+  return { path: docPath(body.name), fields: decodeFields(body.fields ?? {}), updateTime: body.updateTime };
 }
 
 export interface FirestoreWrite {
   path: string;
-  fields: Record<string, unknown>;
+  /** Omit (or set `delete: true`) to delete instead of writing fields. */
+  fields?: Record<string, unknown>;
   /**
-   * FOOTGUN: every write must carry this. Without it `:commit` REPLACES the
-   * whole document instead of merging, wiping every sibling field on
-   * `users/{uid}`.
+   * FOOTGUN: every non-delete write must carry this. Without it `:commit`
+   * REPLACES the whole document instead of merging, wiping every sibling
+   * field on the doc.
    */
-  updateMask: string[];
+  updateMask?: string[];
+  delete?: boolean;
   /** Optimistic-concurrency precondition: an updateTime from a prior getDoc, or `{ exists: false }` for a first-writer-wins create. */
   currentDocument?: { updateTime?: string } | { exists: boolean };
 }
 
-/** Throws a 409-tagged error when a `currentDocument` precondition doesn't hold. */
-export async function commit(writes: FirestoreWrite[]): Promise<void> {
+export interface CommitResult {
+  /** Absent for delete writes. */
+  updateTime?: string;
+}
+
+/** Throws a 409-tagged error when any write's `currentDocument` precondition doesn't hold. All writes in one call commit atomically. */
+export async function commit(writes: FirestoreWrite[]): Promise<CommitResult[]> {
   const token = await getAccessToken();
 
   const res = await fetch(`${DOCUMENTS_URL}:commit`, {
@@ -168,11 +209,15 @@ export async function commit(writes: FirestoreWrite[]): Promise<void> {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       writes: writes.map((w) => ({
-        update: {
-          name: `projects/${PROJECT_ID}/databases/(default)/documents/${w.path}`,
-          fields: encodeFields(w.fields),
-        },
-        updateMask: { fieldPaths: w.updateMask },
+        ...(w.delete
+          ? { delete: `projects/${PROJECT_ID}/databases/(default)/documents/${w.path}` }
+          : {
+              update: {
+                name: `projects/${PROJECT_ID}/databases/(default)/documents/${w.path}`,
+                fields: encodeFields(w.fields ?? {}),
+              },
+              updateMask: { fieldPaths: w.updateMask ?? [] },
+            }),
         ...(w.currentDocument ? { currentDocument: w.currentDocument } : {}),
       })),
     }),
@@ -184,4 +229,82 @@ export async function commit(writes: FirestoreWrite[]): Promise<void> {
   if (!res.ok) {
     throw new Error(`Firestore commit failed: ${res.status} ${await res.text()}`);
   }
+
+  const body = (await res.json()) as { writeResults?: { updateTime?: string }[] };
+  return writes.map((_, i) => ({ updateTime: body.writeResults?.[i]?.updateTime }));
+}
+
+/** Convenience wrapper for a single-document delete. 404 (already gone) is treated as success. */
+export async function deleteDoc(path: string): Promise<void> {
+  const token = await getAccessToken();
+  const res = await fetch(`${DOCUMENTS_URL}/${path}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Firestore deleteDoc(${path}) failed: ${res.status} ${await res.text()}`);
+  }
+}
+
+// ------------------------------------------------------------------- query
+
+export type QueryFilter = { field: string; op: 'EQUAL' | 'GREATER_THAN_OR_EQUAL' | 'LESS_THAN_OR_EQUAL'; value: unknown };
+
+export interface RunQueryOptions {
+  collectionId: string;
+  /** Query root, e.g. `''` for a top-level collection or `users/{uid}` for a subcollection. Defaults to the documents root. */
+  parentPath?: string;
+  where?: QueryFilter[];
+  orderBy?: { field: string; direction?: 'ASCENDING' | 'DESCENDING' }[];
+  limit?: number;
+  /** Cursor: field values matching `orderBy`, exclusive (start AFTER this row). */
+  startAfter?: unknown[];
+}
+
+/**
+ * Runs a structured query and returns matching documents (empty array, not
+ * undefined, when nothing matches). Bounded by `limit` — callers must pass
+ * one; there is no unbounded "get everything" query on this adapter.
+ */
+export async function runQuery(opts: RunQueryOptions): Promise<FirestoreDoc[]> {
+  const token = await getAccessToken();
+
+  const structuredQuery: Record<string, unknown> = {
+    from: [{ collectionId: opts.collectionId }],
+  };
+  if (opts.where?.length) {
+    const filters = opts.where.map((f) => ({
+      fieldFilter: { field: { fieldPath: f.field }, op: f.op, value: encodeValue(f.value) },
+    }));
+    structuredQuery.where =
+      filters.length === 1 ? filters[0] : { compositeFilter: { op: 'AND', filters } };
+  }
+  if (opts.orderBy?.length) {
+    structuredQuery.orderBy = opts.orderBy.map((o) => ({
+      field: { fieldPath: o.field },
+      direction: o.direction ?? 'ASCENDING',
+    }));
+  }
+  if (opts.limit) structuredQuery.limit = opts.limit;
+  if (opts.startAfter?.length) {
+    structuredQuery.startAt = { values: opts.startAfter.map(encodeValue), before: false };
+  }
+
+  const parent = opts.parentPath ? `${DOCUMENTS_URL}/${opts.parentPath}` : DOCUMENTS_URL;
+  const res = await fetch(`${parent}:runQuery`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery }),
+  });
+
+  if (!res.ok) throw new Error(`Firestore runQuery(${opts.collectionId}) failed: ${res.status} ${await res.text()}`);
+
+  const body = (await res.json()) as { document?: { name: string; fields?: Record<string, FirestoreValue>; updateTime: string } }[];
+  return body
+    .filter((row): row is { document: NonNullable<(typeof body)[number]['document']> } => !!row.document)
+    .map((row) => ({
+      path: docPath(row.document.name),
+      fields: decodeFields(row.document.fields ?? {}),
+      updateTime: row.document.updateTime,
+    }));
 }

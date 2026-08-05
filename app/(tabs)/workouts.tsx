@@ -1,19 +1,10 @@
 import { WorkoutCard } from '@/components/workout-card';
-import { db } from '@/config/firebase';
+import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -43,13 +34,7 @@ export default function WorkoutsScreen() {
     if (!user) return;
     setLoading(true);
     try {
-      const q = query(
-        collection(db, 'workouts'),
-        where('userId', '==', user.uid),
-        orderBy('date', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      const data = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
       setWorkouts(data);
       setPage(0);
     } catch (err) {
@@ -74,7 +59,8 @@ export default function WorkoutsScreen() {
     if (!pendingDeleteId) return;
     setShowDeleteModal(false);
     try {
-      await deleteDoc(doc(db, 'workouts', pendingDeleteId));
+      if (!user) return;
+      await workoutRepository.softDelete(user.uid, pendingDeleteId);
       setWorkouts((prev) => prev.filter((w) => w.id !== pendingDeleteId));
     } catch {
       // silently fail

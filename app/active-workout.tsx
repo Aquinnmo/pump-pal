@@ -3,7 +3,8 @@ import { PlateCalculator } from "@/components/ui/plate-calculator";
 import { Toast } from "@/components/ui/toast";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { FocusView } from "@/components/workout/focus-view";
-import { db } from "@/config/firebase";
+import { profileRepository } from "@/db/profile-repository";
+import { workoutRepository } from "@/db/workout-repository";
 import { isSplitOption } from "@/constants/split-options";
 import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
@@ -12,6 +13,7 @@ import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { TEMPORARY_AI_DAILY_LIMIT } from "@/shared/ai-contract";
 import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { formatAIError } from "@/utils/ai-client";
+import { useAIGenerationAvailable } from "@/utils/use-ai-connectivity";
 import { showAlert } from "@/utils/alert";
 import { createPendingExercise } from "@/utils/create-pending-exercise";
 import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
@@ -50,21 +52,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  deleteField,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -114,6 +101,7 @@ export default function ActiveWorkoutScreen() {
   }>();
   const insets = useSafeAreaInsets();
   const { options: catalogOptions } = useExerciseCatalog();
+  const aiAvailable = useAIGenerationAvailable();
 
   const [workoutId, setWorkoutId] = useState<string | null>(null);
   const [cameFromPlan, setCameFromPlan] = useState(false);
@@ -184,14 +172,13 @@ export default function ActiveWorkoutScreen() {
     (async () => {
       try {
         if (id) {
-          const ref = doc(db, "workouts", id);
-          const snap = await getDoc(ref);
-          if (!snap.exists() || snap.data().userId !== user.uid) {
+          const stored = await workoutRepository.getById(user.uid, id);
+          if (!stored) {
             showAlert("Error", "Could not load workout.");
             router.back();
             return;
           }
-          const data = snap.data() as Workout;
+          const data = stored.data;
           setWorkoutName(data.name || "");
           const hasExercises =
             !!data.performedExercises && data.performedExercises.length > 0;
@@ -209,10 +196,7 @@ export default function ActiveWorkoutScreen() {
           // its presence tells us how "discard" should behave even on resume.
           setCameFromPlan(data.queueOrder !== undefined);
           if (data.status === "planned") {
-            await updateDoc(ref, {
-              status: "in_progress",
-              startedAt: serverTimestamp(),
-            });
+            await workoutRepository.update(user.uid, id, { ...data, status: "in_progress", startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
             setStartedAt(new Date());
           } else {
             setStartedAt(
@@ -222,17 +206,16 @@ export default function ActiveWorkoutScreen() {
           setWorkoutId(id);
         } else {
           const name = suggestion || "";
-          const newDoc = await addDoc(collection(db, "workouts"), {
-            userId: user.uid,
+          const newId = await workoutRepository.create(user.uid, {
             name,
             performedExercises: [],
             status: "in_progress",
-            startedAt: serverTimestamp(),
+            startedAt: new Date().toISOString(),
             schemaVersion: 2,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           });
-          setWorkoutId(newDoc.id);
+          setWorkoutId(newId);
           setWorkoutName(name);
           setCameFromPlan(false);
           setStartedAt(new Date());
@@ -253,8 +236,8 @@ export default function ActiveWorkoutScreen() {
 
     (async () => {
       try {
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        const data = userSnap.data();
+        const profile = await profileRepository.get(user.uid);
+        const data = profile?.data;
         const todayUTC = new Date().toISOString().slice(0, 10);
         const aiUsage = data?.aiUsage as
           | { date: string; count: number }
@@ -294,19 +277,10 @@ export default function ActiveWorkoutScreen() {
           }
         }
 
-        const workoutsSnap = await getDocs(
-          query(
-            collection(db, "workouts"),
-            where("userId", "==", user.uid),
-            orderBy("date", "desc"),
-          ),
-        );
         const merged = [...splitNames];
-        const historyData: Workout[] = [];
-        workoutsSnap.docs.forEach((d) => {
-          const data = d.data();
-          if (data.name && !merged.includes(data.name)) merged.push(data.name);
-          historyData.push({ id: d.id, ...data } as Workout);
+        const historyData = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
+        historyData.forEach((workout) => {
+          if (workout.name && !merged.includes(workout.name)) merged.push(workout.name);
         });
         setWorkoutNameOptions(merged);
         setWorkoutHistory(historyData);
@@ -360,7 +334,7 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleAISuggest = async () => {
-    if (!user || aiUsesLeft <= 0) return;
+    if (!user || aiUsesLeft <= 0 || !aiAvailable) return;
     setAiLoading(true);
     try {
       // The quota is counted and enforced by /api/ai; the client just reflects it.
@@ -407,10 +381,10 @@ export default function ActiveWorkoutScreen() {
       const performedExercises: PerformedExercise[] = exercises
         .filter((ex) => ex.label.trim() !== "")
         .map((ex, order) => buildPerformedExercise(ex, order));
-      updateDoc(doc(db, "workouts", workoutId), {
-        name: effectiveWorkoutName,
-        performedExercises,
-        updatedAt: serverTimestamp(),
+      if (!user) return;
+      workoutRepository.getById(user.uid, workoutId).then((stored) => {
+        if (!stored) return;
+        return workoutRepository.update(user.uid, workoutId, { ...stored.data, name: effectiveWorkoutName, performedExercises, updatedAt: new Date().toISOString() });
       }).catch(() => {
         /* best-effort autosave */
       });
@@ -468,13 +442,17 @@ export default function ActiveWorkoutScreen() {
         }));
 
       const injuries = user ? await getOngoingInjuryIds(user.uid) : [];
-      await updateDoc(doc(db, "workouts", workoutId), {
+      if (!user) throw new Error('You must be signed in to finish a workout.');
+      const stored = await workoutRepository.getById(user.uid, workoutId);
+      if (!stored) throw new Error('Workout no longer exists.');
+      await workoutRepository.update(user.uid, workoutId, {
+        ...stored.data,
         name: effectiveWorkoutName || "Workout",
-        date: Timestamp.fromDate(new Date()),
+        date: new Date().toISOString(),
         performedExercises,
         status: "completed",
         injuries,
-        updatedAt: serverTimestamp(),
+        updatedAt: new Date().toISOString(),
       });
       await dismissWorkoutNotification();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -595,14 +573,19 @@ export default function ActiveWorkoutScreen() {
             ...pe,
             sets: pe.sets.map(({ completed, ...rest }) => rest),
           }));
-        await updateDoc(doc(db, "workouts", workoutId), {
+        if (!user) throw new Error('You must be signed in to discard a workout.');
+        const stored = await workoutRepository.getById(user.uid, workoutId);
+        if (!stored) throw new Error('Workout no longer exists.');
+        const restored = { ...stored.data, status: 'planned' as const, performedExercises, updatedAt: new Date().toISOString() };
+        delete restored.startedAt;
+        await workoutRepository.update(user.uid, workoutId, {
+          ...restored,
           status: "planned",
           performedExercises,
-          startedAt: deleteField(),
-          updatedAt: serverTimestamp(),
         });
       } else {
-        await deleteDoc(doc(db, "workouts", workoutId));
+        if (!user) throw new Error('You must be signed in to discard a workout.');
+        await workoutRepository.softDelete(user.uid, workoutId);
       }
       await dismissWorkoutNotification();
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
@@ -769,11 +752,11 @@ export default function ActiveWorkoutScreen() {
             <TouchableOpacity
               style={[
                 styles.aiSuggestButton,
-                (aiLoading || initializing || aiUsesLeft <= 0) &&
+                (aiLoading || initializing || aiUsesLeft <= 0 || !aiAvailable) &&
                   styles.aiSuggestButtonDisabled,
               ]}
               onPress={handleAISuggest}
-              disabled={aiLoading || initializing || aiUsesLeft <= 0}
+              disabled={aiLoading || initializing || aiUsesLeft <= 0 || !aiAvailable}
               activeOpacity={0.8}
             >
               {aiLoading ? (
@@ -791,7 +774,9 @@ export default function ActiveWorkoutScreen() {
                       aiUsesLeft <= 0 && styles.aiSuggestButtonTextDisabled,
                     ]}
                   >
-                    {aiUsesLeft > 0
+                    {!aiAvailable
+                      ? "AI needs a connection"
+                      : aiUsesLeft > 0
                       ? `Balance Workout with AI (${aiUsesLeft} left)`
                       : "No AI uses left today"}
                   </Text>

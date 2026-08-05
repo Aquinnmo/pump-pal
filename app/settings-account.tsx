@@ -1,10 +1,11 @@
 import { Toast } from '@/components/ui/toast';
-import { auth, db } from '@/config/firebase';
+import { auth } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
+import { getSignOutSafety, purgeLocalAccountData, SignOutSafety, syncBeforeSignOut } from '@/db/account-data';
+import { deleteAccountData } from '@/repositories/remote/account';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { deleteUser, sendPasswordResetEmail } from 'firebase/auth';
-import { collection, deleteDoc, doc, getDocs, query, where } from 'firebase/firestore';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,6 +14,9 @@ export default function SettingsAccountScreen() {
   const { user, logOut } = useAuth();
   const insets = useSafeAreaInsets();
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [signOutSafety, setSignOutSafety] = useState<SignOutSafety | null>(null);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -26,7 +30,17 @@ export default function SettingsAccountScreen() {
     type: 'success',
   });
 
-  const handleSignOut = () => setShowSignOutModal(true);
+  const handleSignOut = async () => {
+    if (!user) return;
+    setSignOutError('');
+    setSignOutSafety(null);
+    setShowSignOutModal(true);
+    try {
+      setSignOutSafety(await getSignOutSafety(user.uid));
+    } catch (error) {
+      setSignOutError('Could not inspect local changes. Stay signed in and try again.');
+    }
+  };
 
   const handleChangePassword = () => {
     setChangePasswordError('');
@@ -59,15 +73,8 @@ export default function SettingsAccountScreen() {
     if (!user || deleteConfirmName !== user.displayName) return;
     setDeletingAccount(true);
     try {
-      const v2Snap = await getDocs(
-        query(collection(db, 'workouts'), where('userId', '==', user.uid))
-      );
-      await Promise.all(v2Snap.docs.map((d) => deleteDoc(d.ref)));
-
-      const workoutsSnap = await getDocs(collection(db, 'users', user.uid, 'workouts'));
-      await Promise.all(workoutsSnap.docs.map((d) => deleteDoc(d.ref)));
-      await deleteDoc(doc(db, 'users', user.uid, 'pushup-challenge', 'data')).catch(() => {});
-      await deleteDoc(doc(db, 'users', user.uid));
+      await deleteAccountData();
+      await purgeLocalAccountData(user.uid);
       await deleteUser(auth.currentUser!);
       setShowDeleteModal(false);
       setDeleteConfirmName('');
@@ -84,10 +91,33 @@ export default function SettingsAccountScreen() {
     }
   };
 
-  const confirmSignOut = async () => {
-    setShowSignOutModal(false);
-    await logOut();
-    router.replace('/(auth)/sign-in');
+  const finishSignOut = async (discard = false) => {
+    if (!user) return;
+    setSigningOut(true);
+    setSignOutError('');
+    try {
+      if (discard) {
+        await purgeLocalAccountData(user.uid);
+      } else {
+        const remaining = await syncBeforeSignOut(user.uid);
+        if (remaining.pending || remaining.conflicts) {
+          setSignOutSafety(remaining);
+          setSignOutError(remaining.conflicts
+            ? 'Sync found a conflict. Choose a copy before signing out, or explicitly discard local data.'
+            : 'Sync did not finish. Your changes are still safe on this device.');
+          return;
+        }
+        await purgeLocalAccountData(user.uid);
+      }
+      setShowSignOutModal(false);
+      await logOut();
+      router.replace('/(auth)/sign-in');
+    } catch (error) {
+      console.error(error);
+      setSignOutError('Could not sync local changes. You are still signed in.');
+    } finally {
+      setSigningOut(false);
+    }
   };
 
   return (
@@ -197,21 +227,37 @@ export default function SettingsAccountScreen() {
       <Modal visible={showSignOutModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Sign Out</Text>
-            <Text style={styles.modalMessage}>Are you sure you want to sign out?</Text>
+            <Text style={styles.modalTitle}>Sign out?</Text>
+            <Text style={styles.modalMessage}>
+              {signOutSafety === null
+                ? 'Checking whether this device has unsynced changes.'
+                : signOutSafety.pending || signOutSafety.conflicts
+                  ? `${signOutSafety.pending} change${signOutSafety.pending === 1 ? '' : 's'} pending and ${signOutSafety.conflicts} conflict${signOutSafety.conflicts === 1 ? '' : 's'} need attention. Sync before signing out, or explicitly discard this device’s local data.`
+                  : 'No unsynced changes remain on this device.'}
+            </Text>
+            {signOutError ? <Text style={styles.modalErrorText}>{signOutError}</Text> : null}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancelButton}
                 onPress={() => setShowSignOutModal(false)}
-                activeOpacity={0.8}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
+                activeOpacity={0.8}
+                disabled={signingOut}>
+                <Text style={styles.modalCancelText}>Stay Signed In</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.modalConfirmButton}
-                onPress={confirmSignOut}
-                activeOpacity={0.8}>
-                <Text style={styles.modalConfirmText}>Sign Out</Text>
-              </TouchableOpacity>
+              {signOutSafety && (signOutSafety.pending || signOutSafety.conflicts) ? (
+                <>
+                  <TouchableOpacity style={styles.modalConfirmButton} onPress={() => finishSignOut(false)} activeOpacity={0.8} disabled={signingOut}>
+                    {signingOut ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.modalConfirmText}>Sync and Sign Out</Text>}
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.modalConfirmButton} onPress={() => finishSignOut(true)} activeOpacity={0.8} disabled={signingOut}>
+                    <Text style={styles.modalConfirmText}>Discard and Sign Out</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <TouchableOpacity style={styles.modalConfirmButton} onPress={() => finishSignOut(false)} activeOpacity={0.8} disabled={signingOut || signOutSafety === null}>
+                  {signingOut ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.modalConfirmText}>Sign Out</Text>}
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
