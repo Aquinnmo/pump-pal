@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { decodeFields, encodeFields } from './rest';
-import { nextUsage, todayUTC } from './quota';
+import { decodeFields, encodeFields } from './rest.js';
+import { nextUsage, todayUTC } from './quota.js';
 
 // Fixed dates so the test never depends on the wall clock.
 const TODAY = '2026-08-03';

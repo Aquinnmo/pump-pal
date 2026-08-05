@@ -1,5 +1,5 @@
-import { TEMPORARY_AI_DAILY_LIMIT } from '../../../shared/ai-contract';
-import { commit, getDoc } from './rest';
+import { TEMPORARY_AI_DAILY_LIMIT } from '../../../shared/ai-contract.js';
+import { commit, getDoc } from './rest.js';
 
 export interface AIUsage {
   date: string;

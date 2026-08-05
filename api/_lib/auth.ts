@@ -1,5 +1,3 @@
-// Pinned to jose 5.x on purpose: v6 is ESM-only, and Vercel compiles these
-// functions to CommonJS, so v6 fails at runtime with ERR_REQUIRE_ESM.
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 /**

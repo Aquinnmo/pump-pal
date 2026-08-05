@@ -1,5 +1,5 @@
-import { commit, getDoc } from './rest';
-import { todayUTC } from './quota';
+import { commit, getDoc } from './rest.js';
+import { todayUTC } from './quota.js';
 
 /**
  * The `random/{utcDate}` cache for the shared daily name — split out of the

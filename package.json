@@ -69,7 +69,7 @@
     "expo-updates": "~29.0.16",
     "expo-web-browser": "~15.0.11",
     "firebase": "^12.9.0",
-    "jose": "^5.10.0",
+    "jose": "^6.2.8",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",

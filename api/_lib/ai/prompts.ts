@@ -1,6 +1,6 @@
 import { generateText, Output } from 'ai';
-import { AI_MAX_RETRIES, AI_OPS, type AIOp, type AIOpInput, type AIOpOutput } from '../../../shared/ai-contract';
-import { getAIModel } from './model';
+import { AI_MAX_RETRIES, AI_OPS, type AIOp, type AIOpInput, type AIOpOutput } from '../../../shared/ai-contract.js';
+import { getAIModel } from './model.js';
 
 /**
  * Server-owned prompt templates, one per operation. Each reads its output

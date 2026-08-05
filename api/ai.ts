@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '../shared/ai-contract';
-import { requireUid } from './_lib/auth';
-import { generateDailyName, runPrompt } from './_lib/ai/prompts';
-import { getCachedDailyName, setCachedDailyName } from './_lib/store/daily-name';
-import { consumeQuota, refundQuota } from './_lib/store/quota';
+import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '../shared/ai-contract.js';
+import { requireUid } from './_lib/auth.js';
+import { generateDailyName, runPrompt } from './_lib/ai/prompts.js';
+import { getCachedDailyName, setCachedDailyName } from './_lib/store/daily-name.js';
+import { consumeQuota, refundQuota } from './_lib/store/quota.js';
 
 /**
  * AI proxy. The provider API keys live only in this function's environment —
