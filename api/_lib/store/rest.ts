@@ -16,8 +16,17 @@ import { importPKCS8, SignJWT } from 'jose';
 
 const PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
 const CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
-// Vercel stores the PEM with literal "\n" sequences; restore real newlines.
-const PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+/**
+ * The PEM survives a round trip through JSON and a dashboard textarea, which
+ * mangles it three ways: literal "\n" instead of newlines, the JSON string's
+ * own surrounding quotes pasted along with the value, and stray whitespace.
+ * `importPKCS8` requires the header at index 0 exactly, so any one of those
+ * fails with a message that names none of them.
+ */
+const PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
+  .trim()
+  .replace(/^["']|["']$/g, '')
+  .trim();
 
 const DOCUMENTS_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
@@ -30,6 +39,19 @@ async function getAccessToken(): Promise<string> {
   if (!PROJECT_ID || !CLIENT_EMAIL || !PRIVATE_KEY) {
     throw new Error(
       'Missing Firebase service-account credentials (FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY)'
+    );
+  }
+
+  if (!PRIVATE_KEY.startsWith('-----BEGIN PRIVATE KEY-----')) {
+    // Never log the key itself. The first 30 chars are the PEM header at worst,
+    // and are the only part that says which of the mangling modes happened.
+    throw new Error(
+      'FIREBASE_PRIVATE_KEY is not a PKCS#8 PEM. It must begin with ' +
+        `"-----BEGIN PRIVATE KEY-----" but begins with ${JSON.stringify(
+          PRIVATE_KEY.slice(0, 30)
+        )}. Paste the private_key value from the service-account JSON without ` +
+        'its surrounding quotes; "BEGIN RSA PRIVATE KEY" means PKCS#1, convert ' +
+        'with: openssl pkcs8 -topk8 -nocrypt -in old.pem'
     );
   }
 
