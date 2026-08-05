@@ -1,11 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { randomUUID } from 'node:crypto';
-import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '../shared/ai-contract.js';
-import { requireUid } from './_lib/auth.js';
-import { AI_MODEL_INFO } from './_lib/ai/model.js';
-import { generateDailyName, runPrompt } from './_lib/ai/prompts.js';
-import { getCachedDailyName, setCachedDailyName } from './_lib/store/daily-name.js';
-import { consumeQuota, refundQuota } from './_lib/store/quota.js';
+import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '../../../shared/ai-contract.js';
+import { requireUid } from '../auth.js';
+import { AI_MODEL_INFO } from '../ai/model.js';
+import { generateDailyName, runPrompt } from '../ai/prompts.js';
+import { getCachedDailyName, setCachedDailyName } from '../store/daily-name.js';
+import { consumeQuota, refundQuota } from '../store/quota.js';
 
 /**
  * AI proxy. The provider API keys live only in this function's environment —
@@ -23,7 +23,7 @@ import { consumeQuota, refundQuota } from './_lib/store/quota.js';
  * No CORS handling: the web build is served from this same Vercel origin, and
  * the native app is not a browser, so no preflight ever occurs.
  */
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function ai(req: VercelRequest, res: VercelResponse) {
   const requestId = randomUUID();
   const start = Date.now();
   let status = 500;

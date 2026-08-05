@@ -1,13 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { putPushupChallengeInput } from '../../shared/api-contract.js';
-import { ApiError, withRoute } from '../_lib/http.js';
-import { getChallenge, putChallenge } from '../_lib/store/pushup-challenge.js';
+import { putPushupChallengeInput } from '../../../shared/api-contract.js';
+import { ApiError, withRoute } from '../http.js';
+import { getChallenge, putChallenge } from '../store/pushup-challenge.js';
 
 /**
  * GET /api/pushup-challenge -- current state (version: null when no active challenge)
  * PUT /api/pushup-challenge -- full desired-state replace, same semantics as the client's setDoc
  */
-export default withRoute(['GET', 'PUT'], async (req: VercelRequest, res: VercelResponse, { uid }) => {
+export const pushupChallenge = withRoute(['GET', 'PUT'], async (req: VercelRequest, res: VercelResponse, { uid }) => {
   if (req.method === 'GET') {
     const challenge = await getChallenge(uid);
     return void res.status(200).json({ challenge });

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { withRoute } from '../_lib/http.js';
-import { deleteAccountData } from '../_lib/store/account.js';
+import { withRoute } from '../http.js';
+import { deleteAccountData } from '../store/account.js';
 
 /**
  * DELETE /api/account/data -- purges every per-user Firestore
@@ -8,7 +8,7 @@ import { deleteAccountData } from '../_lib/store/account.js';
  * calls `deleteUser(auth.currentUser)` itself, only after this returns
  * `partial: false`.
  */
-export default withRoute(['DELETE'], async (_req: VercelRequest, res: VercelResponse, { uid }) => {
+export const data = withRoute(['DELETE'], async (_req: VercelRequest, res: VercelResponse, { uid }) => {
   const result = await deleteAccountData(uid);
   return void res.status(200).json(result);
 });

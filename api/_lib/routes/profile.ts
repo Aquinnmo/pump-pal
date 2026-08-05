@@ -1,17 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { profilePatchInput } from '../../shared/api-contract.js';
-import { ApiError, withRoute } from '../_lib/http.js';
-import { getProfile, updateProfile } from '../_lib/store/profile.js';
+import { profilePatchInput } from '../../../shared/api-contract.js';
+import { ApiError, withRoute } from '../http.js';
+import { getProfile, updateProfile } from '../store/profile.js';
 
 /**
  * GET   /api/profile -- current user's workoutSplit/aiUsage + version
  * PATCH /api/profile -- allowlisted fields only (workoutSplit); uid always
  *                        from the verified token, never the body
  */
-export default withRoute(['GET', 'PATCH'], async (req: VercelRequest, res: VercelResponse, { uid }) => {
+export const profile = withRoute(['GET', 'PATCH'], async (req: VercelRequest, res: VercelResponse, { uid }) => {
   if (req.method === 'GET') {
-    const profile = await getProfile(uid);
-    return void res.status(200).json({ profile });
+    const result = await getProfile(uid);
+    return void res.status(200).json({ profile: result });
   }
 
   const parsed = profilePatchInput.safeParse(req.body);
