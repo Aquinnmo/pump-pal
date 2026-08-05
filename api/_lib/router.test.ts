@@ -93,10 +93,30 @@ async function run() {
   assert.equal(matchRoute('/api/workouts/abc/extra'), undefined);
   assert.equal(matchRoute('/api'), undefined);
 
+  // An unmatched path never reaches withRoute, so dispatch has to emit the
+  // log line itself -- otherwise a wrong URL is invisible server-side and
+  // "nothing in the logs" can't be told apart from "the request never arrived".
+  const logged: string[] = [];
+  const realLog = console.log;
+  console.log = (...args: unknown[]) => void logged.push(String(args[0]));
+
   const res = fakeRes();
-  await dispatch({ url: '/api/nope', query: {} } as any, res);
+  try {
+    await dispatch({ url: '/api/nope?x=1', method: 'GET', query: {} } as any, res);
+  } finally {
+    console.log = realLog;
+  }
+
   assert.equal(res.statusCode, 404);
   assert.deepEqual(res.body, { error: 'Not found', code: 'not_found' });
+
+  assert.equal(logged.length, 1, 'a router miss must log exactly once');
+  const entry = JSON.parse(logged[0]);
+  assert.equal(entry.route, '/api/nope', 'logs the normalized path, not the raw url');
+  assert.equal(entry.method, 'GET');
+  assert.equal(entry.status, 404);
+  assert.equal(entry.unmatched, true);
+  assert.ok(typeof entry.requestId === 'string' && entry.requestId.length > 0);
 
   console.log('router: all assertions passed');
 }

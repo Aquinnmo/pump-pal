@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { randomUUID } from 'node:crypto';
 
 /**
  * Path -> handler table for the single catch-all function (`api/[...path].ts`).
@@ -93,6 +94,20 @@ export function matchRoute(url: string | undefined): Match | undefined {
 export async function dispatch(req: VercelRequest, res: VercelResponse): Promise<void> {
   const match = matchRoute(req.url);
   if (!match) {
+    // A miss never reaches withRoute, so without this line an unmatched path
+    // produces *no* server-side output at all -- making "nothing in the logs"
+    // ambiguous between "the request never arrived" and "the router rejected
+    // it". Same JSON shape withRoute emits so both read alike in the stream.
+    console.log(
+      JSON.stringify({
+        requestId: randomUUID(),
+        route: normalizePath(req.url),
+        method: req.method,
+        status: 404,
+        durationMs: 0,
+        unmatched: true,
+      })
+    );
     // Same envelope withRoute produces, so utils/api-client.ts handles a
     // typo'd path the same way it handles any other 4xx.
     return void res.status(404).json({ error: 'Not found', code: 'not_found' });

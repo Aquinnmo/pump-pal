@@ -30,6 +30,21 @@ export type { ApiRequestOptions } from './api-client-core';
 const BASE_URL = Platform.OS === 'web' ? '' : (process.env.EXPO_PUBLIC_API_BASE_URL ?? '');
 const CLIENT_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
+/**
+ * Dev-only request log. Production builds stay silent — `__DEV__` is inlined
+ * by Metro, so the whole call is dropped from release bundles.
+ *
+ * Failures use console.warn so they surface in Metro without having to open
+ * Settings -> Sync status, which is where a failed sync used to die quietly.
+ */
+const devLog: ApiRequestDeps['log'] = __DEV__
+  ? ({ method, url, status, durationMs, error }) => {
+      const line = `[api] ${method} ${url} -> ${status ?? '(no response)'} ${durationMs}ms`;
+      if (error) console.warn(`${line} ${error}`);
+      else console.log(line);
+    }
+  : undefined;
+
 async function defaultGetIdToken(): Promise<string | null> {
   // Dynamically imported so a caller that only needs the error classes (or
   // tests api-client-core.ts directly) never triggers Firebase init.
@@ -53,6 +68,7 @@ export async function apiRequest<TOut = void>(
     clientVersion: CLIENT_VERSION,
     fetchImpl: expoFetch as ApiRequestDeps['fetchImpl'],
     getIdToken: defaultGetIdToken,
+    log: devLog,
   };
   return apiRequestCore(path, deps, options);
 }

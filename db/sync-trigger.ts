@@ -35,8 +35,14 @@ async function runAndReportSync(): Promise<void> {
   try {
     const outcome = await syncNow(uid, currentUid);
     setSyncStatus(statusFromOutcome(outcome, getSyncStatus().conflictCount));
+    // "pulled: 0" and "the run threw" are different diagnoses, and until this
+    // existed both looked identical from outside: an empty screen.
+    console.log('[sync]', JSON.stringify(outcome));
   } catch (err) {
     setSyncStatus(statusFromError(err));
+    // Settings -> Sync status keeps the detail; this makes a failed run
+    // visible in Metro instead of only to someone who goes looking for it.
+    console.warn('[sync] run failed:', err);
   }
 }
 

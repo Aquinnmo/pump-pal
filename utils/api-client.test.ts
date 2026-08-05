@@ -10,6 +10,7 @@ import {
   ApiNotFoundError,
   ApiValidationError,
   ApiRequestDeps,
+  ApiRequestLog,
   FetchLike,
 } from './api-client-core';
 
@@ -191,6 +192,89 @@ async function main() {
     } catch (err) {
       assert.equal((err as Error).name, 'AbortError');
     }
+  }
+
+  // --- 404 names the failing request ---
+  // A bare "Not found." cost a real debugging session: it identified neither
+  // the URL nor the method, so a route that was never deployed looked exactly
+  // like an id that doesn't exist.
+  {
+    await assert.rejects(
+      () => apiRequestCore('/api/sync/manifest', deps(fakeFetch(() => ({ status: 404 })))),
+      (err: Error) => {
+        assert.ok(err instanceof ApiNotFoundError);
+        assert.match(err.message, /GET https:\/\/api\.test\/api\/sync\/manifest/);
+        return true;
+      }
+    );
+  }
+
+  // --- 401 likewise ---
+  {
+    await assert.rejects(
+      () => apiRequestCore('/api/profile', deps(fakeFetch(() => ({ status: 401 })))),
+      (err: Error) => {
+        assert.ok(err instanceof ApiAuthError);
+        assert.match(err.message, /401 from GET https:\/\/api\.test\/api\/profile/);
+        return true;
+      }
+    );
+  }
+
+  // --- log: exactly one entry per request, on success ---
+  {
+    const entries: ApiRequestLog[] = [];
+    await apiRequestCore('/api/x', { ...deps(fakeFetch(() => ({ status: 200, body: { ok: true } }))), log: (e) => entries.push(e) }, { responseSchema: echoSchema });
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].method, 'GET');
+    assert.equal(entries[0].url, 'https://api.test/api/x');
+    assert.equal(entries[0].status, 200);
+    assert.equal(entries[0].error, undefined);
+    assert.ok(typeof entries[0].durationMs === 'number');
+    // Redaction: the token must never reach a log sink.
+    assert.doesNotMatch(JSON.stringify(entries[0]), /fake-token|Authorization/i);
+  }
+
+  // --- log: failures carry the status and the error name ---
+  {
+    const entries: ApiRequestLog[] = [];
+    await assert.rejects(() =>
+      apiRequestCore('/api/x', {
+        ...deps(fakeFetch(() => ({ status: 404 }))),
+        log: (e) => entries.push(e),
+      })
+    );
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].status, 404);
+    assert.equal(entries[0].error, 'ApiNotFoundError');
+  }
+
+  // --- log: a request that never got a response has no status ---
+  {
+    const entries: ApiRequestLog[] = [];
+    await assert.rejects(() =>
+      apiRequestCore('/api/x', {
+        ...deps(() => Promise.reject(new Error('getaddrinfo ENOTFOUND'))),
+        log: (e) => entries.push(e),
+      })
+    );
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].status, undefined);
+    assert.equal(entries[0].error, 'ApiNetworkError');
+  }
+
+  // --- log: a missing ID token is logged too, not swallowed before logging ---
+  {
+    const entries: ApiRequestLog[] = [];
+    await assert.rejects(() =>
+      apiRequestCore('/api/x', {
+        ...deps(fakeFetch(() => ({ status: 200 })), async () => null),
+        log: (e) => entries.push(e),
+      })
+    );
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].error, 'ApiAuthError');
+    assert.equal(entries[0].status, undefined);
   }
 
   console.log('utils/api-client.test.ts: all assertions passed');

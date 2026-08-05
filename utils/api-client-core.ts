@@ -107,24 +107,75 @@ export type ApiRequestOptions<TOut> = {
   signal?: AbortSignal;
 };
 
+/**
+ * One line per completed request. Never carries the Authorization header, the
+ * ID token, or request/response bodies — same redaction rule the server side
+ * follows in api/_lib/http.ts.
+ */
+export type ApiRequestLog = {
+  method: string;
+  url: string;
+  /** Absent when the request never got a response (network failure, timeout, abort). */
+  status?: number;
+  durationMs: number;
+  /** The thrown error's `name`, e.g. 'ApiNotFoundError'. Absent on success. */
+  error?: string;
+};
+
 export type ApiRequestDeps = {
   baseUrl: string;
   clientVersion: string;
   fetchImpl: FetchLike;
   getIdToken: () => Promise<string | null>;
+  /** Injected rather than calling console directly, so this module stays platform-free and the logging stays assertable in tests. */
+  log?: (entry: ApiRequestLog) => void;
 };
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
+/**
+ * Wraps `sendRequest` with exactly one log line per attempt — success, HTTP
+ * failure, and never-got-a-response alike. Mirrors the server's
+ * `withRoute` finally-block so a request can be matched up across both sides.
+ */
 export async function apiRequestCore<TOut = void>(
   path: string,
   deps: ApiRequestDeps,
   options: ApiRequestOptions<TOut> = {}
 ): Promise<TOut> {
+  const method = options.method ?? 'GET';
+  const url = `${deps.baseUrl}${path}${buildQueryString(options.query)}`;
+  const start = Date.now();
+  const log = deps.log;
+  // Written by sendRequest once a response comes back; stays undefined when
+  // the request never got one (network failure, timeout, missing token).
+  const seen: { status?: number } = {};
+
+  try {
+    const result = await sendRequest<TOut>(url, method, deps, options, seen);
+    log?.({ method, url, status: seen.status, durationMs: Date.now() - start });
+    return result;
+  } catch (err) {
+    log?.({
+      method,
+      url,
+      status: seen.status,
+      durationMs: Date.now() - start,
+      error: (err as Error)?.name ?? 'Error',
+    });
+    throw err;
+  }
+}
+
+async function sendRequest<TOut>(
+  url: string,
+  method: string,
+  deps: ApiRequestDeps,
+  options: ApiRequestOptions<TOut>,
+  seen: { status?: number }
+): Promise<TOut> {
   const idToken = await deps.getIdToken();
   if (!idToken) throw new ApiAuthError();
-
-  const url = `${deps.baseUrl}${path}${buildQueryString(options.query)}`;
 
   // Combine an internal timeout controller with any caller-supplied signal —
   // whichever fires first aborts the request.
@@ -139,7 +190,7 @@ export async function apiRequestCore<TOut = void>(
   let response: Awaited<ReturnType<FetchLike>>;
   try {
     response = await deps.fetchImpl(url, {
-      method: options.method ?? 'GET',
+      method,
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
@@ -164,11 +215,16 @@ export async function apiRequestCore<TOut = void>(
     options.signal?.removeEventListener('abort', onCallerAbort);
   }
 
+  seen.status = response.status;
+
+  // Both of these name the request. Without it every failure collapses to the
+  // same context-free string, and telling "this route isn't deployed" apart
+  // from "this id doesn't exist" means reading source instead of the message.
   if (response.status === 401) {
-    throw new ApiAuthError('Session expired — please sign in again.');
+    throw new ApiAuthError(`Session expired — please sign in again. (401 from ${method} ${url})`);
   }
   if (response.status === 404) {
-    throw new ApiNotFoundError();
+    throw new ApiNotFoundError(`Not found: ${method} ${url}`);
   }
   if (response.status === 409) {
     const body = (await response.json().catch(() => null)) as
