@@ -48,12 +48,22 @@ export async function callAI<Op extends AIOp>(
     throw new Error(`Could not reach ${url}: ${describeError(cause)}`, { cause });
   }
 
+  // `error` is deliberately unknown, not string: our own function returns a
+  // string, but a platform-level failure (an undeployed function, an auth wall)
+  // returns Vercel's own `{ error: { code, message } }` shape. Passing that
+  // object straight to `new Error()` stringifies it to "[object Object]" and
+  // loses the one detail worth reading.
   const body = (await response.json().catch(() => null)) as
-    | (AIResponse<Op> & { error?: string })
+    | (AIResponse<Op> & { error?: unknown })
     | null;
 
   if (!response.ok || !body) {
-    throw new Error(body?.error ?? `AI request failed (${response.status})`);
+    const detail = body?.error == null ? null : describeError(body.error);
+    throw new Error(
+      detail
+        ? `AI request failed (${response.status}): ${detail}`
+        : `AI request failed (${response.status})`
+    );
   }
 
   return body;

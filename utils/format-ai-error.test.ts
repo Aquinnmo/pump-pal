@@ -8,6 +8,19 @@ const cases: [label: string, value: unknown, expected: string][] = [
   ['TypeError from fetch', new TypeError('Network request failed'), 'Network request failed'],
   ['server error shape', { error: 'AI request failed' }, 'AI request failed'],
   ['object with message', { message: 'nope' }, 'Object: nope'],
+  // The exact body Vercel returns for an undeployed function or an auth wall.
+  [
+    'Vercel platform error',
+    { code: 'NOT_FOUND', message: 'The page could not be found' },
+    'NOT_FOUND: The page could not be found',
+  ],
+  [
+    'FirebaseError shape',
+    Object.assign(new Error('Firebase: Error (auth/invalid-api-key).'), {
+      code: 'auth/invalid-api-key',
+    }),
+    'auth/invalid-api-key: Firebase: Error (auth/invalid-api-key).',
+  ],
   ['string', 'raw string', 'raw string'],
   ['null', null, 'null'],
   ['undefined', undefined, 'undefined'],

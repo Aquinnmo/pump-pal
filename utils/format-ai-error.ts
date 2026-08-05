@@ -26,7 +26,16 @@ export function describeError(value: unknown): string {
     'Object';
 
   if (typeof obj.message === 'string' && obj.message) {
-    return value instanceof Error ? obj.message : `${name}: ${obj.message}`;
+    // A `code` is the more diagnostic half when both are present — this is the
+    // shape of Vercel platform errors ({ code: 'NOT_FOUND', message: ... }) and
+    // of FirebaseError.
+    const prefix =
+      typeof obj.code === 'string' && obj.code
+        ? obj.code
+        : value instanceof Error
+          ? null
+          : name;
+    return prefix ? `${prefix}: ${obj.message}` : obj.message;
   }
   if (typeof obj.error === 'string' && obj.error) return obj.error;
 
