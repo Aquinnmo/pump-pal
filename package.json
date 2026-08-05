@@ -17,6 +17,7 @@
     "build:web": "npx expo export -p web",
     "test:ios-scripts": "bash scripts/ios/_common.sh --self-test",
     "test:ai-quota": "tsx api/_lib/store/quota.test.ts",
+    "test:ai-error": "tsx utils/format-ai-error.test.ts",
     "test:api-isolation": "node scripts/check-api-isolation.js",
     "test:up-next": "tsx utils/up-next.test.ts",
     "test:wear-state": "tsx utils/wear-state.test.ts",

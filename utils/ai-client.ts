@@ -2,6 +2,7 @@ import { auth } from '@/config/firebase';
 import type { AIOp, AIOpInput, AIResponse } from '@/shared/ai-contract';
 import { fetch as expoFetch } from 'expo/fetch';
 import { Platform } from 'react-native';
+import { describeError } from './format-ai-error';
 
 /**
  * Client for the `/api/ai` proxy.
@@ -20,14 +21,32 @@ export async function callAI<Op extends AIOp>(
   const user = auth.currentUser;
   if (!user) throw new Error('You must be signed in to use AI features.');
 
-  const response = await expoFetch(`${BASE_URL}/api/ai`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${await user.getIdToken()}`,
-    },
-    body: JSON.stringify({ op, input }),
-  });
+  // A relative URL can only resolve in a browser. Off the web an unset base URL
+  // surfaces as an opaque network failure, so name the actual cause instead.
+  if (!BASE_URL && Platform.OS !== 'web') {
+    throw new Error(
+      'EXPO_PUBLIC_API_BASE_URL is not set, so there is no /api/ai endpoint to call. ' +
+        'Set it in .env (local) and in the EAS environment for this build profile.'
+    );
+  }
+
+  const url = `${BASE_URL}/api/ai`;
+
+  let response: Awaited<ReturnType<typeof expoFetch>>;
+  try {
+    response = await expoFetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await user.getIdToken()}`,
+      },
+      body: JSON.stringify({ op, input }),
+    });
+  } catch (cause) {
+    // fetch rejects with wildly varying shapes across platforms; keep the URL
+    // and the original value rather than letting it stringify to [object Object].
+    throw new Error(`Could not reach ${url}: ${describeError(cause)}`, { cause });
+  }
 
   const body = (await response.json().catch(() => null)) as
     | (AIResponse<Op> & { error?: string })
@@ -40,14 +59,4 @@ export async function callAI<Op extends AIOp>(
   return body;
 }
 
-/**
- * Formats an error from `callAI` for display. The proxy already sanitizes
- * provider responses, so this only has to unwrap the Error shape.
- */
-export function formatAIError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (!error || typeof error !== 'object') return String(error);
-
-  const message = (error as { message?: unknown }).message;
-  return typeof message === 'string' ? message : String(error);
-}
+export { formatAIError } from './format-ai-error';

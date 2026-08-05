@@ -389,7 +389,7 @@ export default function AddWorkoutModal() {
       setExercises((prev) => [...prev, ...newRows]);
     } catch (e) {
       const details = formatAIError(e);
-      console.error("AI workout suggestion failed:", details);
+      console.error("AI workout suggestion failed:", details, e);
       showAlert(
         "Error",
         __DEV__

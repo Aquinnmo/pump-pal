@@ -388,7 +388,7 @@ export default function ActiveWorkoutScreen() {
       ]);
     } catch (e) {
       const details = formatAIError(e);
-      console.error("AI workout suggestion failed:", details);
+      console.error("AI workout suggestion failed:", details, e);
       showAlert(
         "Error",
         __DEV__

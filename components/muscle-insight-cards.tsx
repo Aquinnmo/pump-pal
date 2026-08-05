@@ -82,7 +82,7 @@ export function MuscleInsightCards({ workouts }: Props) {
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (caughtError) {
       const details = formatAIError(caughtError);
-      console.error("AI muscle analysis failed:", details);
+      console.error("AI muscle analysis failed:", details, caughtError);
       setError(
         __DEV__
           ? `AI error: ${details}`
