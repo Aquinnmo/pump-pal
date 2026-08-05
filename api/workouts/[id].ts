@@ -36,7 +36,9 @@ export default withRoute(['GET', 'PATCH', 'DELETE'], async (req: VercelRequest, 
       : undefined;
 
   const result = await updateWorkout(uid, id, parsed.data, ongoingInjuryIds);
-  if (result.conflict) {
+  // `=== true`, not truthiness: Vercel's builder compiles api/ with strict off,
+  // where a boolean-literal discriminant only narrows on an explicit comparison.
+  if (result.conflict === true) {
     return void res.status(409).json({ error: 'Workout was modified since baseVersion', code: 'conflict', remote: result.remote, remoteVersion: result.remote.version });
   }
   return void res.status(200).json({ workout: result.workout });

@@ -18,7 +18,9 @@ export default withRoute(['GET', 'PATCH'], async (req: VercelRequest, res: Verce
   if (!parsed.success) throw new ApiError(400, `Invalid profile patch: ${parsed.error.message}`);
 
   const result = await updateProfile(uid, parsed.data);
-  if (result.conflict) {
+  // `=== true`, not truthiness: Vercel's builder compiles api/ with strict off,
+  // where a boolean-literal discriminant only narrows on an explicit comparison.
+  if (result.conflict === true) {
     return void res
       .status(409)
       .json({ error: 'Profile was modified since baseVersion', code: 'conflict', remote: result.remote, remoteVersion: result.remote.version });

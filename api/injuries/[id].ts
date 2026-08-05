@@ -20,7 +20,9 @@ export default withRoute(['PATCH', 'DELETE'], async (req: VercelRequest, res: Ve
   if (!parsed.success) throw new ApiError(400, `Invalid injury patch: ${parsed.error.message}`);
 
   const result = await updateInjury(uid, id, parsed.data);
-  if (result.conflict) {
+  // `=== true`, not truthiness: Vercel's builder compiles api/ with strict off,
+  // where a boolean-literal discriminant only narrows on an explicit comparison.
+  if (result.conflict === true) {
     // The injury record itself isn't independently versioned (it's an array
     // element on the user doc) -- a conflict here means "the user doc moved
     // under you", so the caller should re-GET /api/injuries and retry.

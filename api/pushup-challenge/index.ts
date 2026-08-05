@@ -17,7 +17,9 @@ export default withRoute(['GET', 'PUT'], async (req: VercelRequest, res: VercelR
   if (!parsed.success) throw new ApiError(400, `Invalid pushup-challenge input: ${parsed.error.message}`);
 
   const result = await putChallenge(uid, parsed.data);
-  if (result.conflict) {
+  // `=== true`, not truthiness: Vercel's builder compiles api/ with strict off,
+  // where a boolean-literal discriminant only narrows on an explicit comparison.
+  if (result.conflict === true) {
     return void res
       .status(409)
       .json({ error: 'Pushup challenge was modified since baseVersion', code: 'conflict', remote: result.remote, remoteVersion: result.remote.version });
