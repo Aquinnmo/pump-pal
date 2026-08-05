@@ -188,9 +188,9 @@ _self_test() {
 
   # A complete file passes.
   { for k in "${REQUIRED_ENV_KEYS[@]}"; do echo "$k=value"; done
-    echo "EXPO_PUBLIC_GEMINI_API_KEY="; } > "$dir/complete"
+    echo "EXPO_PUBLIC_API_BASE_URL="; } > "$dir/complete"
   validate_env "$dir/complete" --quiet; status=$?
-  _assert "accepts a complete .env (optional AI key may be empty)" 0 $status
+  _assert "accepts a complete .env (optional non-required keys may be empty)" 0 $status
 
   # A missing key fails.
   grep -v EXPO_PUBLIC_FIREBASE_APP_ID "$dir/complete" > "$dir/missing"

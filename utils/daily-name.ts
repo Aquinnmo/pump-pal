@@ -1,51 +1,17 @@
-import { db } from '@/config/firebase';
-import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
-import { generateText } from 'ai';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-
-/** Returns today's UTC date as YYYY-MM-DD */
-function todayUTC(): string {
-  const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-/** Asks the configured AI model for a single random first name to use in the "Swipe left if you lied" prompt. */
-async function generateRandomName(): Promise<string> {
-  const prompt = `Give me one single random human first name. There should be a 10% chance of generating a medieval ruler's name. Return ONLY the name itself with no punctuation, explanation, or extra text. You are allowed 10 characters MAXIMUM.`;
-
-  const { text } = await generateText({ model: getAIModel(), prompt, maxRetries: AI_MAX_RETRIES });
-  const name = text.trim().replace(/[^a-zA-Z'\- ]/g, '').trim();
-  if (!name) throw new Error('AI model returned an empty name');
-  return name;
-}
+import { callAI } from '@/utils/ai-client';
 
 /**
  * Returns today's daily name for the "Swipe left if you lied" prompt.
  *
- * - Reads from Firestore `random/{utcDate}`.
- * - If the document doesn't exist (or has a different date), generates a new
- *   name via the configured AI model, writes it to `random/{utcDate}`, and returns it.
- * - Multiple clients hitting this at the same time may write the same doc
- *   concurrently, which is harmless (last write wins with the same date key).
+ * The read/generate/cache cycle against Firestore `random/{utcDate}` now runs
+ * inside the `/api/ai` function. That keeps the provider key off the device and
+ * lets the security rules deny clients write access to the shared `random`
+ * collection, which any signed-in user could previously overwrite.
  */
 export async function getDailyName(): Promise<string> {
-  const dateKey = todayUTC();
-  const docRef = doc(db, 'random', dateKey);
-
   try {
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      const stored = snap.data() as { name: string; createdAt: string };
-      if (stored.name) return stored.name;
-    }
-
-    // Not found or missing name — generate a fresh one
-    const name = await generateRandomName();
-    await setDoc(docRef, { name, createdAt: new Date().toISOString() });
-    return name;
+    const { data } = await callAI('daily-name');
+    return data.name;
   } catch (e) {
     console.error('getDailyName failed:', e);
     // Fallback so the UI still renders something sensible

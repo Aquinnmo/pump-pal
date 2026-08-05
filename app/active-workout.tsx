@@ -4,16 +4,14 @@ import { Toast } from "@/components/ui/toast";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { FocusView } from "@/components/workout/focus-view";
 import { db } from "@/config/firebase";
-import {
-  formatAIError,
-  TEMPORARY_AI_DAILY_LIMIT,
-} from "@/constants/ai-config";
 import { isSplitOption } from "@/constants/split-options";
 import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
+import { TEMPORARY_AI_DAILY_LIMIT } from "@/shared/ai-contract";
 import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
+import { formatAIError } from "@/utils/ai-client";
 import { showAlert } from "@/utils/alert";
 import { createPendingExercise } from "@/utils/create-pending-exercise";
 import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
@@ -365,24 +363,15 @@ export default function ActiveWorkoutScreen() {
     if (!user || aiUsesLeft <= 0) return;
     setAiLoading(true);
     try {
-      const suggested = await suggestWorkoutCompletion(
+      // The quota is counted and enforced by /api/ai; the client just reflects it.
+      const { suggestions: suggested, remaining } = await suggestWorkoutCompletion(
         effectiveWorkoutName,
         splitType,
         exercises,
         workoutHistory,
         await getOngoingInjuries(user.uid),
       );
-
-      const todayUTC = new Date().toISOString().slice(0, 10);
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-      const existing = userSnap.data()?.aiUsage as
-        | { date: string; count: number }
-        | undefined;
-      const newCount =
-        existing && existing.date === todayUTC ? existing.count + 1 : 1;
-      await updateDoc(userRef, { aiUsage: { date: todayUTC, count: newCount } });
-      setAiUsesLeft(TEMPORARY_AI_DAILY_LIMIT - newCount);
+      if (remaining != null) setAiUsesLeft(remaining);
 
       if (suggested.length === 0) {
         setToast({

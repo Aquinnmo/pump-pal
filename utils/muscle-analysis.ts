@@ -1,20 +1,13 @@
-import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
-import { isMuscleId, MUSCLES, MUSCLE_REGIONS, MuscleId, muscleLabel } from '@/constants/muscles';
+import { isMuscleId, MUSCLE_REGIONS, MUSCLES, MuscleId, muscleLabel } from '@/constants/muscles';
 import { CatalogExercise, Workout } from '@/types/workout';
+import { callAI } from '@/utils/ai-client';
 import { loadCatalog } from '@/utils/exercise-catalog';
 import { exerciseLabel, toDateObj } from '@/utils/workout-conversion';
-import { generateText, Output } from 'ai';
-import { z } from 'zod';
 
 export interface MuscleInsights {
   overTrained: string[];
   underTrained: string[];
 }
-
-const muscleInsightsSchema = z.object({
-  overTrained: z.array(z.string()),
-  underTrained: z.array(z.string()),
-});
 
 function normalizeInsightList(insights: string[]): string[] {
   return insights
@@ -166,7 +159,7 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
     return { overTrained: [], underTrained: [] };
   }
 
-  const table = stats
+  const volumeTable = stats
     .map((s) => {
       const rpe = s.avgRpe != null ? s.avgRpe.toFixed(1) : '—';
       const ex = s.topExercises.length ? s.topExercises.join(', ') : '(none)';
@@ -180,41 +173,9 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
     .map(([region, muscles]) => `${region}: ${muscles.map(muscleLabel).join(', ')}`)
     .join('\n');
 
-  const prompt = `You are a strength coach analyzing a user's training volume over the last 30 days.
+  // The prompt template and output schema live server-side in
+  // api/_lib/ai/prompts.ts; only the computed data crosses the wire.
+  const { data } = await callAI('muscle-analysis', { volumeTable, regionList });
 
-Volume is measured in "effective weekly sets" per muscle: each working set counts fully (1.0) toward the exercise's primary muscles and half (0.5) toward its secondary muscles, averaged per week. A muscle at 0.0 sets/wk was not trained at all.
-
-Per-muscle volume (sorted high to low):
-${table}
-
-Muscle regions:
-${regionList}
-
-Guidance:
-- A productive hypertrophy range is roughly 10–20 effective sets per muscle per week. Notably below that (especially 0.0) signals UNDER-training; well above ~20 — or high frequency combined with consistently high RPE — signals OVER-training / poor recovery.
-- Also judge each muscle relative to the user's own overall volume: a muscle far below the others is a likely imbalance even if it isn't at zero.
-
-Tasks:
-1. Identify up to 3 OVER-trained muscles (most at risk of overuse or insufficient recovery).
-2. Identify up to 3 UNDER-trained muscles (most neglected or creating imbalance).
-
-Naming rules:
-- Use the specific muscle names exactly as written in the volume list above.
-- ONLY when an entire region (all of its listed muscles) is uniformly over- or under-trained, name the region instead of listing each muscle individually.
-
-Return ONLY a valid JSON object with no markdown fences and no explanation, exactly this structure:
-{"overTrained":["Muscle1","Muscle2"],"underTrained":["Muscle1","Muscle2"]}
-
-If a category has no meaningful findings, return an empty array for that category. If neither category has findings, return empty arrays for both.`;
-
-  const { output } = await generateText({
-    model: getAIModel(),
-    prompt,
-    maxRetries: AI_MAX_RETRIES,
-    output: Output.object({ schema: muscleInsightsSchema }),
-  });
-
-  const parsed: MuscleInsights = output;
-
-  return normalizeMuscleInsights(parsed);
+  return normalizeMuscleInsights(data);
 }

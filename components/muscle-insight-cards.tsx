@@ -1,6 +1,7 @@
-import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from "@/constants/ai-config";
+import { TEMPORARY_AI_DAILY_LIMIT } from "@/shared/ai-contract";
 import { useAuth } from "@/context/auth-context";
 import { Workout } from "@/types/workout";
+import { formatAIError } from "@/utils/ai-client";
 import {
   analyzeMuscles,
   MuscleInsights,

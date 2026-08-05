@@ -16,7 +16,9 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
    npm install
    ```
 
-2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`), AI provider/model settings, and Google provider key (`EXPO_PUBLIC_GEMINI_API_KEY`).
+2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and, for native builds, `EXPO_PUBLIC_API_BASE_URL` (the deployed URL of the `/api/ai` proxy).
+
+   AI provider keys are **not** part of the client `.env`. They live only in the Vercel project environment — see the server section of `.env.example`.
 
 3. Start the dev server
 
@@ -39,9 +41,9 @@ The `preview` profile creates an internally distributed Android APK. It is the p
    npx eas-cli@latest whoami
    ```
 
-2. Add the values from local `.env` to the project's **preview** EAS environment in the Expo dashboard. The remote build cannot read the ignored local `.env` file. Add every value listed in `.env.example`, including the Firebase `EXPO_PUBLIC_FIREBASE_*` values and `EXPO_PUBLIC_GEMINI_API_KEY`.
+2. Add the values from local `.env` to the project's **preview** EAS environment in the Expo dashboard. The remote build cannot read the ignored local `.env` file. Add every `EXPO_PUBLIC_*` value listed in the client section of `.env.example`, including the Firebase config and `EXPO_PUBLIC_API_BASE_URL`.
 
-   `EXPO_PUBLIC_*` values are bundled into the app and must be treated as client-visible configuration, not secrets. See [EAS environment variables](https://docs.expo.dev/eas/environment-variables/).
+   `EXPO_PUBLIC_*` values are bundled into the app and must be treated as client-visible configuration, not secrets. Never add a provider API key here — those belong in the Vercel environment, behind the `/api/ai` proxy. See [EAS environment variables](https://docs.expo.dev/eas/environment-variables/).
 
 ### Build and share a preview APK
 
