@@ -16,7 +16,7 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
    npm install
    ```
 
-2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and, for native builds, `EXPO_PUBLIC_API_BASE_URL` (the deployed URL of the `/api/ai` proxy).
+2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL` when the API is on a different origin. Native builds require that URL; web falls back to same-origin `/api` only when it is unset.
 
    AI provider keys are **not** part of the client `.env`. They live only in the Vercel project environment — see the server section of `.env.example`.
 

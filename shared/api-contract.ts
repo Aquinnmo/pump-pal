@@ -81,6 +81,8 @@ export const profileDTO = z.object({
   version,
 });
 export type ProfileDTO = z.infer<typeof profileDTO>;
+export const profileResponse = z.object({ profile: profileDTO });
+export type ProfileResponse = z.infer<typeof profileResponse>;
 
 /** PATCH /api/profile — allowlisted fields only; UID always comes from the token, never the body. */
 export const profilePatchInput = z.object({

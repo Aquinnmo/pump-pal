@@ -1,16 +1,16 @@
 import { apiRequest, ApiRequestOptions } from '@/utils/api-client';
-import { profileDTO, ProfilePatchInput } from '@/shared/api-contract';
+import { profileDTO, profileResponse, ProfilePatchInput } from '@/shared/api-contract';
 
 export function getProfile(opts?: ApiRequestOptions<never>) {
-  return apiRequest('/api/profile', { responseSchema: profileDTO, signal: opts?.signal });
+  return apiRequest('/api/profile', { responseSchema: profileResponse, signal: opts?.signal }).then(({ profile }) => profile);
 }
 
 export function patchProfile(input: ProfilePatchInput, opts?: ApiRequestOptions<never>) {
   return apiRequest('/api/profile', {
     method: 'PATCH',
     body: input,
-    responseSchema: profileDTO,
+    responseSchema: profileResponse,
     conflictEntitySchema: profileDTO,
     signal: opts?.signal,
-  });
+  }).then(({ profile }) => profile);
 }

@@ -5,6 +5,7 @@ import {
   ApiRequestDeps,
   ApiRequestOptions,
   apiRequestCore,
+  normalizeApiBaseUrl,
 } from './api-client-core';
 
 export {
@@ -27,7 +28,10 @@ export type { ApiRequestOptions } from './api-client-core';
  * `apiRequest`, never `fetch`/Firestore directly, so auth/error handling
  * stays in one place. Core request/error logic lives in api-client-core.ts.
  */
-const BASE_URL = Platform.OS === 'web' ? '' : (process.env.EXPO_PUBLIC_API_BASE_URL ?? '');
+// A configured origin is required for native and deliberately honored on web
+// too: Preview's static web host can be separate from the Vercel API origin.
+// Only an absent value falls back to web's relative, same-origin `/api/*`.
+const BASE_URL = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 const CLIENT_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
 /**
@@ -38,19 +42,27 @@ const CLIENT_VERSION = Constants.expoConfig?.version ?? 'unknown';
  * Settings -> Sync status, which is where a failed sync used to die quietly.
  */
 const devLog: ApiRequestDeps['log'] = __DEV__
-  ? ({ method, url, status, durationMs, error }) => {
+  ? ({ method, url, status, code, requestId, retried, durationMs, error }) => {
       const line = `[api] ${method} ${url} -> ${status ?? '(no response)'} ${durationMs}ms`;
-      if (error) console.warn(`${line} ${error}`);
+      const diagnostics = [
+        error,
+        code ? `code=${code}` : undefined,
+        requestId ? `requestId=${requestId}` : undefined,
+        retried ? 'tokenRefreshed=true' : undefined,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      if (diagnostics) console.warn(`${line} ${diagnostics}`);
       else console.log(line);
     }
   : undefined;
 
-async function defaultGetIdToken(): Promise<string | null> {
+async function defaultGetIdToken(forceRefresh = false): Promise<string | null> {
   // Dynamically imported so a caller that only needs the error classes (or
   // tests api-client-core.ts directly) never triggers Firebase init.
   const { auth } = await import('@/config/firebase');
   const user = auth.currentUser;
-  return user ? user.getIdToken() : null;
+  return user ? user.getIdToken(forceRefresh) : null;
 }
 
 export async function apiRequest<TOut = void>(

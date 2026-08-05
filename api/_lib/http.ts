@@ -15,7 +15,10 @@ import { requireUid } from './auth.js';
  */
 
 function required(name: string): string {
-  const value = process.env[name];
+  // Keep the dynamic lookup out of the client-only Expo env lint rule. This
+  // runs in Vercel's server runtime, where the required-name list is internal.
+  const environment: Record<string, string | undefined> = process.env;
+  const value = environment[name];
   if (!value) throw new Error(`Missing required env var: ${name}`);
   return value;
 }
@@ -56,6 +59,7 @@ function applyCors(req: VercelRequest, res: VercelResponse): boolean {
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Client-Version');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Expose-Headers', 'X-Request-Id');
   }
 
   if (req.method === 'OPTIONS') {
@@ -82,6 +86,7 @@ type Handler = (req: VercelRequest, res: VercelResponse, ctx: RouteContext) => P
 export function withRoute(methods: string[], handler: Handler) {
   return async (req: VercelRequest, res: VercelResponse) => {
     const requestId = randomUUID();
+    res.setHeader('X-Request-Id', requestId);
     const start = Date.now();
     let status = 500;
 

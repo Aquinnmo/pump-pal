@@ -4,16 +4,16 @@ import { fetch as expoFetch } from 'expo/fetch';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import { describeError } from './format-ai-error';
+import { normalizeApiBaseUrl } from './api-client-core';
 
 /**
  * Client for the `/api/ai` proxy.
  *
  * No provider API key exists on the device — generation happens server-side.
- * On web the app is served from the same Vercel origin as the function, so a
- * relative path works and no CORS is involved. Native builds need the absolute
- * deployment URL, which is not a secret.
+ * A configured Preview/API origin is honored on every platform. Web uses a
+ * relative path only when that public configuration is intentionally absent.
  */
-const BASE_URL = Platform.OS === 'web' ? '' : (process.env.EXPO_PUBLIC_API_BASE_URL ?? '');
+const BASE_URL = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 
 /**
  * AI work is deliberately never queued.  A cached result remains useful while

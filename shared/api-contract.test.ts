@@ -10,6 +10,7 @@ import {
   listResponse,
   performedSet,
   profilePatchInput,
+  profileResponse,
   pullRequest,
   putPushupChallengeInput,
   reorderWorkoutsInput,
@@ -71,6 +72,7 @@ assert.equal(Object.keys(profilePatchInput.shape).includes('uid'), false);
   const parsed = profilePatchInput.parse({ uid: 'someone-elses-uid', workoutSplit: { type: 'Full Body', custom: null } });
   assert.equal('uid' in parsed, false);
 }
+assert.equal(profileResponse.safeParse({ profile: { workoutSplit: null, aiUsage: null, version: 'v1' } }).success, true);
 
 // ---- injuries ----
 assert.equal(

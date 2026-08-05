@@ -1,3 +1,5 @@
+import type { InitialSyncOutcome } from './initial-sync';
+
 // Web build of db/sync-trigger.ts. Web is directly API-backed per request
 // (repositories/*.web.ts) — no outbox, no background sync, nothing to
 // trigger. Same exported names as the native file, all no-ops, so
@@ -11,4 +13,9 @@ export function stopSyncTriggers(): void {}
 export function triggerSyncAfterWrite(): void {}
 // Web repositories read through to the API, so there is never a local row
 // waiting to be hydrated — callers can proceed immediately.
-export function waitForInitialSync(): Promise<void> { return Promise.resolve(); }
+export function waitForInitialSync(uid: string): Promise<InitialSyncOutcome> {
+  return Promise.resolve({ kind: 'success', uid });
+}
+export function retryInitialSync(uid: string): Promise<InitialSyncOutcome> {
+  return Promise.resolve({ kind: 'success', uid });
+}

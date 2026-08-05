@@ -9,13 +9,16 @@
 // fingerprints registered in the Firebase console (without them Android sign-in
 // fails with DEVELOPER_ERROR, status code 10).
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, linkWithCredential, signInWithCredential, type User } from 'firebase/auth';
 import { auth } from '@/config/firebase';
+import { getGoogleOAuthConfig } from '@/config/google-oauth';
+import { assertGoogleLinkIdentity } from '@/utils/google-account-link';
 
 // Public identifiers, not secrets — they ship inside every APK/IPA regardless.
+const { webClientId, iosClientId } = getGoogleOAuthConfig(process.env);
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-  iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  webClientId,
+  iosClientId,
 });
 
 /** Returns false when the user dismissed the picker — not an error worth surfacing. */
@@ -30,6 +33,33 @@ export async function signInWithGoogle(): Promise<boolean> {
   if (!idToken) throw new Error('Google did not return an ID token. Check EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.');
 
   await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+  return true;
+}
+
+/** Links the selected Google identity to this existing Firebase user. */
+export async function connectGoogleAccount(user: User): Promise<boolean> {
+  const expectedUid = user.uid;
+  const accountEmail = user.email;
+  await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+  const result = await GoogleSignin.signIn();
+  if (result.type === 'cancelled') return false;
+
+  const idToken = result.data.idToken;
+  if (!idToken) throw new Error('Google did not return an ID token. Check EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.');
+
+  assertGoogleLinkIdentity({
+    expectedUid,
+    linkedUid: auth.currentUser?.uid ?? '',
+    accountEmail,
+    googleEmail: result.data.user.email,
+  });
+  const linked = await linkWithCredential(user, GoogleAuthProvider.credential(idToken));
+  assertGoogleLinkIdentity({
+    expectedUid,
+    linkedUid: linked.user.uid,
+    accountEmail,
+    googleEmail: result.data.user.email,
+  });
   return true;
 }
 

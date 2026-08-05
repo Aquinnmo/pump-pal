@@ -53,6 +53,8 @@ async function run() {
     await withRoute(['GET'], noopHandler)(req, res);
     assert.equal(res.statusCode, 204);
     assert.equal(res.headers['Access-Control-Allow-Origin'], 'https://timber-preview.adam-montgomery.ca');
+    assert.equal(res.headers['Access-Control-Expose-Headers'], 'X-Request-Id');
+    assert.match(res.headers['X-Request-Id'], /^[0-9a-f-]{36}$/);
   }
 
   // OPTIONS from a disallowed origin is denied.

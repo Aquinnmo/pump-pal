@@ -13,6 +13,8 @@ import { AppState, AppStateStatus, Platform } from 'react-native';
 import * as TaskManager from 'expo-task-manager';
 import { syncNow } from './sync';
 import { getSyncStatus, setSyncStatus, statusFromError, statusFromOutcome } from './sync-status';
+import { InitialSyncOutcome, initialSyncOutcomeFromError, initialSyncOutcomeFromSync } from './initial-sync';
+import type { SyncOutcome } from './sync-engine';
 
 const BACKGROUND_TASK_NAME = 'pumppal-background-sync';
 // Post-write triggers fire on every local commit; the app's own autosave is
@@ -28,9 +30,11 @@ export function configureSyncTrigger(provider: UidProvider): void {
   getUids = provider;
 }
 
-async function runAndReportSync(): Promise<void> {
+type ReportedSyncResult = { outcome: SyncOutcome } | { error: unknown };
+
+async function runAndReportSync(): Promise<ReportedSyncResult> {
   const { uid, currentUid } = getUids();
-  if (!uid || !currentUid || uid !== currentUid) return;
+  if (!uid || !currentUid || uid !== currentUid) return { outcome: { status: 'auth-required' } };
   setSyncStatus({ state: 'syncing' });
   try {
     const outcome = await syncNow(uid, currentUid);
@@ -38,11 +42,13 @@ async function runAndReportSync(): Promise<void> {
     // "pulled: 0" and "the run threw" are different diagnoses, and until this
     // existed both looked identical from outside: an empty screen.
     console.log('[sync]', JSON.stringify(outcome));
+    return { outcome };
   } catch (err) {
     setSyncStatus(statusFromError(err));
     // Settings -> Sync status keeps the detail; this makes a failed run
     // visible in Metro instead of only to someone who goes looking for it.
     console.warn('[sync] run failed:', err);
+    return { error: err };
   }
 }
 
@@ -76,14 +82,41 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   }
 });
 
-let initialSync: Promise<void> | null = null;
+let initialSync: Promise<InitialSyncOutcome> | null = null;
+let initialSyncUid: string | null = null;
+
+async function runInitialSync(uid: string): Promise<InitialSyncOutcome> {
+  const result = await runAndReportSync();
+  const { uid: activeUid, currentUid } = getUids();
+  // Do not let an older account's completion decide the new account's route.
+  if (activeUid !== uid || currentUid !== uid) return { kind: 'auth-transition', uid };
+  return 'error' in result
+    ? initialSyncOutcomeFromError(uid, result.error)
+    : initialSyncOutcomeFromSync(uid, result.outcome);
+}
+
+function beginInitialSync(): Promise<InitialSyncOutcome> {
+  const { uid, currentUid } = getUids();
+  if (!uid || uid !== currentUid) return Promise.resolve({ kind: 'auth-transition', uid: uid ?? '' });
+  initialSyncUid = uid;
+  initialSync = runInitialSync(uid);
+  return initialSync;
+}
 /**
- * Resolves once the sign-in bootstrap sync has finished (success or failure).
- * Gating UI that reads local-only rows needs this: before the first pull lands,
- * a missing row means "not synced yet", not "the user never set it".
+ * Resolves to a structured sign-in bootstrap result. A caller for a different
+ * UID receives an auth-transition outcome rather than an old account's data.
  */
-export function waitForInitialSync(): Promise<void> {
-  return initialSync ?? Promise.resolve();
+export function waitForInitialSync(uid: string): Promise<InitialSyncOutcome> {
+  return initialSync && initialSyncUid === uid
+    ? initialSync
+    : Promise.resolve({ kind: 'auth-transition', uid });
+}
+
+/** Starts a fresh, user-requested bootstrap attempt after a recoverable failure. */
+export function retryInitialSync(uid: string): Promise<InitialSyncOutcome> {
+  const { uid: activeUid, currentUid } = getUids();
+  if (activeUid !== uid || currentUid !== uid) return Promise.resolve({ kind: 'auth-transition', uid });
+  return beginInitialSync();
 }
 
 let started = false;
@@ -96,7 +129,7 @@ export function startSyncTriggers(): void {
   if (started || Platform.OS === 'web') return;
   started = true;
 
-  initialSync = runAndReportSync(); // sign-in/bootstrap trigger; never rejects
+  void beginInitialSync();
 
   appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
     if (state === 'active') void runAndReportSync();
@@ -121,6 +154,7 @@ export function startSyncTriggers(): void {
 export function stopSyncTriggers(): void {
   started = false;
   initialSync = null;
+  initialSyncUid = null;
   appStateSubscription?.remove();
   appStateSubscription = null;
   netInfoUnsubscribe?.();

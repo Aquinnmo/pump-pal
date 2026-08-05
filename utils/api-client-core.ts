@@ -10,14 +10,19 @@ import { z } from 'zod';
  */
 
 export class ApiAuthError extends Error {
-  constructor(message = 'You must be signed in.') {
+  constructor(
+    message = 'You must be signed in.',
+    public status?: number,
+    public code?: string,
+    public requestId?: string
+  ) {
     super(message);
     this.name = 'ApiAuthError';
   }
 }
 
 export class ApiValidationError extends Error {
-  constructor(message: string, public code?: string) {
+  constructor(message: string, public code?: string, public requestId?: string) {
     super(message);
     this.name = 'ApiValidationError';
   }
@@ -25,7 +30,13 @@ export class ApiValidationError extends Error {
 
 /** 409 — the mutation's baseVersion is stale. `remote`/`remoteVersion` let the caller rebase. */
 export class ApiConflictError<T = unknown> extends Error {
-  constructor(message: string, public remote: T, public remoteVersion: string) {
+  constructor(
+    message: string,
+    public remote: T,
+    public remoteVersion: string,
+    public code = 'conflict',
+    public requestId?: string
+  ) {
     super(message);
     this.name = 'ApiConflictError';
   }
@@ -33,7 +44,7 @@ export class ApiConflictError<T = unknown> extends Error {
 
 export class ApiRateLimitError extends Error {
   /** Milliseconds to wait before retrying, parsed from `Retry-After`; null if the header was absent/unparseable. */
-  constructor(message: string, public retryAfterMs: number | null) {
+  constructor(message: string, public retryAfterMs: number | null, public code?: string, public requestId?: string) {
     super(message);
     this.name = 'ApiRateLimitError';
   }
@@ -54,7 +65,7 @@ export class ApiTimeoutError extends Error {
 }
 
 export class ApiNotFoundError extends Error {
-  constructor(message = 'Not found.') {
+  constructor(message = 'Not found.', public code?: string, public requestId?: string) {
     super(message);
     this.name = 'ApiNotFoundError';
   }
@@ -62,7 +73,7 @@ export class ApiNotFoundError extends Error {
 
 /** Any other non-2xx status (500, ...), or a 2xx body that fails the caller's response schema. */
 export class ApiHttpError extends Error {
-  constructor(message: string, public status: number) {
+  constructor(message: string, public status: number, public code?: string, public requestId?: string) {
     super(message);
     this.name = 'ApiHttpError';
   }
@@ -82,6 +93,21 @@ export function buildQueryString(query?: Record<string, string | number | boolea
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
   return parts.length ? `?${parts.join('&')}` : '';
+}
+
+/**
+ * Removes incidental whitespace and trailing slashes from an absolute API
+ * origin. An empty result deliberately remains empty: web callers use that as
+ * the same-origin fallback, while native callers surface a configuration error.
+ */
+export function normalizeApiBaseUrl(baseUrl: string | undefined): string {
+  return baseUrl?.trim().replace(/\/+$/, '') ?? '';
+}
+
+/** Stable for both absolute API origins and web's same-origin empty base URL. */
+export function buildApiUrl(baseUrl: string, path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${normalizeApiBaseUrl(baseUrl)}${normalizedPath}`;
 }
 
 // Minimal shape both expo/fetch and the global fetch satisfy.
@@ -117,6 +143,12 @@ export type ApiRequestLog = {
   url: string;
   /** Absent when the request never got a response (network failure, timeout, abort). */
   status?: number;
+  /** Server-provided structured error code, when a response supplied one. */
+  code?: string;
+  /** Correlates client-visible errors with the redacted server log line. */
+  requestId?: string;
+  /** True only when a 401 caused one forced Firebase token refresh and replay. */
+  retried?: boolean;
   durationMs: number;
   /** The thrown error's `name`, e.g. 'ApiNotFoundError'. Absent on success. */
   error?: string;
@@ -126,7 +158,7 @@ export type ApiRequestDeps = {
   baseUrl: string;
   clientVersion: string;
   fetchImpl: FetchLike;
-  getIdToken: () => Promise<string | null>;
+  getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
   /** Injected rather than calling console directly, so this module stays platform-free and the logging stays assertable in tests. */
   log?: (entry: ApiRequestLog) => void;
 };
@@ -144,22 +176,44 @@ export async function apiRequestCore<TOut = void>(
   options: ApiRequestOptions<TOut> = {}
 ): Promise<TOut> {
   const method = options.method ?? 'GET';
-  const url = `${deps.baseUrl}${path}${buildQueryString(options.query)}`;
+  const url = `${buildApiUrl(deps.baseUrl, path)}${buildQueryString(options.query)}`;
   const start = Date.now();
   const log = deps.log;
   // Written by sendRequest once a response comes back; stays undefined when
   // the request never got one (network failure, timeout, missing token).
-  const seen: { status?: number } = {};
+  const seen: { status?: number; code?: string; requestId?: string } = {};
+  let retried = false;
 
   try {
-    const result = await sendRequest<TOut>(url, method, deps, options, seen);
-    log?.({ method, url, status: seen.status, durationMs: Date.now() - start });
+    let result: TOut;
+    try {
+      result = await sendRequest<TOut>(url, method, deps, options, seen);
+    } catch (err) {
+      // Firebase ID tokens can expire in memory before Firebase refreshes
+      // them. Replay only an actual 401, once, with a forced refresh; never
+      // retry malformed requests, conflicts, rate limits, or network errors.
+      if (!(err instanceof ApiAuthError) || err.status !== 401) throw err;
+      retried = true;
+      result = await sendRequest<TOut>(url, method, deps, options, seen, true);
+    }
+    log?.({
+      method,
+      url,
+      status: seen.status,
+      code: seen.code,
+      requestId: seen.requestId,
+      retried: retried || undefined,
+      durationMs: Date.now() - start,
+    });
     return result;
   } catch (err) {
     log?.({
       method,
       url,
       status: seen.status,
+      code: seen.code,
+      requestId: seen.requestId,
+      retried: retried || undefined,
       durationMs: Date.now() - start,
       error: (err as Error)?.name ?? 'Error',
     });
@@ -172,9 +226,10 @@ async function sendRequest<TOut>(
   method: string,
   deps: ApiRequestDeps,
   options: ApiRequestOptions<TOut>,
-  seen: { status?: number }
+  seen: { status?: number; code?: string; requestId?: string },
+  forceRefresh = false
 ): Promise<TOut> {
-  const idToken = await deps.getIdToken();
+  const idToken = await deps.getIdToken(forceRefresh);
   if (!idToken) throw new ApiAuthError();
 
   // Combine an internal timeout controller with any caller-supplied signal —
@@ -216,15 +271,26 @@ async function sendRequest<TOut>(
   }
 
   seen.status = response.status;
+  seen.code = undefined;
+  seen.requestId = response.headers.get('X-Request-Id') ?? undefined;
 
   // Both of these name the request. Without it every failure collapses to the
   // same context-free string, and telling "this route isn't deployed" apart
   // from "this id doesn't exist" means reading source instead of the message.
   if (response.status === 401) {
-    throw new ApiAuthError(`Session expired — please sign in again. (401 from ${method} ${url})`);
+    const details = await readErrorDetails(response);
+    seen.code = details.code;
+    throw new ApiAuthError(
+      `${details.message ?? 'Session expired — please sign in again.'} (401 from ${method} ${url})`,
+      401,
+      details.code,
+      seen.requestId
+    );
   }
   if (response.status === 404) {
-    throw new ApiNotFoundError(`Not found: ${method} ${url}`);
+    const details = await readErrorDetails(response);
+    seen.code = details.code;
+    throw new ApiNotFoundError(`Not found: ${method} ${url}`, details.code, seen.requestId);
   }
   if (response.status === 409) {
     const body = (await response.json().catch(() => null)) as
@@ -233,24 +299,32 @@ async function sendRequest<TOut>(
     const remote = options.conflictEntitySchema
       ? options.conflictEntitySchema.parse(body?.remote)
       : body?.remote;
+    seen.code = typeof body?.error === 'string' ? 'conflict' : undefined;
     throw new ApiConflictError(
       typeof body?.error === 'string' ? body.error : 'Version conflict.',
       remote,
-      body?.remoteVersion ?? ''
+      body?.remoteVersion ?? '',
+      'conflict',
+      seen.requestId
     );
   }
   if (response.status === 429) {
+    const details = await readErrorDetails(response);
+    seen.code = details.code;
     throw new ApiRateLimitError(
-      'Rate limited — try again shortly.',
-      parseRetryAfter(response.headers.get('Retry-After'))
+      details.message ?? 'Rate limited — try again shortly.',
+      parseRetryAfter(response.headers.get('Retry-After')),
+      details.code,
+      seen.requestId
     );
   }
   if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const parsed = errorResponse.safeParse(body);
+    const details = await readErrorDetails(response);
+    seen.code = details.code;
     throw new ApiValidationError(
-      parsed.success ? parsed.data.error : `Request failed (${response.status}).`,
-      parsed.success ? parsed.data.code : undefined
+      details.message ?? `Request failed (${response.status}).`,
+      details.code,
+      seen.requestId
     );
   }
 
@@ -260,8 +334,19 @@ async function sendRequest<TOut>(
   if (!parsed.success) {
     throw new ApiHttpError(
       `Response did not match the expected shape: ${parsed.error.message}`,
-      response.status
+      response.status,
+      undefined,
+      seen.requestId
     );
   }
   return parsed.data;
+}
+
+async function readErrorDetails(response: Awaited<ReturnType<FetchLike>>): Promise<{
+  message?: string;
+  code?: string;
+}> {
+  const body = await response.json().catch(() => null);
+  const parsed = errorResponse.safeParse(body);
+  return parsed.success ? { message: parsed.data.error, code: parsed.data.code } : {};
 }

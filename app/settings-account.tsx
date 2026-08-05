@@ -3,6 +3,7 @@ import { auth } from '@/config/firebase';
 import { useAuth } from '@/context/auth-context';
 import { getSignOutSafety, purgeLocalAccountData, SignOutSafety, syncBeforeSignOut } from '@/db/account-data';
 import { deleteAccountData } from '@/repositories/remote/account';
+import { getFriendlyAuthError } from '@/utils/firebase-errors';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { deleteUser, sendPasswordResetEmail } from 'firebase/auth';
@@ -11,7 +12,7 @@ import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, TouchableOpacity
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsAccountScreen() {
-  const { user, logOut } = useAuth();
+  const { user, logOut, googleConnection, connectGoogleAccount } = useAuth();
   const insets = useSafeAreaInsets();
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signOutSafety, setSignOutSafety] = useState<SignOutSafety | null>(null);
@@ -24,6 +25,7 @@ export default function SettingsAccountScreen() {
   const [sendingResetEmail, setSendingResetEmail] = useState(false);
   const [deleteModalError, setDeleteModalError] = useState('');
   const [changePasswordError, setChangePasswordError] = useState('');
+  const [googleLinkError, setGoogleLinkError] = useState('');
   const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
     visible: false,
     message: '',
@@ -37,7 +39,7 @@ export default function SettingsAccountScreen() {
     setShowSignOutModal(true);
     try {
       setSignOutSafety(await getSignOutSafety(user.uid));
-    } catch (error) {
+    } catch {
       setSignOutError('Could not inspect local changes. Stay signed in and try again.');
     }
   };
@@ -46,6 +48,18 @@ export default function SettingsAccountScreen() {
     setChangePasswordError('');
     setShowChangePasswordModal(true);
   };
+
+  const handleConnectGoogle = async () => {
+    setGoogleLinkError('');
+    try {
+      const connected = await connectGoogleAccount();
+      if (connected) setToast({ visible: true, message: 'Google connected', type: 'success' });
+    } catch (error) {
+      setGoogleLinkError(getFriendlyAuthError(error));
+    }
+  };
+
+  const isPasswordAccount = user?.providerData.some((provider) => provider.providerId === 'password') ?? false;
 
   const confirmChangePassword = async () => {
     if (!user || !user.email) return;
@@ -264,6 +278,44 @@ export default function SettingsAccountScreen() {
       </Modal>
 
       <View style={styles.content}>
+        {isPasswordAccount && (
+          <View style={styles.googleConnection}>
+            {googleConnection === 'connected' ? (
+              <View
+                accessibilityLabel="Google sign-in connected"
+                accessibilityRole="text"
+                style={styles.googleConnectedRow}>
+                <Ionicons name="logo-google" size={20} color="#fff" style={styles.rowIcon} />
+                <View style={styles.googleCopy}>
+                  <Text style={styles.googleTitle}>Google</Text>
+                  <Text selectable style={styles.googleConnectedText}>Connected</Text>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={googleConnection === 'connecting' ? 'Connecting Google' : 'Connect Google'}
+                activeOpacity={0.8}
+                disabled={googleConnection === 'connecting'}
+                onPress={handleConnectGoogle}
+                style={[styles.googleConnectButton, googleConnection === 'connecting' && styles.modalButtonDisabled]}>
+                {googleConnection === 'connecting' ? (
+                  <ActivityIndicator size="small" color="#fff" style={styles.rowIcon} />
+                ) : (
+                  <Ionicons name="logo-google" size={20} color="#fff" style={styles.rowIcon} />
+                )}
+                <View style={styles.googleCopy}>
+                  <Text style={styles.googleTitle}>
+                    {googleConnection === 'connecting' ? 'Connecting Google' : 'Connect Google'}
+                  </Text>
+                  <Text style={styles.googleHint}>Use the same email as this account.</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            {googleLinkError ? <Text selectable style={styles.googleError}>{googleLinkError}</Text> : null}
+          </View>
+        )}
+
         <TouchableOpacity
           style={[styles.changePasswordButton, { marginBottom: 12 }]}
           onPress={handleChangePassword}
@@ -307,6 +359,59 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+  },
+  googleConnection: {
+    marginBottom: 12,
+  },
+  googleConnectButton: {
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderColor: '#2a2a2a',
+    borderCurve: 'continuous',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    minHeight: 52,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
+  googleConnectedRow: {
+    alignItems: 'center',
+    backgroundColor: '#1c1c1c',
+    borderColor: '#2a2a2a',
+    borderCurve: 'continuous',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    minHeight: 52,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
+  googleCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  googleTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  googleHint: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  googleConnectedText: {
+    color: '#4ade80',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  googleError: {
+    color: '#f87171',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+    marginTop: 8,
   },
   rowIcon: {
     marginRight: 12,

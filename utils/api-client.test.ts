@@ -11,6 +11,8 @@ import {
   ApiValidationError,
   ApiRequestDeps,
   ApiRequestLog,
+  buildApiUrl,
+  normalizeApiBaseUrl,
   FetchLike,
 } from './api-client-core';
 
@@ -33,7 +35,10 @@ function fakeFetch(respond: (url: string, init: any) => FakeResponse | Promise<F
         resolve({
           ok: r.status >= 200 && r.status < 300,
           status: r.status,
-          headers: { get: (k: string) => r.headers?.[k] ?? null },
+          headers: {
+            get: (name: string) =>
+              Object.entries(r.headers ?? {}).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1] ?? null,
+          },
           json: async () => r.body,
         });
       });
@@ -50,6 +55,15 @@ function deps(
 const echoSchema = z.object({ ok: z.boolean() });
 
 async function main() {
+  // --- configured origins and same-origin fallback join paths consistently ---
+  {
+    const previewOrigin = normalizeApiBaseUrl(' https://timber-preview.example.com/// ');
+    assert.equal(previewOrigin, 'https://timber-preview.example.com');
+    assert.equal(buildApiUrl(previewOrigin, '/api/profile'), 'https://timber-preview.example.com/api/profile');
+    assert.equal(buildApiUrl(previewOrigin, 'api/profile'), 'https://timber-preview.example.com/api/profile');
+    assert.equal(buildApiUrl(normalizeApiBaseUrl(undefined), '/api/profile'), '/api/profile');
+  }
+
   // --- success: response validated + typed against the schema ---
   {
     const result = await apiRequestCore(
@@ -80,12 +94,66 @@ async function main() {
     assert.equal(fetchCalled, false);
   }
 
-  // --- 401: session expired ---
+  // --- 401: one forced token refresh and replay recovers a stale session ---
   {
-    await assert.rejects(
-      () => apiRequestCore('/api/x', deps(fakeFetch(() => ({ status: 401 })))),
-      ApiAuthError
+    const refreshes: boolean[] = [];
+    const tokens: string[] = [];
+    let attempts = 0;
+    const result = await apiRequestCore(
+      '/api/x',
+      deps(
+        fakeFetch((_url, init) => {
+          tokens.push(init.headers.Authorization);
+          attempts += 1;
+          return attempts === 1
+            ? { status: 401, body: { error: 'Invalid or expired session', code: 'invalid_token' } }
+            : { status: 200, body: { ok: true } };
+        }),
+        async (forceRefresh = false) => {
+          refreshes.push(forceRefresh);
+          return forceRefresh ? 'fresh-token' : 'stale-token';
+        }
+      ),
+      { responseSchema: echoSchema }
     );
+    assert.deepEqual(result, { ok: true });
+    assert.deepEqual(refreshes, [false, true]);
+    assert.deepEqual(tokens, ['Bearer stale-token', 'Bearer fresh-token']);
+  }
+
+  // --- second 401 surfaces the server diagnostics unchanged; no third attempt ---
+  {
+    let tokenCalls = 0;
+    let fetchCalls = 0;
+    await assert.rejects(
+      () =>
+        apiRequestCore(
+          '/api/x',
+          deps(
+            fakeFetch(() => {
+              fetchCalls += 1;
+              return {
+                status: 401,
+                headers: { 'X-Request-Id': 'request-401' },
+                body: { error: 'Invalid or expired session', code: 'invalid_token' },
+              };
+            }),
+            async () => {
+              tokenCalls += 1;
+              return 'fake-token';
+            }
+          )
+        ),
+      (err: Error) => {
+        assert.ok(err instanceof ApiAuthError);
+        assert.equal(err.message, 'Invalid or expired session (401 from GET https://api.test/api/x)');
+        assert.equal(err.code, 'invalid_token');
+        assert.equal(err.requestId, 'request-401');
+        return true;
+      }
+    );
+    assert.equal(tokenCalls, 2);
+    assert.equal(fetchCalls, 2);
   }
 
   // --- 404: distinct from a generic validation/http error ---
@@ -153,6 +221,31 @@ async function main() {
       assert.equal((err as ApiValidationError).message, 'name is required');
       assert.equal((err as ApiValidationError).code, 'validation');
     }
+  }
+
+  // --- non-401 response failures are not retried ---
+  {
+    let tokenCalls = 0;
+    let fetchCalls = 0;
+    await assert.rejects(
+      () =>
+        apiRequestCore(
+          '/api/x',
+          deps(
+            fakeFetch(() => {
+              fetchCalls += 1;
+              return { status: 403, body: { error: 'Origin not allowed', code: 'origin_denied' } };
+            }),
+            async () => {
+              tokenCalls += 1;
+              return 'fake-token';
+            }
+          )
+        ),
+      ApiValidationError
+    );
+    assert.equal(tokenCalls, 1);
+    assert.equal(fetchCalls, 1);
   }
 
   // --- network loss: fetch rejects with something other than AbortError ---
@@ -240,13 +333,48 @@ async function main() {
     const entries: ApiRequestLog[] = [];
     await assert.rejects(() =>
       apiRequestCore('/api/x', {
-        ...deps(fakeFetch(() => ({ status: 404 }))),
+        ...deps(
+          fakeFetch(() => ({
+            status: 404,
+            headers: { 'X-Request-Id': 'request-404' },
+            body: { error: 'Not found', code: 'not_found' },
+          }))
+        ),
         log: (e) => entries.push(e),
       })
     );
     assert.equal(entries.length, 1);
     assert.equal(entries[0].status, 404);
     assert.equal(entries[0].error, 'ApiNotFoundError');
+    assert.equal(entries[0].code, 'not_found');
+    assert.equal(entries[0].requestId, 'request-404');
+    assert.doesNotMatch(JSON.stringify(entries[0]), /fake-token|Authorization/i);
+  }
+
+  // --- log: the second attempt's safe diagnostics are retained, never tokens ---
+  {
+    const entries: ApiRequestLog[] = [];
+    let attempts = 0;
+    await apiRequestCore(
+      '/api/x',
+      {
+        ...deps(
+          fakeFetch(() => {
+            attempts += 1;
+            return attempts === 1
+              ? { status: 401, body: { error: 'Invalid or expired session', code: 'invalid_token' } }
+              : { status: 200, headers: { 'X-Request-Id': 'request-ok' }, body: { ok: true } };
+          })
+        ),
+        log: (entry) => entries.push(entry),
+      },
+      { responseSchema: echoSchema }
+    );
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].status, 200);
+    assert.equal(entries[0].requestId, 'request-ok');
+    assert.equal(entries[0].retried, true);
+    assert.doesNotMatch(JSON.stringify(entries[0]), /fake-token|Authorization/i);
   }
 
   // --- log: a request that never got a response has no status ---

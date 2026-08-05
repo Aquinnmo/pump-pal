@@ -55,7 +55,34 @@ Two separate credential classes, easy to confuse:
 Everything in this stage targets **Preview only**. Nothing here touches a
 real user.
 
-### 1a. Vercel environment variables (Preview)
+### 1a. Expo client configuration and Google registrations (Preview)
+
+Set the following **public client** values for the EAS `preview` environment
+(the checked-in `eas.json` selects it). They identify a Firebase/OAuth client;
+they are safe to embed, but they are not a substitute for Firebase security
+rules or server-side token verification.
+
+| Variable | Preview value | Purpose |
+| --- | --- | --- |
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase web config | Firebase client identity |
+| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase web config | Firebase Auth redirect domain |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `pumppal-c9199` | Firebase project |
+| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase web config | Firebase storage bucket |
+| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase web config | Firebase messaging sender ID |
+| `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase web config | Firebase app ID (not an OAuth client ID) |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth web client ID | browser sign-in/linking |
+| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client ID | installed iOS sign-in/linking |
+| `EXPO_PUBLIC_API_BASE_URL` | Preview API origin | required for native Preview builds; optional only for same-origin web |
+
+Before testing, enable Google in Firebase Authentication → Sign-in method. In
+Google Cloud/Firebase OAuth settings, register the exact Preview web origin as
+an authorized JavaScript origin, the exact Preview iOS bundle identifier on
+the iOS OAuth client, and the Android package plus the SHA-1 and SHA-256 of
+the EAS Preview signing certificate on the Android OAuth client. Use the OAuth
+client IDs only—never a client secret, service-account JSON, or a signing key
+in EAS variables or the repository.
+
+### 1b. Vercel environment variables (Preview)
 
 Vercel dashboard → the project → Settings → Environment Variables → scope to
 **Preview**. None of these are prefixed `EXPO_PUBLIC_`, and none of them ever
@@ -92,14 +119,14 @@ the Firebase project, not the Vercel environment) — the separation that
 matters is the AI provider key and `API_ALLOWED_ORIGINS`, which should differ
 per environment so a Preview key leak doesn't cost Production spend.
 
-### 1b. Point Preview at `timber-preview.adam-montgomery.ca`
+### 1c. Point Preview at `timber-preview.adam-montgomery.ca`
 
 Assign that domain to the project's Preview deployments in the Vercel
 dashboard (Settings → Domains). Confirm a Preview deploy actually builds
 `api/**` as functions — check the deployment's **Functions** tab. If it
 produced only static output, nothing past this point will work.
 
-### 1c. Run the focused test suite
+### 1d. Run the focused test suite
 
 ```bash
 npm run test:api
@@ -108,10 +135,10 @@ npm run test:api
 Covers isolation (`api/**` only imports `api/`+`shared/`; no Firebase SDK in
 `api/`; no AI provider SDK/key outside `api/`), CORS allow/deny, auth,
 contract schema validation, and ownership/conflict/idempotency for every
-domain (see `docs/api-operations.md`). This is a prerequisite for Stage 1d,
+domain (see `docs/api-operations.md`). This is a prerequisite for Stage 1e,
 not a substitute for it — none of these tests touch a live deployment.
 
-### 1d. Cold-start check (Preview only, requires deployment)
+### 1e. Cold-start check (Preview only, requires deployment)
 
 The Firebase Admin cold-start gate is **p95 < 2s**. This API stayed on the
 Firestore REST adapter (`api/_lib/store/rest.ts`) rather than reintroducing
@@ -350,10 +377,11 @@ does **not** run Vercel functions.
 | Symptom | Likely cause |
 | --- | --- |
 | `You must be signed in to use AI features.` | thrown client-side before any request; no Firebase user |
-| `Invalid or expired session` (401) | `FIREBASE_PROJECT_ID` on Vercel doesn't match the project that issued the token, or the token expired |
-| `403` with `code: origin_denied` | the caller's `Origin` isn't in `API_ALLOWED_ORIGINS` for that environment |
+| `Invalid or expired session` (401) | the client force-refreshes its Firebase token and replays once; if the replay still fails, compare Preview `FIREBASE_PROJECT_ID` with the client config and use the safe route/status/code/request ID diagnostic to find the server log |
+| `403` with `code: origin_denied` | the caller's `Origin` isn't in Preview `API_ALLOWED_ORIGINS`; this is not retried, so correct the allowlist and correlate the route/status/code/request ID with Vercel logs |
 | JSON parse error, response looks like HTML | hit a Vercel-SSO-protected `*.vercel.app` URL instead of the custom domain |
-| 404 on any `/api/*` route | Vercel didn't build the function (check the Functions tab), or you're on `expo start --web` without `vercel dev` |
+| `404` with API code `not_found` | the API route ran but the requested resource is absent; inspect the route and request ID rather than treating it as a deploy failure |
+| `404` on every `/api/*` route, especially an HTML/non-API response | Vercel didn't build the function (check the Functions tab), the origin is wrong, or you're on `expo start --web` without `vercel dev` |
 | `Missing required env var: ...` at cold start | one of `AI_PROVIDER`/`AI_MODEL`/`FIREBASE_PROJECT_ID`/`FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY` unset for that environment |
 | `Unsupported AI_REASONING_EFFORT "max"` for google | `max` is OpenAI-only; use `high` or switch `AI_PROVIDER` |
 | 401 from the token exchange, function-side | `FIREBASE_PRIVATE_KEY` newlines mangled — must be literal `\n`, not real line breaks |

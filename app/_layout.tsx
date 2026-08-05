@@ -1,6 +1,6 @@
 import { profileRepository } from '@/db/profile-repository';
-import { waitForInitialSync } from '@/db/sync-trigger';
-import { isSplitOption } from '@/constants/split-options';
+import { retryInitialSync, waitForInitialSync } from '@/db/sync-trigger';
+import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError } from '@/db/initial-sync';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { subscribeLiveUpdateNotificationActions } from '@/utils/live-update-notification-actions';
@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import 'react-native-reanimated';
@@ -23,9 +23,10 @@ export const unstable_settings = {
 
 function RootLayoutNav() {
   const { user, loading } = useAuth();
+  const userId = user?.uid ?? null;
   const segments = useSegments();
-  const [hasSplit, setHasSplit] = useState(false);
-  const [checkingSplit, setCheckingSplit] = useState(true);
+  const [accountGate, setAccountGate] = useState<AccountBootstrapDecision>({ state: 'pending' });
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -36,44 +37,52 @@ function RootLayoutNav() {
 
   useEffect(() => {
     if (loading) return;
+    if (!userId) {
+      setAccountGate({ state: 'ready', source: 'remote' });
+      return;
+    }
 
+    const uid = userId;
     let cancelled = false;
+    setAccountGate({ state: 'pending' });
 
-    const checkSplit = async () => {
-      if (!user) {
-        setHasSplit(false);
-        setCheckingSplit(false);
-        return;
-      }
-
-      setCheckingSplit(true);
+    const checkAccount = async () => {
       try {
-        let profile = await profileRepository.get(user.uid);
-        if (!profile) {
-          // Native reads users/{uid} out of local SQLite only, so a missing row
-          // before the first pull lands is "not synced yet", not "no split" —
-          // deciding here is what used to send returning users to /set-split.
-          // ponytail: offline on a fresh install still falls through to
-          // /set-split; check sync status here if that starts to bite.
-          await waitForInitialSync();
-          if (cancelled) return;
-          profile = await profileRepository.get(user.uid);
+        // Native can open a known account immediately from its UID-scoped
+        // SQLite profile, even if the background pull is offline. Web's
+        // repository performs this read against the API, so an error below is
+        // a real hydration failure rather than an empty account.
+        const cachedProfile = (await profileRepository.get(uid))?.data ?? null;
+        const cachedDecision = decideAccountBootstrap(cachedProfile, null, { kind: 'auth-transition', uid });
+        if (cachedDecision.state === 'ready') {
+          if (!cancelled) setAccountGate(cachedDecision);
+          return;
         }
+        let outcome = await waitForInitialSync(uid);
+        if (outcome.kind === 'auth-transition') outcome = await retryInitialSync(uid);
+        if (cancelled || outcome.uid !== uid || outcome.kind === 'auth-transition') return;
+
+        // After a successful native pull, read the local row again. On web,
+        // this is the authoritative API read that just completed above.
+        const hydratedProfile = outcome.kind === 'success'
+          ? ((await profileRepository.get(uid))?.data ?? null)
+          : null;
         if (cancelled) return;
-        const splitType = profile?.data.workoutSplit?.type;
-        setHasSplit(isSplitOption(splitType));
-      } catch {
-        if (!cancelled) setHasSplit(false);
-      } finally {
-        if (!cancelled) setCheckingSplit(false);
+        setAccountGate(decideAccountBootstrap(cachedProfile, hydratedProfile, outcome));
+      } catch (error) {
+        if (!cancelled) {
+          setAccountGate(
+            decideAccountBootstrap(null, null, initialSyncOutcomeFromError(uid, error))
+          );
+        }
       }
     };
 
-    checkSplit();
+    void checkAccount();
     return () => {
       cancelled = true;
     };
-  }, [user, loading, segments]);
+  }, [loading, retryAttempt, userId]);
 
   // Watch actions, for every case except "the active-workout screen is mounted" —
   // that screen subscribes itself and applies them to its own draft state.
@@ -98,20 +107,27 @@ function RootLayoutNav() {
   }, [user]);
 
   useEffect(() => {
-    if (loading || checkingSplit || onboardingSeen === null) return;
+    if (loading || onboardingSeen === null || (user && accountGate.state === 'pending')) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inSetSplit = segments[0] === 'set-split';
 
     if (!user && !inAuthGroup) {
       router.replace(onboardingSeen ? '/(auth)/sign-in' : '/(auth)/welcome');
-    } else if (user && !hasSplit && !inSetSplit) {
+    } else if (user && accountGate.state === 'onboarding' && !inSetSplit) {
       router.replace('/set-split');
-    } else if (user && hasSplit && (inAuthGroup || inSetSplit)) {
+    } else if (user && accountGate.state === 'ready' && (inAuthGroup || inSetSplit)) {
       router.replace('/(tabs)');
     }
-  }, [user, loading, checkingSplit, hasSplit, segments, onboardingSeen]);
+  }, [accountGate.state, user, loading, segments, onboardingSeen]);
 
-  const gateUndecided = loading || checkingSplit || onboardingSeen === null;
+  const gateUndecided = loading || onboardingSeen === null || (!!user && accountGate.state === 'pending');
+
+  const retryAccountBootstrap = () => {
+    if (!user) return;
+    const uid = user.uid;
+    setAccountGate({ state: 'pending' });
+    void retryInitialSync(uid).then(() => setRetryAttempt((attempt) => attempt + 1));
+  };
 
   return (
     <>
@@ -137,6 +153,22 @@ function RootLayoutNav() {
           <WorkoutPrefillLoader label="Loading your account…" subtitle="Warming up" />
         </View>
       )}
+      {user && accountGate.state === 'error' && (
+        <View style={styles.errorOverlay} accessibilityViewIsModal>
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>Could not load your account</Text>
+            <Text selectable style={styles.errorMessage}>{accountGate.message}</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Try loading your account again"
+              activeOpacity={0.8}
+              style={styles.retryButton}
+              onPress={retryAccountBootstrap}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
       <StatusBar style="light" />
     </>
   );
@@ -146,6 +178,51 @@ const styles = StyleSheet.create({
   bootOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0f0f0f',
+  },
+  errorOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: '#0f0f0f',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  errorCard: {
+    backgroundColor: '#1c1c1c',
+    borderColor: '#2a2a2a',
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderRadius: 14,
+    gap: 12,
+    maxWidth: 420,
+    padding: 16,
+    width: '100%',
+  },
+  errorTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  errorMessage: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  retryButton: {
+    alignItems: 'center',
+    backgroundColor: '#e54242',
+    borderCurve: 'continuous',
+    borderRadius: 14,
+    minHeight: 52,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '800',
   },
 });
 
