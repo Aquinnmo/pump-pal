@@ -75,6 +75,19 @@ export function normalizePath(url: string | undefined): string {
   return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
 }
 
+/**
+ * The path to route on. `vercel.json` rewrites `/api/:path*` to
+ * `/api?path=:path*`, so the segments arrive as a query param; `req.url` is
+ * only trusted as a fallback because a rewrite may present the destination
+ * rather than what the client asked for. Exported for tests.
+ */
+export function requestPath(req: Pick<VercelRequest, 'url' | 'query'>): string {
+  const raw = req.query?.path;
+  const joined = Array.isArray(raw) ? raw.join('/') : raw;
+  if (!joined) return normalizePath(req.url);
+  return normalizePath(`/api/${joined.replace(/^\/+/, '')}`);
+}
+
 export interface Match {
   route: Route;
   /** First capture group, when the pattern has one. Always the entity id here. */
@@ -92,7 +105,8 @@ export function matchRoute(url: string | undefined): Match | undefined {
 }
 
 export async function dispatch(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const match = matchRoute(req.url);
+  const path = requestPath(req);
+  const match = matchRoute(path);
   if (!match) {
     // A miss never reaches withRoute, so without this line an unmatched path
     // produces *no* server-side output at all -- making "nothing in the logs"
@@ -101,7 +115,7 @@ export async function dispatch(req: VercelRequest, res: VercelResponse): Promise
     console.log(
       JSON.stringify({
         requestId: randomUUID(),
-        route: normalizePath(req.url),
+        route: path,
         method: req.method,
         status: 404,
         durationMs: 0,

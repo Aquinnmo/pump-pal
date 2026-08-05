@@ -7,16 +7,21 @@ const LOCAL_IOS_BUNDLE_ID = process.env.TIMBER_IOS_BUNDLE_IDENTIFIER;
 // Google sign-in lives here rather than in app.json's static plugin array
 // because iosUrlScheme is the reversed iOS OAuth client ID, and the iOS client
 // differs per bundle identifier — which this file is what varies.
+//
+// Omitted entirely when the client ID is unset: the plugin throws on a missing
+// iosUrlScheme rather than skipping itself, which broke `expo export -p web` on
+// Vercel, where no EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID exists. The web bundle uses
+// signInWithPopup and never touches the native module, so this costs it nothing.
 const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
-const googleSignInPlugin = [
-  '@react-native-google-signin/google-signin',
-  IOS_CLIENT_ID
-    ? { iosUrlScheme: `com.googleusercontent.apps.${IOS_CLIENT_ID.replace('.apps.googleusercontent.com', '')}` }
-    : {},
-];
+const googleSignInPlugin = IOS_CLIENT_ID
+  ? [
+      '@react-native-google-signin/google-signin',
+      { iosUrlScheme: `com.googleusercontent.apps.${IOS_CLIENT_ID.replace('.apps.googleusercontent.com', '')}` },
+    ]
+  : null;
 
 module.exports = ({ config }) => {
-  const plugins = [...(config.plugins ?? []), googleSignInPlugin];
+  const plugins = googleSignInPlugin ? [...(config.plugins ?? []), googleSignInPlugin] : config.plugins;
 
   if (!IS_DEV && !LOCAL_IOS_BUNDLE_ID) return { ...config, plugins };
 

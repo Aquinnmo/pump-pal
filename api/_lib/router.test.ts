@@ -14,7 +14,7 @@ process.env.AI_PROVIDER = 'openai';
 process.env.AI_MODEL = 'gpt-test';
 process.env.OPENAI_API_KEY = 'test-key';
 
-const { matchRoute, normalizePath, dispatch } = await import('./router.js');
+const { matchRoute, normalizePath, dispatch, requestPath } = await import('./router.js');
 
 function fakeRes() {
   const res: any = {
@@ -92,6 +92,21 @@ async function run() {
   assert.equal(matchRoute('/api/nope'), undefined);
   assert.equal(matchRoute('/api/workouts/abc/extra'), undefined);
   assert.equal(matchRoute('/api'), undefined);
+
+  // vercel.json rewrites /api/:path* to /api?path=:path*, so the segments
+  // arrive as a query param. Routing on req.url alone is what shipped every
+  // multi-segment route broken: as a bracket catch-all the platform 404'd
+  // /api/sync/manifest without ever invoking the function.
+  assert.equal(requestPath({ url: '/api?path=sync/manifest', query: { path: 'sync/manifest' } }), '/api/sync/manifest');
+  assert.equal(requestPath({ url: '/api', query: { path: ['workouts', 'abc'] } }), '/api/workouts/abc');
+  assert.equal(requestPath({ url: '/api', query: { path: '/profile' } }), '/api/profile');
+  // No param (direct hit, or a rewrite that kept the original url) -> req.url.
+  assert.equal(requestPath({ url: '/api/profile?x=1', query: {} }), '/api/profile');
+  assert.equal(requestPath({ url: '/api/profile', query: { path: '' } }), '/api/profile');
+
+  const rewritten = matchRoute(requestPath({ url: '/api?path=sync/manifest', query: { path: 'sync/manifest' } }));
+  assert.ok(rewritten, 'a rewritten nested path must still match');
+  assert.equal(await rewritten.route.load(), (await import('./routes/sync.js')).manifest);
 
   // An unmatched path never reaches withRoute, so dispatch has to emit the
   // log line itself -- otherwise a wrong URL is invisible server-side and
