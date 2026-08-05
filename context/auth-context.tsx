@@ -1,5 +1,6 @@
 import { auth } from '@/config/firebase';
 import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/db/sync-trigger';
+import { signInWithGoogle as googleSignIn, signOutGoogle } from '@/utils/google-sign-in';
 import {
     User,
     createUserWithEmailAndPassword,
@@ -15,6 +16,8 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  /** Resolves false when the user dismissed the Google picker. */
+  signInWithGoogle: () => Promise<boolean>;
   logOut: () => Promise<void>;
 }
 
@@ -54,12 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await updateProfile(credential.user, { displayName });
   };
 
+  const signInWithGoogle = () => googleSignIn();
+
   const logOut = async () => {
+    // Clears the cached Google account first, so the next Google sign-in shows
+    // the picker instead of silently reusing the last one.
+    await signOutGoogle();
     await signOut(auth);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, logOut }}>
+    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, logOut }}>
       {children}
     </AuthContext.Provider>
   );
