@@ -76,6 +76,16 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   }
 });
 
+let initialSync: Promise<void> | null = null;
+/**
+ * Resolves once the sign-in bootstrap sync has finished (success or failure).
+ * Gating UI that reads local-only rows needs this: before the first pull lands,
+ * a missing row means "not synced yet", not "the user never set it".
+ */
+export function waitForInitialSync(): Promise<void> {
+  return initialSync ?? Promise.resolve();
+}
+
 let started = false;
 let appStateSubscription: { remove(): void } | null = null;
 let netInfoUnsubscribe: (() => void) | null = null;
@@ -86,7 +96,7 @@ export function startSyncTriggers(): void {
   if (started || Platform.OS === 'web') return;
   started = true;
 
-  void runAndReportSync(); // sign-in/bootstrap trigger
+  initialSync = runAndReportSync(); // sign-in/bootstrap trigger; never rejects
 
   appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
     if (state === 'active') void runAndReportSync();
@@ -110,6 +120,7 @@ export function startSyncTriggers(): void {
 
 export function stopSyncTriggers(): void {
   started = false;
+  initialSync = null;
   appStateSubscription?.remove();
   appStateSubscription = null;
   netInfoUnsubscribe?.();

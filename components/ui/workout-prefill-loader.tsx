@@ -16,6 +16,9 @@ import Animated, {
 
 type WorkoutPrefillLoaderProps = {
   workoutName?: string | null;
+  /** Overrides the workout-specific copy for non-workout waits (e.g. app boot). */
+  label?: string;
+  subtitle?: string;
 };
 
 type LoadingPlateProps = {
@@ -84,7 +87,7 @@ const PLATES = [
   { left: 50, right: 129, height: 52, width: 11, color: '#ff8f8f', start: 0.08 },
 ] as const;
 
-export function WorkoutPrefillLoader({ workoutName }: WorkoutPrefillLoaderProps) {
+export function WorkoutPrefillLoader({ workoutName, label, subtitle }: WorkoutPrefillLoaderProps) {
   const progress = useSharedValue(0);
   const reducedMotion = useReducedMotion();
 
@@ -102,7 +105,7 @@ export function WorkoutPrefillLoader({ workoutName }: WorkoutPrefillLoaderProps)
     return () => cancelAnimation(progress);
   }, [progress, reducedMotion]);
 
-  const loadingLabel = workoutName ? `Loading ${workoutName}…` : 'Loading your workout…';
+  const loadingLabel = label ?? (workoutName ? `Loading ${workoutName}…` : 'Loading your workout…');
 
   return (
     <Animated.View
@@ -141,7 +144,7 @@ export function WorkoutPrefillLoader({ workoutName }: WorkoutPrefillLoaderProps)
         ])}
       </View>
       <Text style={styles.label}>{loadingLabel}</Text>
-      <Text style={styles.subtitle}>Racking your last session</Text>
+      <Text style={styles.subtitle}>{subtitle ?? 'Racking your last session'}</Text>
     </Animated.View>
   );
 }

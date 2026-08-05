@@ -1,5 +1,7 @@
 import { profileRepository } from '@/db/profile-repository';
+import { waitForInitialSync } from '@/db/sync-trigger';
 import { isSplitOption } from '@/constants/split-options';
+import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { subscribeLiveUpdateNotificationActions } from '@/utils/live-update-notification-actions';
 import { handleWorkoutAction, screenOwnsWorkoutActions } from '@/utils/wear-action-task';
@@ -8,6 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
 import 'react-native-reanimated';
@@ -34,6 +37,8 @@ function RootLayoutNav() {
   useEffect(() => {
     if (loading) return;
 
+    let cancelled = false;
+
     const checkSplit = async () => {
       if (!user) {
         setHasSplit(false);
@@ -43,17 +48,31 @@ function RootLayoutNav() {
 
       setCheckingSplit(true);
       try {
-        const profile = await profileRepository.get(user.uid);
+        let profile = await profileRepository.get(user.uid);
+        if (!profile) {
+          // Native reads users/{uid} out of local SQLite only, so a missing row
+          // before the first pull lands is "not synced yet", not "no split" —
+          // deciding here is what used to send returning users to /set-split.
+          // ponytail: offline on a fresh install still falls through to
+          // /set-split; check sync status here if that starts to bite.
+          await waitForInitialSync();
+          if (cancelled) return;
+          profile = await profileRepository.get(user.uid);
+        }
+        if (cancelled) return;
         const splitType = profile?.data.workoutSplit?.type;
         setHasSplit(isSplitOption(splitType));
       } catch {
-        setHasSplit(false);
+        if (!cancelled) setHasSplit(false);
       } finally {
-        setCheckingSplit(false);
+        if (!cancelled) setCheckingSplit(false);
       }
     };
 
     checkSplit();
+    return () => {
+      cancelled = true;
+    };
   }, [user, loading, segments]);
 
   // Watch actions, for every case except "the active-workout screen is mounted" —
@@ -92,6 +111,8 @@ function RootLayoutNav() {
     }
   }, [user, loading, checkingSplit, hasSplit, segments, onboardingSeen]);
 
+  const gateUndecided = loading || checkingSplit || onboardingSeen === null;
+
   return (
     <>
       <Stack>
@@ -109,10 +130,24 @@ function RootLayoutNav() {
         <Stack.Screen name="sync-status" options={{ headerShown: true }} />
         <Stack.Screen name="muscle-load" options={{ title: 'Muscle load' }} />
       </Stack>
+      {gateUndecided && (
+        // Overlay rather than replacing the Stack: expo-router needs it mounted
+        // to run the redirect above. Opaque, so no route flashes underneath.
+        <View style={styles.bootOverlay}>
+          <WorkoutPrefillLoader label="Loading your account…" subtitle="Warming up" />
+        </View>
+      )}
       <StatusBar style="light" />
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  bootOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#0f0f0f',
+  },
+});
 
 export default function RootLayout() {
   return (

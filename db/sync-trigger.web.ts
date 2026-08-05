@@ -9,3 +9,6 @@ export function configureSyncTrigger(_provider: UidProvider): void {}
 export function startSyncTriggers(): void {}
 export function stopSyncTriggers(): void {}
 export function triggerSyncAfterWrite(): void {}
+// Web repositories read through to the API, so there is never a local row
+// waiting to be hydrated — callers can proceed immediately.
+export function waitForInitialSync(): Promise<void> { return Promise.resolve(); }
