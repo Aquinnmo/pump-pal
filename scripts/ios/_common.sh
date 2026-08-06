@@ -236,13 +236,13 @@ _self_test() {
   if [ "$first_bundle" = "$second_bundle" ]; then status=0; else status=1; fi
   _assert "preserves the generated Apple bundle ID" 0 $status
 
-  # Every key in .env.example that we require is spelled correctly.
-  if [ -f "$(dirname -- "${BASH_SOURCE[0]}")/../../.env.example" ]; then
+  # Every key in the mobile example that we require is spelled correctly.
+  if [ -f "$(dirname -- "${BASH_SOURCE[0]}")/../../.env.example.eas" ]; then
     local example k
-    example="$(dirname -- "${BASH_SOURCE[0]}")/../../.env.example"
+    example="$(dirname -- "${BASH_SOURCE[0]}")/../../.env.example.eas"
     for k in "${REQUIRED_ENV_KEYS[@]}"; do
       grep -qE "^${k}=" "$example"; status=$?
-      _assert "$k exists in .env.example" 0 $status
+      _assert "$k exists in .env.example.eas" 0 $status
     done
   fi
 

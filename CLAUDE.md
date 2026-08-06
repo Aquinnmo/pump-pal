@@ -54,7 +54,7 @@ Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React
 
 ### Firebase
 
-`config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example`), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
+`config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example.eas` for mobile and `.env.example.vercel` for web), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
 
 The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/data-model/README.md` (`docs/firestore-data-refactor.md` is migration history, not the current schema). The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
 

@@ -16,9 +16,9 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
    npm install
    ```
 
-2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL` when the API is on a different origin. Native builds require that URL; web falls back to same-origin `/api` only when it is unset.
+2. Copy [`.env.example.eas`](.env.example.eas) to `.env` for local/native development and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL`. Native builds require the API URL; web falls back to same-origin `/api` only when it is unset. The Vercel web/API settings are documented in [`.env.example.vercel`](.env.example.vercel).
 
-   AI provider keys are **not** part of the client `.env`. They live only in the Vercel project environment — see the server section of `.env.example`.
+   AI provider keys are **not** part of the client `.env`. They live only in the Vercel project environment — see the server section of `.env.example.vercel`.
 
 3. Start the dev server
 
@@ -41,7 +41,7 @@ The `preview` profile creates an internally distributed Android APK. It is the p
    npx eas-cli@latest whoami
    ```
 
-2. Add the values from local `.env` to the project's **preview** EAS environment in the Expo dashboard. The remote build cannot read the ignored local `.env` file. Add every `EXPO_PUBLIC_*` value listed in the client section of `.env.example`, including the Firebase config and `EXPO_PUBLIC_API_BASE_URL`.
+2. Add the values from local `.env` to the project's **preview** EAS environment in the Expo dashboard. The remote build cannot read the ignored local `.env` file. Add every `EXPO_PUBLIC_*` value listed in `.env.example.eas`, including the Firebase config and `EXPO_PUBLIC_API_BASE_URL`.
 
    `EXPO_PUBLIC_*` values are bundled into the app and must be treated as client-visible configuration, not secrets. Never add a provider API key here — those belong in the Vercel environment, behind the `/api/ai` proxy. See [EAS environment variables](https://docs.expo.dev/eas/environment-variables/).
 
