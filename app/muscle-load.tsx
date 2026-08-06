@@ -37,7 +37,7 @@ export default function MuscleLoadScreen() {
     setCatalogUnavailable(false);
     try {
       const [storedWorkouts, loadedCatalog] = await Promise.all([
-        workoutRepository.getAll(user.uid),
+        workoutRepository.getHistory(user.uid),
         loadCatalog(),
       ]);
       setWorkouts(storedWorkouts.map((record) => record.data));

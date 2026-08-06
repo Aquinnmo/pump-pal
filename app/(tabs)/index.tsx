@@ -28,7 +28,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!inProgress?.startedAt) return;
-    const startMs = toDateObj(inProgress.startedAt as unknown as Workout['date']).getTime();
+    const startMs = toDateObj(inProgress.startedAt as unknown as Workout['date'])?.getTime();
+    if (startMs === undefined) return;
     const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     tick();
     const interval = setInterval(tick, 1000);
@@ -42,7 +43,7 @@ export default function HomeScreen() {
         setLoading(true);
         try {
           // Completed history is only needed to predict the next split workout.
-          const allFetched = (await workoutRepository.getAll(user.uid)).map((record) => record.data).slice(0, 30);
+          const allFetched = (await workoutRepository.getHistory(user.uid)).map((record) => record.data).slice(0, 30);
 
           // Predict next workout type
           const splitNames = await loadSplitNames(user.uid);

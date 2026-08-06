@@ -31,8 +31,11 @@ export async function getOngoingInjuries(uid: string): Promise<Injury[]> {
  * [onsetDate, resolvedDate ?? now]. Pure — the one piece worth eyeballing.
  */
 export function injuryCoversDate(injury: Injury, date: Date): boolean {
-  const start = toDateObj(injury.onsetDate).getTime();
-  const end = injury.resolvedDate ? toDateObj(injury.resolvedDate).getTime() : Date.now();
+  const startDate = toDateObj(injury.onsetDate);
+  const endDate = injury.resolvedDate ? toDateObj(injury.resolvedDate) : new Date();
+  if (!startDate || !endDate) return false;
+  const start = startDate.getTime();
+  const end = endDate.getTime();
   const t = date.getTime();
   return t >= start && t <= end;
 }
@@ -45,11 +48,12 @@ export function injuryCoversDate(injury: Injury, date: Date): boolean {
  * hundreds of workouts); chunk into writeBatch(≤450) only if a user ever has thousands.
  */
 export async function applyInjuryToHistory(uid: string, injury: Injury): Promise<number> {
-  const workouts = await workoutRepository.getAll(uid);
+  const workouts = await workoutRepository.getHistory(uid);
   const targets = workouts.filter((record) => {
     const data = record.data;
     if (!data.date) return false; // planned/in_progress — not history
-    return injuryCoversDate(injury, toDateObj(data.date));
+    const date = toDateObj(data.date);
+    return date ? injuryCoversDate(injury, date) : false;
   });
   await Promise.all(targets.map(({ id, data }) => workoutRepository.update(uid, id, {
     ...data,
@@ -63,7 +67,7 @@ export async function applyInjuryToHistory(uid: string, injury: Injury): Promise
  * number of workouts unstamped. (Deleting the user-level record is the caller's job.)
  */
 export async function removeInjuryFromHistory(uid: string, injuryId: string): Promise<number> {
-  const workouts = await workoutRepository.getAll(uid);
+  const workouts = await workoutRepository.getHistory(uid);
   const targets = workouts.filter(({ data }) => (data.injuries ?? []).includes(injuryId));
   await Promise.all(targets.map(({ id, data }) => workoutRepository.update(uid, id, {
     ...data,

@@ -105,7 +105,10 @@ export async function suggestWorkoutCompletion(
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
   // Summarise past 30 days (same logic as muscle analysis)
-  const recent = history.filter((w) => toDateObj(w.date).getTime() >= thirtyDaysAgo);
+  const recent = history.filter((w) => {
+    const date = toDateObj(w.date);
+    return date !== null && date.getTime() >= thirtyDaysAgo;
+  });
 
   interface ExStats {
     sessions: number;

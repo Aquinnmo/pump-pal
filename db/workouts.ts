@@ -57,6 +57,22 @@ export async function getAll(db: SqlExecutor, uid: string): Promise<StoredRecord
   return rows.map(fromRow);
 }
 
+/**
+ * Dated workout history for UI/analytics consumers. Missing status is the
+ * legacy representation of completed, while planned/in-progress rows are
+ * intentionally excluded even if a malformed row happens to carry a date.
+ */
+export async function getHistory(db: SqlExecutor, uid: string): Promise<StoredRecord<Workout>[]> {
+  const rows = await db.getAllAsync<Row>(
+    `SELECT * FROM workouts
+     WHERE uid = ? AND deleted = 0 AND date IS NOT NULL
+       AND (status IS NULL OR status = 'completed')
+     ORDER BY date DESC`,
+    [uid]
+  );
+  return rows.map(fromRow);
+}
+
 export async function getByStatus(
   db: SqlExecutor,
   uid: string,

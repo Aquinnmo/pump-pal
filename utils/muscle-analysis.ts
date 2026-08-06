@@ -146,7 +146,10 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
   const now = Date.now();
   const thirtyDaysAgo = now - WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
-  const recent = workouts.filter((w) => toDateObj(w.date).getTime() >= thirtyDaysAgo);
+  const recent = workouts.filter((w) => {
+    const date = toDateObj(w.date);
+    return date !== null && date.getTime() >= thirtyDaysAgo;
+  });
   if (recent.length === 0) {
     return { overTrained: [], underTrained: [] };
   }

@@ -299,6 +299,8 @@ export const catalogExerciseDTO = z.object({
   forceType: z.enum(['push', 'pull', 'hinge', 'squat', 'carry', 'rotation', 'static', 'mixed']),
   trackingModes: z.array(trackingMode),
   variations: z.array(exerciseVariationDTO),
+  /** Canonical catalog documents only; clients use this to reject legacy rows. */
+  schemaVersion: z.literal(2),
   status: z.enum(['approved', 'pending_review']).optional(),
   createdBy: z.string().optional(),
 });
@@ -311,7 +313,8 @@ export type CatalogExerciseDTO = z.infer<typeof catalogExerciseDTO>;
  * matches what they cached.
  */
 export const catalogResponse = z.object({
-  exercises: z.array(catalogExerciseDTO),
+  /** An empty snapshot must never replace a usable cached catalog. */
+  exercises: z.array(catalogExerciseDTO).min(1),
   version: z.number().int(),
 });
 export type CatalogResponse = z.infer<typeof catalogResponse>;

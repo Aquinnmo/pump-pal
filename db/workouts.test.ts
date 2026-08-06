@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from './migrate';
 import { SqlExecutor } from './executor';
-import { getAll, getByStatus, getById, create, update, softDelete, reorderQueue } from './workouts';
+import { getAll, getHistory, getByStatus, getById, create, update, softDelete, reorderQueue } from './workouts';
 import { listAll } from './outbox';
 import { Workout } from '@/types/workout';
 
@@ -84,6 +84,15 @@ async function main() {
   assert.equal(planned[0].data.name, 'Planned Pull');
   const completed = await getByStatus(db, 'u1', 'completed');
   assert.equal(completed.length, 1);
+
+  // --- getHistory preserves legacy completed rows and excludes queue/live rows ---
+  await create(db, 'u1', baseWorkout({ name: 'Legacy completed', status: undefined }));
+  await create(db, 'u1', baseWorkout({ name: 'Malformed live row', status: 'in_progress' }));
+  const history = await getHistory(db, 'u1');
+  assert.deepEqual(
+    new Set(history.map((row) => row.data.name)),
+    new Set(['Push (edited)', 'Legacy completed']),
+  );
 
   // --- softDelete: create -> delete cancels the outbox entirely (never synced) ---
   const id2 = await create(db, 'u1', baseWorkout({ name: 'Throwaway' }));

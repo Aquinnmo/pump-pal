@@ -200,7 +200,7 @@ export default function ActiveWorkoutScreen() {
             setStartedAt(new Date());
           } else {
             setStartedAt(
-              data.startedAt ? toDateObj(data.startedAt) : new Date(),
+              (data.startedAt ? toDateObj(data.startedAt) : null) ?? new Date(),
             );
           }
           setWorkoutId(id);
@@ -278,7 +278,7 @@ export default function ActiveWorkoutScreen() {
         }
 
         const merged = [...splitNames];
-        const historyData = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
+        const historyData = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
         historyData.forEach((workout) => {
           if (workout.name && !merged.includes(workout.name)) merged.push(workout.name);
         });

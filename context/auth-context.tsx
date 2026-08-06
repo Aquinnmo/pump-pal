@@ -2,6 +2,7 @@ import { auth } from '@/config/firebase';
 import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/db/sync-trigger';
 import { connectGoogleAccount as linkGoogleAccount, signInWithGoogle as googleSignIn, signOutGoogle } from '@/utils/google-sign-in';
 import { hasGoogleProvider } from '@/utils/google-account-link';
+import { loadCatalog } from '@/utils/exercise-catalog';
 import {
     User,
     createUserWithEmailAndPassword,
@@ -47,6 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(false);
       if (firebaseUser) {
         startSyncTriggers();
+        // Start the global catalog fetch at authenticated startup rather than
+        // waiting for a picker or analytics surface to mount. loadCatalog
+        // coalesces this with any concurrent consumer and handles offline
+        // fallbacks internally, so it is deliberately non-blocking here.
+        void loadCatalog(firebaseUser.uid);
       } else {
         stopSyncTriggers();
       }

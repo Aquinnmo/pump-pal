@@ -187,7 +187,7 @@ export default function AddWorkoutModal() {
 
         // Collect unique names actually used in saved workouts
         const usedNames = new Set<string>();
-        const historyData = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
+        const historyData = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
         historyData.forEach((workout) => {
           if (workout.name) usedNames.add(workout.name);
         });
@@ -262,14 +262,16 @@ export default function AddWorkoutModal() {
           setDocStatus(data.status);
           if (data.date) {
             const date = toDateObj(data.date);
-            setWorkoutDate(date);
-            const today = new Date();
-            if (
-              date.getDate() !== today.getDate() ||
-              date.getMonth() !== today.getMonth() ||
-              date.getFullYear() !== today.getFullYear()
-            ) {
-              setIsToday(false);
+            if (date) {
+              setWorkoutDate(date);
+              const today = new Date();
+              if (
+                date.getDate() !== today.getDate() ||
+                date.getMonth() !== today.getMonth() ||
+                date.getFullYear() !== today.getFullYear()
+              ) {
+                setIsToday(false);
+              }
             }
           }
           if (data.performedExercises && data.performedExercises.length > 0) {

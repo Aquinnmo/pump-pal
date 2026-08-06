@@ -65,20 +65,50 @@ export async function replaceAll(
 ): Promise<void> {
   const now = new Date().toISOString();
   await db.withTransactionAsync(async () => {
-    await db.runAsync(`DELETE FROM catalog_exercises WHERE uid = ? AND sync_state = 'synced'`, [
-      uid,
-    ]);
-    for (const exercise of exercises) {
-      const normalized = normalizeTimestampsDeep(exercise);
-      await db.runAsync(
-        `INSERT INTO catalog_exercises (uid, id, data, updated_at, sync_state, server_version)
-         VALUES (?, ?, ?, ?, 'synced', NULL)
-         ON CONFLICT(uid, id) DO UPDATE SET
-           data = excluded.data, updated_at = excluded.updated_at,
-           sync_state = 'synced', server_version = NULL`,
-        [uid, exercise.id, JSON.stringify(normalized), now]
-      );
-    }
+    await replaceSyncedRows(db, uid, exercises, now);
+  });
+}
+
+async function replaceSyncedRows(
+  db: SqlExecutor,
+  uid: string,
+  exercises: CatalogExercise[],
+  now: string
+): Promise<void> {
+  await db.runAsync(`DELETE FROM catalog_exercises WHERE uid = ? AND sync_state = 'synced'`, [uid]);
+  for (const exercise of exercises) {
+    const normalized = normalizeTimestampsDeep(exercise);
+    await db.runAsync(
+      `INSERT INTO catalog_exercises (uid, id, data, updated_at, sync_state, server_version)
+       VALUES (?, ?, ?, ?, 'synced', NULL)
+       ON CONFLICT(uid, id) DO UPDATE SET
+         data = excluded.data, updated_at = excluded.updated_at,
+         sync_state = 'synced', server_version = NULL`,
+      [uid, exercise.id, JSON.stringify(normalized), now]
+    );
+  }
+}
+
+/**
+ * Commits a validated server snapshot and its cache-invalidation marker as one
+ * transaction. Dirty pending-review submissions remain untouched.
+ */
+export async function replaceSnapshot(
+  db: SqlExecutor,
+  uid: string,
+  exercises: CatalogExercise[],
+  version: number
+): Promise<void> {
+  const now = new Date().toISOString();
+  await db.withTransactionAsync(async () => {
+    await replaceSyncedRows(db, uid, exercises, now);
+    await db.runAsync(
+      `INSERT INTO catalog_meta (uid, version, exercise_count, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(uid) DO UPDATE SET
+         version = excluded.version, exercise_count = excluded.exercise_count, updated_at = excluded.updated_at`,
+      [uid, version, exercises.length, now]
+    );
   });
 }
 

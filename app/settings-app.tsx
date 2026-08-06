@@ -1,7 +1,6 @@
 import { Toast } from '@/components/ui/toast';
 import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
-import { Workout } from '@/types/workout';
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -48,14 +47,15 @@ export default function SettingsAppScreen() {
         import('expo-sharing'),
       ]);
 
-      const workouts = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
+      const workouts = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
 
       const rows: string[] = [
         ['Date', 'Workout', 'Notes', 'Exercise', 'Variation', 'Set', 'Reps', 'Weight (lbs)', 'Duration (sec)', 'Hold (sec)', 'Bodyweight'].join(','),
       ];
 
       workouts.forEach((w) => {
-        const dateMs = toDateObj(w.date).getTime();
+        const dateMs = toDateObj(w.date)?.getTime();
+        if (dateMs === undefined) return;
         const dateStr = new Date(dateMs).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         const name = `"${(w.name ?? '').replace(/"/g, '""')}"`;
         const notes = `"${(w.notes ?? '').replace(/"/g, '""')}"`;

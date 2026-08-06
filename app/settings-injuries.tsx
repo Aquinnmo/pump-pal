@@ -186,11 +186,11 @@ export default function SettingsInjuriesScreen() {
       {inj.avoid?.length ? <Text style={styles.cardNotes}>Avoid: {inj.avoid.join(', ')}</Text> : null}
 
       <Text style={styles.cardDateLabel}>Onset</Text>
-      <DateField value={toDateObj(inj.onsetDate)} onChange={(d) => handleEditOnset(inj.id, d)} />
+      <DateField value={toDateObj(inj.onsetDate) ?? new Date()} onChange={(d) => handleEditOnset(inj.id, d)} />
       {inj.status === 'resolved' && inj.resolvedDate ? (
         <>
           <Text style={styles.cardDateLabel}>Resolved</Text>
-          <DateField value={toDateObj(inj.resolvedDate)} onChange={(d) => handleEditResolved(inj.id, d)} />
+          <DateField value={toDateObj(inj.resolvedDate) ?? new Date()} onChange={(d) => handleEditResolved(inj.id, d)} />
         </>
       ) : null}
 

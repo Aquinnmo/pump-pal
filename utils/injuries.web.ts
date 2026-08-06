@@ -12,8 +12,11 @@ export async function getOngoingInjuries(_uid: string): Promise<Injury[]> {
 }
 
 export function injuryCoversDate(injury: Injury, date: Date): boolean {
-  const start = toDateObj(injury.onsetDate).getTime();
-  const end = injury.resolvedDate ? toDateObj(injury.resolvedDate).getTime() : Date.now();
+  const startDate = toDateObj(injury.onsetDate);
+  const endDate = injury.resolvedDate ? toDateObj(injury.resolvedDate) : new Date();
+  if (!startDate || !endDate) return false;
+  const start = startDate.getTime();
+  const end = endDate.getTime();
   return date.getTime() >= start && date.getTime() <= end;
 }
 

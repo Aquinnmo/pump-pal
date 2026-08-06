@@ -91,7 +91,7 @@ async function startWorkout(uid: string): Promise<void> {
 }
 
 async function refreshWorkoutNotification(workout: Workout, rows: DraftExerciseRow[]): Promise<void> {
-  const startedAt = workout.startedAt ? toDateObj(workout.startedAt) : new Date();
+  const startedAt = (workout.startedAt ? toDateObj(workout.startedAt) : null) ?? new Date();
   // Establish the single selected surface before posting: a cold headless process
   // must not recreate both the native Live Update and the Notifee fallback.
   await ensureWorkoutChannel();

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from './migrate';
 import { SqlExecutor } from './executor';
-import { getAll, getById, replaceAll, createPending, getMeta, setMeta } from './catalog';
+import { getAll, getById, replaceAll, replaceSnapshot, createPending, getMeta, setMeta } from './catalog';
 import { listAll } from './outbox';
 import { CatalogExercise } from '@/types/workout';
 
@@ -84,16 +84,36 @@ async function main() {
   const squatGone = await getById(db, 'u1', 'squat');
   assert.equal(squatGone, null, 'exercises dropped from the server set are removed from the synced cache');
 
-  // --- catalog_meta cache-invalidation marker ---
+  // --- a refresh atomically replaces synced rows and its cache marker ---
   assert.equal(await getMeta(db, 'u1'), null);
-  await setMeta(db, 'u1', { version: 3, exerciseCount: 74 });
+  await replaceSnapshot(db, 'u1', [exercise('bench-press', 'Bench Press v3')], 3);
   const meta = await getMeta(db, 'u1');
   assert.equal(meta?.version, 3);
-  assert.equal(meta?.exerciseCount, 74);
+  assert.equal(meta?.exerciseCount, 1);
+  assert.equal((await getById(db, 'u1', 'bench-press'))?.data.name, 'Bench Press v3');
+  assert.equal((await getById(db, 'u1', 'user-curl-thing'))?.syncState, 'dirty');
+
+  // A metadata failure rolls back the row replacement too; no partial snapshot
+  // can be observed by the UI after an interrupted refresh.
+  const failingDb: SqlExecutor = {
+    ...db,
+    runAsync: async (sql, params) => {
+      if (sql.includes('INSERT INTO catalog_meta')) throw new Error('metadata write failed');
+      return db.runAsync(sql, params);
+    },
+  };
+  await assert.rejects(() => replaceSnapshot(failingDb, 'u1', [exercise('squat', 'Squat v2')], 4));
+  assert.equal((await getById(db, 'u1', 'squat')), null);
+  assert.equal((await getById(db, 'u1', 'bench-press'))?.data.name, 'Bench Press v3');
+  assert.equal((await getMeta(db, 'u1'))?.version, 3);
+
+  // --- catalog_meta cache-invalidation marker can still be updated directly ---
+  await setMeta(db, 'u1', { version: 5, exerciseCount: 1 });
+  assert.equal((await getMeta(db, 'u1'))?.version, 5);
 
   // --- UID isolation ---
   await replaceAll(db, 'u2', [exercise('bench-press', 'Bench Press')]);
-  assert.equal((await getAll(db, 'u1')).length, 3);
+  assert.equal((await getAll(db, 'u1')).length, 2);
   assert.equal((await getAll(db, 'u2')).length, 1);
 
   console.log('db/catalog.test.ts: all assertions passed');

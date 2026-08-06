@@ -167,7 +167,8 @@ function windowBestSignals(
   const signals = new Map<string, { value: number; performed: PerformedExercise; mapping: MuscleMapping }>();
 
   for (const workout of workouts) {
-    const workoutTime = toDateObj(workout.date).getTime();
+    const workoutTime = toDateObj(workout.date)?.getTime();
+    if (workoutTime === undefined) continue;
     const outsideWindow = period === 'previous'
       ? workoutTime < start || workoutTime >= end
       : workoutTime < start || workoutTime > end;

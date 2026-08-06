@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   catalogExerciseDTO,
+  catalogResponse,
   conflictResponse,
   createInjuryInput,
   createPendingExerciseInput,
@@ -97,6 +98,28 @@ assert.equal(createPendingExerciseInput.safeParse({ name: 'Cable Fly' }).success
 assert.equal('createdBy' in createPendingExerciseInput.shape, false);
 assert.equal('status' in createPendingExerciseInput.shape, false);
 assert.equal(catalogExerciseDTO.safeParse({}).success, false);
+const catalogExercise = {
+  id: 'bench-press',
+  name: 'Bench Press',
+  normalizedName: 'bench press',
+  aliases: [],
+  primaryMuscles: ['chest'],
+  secondaryMuscles: ['triceps'],
+  movementPattern: 'horizontal_press',
+  equipment: ['barbell'],
+  bodyRegion: 'upper',
+  mechanics: 'compound',
+  forceType: 'push',
+  trackingModes: ['reps_weight'],
+  variations: [],
+  schemaVersion: 2,
+};
+assert.equal(catalogExerciseDTO.safeParse(catalogExercise).success, true);
+assert.equal(catalogExerciseDTO.safeParse({ ...catalogExercise, schemaVersion: 1 }).success, false);
+const { schemaVersion: _schemaVersion, ...legacyCatalogExercise } = catalogExercise;
+assert.equal(catalogExerciseDTO.safeParse(legacyCatalogExercise).success, false);
+assert.equal(catalogResponse.safeParse({ exercises: [catalogExercise], version: 1 }).success, true);
+assert.equal(catalogResponse.safeParse({ exercises: [], version: 1 }).success, false);
 
 // ---- reorder: bounded batch ----
 assert.equal(reorderWorkoutsInput.safeParse({ order: [] }).success, false); // min 1

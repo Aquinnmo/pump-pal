@@ -4,10 +4,10 @@
 // (the server-side cache-invalidation `version` still avoids re-fetching the
 // exercise catalog UI-side, per exercise-catalog.ts's existing AsyncStorage
 // version check, which bead pump-pal-bkp.9 wires to this).
-import { StoredRecord } from '@/repositories/types';
+import type { StoredRecord } from '@/repositories/types';
 import * as remote from '@/repositories/remote/catalog';
-import { CatalogExercise, ExerciseCatalogMeta } from '@/types/workout';
-import { CatalogExerciseDTO } from '@/shared/api-contract';
+import type { CatalogExercise, ExerciseCatalogMeta } from '@/types/workout';
+import type { CatalogExerciseDTO, CatalogResponse } from '@/shared/api-contract';
 
 function toStoredRecord(dto: CatalogExerciseDTO): StoredRecord<CatalogExercise> {
   return {
@@ -45,4 +45,9 @@ async function getMeta(_uid: string): Promise<ExerciseCatalogMeta | null> {
 /** No-op on web — meta comes back with every GET /api/catalog, nothing to cache separately. */
 async function setMeta(_uid: string, _meta: Pick<ExerciseCatalogMeta, 'version' | 'exerciseCount'>): Promise<void> {}
 
-export const catalogRepository = { getAll, getById, replaceAll, createPending, getMeta, setMeta };
+/** Web has no SQLite cache; catalog responses are already wire-validated by the remote client. */
+async function refresh(_uid: string): Promise<CatalogResponse> {
+  return remote.getCatalog();
+}
+
+export const catalogRepository = { getAll, getById, replaceAll, createPending, getMeta, setMeta, refresh };

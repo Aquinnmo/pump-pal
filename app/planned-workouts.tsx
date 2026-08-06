@@ -38,7 +38,7 @@ export default function PlannedWorkoutsScreen() {
       const [plannedRecords, profile, allRecords] = await Promise.all([
         workoutRepository.getByStatus(user.uid, 'planned'),
         profileRepository.get(user.uid),
-        workoutRepository.getAll(user.uid),
+        workoutRepository.getHistory(user.uid),
       ]);
 
       let loadedPlans = plannedRecords.map((record) => record.data).sort((a, b) => (a.queueOrder ?? Infinity) - (b.queueOrder ?? Infinity));
@@ -52,7 +52,7 @@ export default function PlannedWorkoutsScreen() {
           loadedPlans = [...cached, ...uncached];
         } catch { /* fall back to stored queue order */ }
       }
-      const history = allRecords.map((record) => record.data).filter((workout) => workout.status === 'completed').slice(0, 30);
+      const history = allRecords.map((record) => record.data).slice(0, 30);
       const splitType = profile?.data.workoutSplit?.type;
       const customSplitDesc: string = profile?.data.workoutSplit?.custom ?? '';
       let loadedSplitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];

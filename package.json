@@ -39,6 +39,7 @@
     "test:oauth-config": "node config/google-oauth.test.js",
     "test:google-account-link": "tsx utils/google-account-link.test.ts",
     "test:firebase-errors": "tsx utils/firebase-errors.test.ts",
+    "test:workout-conversion": "tsx utils/workout-conversion.test.ts",
     "test:web-native-deps": "node scripts/check-web-native-deps.js",
     "test:up-next": "tsx utils/up-next.test.ts",
     "test:wear-state": "tsx utils/wear-state.test.ts",

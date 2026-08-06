@@ -4,6 +4,7 @@ import { Workout, WorkoutStatus } from '@/types/workout';
 
 export const workoutRepository = {
   getAll: async (uid: string) => workouts.getAll(await getDb(), uid),
+  getHistory: async (uid: string) => workouts.getHistory(await getDb(), uid),
   getByStatus: async (uid: string, status: WorkoutStatus) =>
     workouts.getByStatus(await getDb(), uid, status),
   getById: async (uid: string, id: string) => workouts.getById(await getDb(), uid, id),

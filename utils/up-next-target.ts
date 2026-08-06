@@ -16,9 +16,8 @@ export async function resolveUpNextTarget(uid: string): Promise<{ id?: string; s
   const nextPlan = [...planned].sort((a, b) => (a.data.queueOrder ?? Infinity) - (b.data.queueOrder ?? Infinity))[0];
   if (nextPlan) return { id: nextPlan.id };
 
-  const history = (await workoutRepository.getAll(uid))
+  const history = (await workoutRepository.getHistory(uid))
     .map((record) => record.data)
-    .filter((workout) => workout.status === 'completed')
     .slice(0, 30) as Workout[];
   const suggestion = predictNextWorkoutName(await loadSplitNames(uid), history);
 

@@ -62,6 +62,11 @@ export const workoutRepository = {
     return items.map((dto) => toStoredRecord(uid, dto));
   },
 
+  async getHistory(uid: string): Promise<StoredRecord<Workout>[]> {
+    const { items } = await remote.listWorkouts({ status: 'completed' });
+    return items.filter((dto) => dto.date !== undefined).map((dto) => toStoredRecord(uid, dto));
+  },
+
   async getByStatus(uid: string, status: WorkoutStatus): Promise<StoredRecord<Workout>[]> {
     const { items } = await remote.listWorkouts({ status });
     return items.map((dto) => toStoredRecord(uid, dto));

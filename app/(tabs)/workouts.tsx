@@ -2,6 +2,7 @@ import { WorkoutCard } from '@/components/workout-card';
 import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
+import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
@@ -34,7 +35,7 @@ export default function WorkoutsScreen() {
     if (!user) return;
     setLoading(true);
     try {
-      const data = (await workoutRepository.getAll(user.uid)).map((record) => record.data);
+      const data = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
       setWorkouts(data);
       setPage(0);
     } catch (err) {
@@ -76,16 +77,8 @@ export default function WorkoutsScreen() {
   const currentPageWorkouts = workouts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const formatDate = (d: any) => {
-    if (!d) return '';
-    try {
-      let dt: Date;
-      if (d.toDate && typeof d.toDate === 'function') dt = d.toDate();
-      else if (typeof d === 'number') dt = new Date(d);
-      else dt = new Date(d);
-      return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    } catch {
-      return '';
-    }
+    const date = toDateObj(d);
+    return date ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
   };
 
   if (loading) {

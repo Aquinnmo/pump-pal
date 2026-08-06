@@ -18,7 +18,7 @@ export default function DevelopmentProgressScreen() {
     setWorkouts(null);
     setWorkoutError(false);
     try {
-      setWorkouts((await workoutRepository.getAll(user.uid)).map((record) => record.data));
+      setWorkouts((await workoutRepository.getHistory(user.uid)).map((record) => record.data));
     } catch (error) {
       console.error(error);
       setWorkoutError(true);

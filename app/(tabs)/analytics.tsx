@@ -93,7 +93,7 @@ export default function AnalyticsScreen() {
     setLoading(true);
     setFetchError(false);
     try {
-      setWorkouts((await workoutRepository.getAll(user.uid)).map((record) => record.data));
+      setWorkouts((await workoutRepository.getHistory(user.uid)).map((record) => record.data));
     } catch (error) {
       console.error(error);
       setFetchError(true);
@@ -153,6 +153,7 @@ export default function AnalyticsScreen() {
 
     workouts.forEach((workout) => {
       const date = toDateObj(workout.date);
+      if (!date) return;
       const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`;
       const dayKey = [
         date.getFullYear(),

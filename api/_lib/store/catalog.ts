@@ -26,7 +26,7 @@ function asStringArray(v: DecodedValue): string[] {
   return Array.isArray(v) ? (v.filter((x) => typeof x === 'string') as string[]) : [];
 }
 
-function toCatalogExerciseDTO(doc: FirestoreDoc): CatalogExerciseDTO {
+export function toCatalogExerciseDTO(doc: FirestoreDoc): CatalogExerciseDTO {
   const f = doc.fields;
   const id = doc.path.split('/').pop()!;
   return {
@@ -59,6 +59,7 @@ function toCatalogExerciseDTO(doc: FirestoreDoc): CatalogExerciseDTO {
         mechanics: typeof r.mechanics === 'string' ? r.mechanics : undefined,
       };
     }),
+    schemaVersion: 2,
     status: f.status as CatalogExerciseDTO['status'],
     createdBy: typeof f.createdBy === 'string' ? f.createdBy : undefined,
   };
