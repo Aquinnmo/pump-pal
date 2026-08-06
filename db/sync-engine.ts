@@ -246,9 +246,10 @@ async function pullEntity(
 
   const needsPull: string[] = [];
   let remoteDeletions = 0;
+  const manifestKey = (id: string) => `${adapter.wireKind}:${id}`;
 
   for (const row of localRows) {
-    const manifestEntry = manifestByKind.get(row.id);
+    const manifestEntry = manifestByKind.get(manifestKey(row.id));
     if (row.syncState === 'synced') {
       if (!manifestEntry) {
         await adapter.local.removeClean(db, uid, row.id);
@@ -272,16 +273,16 @@ async function pullEntity(
     // reconcile from the manifest this pass.
   }
 
-  for (const [id, entry] of manifestByKind) {
+  for (const entry of manifestByKind.values()) {
     if (entry.kind !== adapter.wireKind) continue;
-    if (!localById.has(id)) needsPull.push(id);
+    if (!localById.has(entry.id)) needsPull.push(entry.id);
   }
 
   let pulled = 0;
   const batchSize = opts.pullBatchSize ?? DEFAULT_PULL_BATCH;
   for (let i = 0; i < needsPull.length; i += batchSize) {
     if (opts.signal?.aborted) break;
-    const batch = needsPull.slice(i, i + batchSize).map((id) => ({ kind: adapter.wireKind!, id, version: manifestByKind.get(id)?.version }));
+    const batch = needsPull.slice(i, i + batchSize).map((id) => ({ kind: adapter.wireKind!, id, version: manifestByKind.get(manifestKey(id))?.version }));
     const { found, missing } = await remote.pull(batch, opts.signal);
     for (const item of found) {
       if (item.kind !== adapter.wireKind) continue;
@@ -305,6 +306,8 @@ async function fetchFullManifest(
   uid: string,
   opts: SyncOptions
 ): Promise<Map<string, ManifestEntry>> {
+  // Keyed by `kind:id`, not id — `profile` and `pushupChallenge` are both
+  // emitted with id = uid, so an id-only key silently drops one of them.
   const byId = new Map<string, ManifestEntry>();
   let cursor: string | undefined;
   let pages = 0;
@@ -312,7 +315,7 @@ async function fetchFullManifest(
   do {
     if (opts.signal?.aborted) break;
     const page = await remote.manifest(uid, cursor, opts.signal);
-    for (const entry of page.items) byId.set(entry.id, entry);
+    for (const entry of page.items) byId.set(`${entry.kind}:${entry.id}`, entry);
     cursor = page.nextCursor ?? undefined;
     pages++;
   } while (cursor && pages < maxPages);

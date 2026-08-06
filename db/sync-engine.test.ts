@@ -577,6 +577,27 @@ async function main() {
     assert.equal(acct2?.data.name, 'Account 2 workout, same id');
   }
 
+  // --- two kinds sharing one id (profile/pushupChallenge are both keyed by uid) ---
+  {
+    const db = await freshDb();
+    const server = new FakeServer();
+    server.seed('u1', workoutPayload({ name: 'Same id as the singleton' }));
+    const remote: SyncRemote = {
+      async manifest(_uid, cursor) {
+        const page = server.manifest('workout', cursor);
+        // The singleton entry lands last, exactly as the API emits it.
+        return { items: [...page.items, { kind: 'pushupChallenge', id: 'u1', version: 'v99' }], nextCursor: page.nextCursor };
+      },
+      async pull(entities) {
+        return server.pull('workout', entities.filter((e) => e.kind === 'workout').map((e) => e.id));
+      },
+    };
+    const outcome = await runSync(db, 'u1', [makeWorkoutAdapter(server)], remote);
+    assert.equal(outcome.status, 'ok');
+    if (outcome.status === 'ok') assert.equal(outcome.pulled, 1, 'a same-id entry of another kind must not shadow this one');
+    assert.equal((await workouts.getById(db, 'u1', 'u1'))?.data.name, 'Same id as the singleton');
+  }
+
   console.log('db/sync-engine.test.ts: all assertions passed');
 }
 

@@ -20,6 +20,22 @@ export type AccountBootstrapDecision =
   | { state: 'error'; message: string }
   | { state: 'pending' };
 
+// The boot decision below is taken once per sign-in, so a local write that can
+// flip it (onboarding saving a split) has to say so — otherwise the router keeps
+// redirecting back to the onboarding screen until the app is restarted.
+const gateListeners = new Set<() => void>();
+
+export function notifyAccountDataChanged(): void {
+  for (const listener of [...gateListeners]) listener();
+}
+
+export function subscribeAccountDataChanged(listener: () => void): () => void {
+  gateListeners.add(listener);
+  return () => {
+    gateListeners.delete(listener);
+  };
+}
+
 function isOfflineError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return /network|fetch|ENOTFOUND|ECONNREFUSED|timed out/i.test(message);

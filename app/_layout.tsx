@@ -1,6 +1,6 @@
 import { profileRepository } from '@/db/profile-repository';
 import { retryInitialSync, waitForInitialSync } from '@/db/sync-trigger';
-import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError } from '@/db/initial-sync';
+import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError, subscribeAccountDataChanged } from '@/db/initial-sync';
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { subscribeLiveUpdateNotificationActions } from '@/utils/live-update-notification-actions';
@@ -34,6 +34,10 @@ function RootLayoutNav() {
       setOnboardingSeen(val === 'true');
     });
   }, []);
+
+  // Onboarding just wrote a split locally — re-decide, or the redirect below
+  // bounces straight back to /set-split off the stale decision.
+  useEffect(() => subscribeAccountDataChanged(() => setRetryAttempt((attempt) => attempt + 1)), []);
 
   useEffect(() => {
     if (loading) return;
