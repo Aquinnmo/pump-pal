@@ -13,10 +13,13 @@ import {
   profilePatchInput,
   profileResponse,
   pullRequest,
+  pushupChallengeDTO,
+  pushupChallengeResponse,
   putPushupChallengeInput,
   reorderWorkoutsInput,
   updateWorkoutInput,
   workoutDTO,
+  workoutResponse,
 } from './api-contract.js';
 
 // ---- errors / conflict envelope ----
@@ -136,6 +139,40 @@ assert.equal(putPushupChallengeInput.safeParse({ startDate: '2026-08-01', days: 
 assert.equal(pullRequest.safeParse({ entities: [] }).success, false); // min 1
 assert.equal(pullRequest.safeParse({ entities: [{ kind: 'workout', id: 'w1' }] }).success, true);
 assert.equal(pullRequest.safeParse({ entities: [{ kind: 'bogus', id: 'w1' }] }).success, false);
+
+// ---- mutation response envelopes ----
+// Every single-entity endpoint wraps its DTO. A client declaring the bare DTO
+// as its responseSchema parses NOTHING, and because the throw isn't a
+// conflict/auth/rate-limit the sync engine retries it forever — which is
+// exactly what shipped for workouts and the push-up challenge. The negative
+// assertion is the one that catches it.
+const validWorkout = {
+  id: 'w1',
+  name: 'Push Day',
+  status: 'completed',
+  date: '2026-08-05T12:00:00Z',
+  performedExercises: [],
+  createdAt: '2026-08-05T12:00:00Z',
+  updatedAt: '2026-08-05T12:00:00Z',
+  version: 'v1',
+};
+assert.equal(workoutDTO.safeParse(validWorkout).success, true);
+assert.equal(workoutResponse.safeParse({ workout: validWorkout }).success, true);
+assert.equal(workoutDTO.safeParse({ workout: validWorkout }).success, false);
+
+const validChallenge = { startDate: '2026-08-05', days: [], longestStreak: 0, version: 'v1' };
+assert.equal(pushupChallengeDTO.safeParse(validChallenge).success, true);
+assert.equal(pushupChallengeResponse.safeParse({ challenge: validChallenge }).success, true);
+assert.equal(pushupChallengeDTO.safeParse({ challenge: validChallenge }).success, false);
+
+// The 409 envelope is the exception: `remote` is a BARE dto, which is why
+// conflictEntitySchema on the client stays workoutDTO, not workoutResponse.
+assert.equal(
+  conflictResponse(workoutDTO).safeParse({
+    error: 'stale', code: 'conflict', remote: validWorkout, remoteVersion: 'v2',
+  }).success,
+  true
+);
 
 // ---- listResponse helper ----
 const listedWorkouts = listResponse(workoutDTO);

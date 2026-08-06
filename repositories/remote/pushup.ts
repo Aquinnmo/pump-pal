@@ -1,11 +1,11 @@
 import { apiRequest, ApiRequestOptions } from '@/utils/api-client';
-import { pushupChallengeDTO, PutPushupChallengeInput } from '@/shared/api-contract';
+import { pushupChallengeDTO, pushupChallengeResponse, PutPushupChallengeInput } from '@/shared/api-contract';
 
 export function getPushupChallenge(opts?: ApiRequestOptions<never>) {
   return apiRequest('/api/pushup-challenge', {
-    responseSchema: pushupChallengeDTO,
+    responseSchema: pushupChallengeResponse,
     signal: opts?.signal,
-  });
+  }).then(({ challenge }) => challenge);
 }
 
 export function putPushupChallenge(
@@ -15,8 +15,9 @@ export function putPushupChallenge(
   return apiRequest('/api/pushup-challenge', {
     method: 'PUT',
     body: input,
-    responseSchema: pushupChallengeDTO,
+    responseSchema: pushupChallengeResponse,
+    // Not the wrapper: the 409 body carries a *bare* DTO under `remote`.
     conflictEntitySchema: pushupChallengeDTO,
     signal: opts?.signal,
-  });
+  }).then(({ challenge }) => challenge);
 }

@@ -152,6 +152,14 @@ export type ApiRequestLog = {
   durationMs: number;
   /** The thrown error's `name`, e.g. 'ApiNotFoundError'. Absent on success. */
   error?: string;
+  /**
+   * The thrown error's `message`. Absent on success. A schema mismatch puts the
+   * zod issue list here, which is the difference between "ApiHttpError on a 200"
+   * and knowing which field disagreed — without it, a response-envelope bug is
+   * only findable by reading source. May quote response values, so only a
+   * dev-gated logger may print it; see the redaction rule above.
+   */
+  errorMessage?: string;
 };
 
 export type ApiRequestDeps = {
@@ -216,6 +224,7 @@ export async function apiRequestCore<TOut = void>(
       retried: retried || undefined,
       durationMs: Date.now() - start,
       error: (err as Error)?.name ?? 'Error',
+      errorMessage: (err as Error)?.message || undefined,
     });
     throw err;
   }

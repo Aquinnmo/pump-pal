@@ -42,10 +42,13 @@ const CLIENT_VERSION = Constants.expoConfig?.version ?? 'unknown';
  * Settings -> Sync status, which is where a failed sync used to die quietly.
  */
 const devLog: ApiRequestDeps['log'] = __DEV__
-  ? ({ method, url, status, code, requestId, retried, durationMs, error }) => {
+  ? ({ method, url, status, code, requestId, retried, durationMs, error, errorMessage }) => {
       const line = `[api] ${method} ${url} -> ${status ?? '(no response)'} ${durationMs}ms`;
       const diagnostics = [
         error,
+        // Only ever printed here: this logger is __DEV__-gated and Metro-only,
+        // so the message (which can quote response values) never ships.
+        errorMessage,
         code ? `code=${code}` : undefined,
         requestId ? `requestId=${requestId}` : undefined,
         retried ? 'tokenRefreshed=true' : undefined,

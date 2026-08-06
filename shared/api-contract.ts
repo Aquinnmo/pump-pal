@@ -224,6 +224,15 @@ export const workoutDTO = z.object({
 });
 export type WorkoutDTO = z.infer<typeof workoutDTO>;
 
+/**
+ * Every single-workout endpoint (GET/POST/PATCH /api/workouts) wraps the DTO,
+ * matching profileResponse and injuryMutationResponse. Note the 409 body is
+ * different: its `remote` field carries a *bare* DTO, so `conflictEntitySchema`
+ * on the client stays `workoutDTO`.
+ */
+export const workoutResponse = z.object({ workout: workoutDTO });
+export type WorkoutResponse = z.infer<typeof workoutResponse>;
+
 /** GET /api/workouts — cursor pages ordered by `date desc` by default. */
 export const listWorkoutsQuery = listQuery.extend({
   status: workoutStatus.optional(),
@@ -345,6 +354,10 @@ export const pushupChallengeDTO = z.object({
   version: version.nullable(), // null when the doc doesn't exist yet
 });
 export type PushupChallengeDTO = z.infer<typeof pushupChallengeDTO>;
+
+/** Wrapper both /api/pushup-challenge verbs return. Same rule as workoutResponse. */
+export const pushupChallengeResponse = z.object({ challenge: pushupChallengeDTO });
+export type PushupChallengeResponse = z.infer<typeof pushupChallengeResponse>;
 
 /**
  * PUT /api/pushup-challenge — full desired-state replace, same semantics as

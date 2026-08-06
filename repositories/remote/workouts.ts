@@ -5,6 +5,7 @@
 import { apiRequest, ApiRequestOptions } from '@/utils/api-client';
 import {
   workoutDTO,
+  workoutResponse,
   listResponse,
   CreateWorkoutInput,
   UpdateWorkoutInput,
@@ -25,19 +26,19 @@ export function listWorkouts(query?: ListWorkoutsQuery, opts?: ApiRequestOptions
 
 export function getWorkout(id: string, opts?: ApiRequestOptions<never>) {
   return apiRequest(`/api/workouts/${encodeURIComponent(id)}`, {
-    responseSchema: workoutDTO,
+    responseSchema: workoutResponse,
     signal: opts?.signal,
-  });
+  }).then(({ workout }) => workout);
 }
 
 export function createWorkout(input: CreateWorkoutInput, opts?: ApiRequestOptions<never>) {
   return apiRequest('/api/workouts', {
     method: 'POST',
     body: input,
-    responseSchema: workoutDTO,
+    responseSchema: workoutResponse,
     conflictEntitySchema: workoutDTO,
     signal: opts?.signal,
-  });
+  }).then(({ workout }) => workout);
 }
 
 export function updateWorkout(
@@ -48,10 +49,11 @@ export function updateWorkout(
   return apiRequest(`/api/workouts/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: input,
-    responseSchema: workoutDTO,
+    responseSchema: workoutResponse,
+    // Not workoutResponse: the 409 body carries a *bare* DTO under `remote`.
     conflictEntitySchema: workoutDTO,
     signal: opts?.signal,
-  });
+  }).then(({ workout }) => workout);
 }
 
 /** Not in the published contract as its own zod schema (no request body needed) — REST convention, baseVersion via query for the 409 check. */
