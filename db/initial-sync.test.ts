@@ -19,13 +19,13 @@ async function main() {
 
   // A successful remote pull can open the app once it writes the profile locally.
   assert.deepEqual(
-    decideAccountBootstrap(null, profileWithSplit, initialSyncOutcomeFromSync(uid, { status: 'ok', pushed: 0, pulled: 1, conflicts: 0, remoteDeletions: 0 })),
+    decideAccountBootstrap(null, profileWithSplit, initialSyncOutcomeFromSync(uid, { status: 'ok', pushed: 0, pulled: 1, remoteDeletions: 0 })),
     { state: 'ready', source: 'remote' }
   );
 
   // This is the only path to onboarding: a completed, authoritative read with no split.
   assert.deepEqual(
-    decideAccountBootstrap(null, null, initialSyncOutcomeFromSync(uid, { status: 'ok', pushed: 0, pulled: 0, conflicts: 0, remoteDeletions: 0 })),
+    decideAccountBootstrap(null, null, initialSyncOutcomeFromSync(uid, { status: 'ok', pushed: 0, pulled: 0, remoteDeletions: 0 })),
     { state: 'onboarding' }
   );
 

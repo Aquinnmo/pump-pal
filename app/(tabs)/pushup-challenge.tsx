@@ -1,4 +1,5 @@
 import { pushupRepository } from '@/db/pushup-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { getDailyName } from '@/utils/daily-name';
 import { syncStreakReminders } from '@/utils/streak-notification';
@@ -459,6 +460,7 @@ export default function PushupChallengeScreen() {
     const prev = data?.longestStreak ?? 0;
     const newData: ChallengeData = { startDate: today, days: [], longestStreak: prev };
     await pushupRepository.upsert(user.uid, newData);
+    triggerSyncAfterWrite();
     setData(newData);
   };
 
@@ -522,6 +524,7 @@ export default function PushupChallengeScreen() {
         pushupRepository.upsert(user.uid, updated).catch((e) => console.error('Failed to save pushup completion', e)),
       ]);
 
+      triggerSyncAfterWrite();
       setData(updated);
       setAnimatingCompletion(false);
     } finally {
@@ -542,6 +545,7 @@ export default function PushupChallengeScreen() {
 
       // Save first, then update the swipe bar/state so the UI reflects the undone state.
       await pushupRepository.upsert(user.uid, updated).catch((e) => console.error('Failed to undo pushup completion', e));
+      triggerSyncAfterWrite();
       setData(updated);
 
       // Wait a frame so the swipe bar update is applied in the UI, then run the fade animation.
@@ -572,6 +576,7 @@ export default function PushupChallengeScreen() {
     const prev = data?.longestStreak ?? 0;
     const newData: ChallengeData = { startDate: today, days: [], longestStreak: prev };
     await pushupRepository.upsert(user.uid, newData);
+    triggerSyncAfterWrite();
     setData(newData);
   };
 

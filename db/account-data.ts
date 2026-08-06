@@ -1,18 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDb, purgeUidData } from './client';
-import { listUnresolved } from './conflicts';
 import { listAll } from './outbox';
 import { syncNow } from './sync';
 
-export type SignOutSafety = { pending: number; conflicts: number };
+export type SignOutSafety = { pending: number };
 
 export async function getSignOutSafety(uid: string): Promise<SignOutSafety> {
   const db = await getDb();
-  const [pending, conflicts] = await Promise.all([listAll(db, uid), listUnresolved(db, uid)]);
-  return { pending: pending.length, conflicts: conflicts.length };
+  return { pending: (await listAll(db, uid)).length };
 }
 
-/** Syncs once, then proves no queued/conflicted data remains before sign-out may proceed. */
+/** Syncs once, then proves nothing is still queued before sign-out may proceed. */
 export async function syncBeforeSignOut(uid: string): Promise<SignOutSafety> {
   await syncNow(uid, uid);
   return getSignOutSafety(uid);

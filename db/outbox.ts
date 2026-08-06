@@ -212,15 +212,36 @@ export async function acknowledge(
 }
 
 /**
- * A push succeeded but a local edit superseded it. The server's write moved
- * the divergence point, so the surviving intent must start from the version
- * the server just wrote — otherwise its next attempt is a guaranteed stale-
- * version conflict.
+ * Re-aims a queued intent at a newer server version. Two callers, both in the
+ * push phase: a write that succeeded but was superseded by a local edit, and a
+ * stale-version rejection being retried against the server's current version.
+ * Either way the divergence point moved, and an intent left on the old one is
+ * a guaranteed conflict next attempt.
+ *
+ * Deliberately leaves `claimed_at` alone. The superseded caller's row is
+ * already unclaimed (enqueue cleared it) or has been re-claimed by another
+ * runtime, whose claim is not ours to steal; the retry caller still holds its
+ * own claim and needs it intact for acknowledge().
  */
 export async function rebase(db: SqlExecutor, id: string, baseVersion: string): Promise<void> {
-  await db.runAsync('UPDATE outbox SET base_version = ?, claimed_at = NULL WHERE id = ?', [
-    baseVersion,
-    id,
+  await db.runAsync('UPDATE outbox SET base_version = ? WHERE id = ?', [baseVersion, id]);
+}
+
+/**
+ * Drops any queued intent for an entity that no longer exists remotely.
+ * acknowledge() only deletes by outbox row id, so the pull phase — which finds
+ * the deletion by manifest diff, not by dispatching a row — needs this instead.
+ */
+export async function discardEntity(
+  db: SqlExecutor,
+  uid: string,
+  entityType: string,
+  entityId: string
+): Promise<void> {
+  await db.runAsync('DELETE FROM outbox WHERE uid = ? AND entity_type = ? AND entity_id = ?', [
+    uid,
+    entityType,
+    entityId,
   ]);
 }
 

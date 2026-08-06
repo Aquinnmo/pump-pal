@@ -9,8 +9,7 @@
 // design note (legacy direct-Firestore writers may still exist during the
 // migration grace period and would bypass a change log).
 import { SqlExecutor } from './executor';
-import { claimPending, release, releaseStaleClaims, acknowledge, rebase, recordRetry, OutboxRow } from './outbox';
-import { recordConflict } from './conflicts';
+import { claimPending, release, releaseStaleClaims, acknowledge, rebase, discardEntity, recordRetry, OutboxRow } from './outbox';
 import { setSyncCursor } from './sync-cursors';
 
 export class SyncAuthError extends Error {}
@@ -28,7 +27,7 @@ export class SyncNotFoundError extends Error {}
 
 export type LocalRow = {
   id: string;
-  syncState: 'synced' | 'dirty' | 'conflict';
+  syncState: 'synced' | 'dirty';
   serverVersion: string | null;
   data: unknown;
 };
@@ -44,7 +43,6 @@ export type EntityAdapter = {
     /** Upsert-by-id with server-authoritative data — never touches the outbox. */
     writeSynced(db: SqlExecutor, uid: string, id: string, data: unknown, version: string): Promise<void>;
     removeClean(db: SqlExecutor, uid: string, id: string): Promise<void>;
-    markConflict(db: SqlExecutor, uid: string, id: string): Promise<void>;
   };
   remote: {
     create(payload: unknown, id: string, signal?: AbortSignal): Promise<{ version: string; data: unknown }>;
@@ -82,7 +80,7 @@ export type SyncOptions = {
 };
 
 export type SyncOutcome =
-  | { status: 'ok'; pushed: number; pulled: number; conflicts: number; remoteDeletions: number }
+  | { status: 'ok'; pushed: number; pulled: number; remoteDeletions: number }
   | { status: 'auth-required' }
   | { status: 'rate-limited'; retryAfterMs: number | null }
   | { status: 'partial'; pushed: number; reason: 'max-outbox-items' | 'cancelled' };
@@ -146,12 +144,12 @@ async function pushEntity(
   opts: SyncOptions
 ): Promise<{
   pushed: number;
-  conflicts: number;
+  remoteDeletions: number;
   outcome: 'drained' | 'auth-required' | 'rate-limited' | 'budget-exhausted' | 'cancelled';
   retryAfterMs?: number | null;
 }> {
   let pushed = 0;
-  let conflicts = 0;
+  let remoteDeletions = 0;
 
   // One claim, one pass. Deliberately not a loop that reclaims after a
   // failure: a row that fails gets recordRetry'd with a backoff, but even
@@ -159,57 +157,61 @@ async function pushEntity(
   // would spin on a persistently-failing item instead of bounding the work
   // and letting the next scheduled run (bead pump-pal-bkp.7's triggers) pick
   // it back up.
-  if (opts.signal?.aborted) return { pushed, conflicts, outcome: 'cancelled' };
+  if (opts.signal?.aborted) return { pushed, remoteDeletions, outcome: 'cancelled' };
   const batch = await claimPending(db, uid, budget);
   const rows = batch.filter((r) => r.entityType === adapter.entityType);
   // Release claims on rows belonging to other entity types — this pass isn't theirs to hold.
   for (const r of batch) if (r.entityType !== adapter.entityType) await release(db, r.id);
 
+  /** Applies a dispatched intent's outcome to local state, honouring the claim token. */
+  const finalize = async (row: OutboxRow, result: { version: string; data: unknown } | null) => {
+    if (await acknowledge(db, row.id, row.claimedAt)) {
+      await applyDispatched(db, uid, row, adapter, result);
+    } else if (result) {
+      // A local write landed mid-round-trip and superseded this intent.
+      // Leave the entity row alone — it holds the user's newer data — and
+      // rebase the surviving outbox row onto the version the server just
+      // wrote. The entity row's now-stale server_version is harmless: it is
+      // only read to seed a *new* intent's baseVersion, and coalesce()
+      // keeps the existing (just-rebased) row's value instead.
+      await rebase(db, row.id, result.version);
+    }
+  };
+
   for (const row of rows) {
     try {
-      const result = await dispatchOne(db, uid, row, adapter, opts.signal);
-      if (await acknowledge(db, row.id, row.claimedAt)) {
-        await applyDispatched(db, uid, row, adapter, result);
-      } else if (result) {
-        // A local write landed mid-round-trip and superseded this intent.
-        // Leave the entity row alone — it holds the user's newer data — and
-        // rebase the surviving outbox row onto the version the server just
-        // wrote. The entity row's now-stale server_version is harmless: it is
-        // only read to seed a *new* intent's baseVersion, and coalesce()
-        // keeps the existing (just-rebased) row's value instead.
-        await rebase(db, row.id, result.version);
+      let current = row;
+      let result: { version: string; data: unknown } | null;
+      try {
+        result = await dispatchOne(db, uid, current, adapter, opts.signal);
+      } catch (err) {
+        if (!(err instanceof SyncConflictError)) throw err;
+        // Local wins, automatically. The server moved on, so re-aim at the
+        // version it reports and push the same local payload straight over
+        // it. One retry, not a loop — a second rejection means yet another
+        // writer landed mid-run, and the outer catch's backoff lets the next
+        // scheduled run start from the version this one just learned about.
+        current = { ...current, baseVersion: err.remoteVersion };
+        await rebase(db, current.id, err.remoteVersion);
+        result = await dispatchOne(db, uid, current, adapter, opts.signal);
       }
-      // ponytail: a *delete* superseded mid-flight (result === null) is left
-      // as-is — the remote row is already gone, so the coalesced update that
-      // replaced it will 404 and retry on backoff forever. Rare (delete then
-      // immediately re-edit the same entity); fix by mapping 404 to a local
-      // removeClean if it ever shows up in practice.
+      await finalize(current, result);
       pushed++;
     } catch (err) {
-      if (err instanceof SyncConflictError) {
-        const serverData = err.remote && typeof err.remote === 'object'
-          ? { ...(err.remote as Record<string, unknown>), version: err.remoteVersion }
-          : err.remote;
-        await recordConflict(db, {
-          uid,
-          entityType: adapter.entityType,
-          entityId: row.entityId,
-          localData: row.payload,
-          serverData,
-        });
-        await adapter.local.markConflict(db, uid, row.entityId);
-        // Superseded by the conflict record — retrying the same stale write
-        // would just conflict again. Unconditional: unlike the success path,
-        // there is no server response to apply, and the conflict row already
-        // captured this payload.
+      if (err instanceof SyncNotFoundError && row.op !== 'create') {
+        // The record was deleted on another device. A delete is an explicit
+        // action there, so accept it rather than resurrecting the row from
+        // this device's copy. (A 404 on `create` is not a deletion — that
+        // falls through to the generic retry below.)
+        await adapter.local.removeClean(db, uid, row.entityId);
         await acknowledge(db, row.id, row.claimedAt);
-        conflicts++;
+        remoteDeletions++;
       } else if (err instanceof SyncAuthError) {
         await release(db, row.id);
-        return { pushed, conflicts, outcome: 'auth-required' };
+        return { pushed, remoteDeletions, outcome: 'auth-required' };
       } else if (err instanceof SyncRateLimitError) {
         await release(db, row.id);
-        return { pushed, conflicts, outcome: 'rate-limited', retryAfterMs: err.retryAfterMs };
+        return { pushed, remoteDeletions, outcome: 'rate-limited', retryAfterMs: err.retryAfterMs };
       } else {
         // Anything else (network blip, timeout, transient 5xx, or even a
         // real validation bug) is retry-scheduled rather than dropped, so
@@ -228,7 +230,7 @@ async function pushEntity(
       }
     }
   }
-  return { pushed, conflicts, outcome: rows.length >= budget ? 'budget-exhausted' : 'drained' };
+  return { pushed, remoteDeletions, outcome: rows.length >= budget ? 'budget-exhausted' : 'drained' };
 }
 
 /** Pull phase: full-manifest diff against local rows for one entity kind. */
@@ -239,12 +241,11 @@ async function pullEntity(
   manifestByKind: Map<string, ManifestEntry>,
   remote: SyncRemote,
   opts: SyncOptions
-): Promise<{ pulled: number; conflicts: number; remoteDeletions: number }> {
+): Promise<{ pulled: number; remoteDeletions: number }> {
   const localRows = await adapter.local.getAllRows(db, uid);
   const localById = new Map(localRows.map((r) => [r.id, r]));
 
   const needsPull: string[] = [];
-  let conflicts = 0;
   let remoteDeletions = 0;
 
   for (const row of localRows) {
@@ -257,22 +258,19 @@ async function pullEntity(
         needsPull.push(row.id);
       }
     } else if (row.syncState === 'dirty' && row.serverVersion) {
-      // Previously synced, now both locally dirty AND absent remotely — a
-      // real conflict (dirty remote deletion), never silently dropped.
+      // Previously synced, now both locally dirty AND absent remotely: it was
+      // deleted on another device. Accept that rather than resurrecting it —
+      // a delete is an explicit action there, and re-creating it would make
+      // deleted records keep reappearing. The queued intent goes too, or it
+      // would 404 on every subsequent run.
       if (!manifestEntry) {
-        await recordConflict(db, {
-          uid,
-          entityType: adapter.entityType,
-          entityId: row.id,
-          localData: row.data,
-          serverData: null,
-        });
-        await adapter.local.markConflict(db, uid, row.id);
-        conflicts++;
+        await adapter.local.removeClean(db, uid, row.id);
+        await discardEntity(db, uid, adapter.entityType, row.id);
+        remoteDeletions++;
       }
     }
-    // dirty-with-no-serverVersion (never synced) or already-conflict rows:
-    // left alone, nothing new to reconcile from the manifest this pass.
+    // dirty-with-no-serverVersion (never synced): left alone, nothing to
+    // reconcile from the manifest this pass.
   }
 
   for (const [id, entry] of manifestByKind) {
@@ -300,7 +298,7 @@ async function pullEntity(
     }
   }
 
-  return { pulled, conflicts, remoteDeletions };
+  return { pulled, remoteDeletions };
 }
 
 async function fetchFullManifest(
@@ -349,13 +347,13 @@ export async function runSync(
   await releaseStaleClaims(db, uid, 0);
 
   let totalPushed = 0;
-  let totalConflicts = 0;
+  let totalRemoteDeletions = 0;
 
   const budgetPerAdapter = Math.ceil((opts.maxOutboxItems ?? DEFAULT_MAX_OUTBOX_ITEMS) / adapters.length);
   for (const adapter of adapters) {
     const result = await pushEntity(db, uid, adapter, budgetPerAdapter, opts);
     totalPushed += result.pushed;
-    totalConflicts += result.conflicts;
+    totalRemoteDeletions += result.remoteDeletions;
     if (result.outcome === 'auth-required') return { status: 'auth-required' };
     if (result.outcome === 'rate-limited') {
       return { status: 'rate-limited', retryAfterMs: result.retryAfterMs ?? null };
@@ -370,12 +368,10 @@ export async function runSync(
 
   const manifestByKind = await fetchFullManifest(remote, uid, opts);
   let totalPulled = 0;
-  let totalRemoteDeletions = 0;
   for (const adapter of adapters) {
     if (!adapter.wireKind) continue;
     const result = await pullEntity(db, uid, adapter, manifestByKind, remote, opts);
     totalPulled += result.pulled;
-    totalConflicts += result.conflicts;
     totalRemoteDeletions += result.remoteDeletions;
     await setSyncCursor(db, {
       uid,
@@ -389,7 +385,6 @@ export async function runSync(
     status: 'ok',
     pushed: totalPushed,
     pulled: totalPulled,
-    conflicts: totalConflicts,
     remoteDeletions: totalRemoteDeletions,
   };
 }

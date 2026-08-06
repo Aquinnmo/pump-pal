@@ -114,11 +114,9 @@ export default function SettingsAccountScreen() {
         await purgeLocalAccountData(user.uid);
       } else {
         const remaining = await syncBeforeSignOut(user.uid);
-        if (remaining.pending || remaining.conflicts) {
+        if (remaining.pending) {
           setSignOutSafety(remaining);
-          setSignOutError(remaining.conflicts
-            ? 'Sync found a conflict. Choose a copy before signing out, or explicitly discard local data.'
-            : 'Sync did not finish. Your changes are still safe on this device.');
+          setSignOutError('Sync did not finish. Your changes are still safe on this device.');
           return;
         }
         await purgeLocalAccountData(user.uid);
@@ -245,8 +243,8 @@ export default function SettingsAccountScreen() {
             <Text style={styles.modalMessage}>
               {signOutSafety === null
                 ? 'Checking whether this device has unsynced changes.'
-                : signOutSafety.pending || signOutSafety.conflicts
-                  ? `${signOutSafety.pending} change${signOutSafety.pending === 1 ? '' : 's'} pending and ${signOutSafety.conflicts} conflict${signOutSafety.conflicts === 1 ? '' : 's'} need attention. Sync before signing out, or explicitly discard this device’s local data.`
+                : signOutSafety.pending
+                  ? `${signOutSafety.pending} change${signOutSafety.pending === 1 ? '' : 's'} still pending. Sync before signing out, or explicitly discard this device’s local data.`
                   : 'No unsynced changes remain on this device.'}
             </Text>
             {signOutError ? <Text style={styles.modalErrorText}>{signOutError}</Text> : null}
@@ -258,7 +256,7 @@ export default function SettingsAccountScreen() {
                 disabled={signingOut}>
                 <Text style={styles.modalCancelText}>Stay Signed In</Text>
               </TouchableOpacity>
-              {signOutSafety && (signOutSafety.pending || signOutSafety.conflicts) ? (
+              {signOutSafety && signOutSafety.pending ? (
                 <>
                   <TouchableOpacity style={styles.modalConfirmButton} onPress={() => finishSignOut(false)} activeOpacity={0.8} disabled={signingOut}>
                     {signingOut ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.modalConfirmText}>Sync and Sign Out</Text>}

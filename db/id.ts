@@ -1,4 +1,4 @@
-// Local-only row ids (outbox entries, conflict records). Not security
+// Local-only row ids (outbox entries). Not security
 // sensitive, so no new dependency — react-native-get-random-values (already
 // a dependency) polyfills crypto.getRandomValues, and Node/Hermes both
 // expose crypto.randomUUID where available.

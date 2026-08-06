@@ -159,6 +159,45 @@ async function main() {
   assert.equal(profile.length, 0);
 }
 
+// --- Migration 5 rescues rows stranded in the retired 'conflict' sync state ---
+// They carry no outbox row (the old engine acknowledged it when it recorded
+// the conflict), so merely marking them dirty would leave them unsyncable
+// forever: push ignores them and the pull phase only overwrites 'synced' rows.
+{
+  const { db } = freshDb();
+  await runMigrations(db, MIGRATIONS.filter((m) => m.version < 5));
+
+  await db.runAsync(
+    `INSERT INTO workouts (uid, id, data, date, status, sync_state, server_version, updated_at, deleted)
+     VALUES (?, ?, ?, NULL, 'completed', 'conflict', 'v7', ?, 0)`,
+    ['uid-a', 'w1', '{"name":"Stranded"}', '2026-01-01T00:00:00.000Z']
+  );
+  await db.runAsync(
+    `INSERT INTO profile (uid, data, sync_state, server_version, updated_at, deleted)
+     VALUES (?, ?, 'conflict', 'v3', ?, 0)`,
+    ['uid-a', '{"name":"Me"}', '2026-01-01T00:00:00.000Z']
+  );
+
+  await runMigrations(db, MIGRATIONS);
+
+  const workout = await db.getFirstAsync<{ sync_state: string }>(
+    'SELECT sync_state FROM workouts WHERE uid = ? AND id = ?', ['uid-a', 'w1']
+  );
+  assert.equal(workout?.sync_state, 'dirty');
+
+  const queued = await db.getAllAsync<{ entity_type: string; entity_id: string; op: string; payload: string; base_version: string }>(
+    'SELECT * FROM outbox WHERE uid = ? ORDER BY entity_type', ['uid-a']
+  );
+  assert.equal(queued.length, 2, 'one re-queued intent per stranded row');
+  assert.deepEqual(queued.map((r) => [r.entity_type, r.entity_id]), [['profile', 'uid-a'], ['workout', 'w1']]);
+  assert.equal(queued[1].op, 'update');
+  assert.equal(queued[1].payload, '{"name":"Stranded"}', 'the local copy is what gets re-queued (local wins)');
+  assert.equal(queued[1].base_version, 'v7');
+
+  const conflicts = await db.getAllAsync("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'conflicts'");
+  assert.equal(conflicts.length, 0, 'the conflicts table is dropped');
+}
+
 console.log('db/migrate.test.ts: all assertions passed');
 }
 

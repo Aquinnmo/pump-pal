@@ -1,5 +1,6 @@
 import { auth } from '@/config/firebase';
 import { workoutRepository } from '@/db/workout-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { DraftExerciseRow, PerformedExercise, Workout } from '@/types/workout';
 import { getOngoingInjuryIds } from '@/utils/injuries';
 import { describeUpNext } from '@/utils/up-next';
@@ -167,6 +168,9 @@ async function finishWorkout(
     injuries: await getOngoingInjuryIds(uid),
     updatedAt: new Date().toISOString(),
   });
+  // Same rule as the phone's finish handler. The set-toggle path above is the
+  // watch's autosave equivalent and deliberately stays local.
+  triggerSyncAfterWrite();
   await dismissWorkoutNotification();
   pushIdleFallback();
 }

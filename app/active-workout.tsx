@@ -5,6 +5,7 @@ import { ExerciseCard } from "@/components/workout/exercise-card";
 import { FocusView } from "@/components/workout/focus-view";
 import { profileRepository } from "@/db/profile-repository";
 import { workoutRepository } from "@/db/workout-repository";
+import { triggerSyncAfterWrite } from "@/db/sync-trigger";
 import { isSplitOption } from "@/constants/split-options";
 import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
@@ -454,6 +455,9 @@ export default function ActiveWorkoutScreen() {
         injuries,
         updatedAt: new Date().toISOString(),
       });
+      // The session is done — push it now rather than leaving it on the device
+      // until the next foreground. The autosave above deliberately does not.
+      triggerSyncAfterWrite();
       await dismissWorkoutNotification();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
@@ -587,6 +591,7 @@ export default function ActiveWorkoutScreen() {
         if (!user) throw new Error('You must be signed in to discard a workout.');
         await workoutRepository.softDelete(user.uid, workoutId);
       }
+      triggerSyncAfterWrite();
       await dismissWorkoutNotification();
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
       // moment later when it regains focus.

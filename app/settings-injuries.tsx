@@ -2,6 +2,7 @@ import { DateField } from '@/components/ui/date-field';
 import { Dropdown } from '@/components/ui/dropdown';
 import { Toast } from '@/components/ui/toast';
 import { injuryRepository } from '@/db/injury-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { BODY_PARTS, BodyPart, bodyPartLabel, isBodyPart } from '@/constants/body-parts';
 import { useAuth } from '@/context/auth-context';
 import { Injury, InjurySeverity, InjurySide } from '@/types/user';
@@ -83,6 +84,9 @@ export default function SettingsInjuriesScreen() {
         existing.delete(injury.id);
       }
       for (const id of existing.keys()) await injuryRepository.softDelete(user.uid, id);
+      // One run for the whole batch, covering the workout rows this cascades
+      // through utils/injuries.ts as well.
+      triggerSyncAfterWrite();
       setInjuries(next);
       return true;
     } catch (err) {

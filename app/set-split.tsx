@@ -1,6 +1,7 @@
 import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import { Dropdown } from '@/components/ui/dropdown';
 import { profileRepository } from '@/db/profile-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { SPLIT_OPTIONS, SplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
@@ -44,6 +45,7 @@ export default function SetSplitScreen() {
           updatedAt: new Date().toISOString(),
         },
       });
+      triggerSyncAfterWrite();
 
       router.replace('/(tabs)');
     } catch (err) {

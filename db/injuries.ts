@@ -60,6 +60,3 @@ export async function softDelete(db: SqlExecutor, uid: string, id: string): Prom
 export async function removeClean(db: SqlExecutor, uid: string, id: string): Promise<void> {
   await db.runAsync("UPDATE injuries SET deleted = 1, sync_state = 'synced', updated_at = ? WHERE uid = ? AND id = ?", [new Date().toISOString(), uid, id]);
 }
-export async function markConflict(db: SqlExecutor, uid: string, id: string): Promise<void> {
-  await db.runAsync("UPDATE injuries SET sync_state = 'conflict', updated_at = ? WHERE uid = ? AND id = ?", [new Date().toISOString(), uid, id]);
-}

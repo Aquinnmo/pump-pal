@@ -4,7 +4,7 @@
 // (bead pump-pal-bkp.9) depend only on this file, never on a concrete
 // implementation or on `Platform.OS`.
 
-export type SyncState = 'synced' | 'dirty' | 'conflict';
+export type SyncState = 'synced' | 'dirty';
 
 /** Sync bookkeeping carried alongside every stored entity. */
 export type SyncMeta = {

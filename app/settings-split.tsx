@@ -1,6 +1,7 @@
 import { Dropdown } from '@/components/ui/dropdown';
 import { Toast } from '@/components/ui/toast';
 import { profileRepository } from '@/db/profile-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
@@ -70,6 +71,7 @@ export default function SettingsSplitScreen() {
           updatedAt: new Date().toISOString(),
         },
       });
+      triggerSyncAfterWrite();
       setToast({ visible: true, message: 'Workout split updated', type: 'success' });
     } catch (err) {
       console.error(err);

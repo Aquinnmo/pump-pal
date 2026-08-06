@@ -13,7 +13,6 @@ import { normalizeTimestampsDeep } from './normalize-timestamps';
 import { randomId } from './id';
 import { Workout, WorkoutStatus } from '@/types/workout';
 import { StoredRecord } from '@/repositories/types';
-import { ConflictRecord, resolveConflict } from './conflicts';
 
 const ENTITY_TYPE = 'workout';
 
@@ -23,7 +22,7 @@ type Row = {
   data: string;
   date: string | null;
   status: string | null;
-  sync_state: 'synced' | 'dirty' | 'conflict';
+  sync_state: 'synced' | 'dirty';
   server_version: string | null;
   updated_at: string;
   deleted: number;
@@ -108,7 +107,7 @@ async function writeRowStatements(
   id: string,
   workout: Workout,
   op: 'create' | 'update',
-  meta?: { syncState?: 'synced' | 'dirty' | 'conflict'; serverVersion?: string | null }
+  meta?: { syncState?: 'synced' | 'dirty'; serverVersion?: string | null }
 ): Promise<void> {
   const now = new Date().toISOString();
   const normalized = normalizeTimestampsDeep({ ...workout, id, userId: uid });
@@ -156,7 +155,7 @@ async function writeRow(
   id: string,
   workout: Workout,
   op: 'create' | 'update',
-  meta?: { syncState?: 'synced' | 'dirty' | 'conflict'; serverVersion?: string | null }
+  meta?: { syncState?: 'synced' | 'dirty'; serverVersion?: string | null }
 ): Promise<void> {
   await db.withTransactionAsync(() => writeRowStatements(db, uid, id, workout, op, meta));
 }
@@ -177,7 +176,7 @@ export async function update(
   uid: string,
   id: string,
   workout: Workout,
-  meta?: { syncState?: 'synced' | 'dirty' | 'conflict'; serverVersion?: string | null }
+  meta?: { syncState?: 'synced' | 'dirty'; serverVersion?: string | null }
 ): Promise<void> {
   await writeRow(db, uid, id, workout, 'update', meta);
 }
@@ -219,16 +218,6 @@ export async function removeClean(db: SqlExecutor, uid: string, id: string): Pro
   ]);
 }
 
-/** Sync-engine only: marks a row conflicted (dirty local vs. stale/missing remote) after recording the conflict. */
-export async function markConflict(db: SqlExecutor, uid: string, id: string): Promise<void> {
-  await db.runAsync('UPDATE workouts SET sync_state = ?, updated_at = ? WHERE uid = ? AND id = ?', [
-    'conflict',
-    new Date().toISOString(),
-    uid,
-    id,
-  ]);
-}
-
 /**
  * Rewrites queueOrder for a full ordered list of planned-workout ids in one
  * transaction, so a reorder is atomic — never half-applied, never
@@ -256,81 +245,5 @@ export async function reorderQueue(
         serverVersion: row.server_version,
       });
     }
-  });
-}
-
-function remoteVersion(data: unknown): string | null {
-  if (!data || typeof data !== 'object') return null;
-  const version = (data as { version?: unknown }).version;
-  return typeof version === 'string' ? version : null;
-}
-
-function remoteWorkoutToLocal(uid: string, data: unknown): Workout {
-  const dto = data as Record<string, unknown>;
-  return {
-    id: String(dto.id),
-    userId: uid,
-    name: String(dto.name ?? ''),
-    date: dto.date as Workout['date'],
-    status: dto.status as WorkoutStatus,
-    startedAt: dto.startedAt as Workout['startedAt'],
-    queueOrder: dto.queueOrder as number | undefined,
-    notes: dto.notes as string | undefined,
-    performedExercises: (dto.performedExercises ?? []) as Workout['performedExercises'],
-    injuries: dto.injuries as string[] | undefined,
-    createdAt: dto.createdAt as Workout['createdAt'],
-    updatedAt: dto.updatedAt as Workout['updatedAt'],
-    schemaVersion: 2,
-  };
-}
-
-/**
- * Applies "Keep This Device" in the same transaction that marks the conflict
- * resolved. A remote deletion becomes a fresh create; a remote record uses
- * its recorded opaque version as the retry baseline. Neither case can leave a
- * resolved conflict without a durable replacement intent.
- */
-export async function resolveKeepLocal(
-  db: SqlExecutor,
-  conflict: ConflictRecord
-): Promise<void> {
-  if (conflict.entityType !== ENTITY_TYPE) throw new Error(`Unsupported conflict type: ${conflict.entityType}`);
-  const local = conflict.localData as Workout;
-  const version = remoteVersion(conflict.serverData);
-  await db.withTransactionAsync(async () => {
-    await writeRowStatements(
-      db,
-      conflict.uid,
-      conflict.entityId,
-      { ...local, id: conflict.entityId, userId: conflict.uid },
-      conflict.serverData === null ? 'create' : 'update',
-      { syncState: 'dirty', serverVersion: version }
-    );
-    await resolveConflict(db, conflict.id);
-  });
-}
-
-/**
- * Applies "Use Server Copy" atomically. A remote deletion removes the local
- * row; otherwise the downloaded version is stored as clean and no outbox row
- * is created. The original local JSON remains in the resolved conflict audit
- * row rather than being silently discarded.
- */
-export async function resolveUseServer(
-  db: SqlExecutor,
-  conflict: ConflictRecord
-): Promise<void> {
-  if (conflict.entityType !== ENTITY_TYPE) throw new Error(`Unsupported conflict type: ${conflict.entityType}`);
-  await db.withTransactionAsync(async () => {
-    if (conflict.serverData === null) {
-      await removeClean(db, conflict.uid, conflict.entityId);
-    } else {
-      const server = remoteWorkoutToLocal(conflict.uid, conflict.serverData);
-      await writeRowStatements(db, conflict.uid, conflict.entityId, server, 'update', {
-        syncState: 'synced',
-        serverVersion: remoteVersion(conflict.serverData),
-      });
-    }
-    await resolveConflict(db, conflict.id);
   });
 }

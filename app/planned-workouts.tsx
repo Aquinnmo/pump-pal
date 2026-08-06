@@ -1,5 +1,6 @@
 import { profileRepository } from '@/db/profile-repository';
 import { workoutRepository } from '@/db/workout-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
@@ -127,6 +128,7 @@ export default function PlannedWorkoutsScreen() {
     try {
       if (!user) return;
       await workoutRepository.softDelete(user.uid, planId);
+      triggerSyncAfterWrite();
       setPlans((prev) => prev.filter((p) => p.id !== planId));
     } catch (err: any) {
       showAlert('Error', 'Could not delete plan. ' + err.message);

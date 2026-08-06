@@ -4,6 +4,7 @@ import { WorkoutPrefillLoader } from "@/components/ui/workout-prefill-loader";
 import { ExerciseCard } from "@/components/workout/exercise-card";
 import { profileRepository } from "@/db/profile-repository";
 import { workoutRepository } from "@/db/workout-repository";
+import { triggerSyncAfterWrite } from "@/db/sync-trigger";
 import { isSplitOption } from "@/constants/split-options";
 import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
@@ -380,6 +381,7 @@ export default function AddWorkoutModal() {
     if (!id || !user) return;
     try {
       await workoutRepository.softDelete(user.uid, id);
+      triggerSyncAfterWrite();
       router.back();
     } catch (err: any) {
       showAlert("Error", "Could not delete workout. " + err.message);
@@ -462,6 +464,7 @@ export default function AddWorkoutModal() {
           });
         }
       }
+      triggerSyncAfterWrite();
       router.back();
     } catch (err: any) {
       showAlert("Error", "Could not save workout. " + err.message);

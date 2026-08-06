@@ -154,6 +154,43 @@ export const MIGRATIONS: Migration[] = [
       `CREATE INDEX idx_injuries_uid_sync_state ON injuries(uid, sync_state)`,
     ],
   },
+  {
+    // Conflicts are now resolved automatically by the sync engine (local wins
+    // on a stale version, remote deletions accepted), so the table, the
+    // 'conflict' sync state and the picker UI are all gone.
+    //
+    // Rows already parked in 'conflict' on a device have no outbox row — the
+    // old engine acknowledged it when it recorded the conflict — so simply
+    // marking them dirty would strand them: push ignores them, and the pull
+    // phase only overwrites 'synced' rows. Re-queue each one first, matching
+    // the local-wins policy, then mark it dirty. INSERT OR IGNORE is safe
+    // against idx_outbox_uid_entity.
+    version: 5,
+    up: [
+      `INSERT OR IGNORE INTO outbox (id, uid, entity_type, entity_id, op, payload, base_version, created_at, attempts)
+       SELECT lower(hex(randomblob(16))), uid, 'workout', id, 'update', data, server_version, datetime('now'), 0
+         FROM workouts WHERE sync_state = 'conflict'`,
+      `UPDATE workouts SET sync_state = 'dirty' WHERE sync_state = 'conflict'`,
+
+      `INSERT OR IGNORE INTO outbox (id, uid, entity_type, entity_id, op, payload, base_version, created_at, attempts)
+       SELECT lower(hex(randomblob(16))), uid, 'injury', id, 'update', data, server_version, datetime('now'), 0
+         FROM injuries WHERE sync_state = 'conflict'`,
+      `UPDATE injuries SET sync_state = 'dirty' WHERE sync_state = 'conflict'`,
+
+      // Singletons key their outbox intent by uid — see db/singleton-repository.ts.
+      `INSERT OR IGNORE INTO outbox (id, uid, entity_type, entity_id, op, payload, base_version, created_at, attempts)
+       SELECT lower(hex(randomblob(16))), uid, 'profile', uid, 'update', data, server_version, datetime('now'), 0
+         FROM profile WHERE sync_state = 'conflict'`,
+      `UPDATE profile SET sync_state = 'dirty' WHERE sync_state = 'conflict'`,
+
+      `INSERT OR IGNORE INTO outbox (id, uid, entity_type, entity_id, op, payload, base_version, created_at, attempts)
+       SELECT lower(hex(randomblob(16))), uid, 'pushup_challenge', uid, 'update', data, server_version, datetime('now'), 0
+         FROM pushup_challenge WHERE sync_state = 'conflict'`,
+      `UPDATE pushup_challenge SET sync_state = 'dirty' WHERE sync_state = 'conflict'`,
+
+      `DROP TABLE conflicts`,
+    ],
+  },
 ];
 
 export const CURRENT_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -168,6 +205,5 @@ export const UID_SCOPED_TABLES = [
   'catalog_exercises',
   'catalog_meta',
   'outbox',
-  'conflicts',
   'sync_cursors',
 ] as const;

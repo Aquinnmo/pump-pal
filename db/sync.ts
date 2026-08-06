@@ -1,8 +1,7 @@
 // Real wiring for the sync engine (db/sync-engine.ts): binds it to the
 // native db/client.ts, the local workout/profile/pushup repositories, and
-// repositories/remote/*.ts. This is what bead pump-pal-bkp.7's triggers and
-// bead pump-pal-bkp.8's conflict/status UI call — never db/sync-engine.ts
-// directly.
+// repositories/remote/*.ts. This is what db/sync-trigger.ts calls — never
+// db/sync-engine.ts directly.
 //
 // Enforces the two rules the core engine documents but can't enforce itself:
 // one run at a time per uid (module-level mutex, keyed by uid so switching
@@ -13,7 +12,7 @@ import { createKeyedMutex } from './keyed-mutex';
 import * as workoutsLocal from './workouts';
 import * as injuriesLocal from './injuries';
 import * as catalogLocal from './catalog';
-import { getSingleton, upsertSingleton, removeCleanSingleton, markSingletonConflict } from './singleton-repository';
+import { getSingleton, upsertSingleton, removeCleanSingleton } from './singleton-repository';
 import {
   runSync as runSyncCore,
   EntityAdapter,
@@ -21,6 +20,7 @@ import {
   SyncOutcome,
   SyncAuthError,
   SyncConflictError,
+  SyncNotFoundError,
   SyncRateLimitError,
 } from './sync-engine';
 import * as remoteWorkouts from '@/repositories/remote/workouts';
@@ -29,7 +29,7 @@ import * as remoteProfile from '@/repositories/remote/profile';
 import * as remotePushup from '@/repositories/remote/pushup';
 import * as remoteCatalog from '@/repositories/remote/catalog';
 import * as remoteSync from '@/repositories/remote/sync';
-import { ApiAuthError, ApiConflictError, ApiRateLimitError } from '@/utils/api-client';
+import { ApiAuthError, ApiConflictError, ApiNotFoundError, ApiRateLimitError } from '@/utils/api-client';
 import { Workout } from '@/types/workout';
 import { ChallengeData } from '@/types/pushup-challenge';
 import { Injury, UserDoc } from '@/types/user';
@@ -39,6 +39,9 @@ import { CreateWorkoutInput, UpdateWorkoutInput, WorkoutDTO, PullRequest, Injury
 function translateApiError(err: unknown): never {
   if (err instanceof ApiAuthError) throw new SyncAuthError(err.message);
   if (err instanceof ApiConflictError) throw new SyncConflictError(err.message, err.remote, err.remoteVersion);
+  // The engine reads this as "deleted on another device" and drops the local
+  // row, so it must not be lumped in with generic retryable failures.
+  if (err instanceof ApiNotFoundError) throw new SyncNotFoundError(err.message);
   if (err instanceof ApiRateLimitError) throw new SyncRateLimitError(err.message, err.retryAfterMs);
   throw err;
 }
@@ -86,7 +89,6 @@ const workoutAdapter: EntityAdapter = {
       await workoutsLocal.update(db, uid, id, data as Workout, { syncState: 'synced', serverVersion: version });
     },
     removeClean: workoutsLocal.removeClean,
-    markConflict: workoutsLocal.markConflict,
   },
   remote: {
     async create(payload, id, signal) {
@@ -142,7 +144,6 @@ const profileAdapter: EntityAdapter = {
     async getAllRows(db, uid) { const row = await getSingleton<UserDoc>(db, 'profile', uid); return row ? [{ id: uid, syncState: row.syncState, serverVersion: row.serverVersion, data: row.data }] : []; },
     writeSynced: (db, uid, _id, data, version) => upsertSingleton(db, 'profile', 'profile', uid, profileFromDto(data as ProfileDTO), { syncState: 'synced', serverVersion: version }),
     removeClean: (db, uid) => removeCleanSingleton(db, 'profile', uid),
-    markConflict: (db, uid) => markSingletonConflict(db, 'profile', uid),
   },
   remote: {
     async create(payload, _id, signal) { try { const dto = await remoteProfile.patchProfile(profilePatch(payload, null), { signal }); return { version: dto.version, data: dto }; } catch (err) { translateApiError(err); } },
@@ -156,7 +157,7 @@ const injuryAdapter: EntityAdapter = {
   local: {
     async getAllRows(db, uid) { return (await injuriesLocal.getAll(db, uid)).map((row) => ({ id: row.id, syncState: row.syncState, serverVersion: row.serverVersion, data: row.data })); },
     writeSynced: (db, uid, _id, data, version) => injuriesLocal.update(db, uid, data as Injury, { syncState: 'synced', serverVersion: version }),
-    removeClean: injuriesLocal.removeClean, markConflict: injuriesLocal.markConflict,
+    removeClean: injuriesLocal.removeClean,
   },
   remote: {
     async create(payload, _id, signal) { try { const response = await remoteInjuries.createInjury(injuryCreateInput(payload as Injury), { signal }); return { version: response.version, data: response.injury }; } catch (err) { translateApiError(err); } },
@@ -171,7 +172,6 @@ const pushupAdapter: EntityAdapter = {
     async getAllRows(db, uid) { const row = await getSingleton<ChallengeData>(db, 'pushup_challenge', uid); return row ? [{ id: uid, syncState: row.syncState, serverVersion: row.serverVersion, data: row.data }] : []; },
     writeSynced: (db, uid, _id, data, version) => upsertSingleton(db, 'pushup_challenge', 'pushup_challenge', uid, challengeFromDto(data as PushupChallengeDTO), { syncState: 'synced', serverVersion: version }),
     removeClean: (db, uid) => removeCleanSingleton(db, 'pushup_challenge', uid),
-    markConflict: (db, uid) => markSingletonConflict(db, 'pushup_challenge', uid),
   },
   remote: {
     async create(payload, _id, signal) { const data = payload as ChallengeData; try { const dto = await remotePushup.putPushupChallenge({ ...data, baseVersion: null }, { signal }); return { version: dto.version ?? '', data: dto }; } catch (err) { translateApiError(err); } },
@@ -185,7 +185,7 @@ const catalogAdapter: EntityAdapter = {
   local: {
     async getAllRows() { return []; },
     async writeSynced(db, uid, id) { await catalogLocal.markSynced(db, uid, id); },
-    async removeClean() { return; }, async markConflict() { return; },
+    async removeClean() { return; },
   },
   remote: {
     async create(payload, _id, signal) { try { const response = await remoteCatalog.createPendingExercise({ name: (payload as { name: string }).name }, { signal }); return { version: '', data: response.exercise }; } catch (err) { translateApiError(err); } },

@@ -1,5 +1,6 @@
 import { WorkoutCard } from '@/components/workout-card';
 import { workoutRepository } from '@/db/workout-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { toDateObj } from '@/utils/workout-conversion';
@@ -62,6 +63,7 @@ export default function WorkoutsScreen() {
     try {
       if (!user) return;
       await workoutRepository.softDelete(user.uid, pendingDeleteId);
+      triggerSyncAfterWrite();
       setWorkouts((prev) => prev.filter((w) => w.id !== pendingDeleteId));
     } catch {
       // silently fail

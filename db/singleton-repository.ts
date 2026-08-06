@@ -33,8 +33,6 @@ function fromRow<T>(row: Row): StoredRecord<T> {
 export type SingletonSyncOps = {
   /** Sync-engine only: manifest-driven remote deletion. No outbox intent. */
   removeClean(uid: string): Promise<void>;
-  /** Sync-engine only: marks the row conflicted after recording the conflict. */
-  markConflict(uid: string): Promise<void>;
 };
 
 export async function getSingleton<T>(db: SqlExecutor, table: SingletonTable, uid: string): Promise<StoredRecord<T> | null> {
@@ -66,9 +64,6 @@ export async function upsertSingleton<T>(
 export async function removeCleanSingleton(db: SqlExecutor, table: SingletonTable, uid: string): Promise<void> {
   await db.runAsync(`UPDATE ${table} SET deleted = 1, sync_state = 'synced', updated_at = ? WHERE uid = ?`, [new Date().toISOString(), uid]);
 }
-export async function markSingletonConflict(db: SqlExecutor, table: SingletonTable, uid: string): Promise<void> {
-  await db.runAsync(`UPDATE ${table} SET sync_state = 'conflict', updated_at = ? WHERE uid = ?`, [new Date().toISOString(), uid]);
-}
 
 export function createSingletonRepository<T>(
   getDb: () => Promise<SqlExecutor>,
@@ -89,11 +84,6 @@ export function createSingletonRepository<T>(
     async removeClean(uid) {
       const db = await getDb();
       await removeCleanSingleton(db, table, uid);
-    },
-
-    async markConflict(uid) {
-      const db = await getDb();
-      await markSingletonConflict(db, table, uid);
     },
   };
 }

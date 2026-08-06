@@ -1,6 +1,6 @@
 // Core catalog-cache logic, parametrized over SqlExecutor so it's testable
-// against node:sqlite (db/catalog.test.ts) the same way db/outbox.ts and
-// db/conflicts.ts are. db/catalog-repository.ts binds this to the real
+// against node:sqlite (db/catalog.test.ts) the same way db/outbox.ts is.
+// db/catalog-repository.ts binds this to the real
 // native db/client.ts for app use.
 //
 // See docs/data-model/exercises.md. Two write paths with different sync
