@@ -9,7 +9,7 @@
 // design note (legacy direct-Firestore writers may still exist during the
 // migration grace period and would bypass a change log).
 import { SqlExecutor } from './executor';
-import { claimPending, release, releaseStaleClaims, acknowledge, recordRetry, OutboxRow } from './outbox';
+import { claimPending, release, releaseStaleClaims, acknowledge, rebase, recordRetry, OutboxRow } from './outbox';
 import { recordConflict } from './conflicts';
 import { setSyncCursor } from './sync-cursors';
 
@@ -96,26 +96,41 @@ function defaultBackoffMs(attempts: number): number {
   return base + Math.floor(Math.random() * 1000); // jitter
 }
 
+/**
+ * Performs the remote call only. Applying the result to local state is the
+ * caller's job, and must happen *after* acknowledge() confirms this run still
+ * holds the row's claim — a local write landing during the round trip
+ * supersedes this intent, and writing the server's response over it would
+ * discard the user's newer edit.
+ */
 async function dispatchOne(
   db: SqlExecutor,
   uid: string,
   row: OutboxRow,
   adapter: EntityAdapter,
   signal?: AbortSignal
-): Promise<void> {
+): Promise<{ version: string; data: unknown } | null> {
   if (row.op === 'create') {
-    const { version, data } = await adapter.remote.create(row.payload, row.entityId, signal);
-    await adapter.local.writeSynced(db, uid, row.entityId, data, version);
-  } else if (row.op === 'update') {
-    const { version, data } = await adapter.remote.update(
-      row.entityId,
-      row.payload,
-      row.baseVersion,
-      signal
-    );
-    await adapter.local.writeSynced(db, uid, row.entityId, data, version);
+    return adapter.remote.create(row.payload, row.entityId, signal);
+  }
+  if (row.op === 'update') {
+    return adapter.remote.update(row.entityId, row.payload, row.baseVersion, signal);
+  }
+  await adapter.remote.delete(row.entityId, row.baseVersion, signal);
+  return null;
+}
+
+/** Applies a dispatched intent's result to local state. Only safe once the claim is confirmed. */
+async function applyDispatched(
+  db: SqlExecutor,
+  uid: string,
+  row: OutboxRow,
+  adapter: EntityAdapter,
+  result: { version: string; data: unknown } | null
+): Promise<void> {
+  if (result) {
+    await adapter.local.writeSynced(db, uid, row.entityId, result.data, result.version);
   } else {
-    await adapter.remote.delete(row.entityId, row.baseVersion, signal);
     // A synced tombstone leaves no local trace to reconcile later — the row
     // is simply gone, same end state as removeClean's manifest-driven path.
     await adapter.local.removeClean(db, uid, row.entityId);
@@ -152,8 +167,23 @@ async function pushEntity(
 
   for (const row of rows) {
     try {
-      await dispatchOne(db, uid, row, adapter, opts.signal);
-      await acknowledge(db, row.id);
+      const result = await dispatchOne(db, uid, row, adapter, opts.signal);
+      if (await acknowledge(db, row.id, row.claimedAt)) {
+        await applyDispatched(db, uid, row, adapter, result);
+      } else if (result) {
+        // A local write landed mid-round-trip and superseded this intent.
+        // Leave the entity row alone — it holds the user's newer data — and
+        // rebase the surviving outbox row onto the version the server just
+        // wrote. The entity row's now-stale server_version is harmless: it is
+        // only read to seed a *new* intent's baseVersion, and coalesce()
+        // keeps the existing (just-rebased) row's value instead.
+        await rebase(db, row.id, result.version);
+      }
+      // ponytail: a *delete* superseded mid-flight (result === null) is left
+      // as-is — the remote row is already gone, so the coalesced update that
+      // replaced it will 404 and retry on backoff forever. Rare (delete then
+      // immediately re-edit the same entity); fix by mapping 404 to a local
+      // removeClean if it ever shows up in practice.
       pushed++;
     } catch (err) {
       if (err instanceof SyncConflictError) {
@@ -168,7 +198,11 @@ async function pushEntity(
           serverData,
         });
         await adapter.local.markConflict(db, uid, row.entityId);
-        await acknowledge(db, row.id); // superseded by the conflict record — retrying the same stale write would just conflict again
+        // Superseded by the conflict record — retrying the same stale write
+        // would just conflict again. Unconditional: unlike the success path,
+        // there is no server response to apply, and the conflict row already
+        // captured this payload.
+        await acknowledge(db, row.id, row.claimedAt);
         conflicts++;
       } else if (err instanceof SyncAuthError) {
         await release(db, row.id);
@@ -305,6 +339,13 @@ export async function runSync(
   // still marked claimed at the start of a run can only be a leftover from a
   // run that crashed before it could release/acknowledge, never a
   // concurrent one. Reclaim unconditionally so it isn't stuck forever.
+  //
+  // ponytail: that premise holds only within one JS runtime — the serializer
+  // is createKeyedMutex (db/sync.ts), which is an in-memory Map. A headless
+  // task with its own runtime (utils/wear-action-task.ts writes the same
+  // active workout) could run concurrently, and this call would steal its
+  // claims. Unverified and not fixed here; the upgrade path is a DB-level
+  // lock rather than an in-process one.
   await releaseStaleClaims(db, uid, 0);
 
   let totalPushed = 0;

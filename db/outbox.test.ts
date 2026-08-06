@@ -9,6 +9,7 @@ import {
   releaseStaleClaims,
   release,
   acknowledge,
+  rebase,
   recordRetry,
   listAll,
 } from './outbox';
@@ -212,8 +213,66 @@ async function main() {
       baseVersion: null,
     });
     const [row] = await claimPending(db, 'u1');
-    await acknowledge(db, row.id);
+    assert.ok(row.claimedAt, 'claimPending returns the claim token it just wrote');
+    assert.equal(await acknowledge(db, row.id, row.claimedAt), true);
     assert.deepEqual(await listAll(db, 'u1'), []);
+  }
+
+  // --- a local write during an in-flight push invalidates the claim ---
+  // Regression: enqueue used to leave claimed_at set, so the completing push
+  // deleted the row via acknowledge and the edit made during the round trip
+  // was lost outright.
+  {
+    const db = await freshDb();
+    const intent = {
+      uid: 'u1',
+      entityType: 'workout',
+      entityId: 'w1',
+      op: 'update' as const,
+      payload: { sets: 1 },
+      baseVersion: 'v1',
+    };
+    await enqueue(db, intent);
+    const [row] = await claimPending(db, 'u1');
+
+    // ...push is in flight; the user logs another set.
+    await enqueue(db, { ...intent, payload: { sets: 2 } });
+    const [claimed] = await listAll(db, 'u1');
+    assert.equal(claimed.claimedAt, null, 'the newer edit released the claim');
+
+    // The push completes and tries to finalize the claim it no longer holds.
+    assert.equal(await acknowledge(db, row.id, row.claimedAt), false);
+    const survivors = await listAll(db, 'u1');
+    assert.equal(survivors.length, 1);
+    assert.deepEqual(survivors[0].payload, { sets: 2 });
+
+    // Rebasing onto the version the server just wrote keeps the retry from
+    // being a guaranteed stale-version conflict.
+    await rebase(db, row.id, 'v2');
+    const [rebased] = await listAll(db, 'u1');
+    assert.equal(rebased.baseVersion, 'v2');
+    assert.equal(rebased.claimedAt, null);
+    assert.deepEqual(rebased.payload, { sets: 2 }, 'rebase never touches the payload');
+  }
+
+  // --- enqueue does not reset backoff state (an 800ms autosave loop must not hammer a failing endpoint) ---
+  {
+    const db = await freshDb();
+    const intent = {
+      uid: 'u1',
+      entityType: 'workout',
+      entityId: 'w1',
+      op: 'update' as const,
+      payload: { sets: 1 },
+      baseVersion: 'v1',
+    };
+    await enqueue(db, intent);
+    const [row] = await claimPending(db, 'u1');
+    await recordRetry(db, row.id, 'boom', '2999-01-01T00:00:00.000Z');
+    await enqueue(db, { ...intent, payload: { sets: 2 } });
+    const [after] = await listAll(db, 'u1');
+    assert.equal(after.attempts, 1);
+    assert.equal(after.nextAttemptAt, '2999-01-01T00:00:00.000Z');
   }
 
   // --- UID isolation: claiming for one uid never returns another uid's rows ---

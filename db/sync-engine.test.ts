@@ -3,7 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from './migrate';
 import { SqlExecutor } from './executor';
 import * as workouts from './workouts';
-import { claimPending } from './outbox';
+import { claimPending, listAll as listOutbox } from './outbox';
 import { listUnresolved } from './conflicts';
 import {
   runSync,
@@ -255,6 +255,60 @@ async function main() {
     const outcome = await runSync(db, 'u1', [makeWorkoutAdapter(server)], makeRemote(server), noBackoff);
     assert.equal(outcome.status, 'ok');
     assert.equal((server.get(id)!.data as { name: string }).name, 'Edited offline');
+  }
+
+  // --- a local write landing mid-push survives and rebases (active-workout autosave) ---
+  // Regression: an autosave firing during the round trip used to coalesce into
+  // the claimed outbox row, and the completing push then clobbered the entity
+  // row with the server's copy and deleted the outbox row — losing the edit,
+  // and leaving the next attempt on a stale baseVersion so it conflicted.
+  {
+    const db = await freshDb();
+    const server = new FakeServer();
+    const id = await workouts.create(db, 'u1', workoutPayload({ name: 'Set 1' }) as never);
+    await runSync(db, 'u1', [makeWorkoutAdapter(server)], makeRemote(server), noBackoff);
+
+    // The user logs another set while this push is still in flight.
+    const base = makeWorkoutAdapter(server);
+    let midFlight = true;
+    const racingAdapter: EntityAdapter = {
+      ...base,
+      remote: {
+        ...base.remote,
+        async update(entityId, payload, baseVersion) {
+          const result = await base.remote.update(entityId, payload, baseVersion);
+          if (midFlight) {
+            midFlight = false;
+            await workouts.update(db, 'u1', id, {
+              ...(await workouts.getById(db, 'u1', id))!.data,
+              name: 'Set 2',
+            });
+          }
+          return result;
+        },
+      },
+    };
+
+    await workouts.update(db, 'u1', id, { ...(await workouts.getById(db, 'u1', id))!.data, name: 'Set 1 edited' });
+    const raced = await runSync(db, 'u1', [racingAdapter], makeRemote(server), noBackoff);
+    assert.equal(raced.status, 'ok');
+    if (raced.status === 'ok') assert.equal(raced.conflicts, 0);
+
+    // The mid-flight edit is still here, still queued, and rebased onto the
+    // version the server just wrote.
+    const local = await workouts.getById(db, 'u1', id);
+    assert.equal(local?.data.name, 'Set 2');
+    assert.equal(local?.syncState, 'dirty');
+    const queued = await listOutbox(db, 'u1');
+    assert.equal(queued.length, 1);
+    assert.equal(queued[0].baseVersion, server.get(id)!.version);
+
+    // ...and the next run lands it without a conflict.
+    const settled = await runSync(db, 'u1', [makeWorkoutAdapter(server)], makeRemote(server), noBackoff);
+    assert.equal(settled.status, 'ok');
+    if (settled.status === 'ok') assert.equal(settled.conflicts, 0);
+    assert.equal((server.get(id)!.data as { name: string }).name, 'Set 2');
+    assert.deepEqual(await listOutbox(db, 'u1'), []);
   }
 
   // --- offline delete, then reconnect ---

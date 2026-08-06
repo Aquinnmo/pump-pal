@@ -13,14 +13,14 @@ const NOTIFICATION_ID = "active-workout";
 let useLiveUpdate: boolean | null = null;
 
 export async function ensureWorkoutChannel(): Promise<string> {
-  // DEFAULT importance = plays a sound when it first appears. Combined with
-  // onlyAlertOnce below, it sounds once on start, not on every set update.
+  // LOW importance = no sound, no heads-up popup, still visible in the shade.
   // Note: Android locks a channel's importance after first creation — if a
-  // prior build created this channel silent, reinstall to pick up the change.
+  // prior build created this channel with DEFAULT (sound), reinstall to pick
+  // up the change.
   const channelId = await notifee.createChannel({
     id: CHANNEL_ID,
     name: "Active Workout",
-    importance: AndroidImportance.DEFAULT,
+    importance: AndroidImportance.LOW,
   });
   // The native module reuses this same channel by ID, so it must exist
   // whichever surface ends up posting.

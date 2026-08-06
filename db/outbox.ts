@@ -121,7 +121,14 @@ export async function enqueue(db: SqlExecutor, intent: OutboxIntent): Promise<vo
      ON CONFLICT(id) DO UPDATE SET
        op = excluded.op,
        payload = excluded.payload,
-       base_version = excluded.base_version`,
+       base_version = excluded.base_version,
+       -- Invalidates any claim a sync run is holding on this row. The run's
+       -- acknowledge() is conditional on the claim token, so it can no longer
+       -- delete the row out from under this newer local edit. Deliberately
+       -- leaves attempts/next_attempt_at alone: an active workout autosaves
+       -- every ~800ms, and resetting the backoff on each one would hammer a
+       -- failing endpoint instead of waiting it out.
+       claimed_at = NULL`,
     [
       existing?.id ?? randomId(),
       intent.uid,
@@ -155,7 +162,10 @@ export async function claimPending(
       }
     });
   }
-  return rows.map(fromRow);
+  // `rows` was read before the UPDATE, so their claimed_at is still the
+  // pre-claim value. Return the token the caller must hand back to
+  // acknowledge() instead.
+  return rows.map((row) => ({ ...fromRow(row), claimedAt: now }));
 }
 
 /** Crash recovery: claims left dangling (app killed mid-sync) become claimable again. */
@@ -179,9 +189,39 @@ export async function release(db: SqlExecutor, id: string): Promise<void> {
   await db.runAsync('UPDATE outbox SET claimed_at = NULL WHERE id = ?', [id]);
 }
 
-/** The server accepted this intent — remove it. Never partially acknowledges. */
-export async function acknowledge(db: SqlExecutor, id: string): Promise<void> {
-  await db.runAsync('DELETE FROM outbox WHERE id = ?', [id]);
+/**
+ * The server accepted this intent — remove it, but only if this run still
+ * holds the claim it was dispatched under. A local write landing mid-flight
+ * clears `claimed_at` (see enqueue), so the delete matches nothing and the
+ * newer intent survives to be pushed on the next run.
+ *
+ * Returns whether the row was removed. `false` means "a local edit superseded
+ * this one" — the caller must not apply the server's response to local state,
+ * or it would clobber that edit.
+ */
+export async function acknowledge(
+  db: SqlExecutor,
+  id: string,
+  claimToken: string | null
+): Promise<boolean> {
+  const { changes } = await db.runAsync('DELETE FROM outbox WHERE id = ? AND claimed_at = ?', [
+    id,
+    claimToken,
+  ]);
+  return changes > 0;
+}
+
+/**
+ * A push succeeded but a local edit superseded it. The server's write moved
+ * the divergence point, so the surviving intent must start from the version
+ * the server just wrote — otherwise its next attempt is a guaranteed stale-
+ * version conflict.
+ */
+export async function rebase(db: SqlExecutor, id: string, baseVersion: string): Promise<void> {
+  await db.runAsync('UPDATE outbox SET base_version = ?, claimed_at = NULL WHERE id = ?', [
+    baseVersion,
+    id,
+  ]);
 }
 
 /** The server rejected/failed this intent — release the claim, bump attempts, schedule a retry. */
