@@ -198,15 +198,14 @@ async function pushEntity(
       await finalize(current, result);
       pushed++;
     } catch (err) {
-      if (err instanceof SyncNotFoundError && row.op !== 'create') {
-        // The record was deleted on another device. A delete is an explicit
-        // action there, so accept it rather than resurrecting the row from
-        // this device's copy. (A 404 on `create` is not a deletion — that
-        // falls through to the generic retry below.)
-        await adapter.local.removeClean(db, uid, row.entityId);
-        await acknowledge(db, row.id, row.claimedAt);
-        remoteDeletions++;
-      } else if (err instanceof SyncAuthError) {
+      // A 404 is deliberately NOT treated as "deleted on another device". Any
+      // hop in the network path can produce one — a route that isn't deployed
+      // returns the same status as a record that doesn't exist — and acting on
+      // it here would delete the user's local row on an infrastructure fault.
+      // The pull phase below detects a real remote deletion from the manifest,
+      // which is evidence the server itself no longer lists the record, and it
+      // does so in the same run. So a 404 just takes the retry path.
+      if (err instanceof SyncAuthError) {
         await release(db, row.id);
         return { pushed, remoteDeletions, outcome: 'auth-required' };
       } else if (err instanceof SyncRateLimitError) {

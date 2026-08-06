@@ -9,7 +9,6 @@ import {
   EntityAdapter,
   SyncRemote,
   SyncConflictError,
-  SyncNotFoundError,
   SyncAuthError,
   SyncRateLimitError,
 } from './sync-engine';
@@ -95,9 +94,10 @@ class FakeServer {
       throw e;
     }
     const existing = this.byId.get(id);
-    // Mirrors the real API: a missing doc is a 404, which db/sync.ts maps to
-    // SyncNotFoundError so the engine reads it as "deleted on another device".
-    if (!existing) throw new SyncNotFoundError(`update on missing entity ${id}`);
+    // A plain Error on purpose: the engine deliberately does not treat a 404 as
+    // a deletion signal (any hop can produce one), so this takes the retry path
+    // and the manifest diff is what actually resolves the deletion.
+    if (!existing) throw new Error(`update on missing entity ${id}`);
     if (existing.version !== baseVersion) {
       throw new SyncConflictError('stale', { ...(existing.data as Record<string, unknown>), id, version: existing.version }, existing.version);
     }
@@ -383,14 +383,15 @@ async function main() {
     await runSync(db, 'u1', [makeWorkoutAdapter(server)], makeRemote(server)); // clean local copy first
     await workouts.update(db, 'u1', 'w1', { ...(await workouts.getById(db, 'u1', 'w1'))!.data, name: 'My pending edit' });
     server.legacyDelete('w1'); // deleted server-side before our pending edit could push
-    // The push phase's update hits a 404 (SyncNotFoundError) and accepts the
-    // deletion outright. A delete is an explicit action on the other device;
-    // resurrecting the row from this one would make it keep reappearing.
+    // The push phase's update fails (the doc is gone) and is retry-scheduled —
+    // a 404 is never taken as proof of deletion. The pull phase, in the SAME
+    // run, sees dirty + has a serverVersion + absent from the manifest and
+    // accepts the deletion on that evidence instead.
     const outcome = await runSync(db, 'u1', [makeWorkoutAdapter(server)], makeRemote(server), noBackoff);
     assert.equal(outcome.status, 'ok');
     if (outcome.status === 'ok') assert.equal(outcome.remoteDeletions, 1);
     assert.equal(await workouts.getById(db, 'u1', 'w1'), null);
-    assert.deepEqual(await listOutbox(db, 'u1'), [], 'no intent left to 404 forever');
+    assert.deepEqual(await listOutbox(db, 'u1'), [], 'the queued intent is discarded with the row');
     assert.equal(server.get('w1'), undefined, 'never re-created server-side');
   }
 

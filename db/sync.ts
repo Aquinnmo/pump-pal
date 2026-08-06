@@ -20,7 +20,6 @@ import {
   SyncOutcome,
   SyncAuthError,
   SyncConflictError,
-  SyncNotFoundError,
   SyncRateLimitError,
 } from './sync-engine';
 import * as remoteWorkouts from '@/repositories/remote/workouts';
@@ -29,7 +28,7 @@ import * as remoteProfile from '@/repositories/remote/profile';
 import * as remotePushup from '@/repositories/remote/pushup';
 import * as remoteCatalog from '@/repositories/remote/catalog';
 import * as remoteSync from '@/repositories/remote/sync';
-import { ApiAuthError, ApiConflictError, ApiNotFoundError, ApiRateLimitError } from '@/utils/api-client';
+import { ApiAuthError, ApiConflictError, ApiRateLimitError } from '@/utils/api-client';
 import { Workout } from '@/types/workout';
 import { ChallengeData } from '@/types/pushup-challenge';
 import { Injury, UserDoc } from '@/types/user';
@@ -39,9 +38,6 @@ import { CreateWorkoutInput, UpdateWorkoutInput, WorkoutDTO, PullRequest, Injury
 function translateApiError(err: unknown): never {
   if (err instanceof ApiAuthError) throw new SyncAuthError(err.message);
   if (err instanceof ApiConflictError) throw new SyncConflictError(err.message, err.remote, err.remoteVersion);
-  // The engine reads this as "deleted on another device" and drops the local
-  // row, so it must not be lumped in with generic retryable failures.
-  if (err instanceof ApiNotFoundError) throw new SyncNotFoundError(err.message);
   if (err instanceof ApiRateLimitError) throw new SyncRateLimitError(err.message, err.retryAfterMs);
   throw err;
 }

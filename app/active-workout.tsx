@@ -56,6 +56,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   BackHandler,
   KeyboardAvoidingView,
   Platform,
@@ -375,29 +376,98 @@ export default function ActiveWorkoutScreen() {
     }
   };
 
-  // Debounced autosave — keeps the doc resumable if the app is closed mid-workout
+  // Writes the draft to SQLite and mirrors it to the watch. Held in a ref so the
+  // remote-action handler can call it without re-subscribing on every keystroke.
+  // Deliberately not timer-based: a notification tap must persist even when the
+  // app is backgrounded and setTimeout is throttled, or the set is lost outright
+  // if Android then kills the process.
+  const persistDraftRef = useRef<(rows: DraftExerciseRow[]) => Promise<void>>(
+    async () => {},
+  );
+  persistDraftRef.current = async (rows: DraftExerciseRow[]) => {
+    if (!workoutId || !user) return;
+    const performedExercises: PerformedExercise[] = rows
+      .filter((ex) => ex.label.trim() !== "")
+      .map((ex, order) => buildPerformedExercise(ex, order));
+    try {
+      const stored = await workoutRepository.getById(user.uid, workoutId);
+      if (!stored) return;
+      await workoutRepository.update(user.uid, workoutId, {
+        ...stored.data,
+        name: effectiveWorkoutName,
+        performedExercises,
+        updatedAt: new Date().toISOString(),
+      });
+      // Mirror the same snapshot to the watch, after the write rather than
+      // alongside it: the watch shows what the doc holds, so they can never
+      // disagree.
+      pushWearState(
+        buildWearActiveState(workoutId, effectiveWorkoutName, rows),
+      );
+    } catch {
+      /* best-effort save */
+    }
+  };
+
+  const redrawNotification = (rows: DraftExerciseRow[]) => {
+    if (!workoutId || !startedAt) return;
+    showWorkoutNotification(
+      buildWorkoutNotificationPresentation({
+        workoutId,
+        workoutName: effectiveWorkoutName,
+        startedAt,
+        rows,
+      }),
+    ).catch((e) => console.warn("[workout-notification] show failed", e));
+  };
+  const redrawNotificationRef = useRef(redrawNotification);
+  redrawNotificationRef.current = redrawNotification;
+
+  // Debounced autosave — keeps the doc resumable if the app is closed mid-workout.
+  // Only coalesces typing; remote actions persist immediately via the ref above.
   useEffect(() => {
     if (!workoutId || initializing) return;
     const t = setTimeout(() => {
-      const performedExercises: PerformedExercise[] = exercises
-        .filter((ex) => ex.label.trim() !== "")
-        .map((ex, order) => buildPerformedExercise(ex, order));
-      if (!user) return;
-      workoutRepository.getById(user.uid, workoutId).then((stored) => {
-        if (!stored) return;
-        return workoutRepository.update(user.uid, workoutId, { ...stored.data, name: effectiveWorkoutName, performedExercises, updatedAt: new Date().toISOString() });
-      }).catch(() => {
-        /* best-effort autosave */
-      });
-
-      // Mirror the same snapshot to the watch. Debounced with the save on purpose:
-      // the watch shows what the doc holds, so they can never disagree.
-      pushWearState(
-        buildWearActiveState(workoutId, effectiveWorkoutName, exercises),
-      );
+      void persistDraftRef.current(exercises);
     }, 800);
     return () => clearTimeout(t);
   }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
+
+  // Flush on the way out, re-read on the way back in. The screen hydrates once
+  // per mount, so without this it can hold state older than the row — a
+  // notification tap handled by the headless task, or by this screen in a tick
+  // that never got flushed, would be overwritten by the stale draft.
+  //
+  // Order matters: the background flush guarantees SQLite is at least as new as
+  // memory BEFORE a foreground read can adopt it. Without it, backgrounding
+  // inside the 800ms autosave window would re-hydrate a staler row.
+  useEffect(() => {
+    if (!workoutId || initializing || !user) return;
+    const uid = user.uid;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active") {
+        void persistDraftRef.current(exercisesRef.current);
+        return;
+      }
+      // Local SQLite only — no network, no Firestore.
+      workoutRepository
+        .getById(uid, workoutId)
+        .then((stored) => {
+          const rows = stored?.data.performedExercises;
+          // A row mid-initialisation has no exercises yet; adopting it would
+          // blank a screen that already has the user's sets.
+          if (!rows || rows.length === 0) return;
+          const draft = rows.map(collapseSetsToDraft);
+          exercisesRef.current = draft;
+          setExercises(draft);
+          if (stored?.data.name) setWorkoutName(stored.data.name);
+        })
+        .catch(() => {
+          /* best-effort re-hydrate; the in-memory draft stays authoritative */
+        });
+    });
+    return () => sub.remove();
+  }, [workoutId, initializing, user, setExercises]);
 
   // The notification is a live control surface, not a save artifact, so it redraws on
   // its own short timer rather than riding the autosave above — a set tapped here or on
@@ -406,16 +476,7 @@ export default function ActiveWorkoutScreen() {
   // The 100ms only coalesces keystroke bursts: weight/duration feed the detail line.
   useEffect(() => {
     if (!workoutId || !startedAt || initializing) return;
-    const t = setTimeout(() => {
-      showWorkoutNotification(
-        buildWorkoutNotificationPresentation({
-          workoutId,
-          workoutName: effectiveWorkoutName,
-          startedAt,
-          rows: exercises,
-        }),
-      ).catch((e) => console.warn("[workout-notification] show failed", e));
-    }, 100);
+    const t = setTimeout(() => redrawNotificationRef.current(exercises), 100);
     return () => clearTimeout(t);
   }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
 
@@ -551,10 +612,19 @@ export default function ActiveWorkoutScreen() {
         finishRef.current();
         return;
       }
-      setExercises((prev) => {
-        if ("expectedCompletedSets" in action && !matchesExpectedCompletedSets(prev, action)) return prev;
-        return applyWearAction(prev, action);
-      });
+      // Persist and redraw right here rather than leaving it to the debounced
+      // effects. A backgrounded app may not run those timers, so the set would
+      // live only in memory — lost if Android kills the process — and the
+      // notification would keep advertising a stale expectedCompletedSets,
+      // which makes the guard above silently reject the next tap.
+      const next = applyWearAction(exercisesRef.current, action);
+      // Advance the ref synchronously: two taps landing in the same tick would
+      // otherwise both read the pre-action rows and the second would be
+      // rejected by the expectedCompletedSets guard above.
+      exercisesRef.current = next;
+      setExercises(next);
+      void persistDraftRef.current(next);
+      redrawNotificationRef.current(next);
     };
     const unsubscribeWear = subscribeWearActions(applyRemoteAction);
     const unsubscribeNotification = subscribeLiveUpdateNotificationActions(applyRemoteAction);
