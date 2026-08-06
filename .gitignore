@@ -69,3 +69,6 @@ graphify-out/**
 /modules/*/android/build/
 /modules/*/android/.cxx/
 /modules/*/android/local.properties
+
+*.apk
+

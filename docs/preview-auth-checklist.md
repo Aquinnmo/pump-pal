@@ -60,7 +60,7 @@ For deeper troubleshooting, see [deployment.md](deployment.md#troubleshooting).
 
 ## Local Android development build
 
-`npm run development:android` uses package `com.aquinnmo.timber.dev`, not the
+`npm run development:android` uses package `com.aquinnmo.timber_dev`, not the
 Preview package. Register that package as a separate Android OAuth client with
 the SHA-1 and SHA-256 from the local debug keystore:
 
@@ -75,3 +75,7 @@ Then set `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in the local `.env` to the valid
 the Android OAuth client is matched automatically by package name and signing
 fingerprint. `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` may be empty for an Android-only
 build. Both populated values must end in `.apps.googleusercontent.com`.
+
+For an iOS development build, use a separate iOS OAuth client registered for
+bundle ID `com.aquinnmo.timber-dev`. Android uses an underscore because its
+package IDs cannot contain hyphens; iOS bundle IDs cannot contain underscores.

@@ -47,7 +47,7 @@ two:
 | Flavor | applicationId | Pairs with |
 | --- | --- | --- |
 | `prod` | `com.aquinnmo.timber` | production / preview builds |
-| `dev` | `com.aquinnmo.timber.dev` | `APP_VARIANT=development` builds |
+| `dev` | `com.aquinnmo.timber_dev` | `APP_VARIANT=development` builds |
 
 **3. Build.** Open this directory (not the repo root) in Android Studio, select the
 build variant matching the phone build you have installed, and run it on a paired

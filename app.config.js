@@ -33,14 +33,14 @@ module.exports = ({ config }) => {
     android: IS_DEV
       ? {
           ...config.android,
-          package: 'com.aquinnmo.timber.dev',
+          package: 'com.aquinnmo.timber_dev',
         }
       : config.android,
     ios: {
       ...config.ios,
       bundleIdentifier:
         LOCAL_IOS_BUNDLE_ID ||
-        (IS_DEV ? 'com.aquinnmo.timber.dev' : config.ios.bundleIdentifier),
+        (IS_DEV ? 'com.aquinnmo.timber-dev' : config.ios.bundleIdentifier),
     },
   };
 };

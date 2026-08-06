@@ -46,7 +46,7 @@ android {
     }
     create("dev") {
       dimension = "variant"
-      applicationId = "com.aquinnmo.timber.dev"
+      applicationId = "com.aquinnmo.timber_dev"
     }
   }
 

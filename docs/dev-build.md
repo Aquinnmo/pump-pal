@@ -15,11 +15,14 @@ The dev build installs as a **separate app** so it doesn't clobber the
 
 | Variant                   | App name       | Android package           |
 | ------------------------- | -------------- | ------------------------- |
-| dev build (`development`) | **Timber Dev** | `com.aquinnmo.timber.dev` |
+| dev build (`development`) | **Timber Dev** | `com.aquinnmo.timber_dev` |
 | preview / production      | Timber         | `com.aquinnmo.timber`     |
 
 Different package = both apps coexist on the same phone. The dev one shows as
 **"Timber Dev"** on your home screen.
+
+> Android package IDs cannot contain hyphens, so development uses an underscore.
+> The corresponding iOS development bundle ID is `com.aquinnmo.timber-dev`.
 
 > EAS sets `APP_VARIANT` automatically for the `development` profile. For a
 > **local** `expo run:android` you must set it yourself (commands below) — miss
