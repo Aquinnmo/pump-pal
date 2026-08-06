@@ -143,7 +143,7 @@ function RootLayoutNav() {
         <Stack.Screen name="settings-injuries" options={{ headerShown: false }} />
         <Stack.Screen name="settings-account" options={{ headerShown: false }} />
         <Stack.Screen name="settings-app" options={{ headerShown: false }} />
-        <Stack.Screen name="sync-status" options={{ headerShown: true }} />
+        <Stack.Screen name="sync-status" options={{ headerShown: false }} />
         <Stack.Screen name="muscle-load" options={{ title: 'Muscle load' }} />
       </Stack>
       {gateUndecided && (

@@ -3,9 +3,11 @@ import { resolveStoredConflict } from '@/db/conflict-resolution';
 import { useSyncStatus } from '@/db/use-sync-status';
 import { useAuth } from '@/context/auth-context';
 import { ConflictRecord } from '@/db/conflicts';
-import { Stack } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function describeConflict(conflict: ConflictRecord): string {
   const label = conflict.entityType === 'workout' ? 'workout' : conflict.entityType === 'injury' ? 'injury' : conflict.entityType === 'pushup_challenge' ? 'push-up challenge' : 'profile';
@@ -19,6 +21,7 @@ function describeConflict(conflict: ConflictRecord): string {
 
 export default function SyncStatusScreen() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const status = useSyncStatus();
   const [conflicts, setConflicts] = useState<ConflictRecord[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -67,38 +70,58 @@ export default function SyncStatusScreen() {
   }[status.state];
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: 'Sync status' }} />
-      <View style={styles.statusCard} accessibilityLabel={`Sync status: ${stateLabel}`}>
-        <Text style={styles.eyebrow}>SYNC</Text>
-        <Text style={styles.title} selectable>{stateLabel}</Text>
-        {status.lastError ? <Text style={styles.detail} selectable>{status.lastError}</Text> : null}
-        {status.lastSyncedAt ? <Text style={styles.detail} selectable>Last synced {new Date(status.lastSyncedAt).toLocaleString()}</Text> : null}
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+          <Ionicons name="arrow-back" size={24} color="#fff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Sync</Text>
+        <View style={{ width: 24 }} />
       </View>
 
-      {conflicts.length === 0 ? (
-        <Text style={styles.detail}>No conflicts need a choice.</Text>
-      ) : conflicts.map((conflict) => (
-        <View key={conflict.id} style={styles.conflictCard}>
-          <Text style={styles.conflictTitle} selectable>Choose a copy to keep</Text>
-          <Text style={styles.detail} selectable>{describeConflict(conflict)}</Text>
-          {busyId === conflict.id ? <ActivityIndicator color="#e54242" /> : (
-            <View style={styles.actions}>
-              <Pressable style={styles.secondaryButton} onPress={() => resolve(conflict, 'use-server')} accessibilityLabel="Use Server Copy">
-                <Text style={styles.secondaryText}>Use Server Copy</Text>
-              </Pressable>
-              <Pressable style={styles.primaryButton} onPress={() => resolve(conflict, 'keep-local')} accessibilityLabel="Keep This Device">
-                <Text style={styles.primaryText}>Keep This Device</Text>
-              </Pressable>
-            </View>
-          )}
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+        <View style={styles.statusCard} accessibilityLabel={`Sync status: ${stateLabel}`}>
+          <Text style={styles.eyebrow}>SYNC</Text>
+          <Text style={styles.title} selectable>{stateLabel}</Text>
+          {status.lastError ? <Text style={styles.detail} selectable>{status.lastError}</Text> : null}
+          {status.lastSyncedAt ? <Text style={styles.detail} selectable>Last synced {new Date(status.lastSyncedAt).toLocaleString()}</Text> : null}
         </View>
-      ))}
-    </ScrollView>
+
+        {conflicts.length === 0 ? (
+          <Text style={styles.detail}>No conflicts need a choice.</Text>
+        ) : conflicts.map((conflict) => (
+          <View key={conflict.id} style={styles.conflictCard}>
+            <Text style={styles.conflictTitle} selectable>Choose a copy to keep</Text>
+            <Text style={styles.detail} selectable>{describeConflict(conflict)}</Text>
+            {busyId === conflict.id ? <ActivityIndicator color="#e54242" /> : (
+              <View style={styles.actions}>
+                <Pressable style={styles.secondaryButton} onPress={() => resolve(conflict, 'use-server')} accessibilityLabel="Use Server Copy">
+                  <Text style={styles.secondaryText}>Use Server Copy</Text>
+                </Pressable>
+                <Pressable style={styles.primaryButton} onPress={() => resolve(conflict, 'keep-local')} accessibilityLabel="Keep This Device">
+                  <Text style={styles.primaryText}>Keep This Device</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        ))}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#0f0f0f' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e1e1e',
+  },
+  headerTitle: { fontSize: 17, fontWeight: '700', color: '#fff' },
   screen: { flex: 1, backgroundColor: '#0f0f0f' },
   content: { padding: 20, gap: 16, paddingBottom: 32 },
   statusCard: { backgroundColor: '#1c1c1c', borderColor: '#2a2a2a', borderWidth: 1, borderRadius: 14, borderCurve: 'continuous', padding: 16, gap: 8 },
