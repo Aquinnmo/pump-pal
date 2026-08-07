@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// PREPARED, NOT DEPLOYED. See docs/deployment.md "Stage 4: the deny-all
+// cutover" for the human-approval gate this file is behind.
+//
+// This replaces firestore.rules once the API boundary (api/**) is the only
+// path the app uses to read/write Firestore. It denies ALL direct client
+// access — the API's service-account credential is unaffected, since that
+// credential bypasses firestore.rules by design (same as it does today).
+//
+// Deploy with:
+//   cp firestore.deny-all.rules firestore.rules
+//   npx firebase-tools@latest deploy --only firestore:rules
+// (git commit the swap so the deployed file matches what's versioned — don't
+// deploy firestore.deny-all.rules by editing firebase.json's `rules` path,
+// that just adds a second live ruleset to reason about.)
+//
+// Do NOT deploy this until:
+//   1. The user has personally verified the migrated app (native + web)
+//      against the API boundary in Production. No fixed time/adoption
+//      threshold substitutes for that verification.
+//   2. Both client repositories (native SQLite-backed, web REST-backed) are
+//      confirmed to no longer read/write Firestore directly outside
+//      config/auth-only files — see the (repo-wide) boundary-isolation check
+//      this doc references once the offline-first epic's migration lands.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { GoogleSignInButton } from '@/components/google-sign-in-button';
 import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import { useAuth } from '@/context/auth-context';
 import { getFriendlyAuthError } from '@/utils/firebase-errors';
@@ -97,6 +98,8 @@ export default function SignUpScreen() {
               disabled={loading}>
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Create Account</Text>}
             </TouchableOpacity>
+
+            <GoogleSignInButton onError={setError} disabled={loading} label="Sign up with Google" />
 
             <Link href="/(auth)/sign-in" asChild>
               <TouchableOpacity style={styles.linkButton}>

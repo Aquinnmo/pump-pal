@@ -15,11 +15,14 @@ The dev build installs as a **separate app** so it doesn't clobber the
 
 | Variant                   | App name       | Android package           |
 | ------------------------- | -------------- | ------------------------- |
-| dev build (`development`) | **Timber Dev** | `com.aquinnmo.timber.dev` |
+| dev build (`development`) | **Timber Dev** | `com.aquinnmo.timber_dev` |
 | preview / production      | Timber         | `com.aquinnmo.timber`     |
 
 Different package = both apps coexist on the same phone. The dev one shows as
 **"Timber Dev"** on your home screen.
+
+> Android package IDs cannot contain hyphens, so development uses an underscore.
+> The corresponding iOS development bundle ID is `com.aquinnmo.timber-dev`.
 
 > EAS sets `APP_VARIANT` automatically for the `development` profile. For a
 > **local** `expo run:android` you must set it yourself (commands below) — miss
@@ -148,8 +151,8 @@ when you:
    it has no current-set detail and **no controls**.
 10. **Check the AOD/lock screen** → the header reads `Logging Push Workout`
     (without doubling a name that already ends in “Workout”), and the detail
-    reads the current set, for example `Bench Press · Set 1 · 135 lbs` or
-    `Plank · Set 1 · 0:45`. Bodyweight, zero weight, and zero/irrelevant
+    reads the current set, for example `Bench Press · 10 reps · 135 lbs` or
+    `Plank · 0:45`. Bodyweight, zero weight, and zero/irrelevant
     duration are omitted rather than shown as placeholders.
 11. **Tap Complete set once** → the chip becomes `1/9 · elapsed time`; the
     control row becomes **Complete set** and **Undo set**. The segmented bar
@@ -221,4 +224,5 @@ when you:
 | First build / after native change (cloud)        | `eas build --profile development --platform android`   |
 | Everyday JS work                                 | `npx expo start --dev-client`                          |
 | Preview (release) build onto the plugged-in phone | `npm run install:android`                             |
+| Preview APK built locally via EAS (Google sign-in works) | see [preview-local-build.md](preview-local-build.md) |
 | Web / non-native work (Notifee is a no-op there) | `npx expo start` (Expo Go still fine for web)          |

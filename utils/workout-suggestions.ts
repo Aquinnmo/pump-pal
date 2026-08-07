@@ -1,11 +1,9 @@
-import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
 import { BODY_PART_MUSCLES, bodyPartLabel } from '@/constants/body-parts';
 import { Injury } from '@/types/user';
 import { DraftExerciseRow, ExerciseSearchOption, Workout } from '@/types/workout';
+import { callAI } from '@/utils/ai-client';
 import { rankSearchOptions, slugify } from '@/utils/exercise-catalog';
 import { exerciseLabel, isDurationExercise, makeUid, toDateObj } from '@/utils/workout-conversion';
-import { generateText, Output } from 'ai';
-import { z } from 'zod';
 
 /**
  * Asks the configured AI model to generate a list of workout day/type names for a custom
@@ -13,30 +11,8 @@ import { z } from 'zod';
  * Returns an ordered array of day names such as ["Full Body A", "Full Body B", "Cardio"].
  */
 export async function generateSplitWorkoutNames(customSplitDescription: string): Promise<string[]> {
-  const prompt = `You are an expert personal trainer. A user has described their custom training split as:
-"${customSplitDescription}"
+  const { data: parsed } = await callAI('split-names', { description: customSplitDescription });
 
-Generate a concise, ordered list of UNIQUE workout day names for this split.
-Rules:
-- If the description lists specific muscle groups or days (e.g. "Delts and Back"), treat EACH one as a separate workout day with its own distinct name (e.g. ["Delts", "Back"]).
-- Return between 2 and 6 names total.
-- Every name in the array MUST be different — no duplicates, no near-duplicates, no combined names.
-- Each name should be short (1–3 words), title-cased, and suitable as a workout session label.
-- Do NOT combine muscle groups into one name unless the user explicitly described a combined session.
-- Do NOT include rest days.
-- Do NOT add a letter suffix (A/B) unless the user described repeated identical days.
-- Return ONLY a valid JSON array of strings with no markdown fences and no explanation.
-Examples:
-  Input: "Delts and Back" → ["Delts", "Back"]
-  Input: "push pull legs" → ["Push", "Pull", "Legs"]
-  Input: "3-day full body + 1 cardio" → ["Full Body A", "Full Body B", "Full Body C", "Cardio"]`;
-
-  const { output: parsed } = await generateText({
-    model: getAIModel(),
-    prompt,
-    maxRetries: AI_MAX_RETRIES,
-    output: Output.array({ element: z.string() }),
-  });
   // Deduplicate while preserving order
   const seen = new Set<string>();
   return parsed.filter((n) => {
@@ -58,17 +34,6 @@ export interface SuggestedExercise {
   weight: string;
   bodyweight: boolean;
 }
-
-const suggestedExerciseSchema = z.object({
-  name: z.string(),
-  exerciseType: z.enum(['Sets of Reps', 'Sets of Duration']),
-  sets: z.number(),
-  reps: z.number(),
-  durationMinutes: z.number(),
-  durationSeconds: z.number(),
-  weight: z.string(),
-  bodyweight: z.boolean(),
-});
 
 /**
  * Convert model output into rows that can be appended to either workout
@@ -125,6 +90,9 @@ function formatActiveInjuries(injuries: Injury[]): string {
  * @param splitType    The user's training split (e.g. "Push / Pull / Legs")
  * @param current      Exercises already added to the current workout
  * @param history      All saved workouts (used for the past-30-day history)
+ *
+ * Returns the suggestions plus how many AI calls the user has left today, as
+ * counted by the server — the client no longer tracks the quota itself.
  */
 export async function suggestWorkoutCompletion(
   workoutName: string,
@@ -132,12 +100,15 @@ export async function suggestWorkoutCompletion(
   current: DraftExerciseRow[],
   history: Workout[],
   activeInjuries: Injury[] = []
-): Promise<SuggestedExercise[]> {
+): Promise<{ suggestions: SuggestedExercise[]; remaining: number | null }> {
   const now = Date.now();
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
 
   // Summarise past 30 days (same logic as muscle analysis)
-  const recent = history.filter((w) => toDateObj(w.date).getTime() >= thirtyDaysAgo);
+  const recent = history.filter((w) => {
+    const date = toDateObj(w.date);
+    return date !== null && date.getTime() >= thirtyDaysAgo;
+  });
 
   interface ExStats {
     sessions: number;
@@ -214,65 +185,15 @@ export async function suggestWorkoutCompletion(
 
   const activeInjuryLines = formatActiveInjuries(activeInjuries);
 
-  const prompt = `You are an expert personal trainer. A user is logging a workout and wants you to suggest exercises to complete it in a balanced way.
-
-TRAINING SPLIT: ${splitType || 'Not specified'}
-TODAY'S WORKOUT DAY: ${workoutName || 'Not specified'}
-
-EXERCISES ALREADY LOGGED TODAY:
-${currentLines}
-
-PAST 30 DAYS OF WORKOUT HISTORY (for context on volume, frequency, and weights used):
-${historyLines}
-
-ACTIVE USER-REPORTED INJURIES:
-${activeInjuryLines}
-
-TASK:
-Suggest 2–5 additional exercises to round out this workout. Take into account:
-- The selected workout day is authoritative: suggest exercises for this day only and keep the workout balanced within this day, not across the whole split
-- Stay strictly inside the user's split boundaries. Do not pull exercises from the next, previous, or another split day just to add variety; for example, if the split is Push / Pull / Legs and today's day is Pull, do not suggest calf or other Legs-day exercises even if Legs is next
-- The split is a prioritization guide, not an exhaustive whitelist: muscle groups that are not assigned to a split day, such as core in a Push / Pull / Legs split, may be suggested on any day when they complement the workout
-- The workout day type (e.g. Push = chest/shoulders/triceps, Pull = back/biceps, Legs = quads/hamstrings/glutes/calves)
-- What has already been done today (avoid duplicates, ensure muscle balance within the session)
-- Past history (avoid further overtraining muscles already hit frequently; prefer exercises that address undertrained ones where relevant)
-- Active injuries above (avoid exercises or movements that could aggravate an injury, honor explicit avoid instructions, and prefer alternatives that train unaffected areas)
-- Do not diagnose, prescribe treatment, or claim that any exercise is medically cleared. If no reasonable safe additions remain, return an empty array.
-- Realistic sets/reps/weights based on historical weights used (if no history exists, use sensible beginner-intermediate defaults)
-
-For weighted exercises suggest a weight in lbs based on history. If no history, pick a reasonable starting weight.
-For bodyweight exercises set bodyweight to true and weight to "0".
-For duration exercises set exerciseType to "Sets of Duration" and provide durationMinutes + durationSeconds.
-
-Return ONLY a valid JSON array with no markdown fences, no explanation:
-[
-  {
-    "name": "Exercise Name",
-    "exerciseType": "Sets of Reps",
-    "sets": 3,
-    "reps": 10,
-    "durationMinutes": 0,
-    "durationSeconds": 0,
-    "weight": "135",
-    "bodyweight": false
-  }
-]`;
-
-  const { output: parsed } = await generateText({
-    model: getAIModel(),
-    prompt,
-    maxRetries: AI_MAX_RETRIES,
-    output: Output.array({ element: suggestedExerciseSchema }),
+  // The prompt template and output schema live server-side in api/_lib/ai/prompts.ts
+  // and shared/ai-contract.ts; only these computed summaries cross the wire.
+  const { data, remaining } = await callAI('workout-completion', {
+    workoutName,
+    splitType,
+    currentLines,
+    historyLines,
+    injuryLines: activeInjuryLines,
   });
 
-  return parsed.map((ex) => ({
-    name: ex.name ?? '',
-    exerciseType: ex.exerciseType === 'Sets of Duration' ? 'Sets of Duration' : 'Sets of Reps',
-    sets: Number(ex.sets) || 3,
-    reps: Number(ex.reps) || 10,
-    durationMinutes: Number(ex.durationMinutes) || 0,
-    durationSeconds: Number(ex.durationSeconds) || 30,
-    weight: String(ex.weight ?? ''),
-    bodyweight: !!ex.bodyweight,
-  }));
+  return { suggestions: data, remaining };
 }

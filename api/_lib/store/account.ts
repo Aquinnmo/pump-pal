@@ -1,0 +1,89 @@
+import type { DeleteAccountDataResponse } from '../../../shared/api-contract.js';
+import { deleteDoc, runQuery } from './rest.js';
+
+/**
+ * Server-side port of `app/settings-account.tsx confirmDeleteAccount`'s
+ * Firestore cleanup, same order: canonical `workouts` (by `userId`), the
+ * legacy `users/{uid}/workouts/*` subcollection, `users/{uid}/pushup-
+ * challenge/data`, then `users/{uid}` itself. Does NOT delete the Firebase
+ * Auth user -- that stays a client `deleteUser(auth.currentUser)` call,
+ * invoked only after this succeeds.
+ *
+ * Every phase runs even if an earlier one fails (best-effort, not
+ * fail-fast) and every phase is independently idempotent (`deleteDoc`
+ * treats 404 as success, a query over an already-emptied collection just
+ * returns fewer docs) — so a caller that sees `partial: true` can retry the
+ * whole call safely instead of needing to know which phase to resume from.
+ */
+export interface AccountDeletionPhases {
+  deleteWorkouts(uid: string): Promise<number>;
+  deleteLegacyWorkouts(uid: string): Promise<number>;
+  deletePushupChallenge(uid: string): Promise<void>;
+  deleteUserDoc(uid: string): Promise<void>;
+}
+
+const realPhases: AccountDeletionPhases = {
+  async deleteWorkouts(uid) {
+    const docs = await runQuery({ collectionId: 'workouts', where: [{ field: 'userId', op: 'EQUAL', value: uid }], limit: 5000 });
+    await Promise.all(docs.map((d) => deleteDoc(d.path)));
+    return docs.length;
+  },
+  async deleteLegacyWorkouts(uid) {
+    const docs = await runQuery({ parentPath: `users/${uid}`, collectionId: 'workouts', limit: 5000 });
+    await Promise.all(docs.map((d) => deleteDoc(d.path)));
+    return docs.length;
+  },
+  async deletePushupChallenge(uid) {
+    await deleteDoc(`users/${uid}/pushup-challenge/data`);
+  },
+  async deleteUserDoc(uid) {
+    await deleteDoc(`users/${uid}`);
+  },
+};
+
+/**
+ * The orchestration logic, with the four Firestore phases injected so it's
+ * unit-testable without a live Firestore connection (there isn't one in this
+ * sandbox). `deleteAccountData` below is the real entry point; tests call
+ * this directly with mock phases.
+ */
+export async function deleteAccountDataWith(uid: string, phases: AccountDeletionPhases): Promise<DeleteAccountDataResponse> {
+  const deleted = { workouts: 0, legacyWorkouts: 0, pushupChallenge: false, userDoc: false };
+  let partial = false;
+
+  try {
+    deleted.workouts = await phases.deleteWorkouts(uid);
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting workouts`, e);
+  }
+
+  try {
+    deleted.legacyWorkouts = await phases.deleteLegacyWorkouts(uid);
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting legacy workouts`, e);
+  }
+
+  try {
+    await phases.deletePushupChallenge(uid);
+    deleted.pushupChallenge = true;
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting pushup-challenge`, e);
+  }
+
+  try {
+    await phases.deleteUserDoc(uid);
+    deleted.userDoc = true;
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting user doc`, e);
+  }
+
+  return { deleted, partial };
+}
+
+export function deleteAccountData(uid: string): Promise<DeleteAccountDataResponse> {
+  return deleteAccountDataWith(uid, realPhases);
+}

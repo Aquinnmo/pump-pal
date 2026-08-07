@@ -28,7 +28,7 @@
       {
         "hooks": [
           {
-            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-check",
+            "command": "graphify hook-check",
             "type": "command"
           }
         ],

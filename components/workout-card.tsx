@@ -33,11 +33,13 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   const insets = useSafeAreaInsets();
   const date = toDateObj(workout.date);
   const performedExercises = useMemo(() => workout.performedExercises ?? [], [workout.performedExercises]);
-  const dateStr = date.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+  const dateStr = date
+    ? date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'Date unavailable';
 
   const SCREEN_HEIGHT = Dimensions.get('window').height;
   const DISMISS_THRESHOLD = 120;

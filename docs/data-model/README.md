@@ -9,6 +9,19 @@ For the historical record of the legacy-to-canonical migration (what changed,
 when, and why), see [`firestore-data-refactor.md`](../firestore-data-refactor.md).
 This directory describes the schema as it exists today.
 
+**Access path (grace period, in progress):** a Vercel API boundary
+(`api/**`, routes documented in [api-operations.md](../api-operations.md))
+now covers every collection below with an authenticated REST route, wire-typed
+via [`shared/api-contract.ts`](../../shared/api-contract.ts). It runs
+*additively* alongside direct client Firestore access under the current
+`firestore.rules` — both paths write the same shapes described here, so
+neither is more authoritative than the other during the grace period. Direct
+client Firestore access is cut off only at the explicit, human-approved
+deny-all rules deployment described in
+[deployment.md § Stage 4](../deployment.md#stage-4--the-deny-all-cutover-human-gated-do-last);
+until then, treat this doc as describing the shapes, not the only way they get
+written.
+
 ## Collections
 
 | Path | Purpose | Doc |
@@ -19,6 +32,29 @@ This directory describes the schema as it exists today.
 | `users/{uid}` | Per-user profile (currently just workout split) | [users.md](./users.md) |
 | `users/{uid}/pushup-challenge/data` | Pushup Challenge (TPC tab) progress | [pushup-challenge.md](./pushup-challenge.md) |
 | `users/{uid}/workouts/{oldWorkoutId}` | **Legacy**, pre-migration workout rows | [legacy.md](./legacy.md) |
+
+## Native offline-first behavior
+
+iOS and Android treat UID-scoped Expo SQLite rows as the UI source of truth.
+Every user mutation changes the local entity and its coalesced outbox record
+in one transaction; native screens therefore read committed local state even
+without a network. The outbox synchronizes through the API when connectivity
+returns, using opaque server versions as `baseVersion` values. A `409` or a
+dirty record deleted remotely creates a persisted conflict that retains both
+copies until the user chooses **Keep This Device** or **Use Server Copy**.
+Workouts and injuries retain independent SQLite rows; profile and push-up
+challenge are UID-singleton rows. Pending exercise submissions are also
+durable local rows, but are uploaded through the catalog endpoint rather than
+the manifest because the approved catalog is a shared cache, not user data.
+
+Firebase Auth remains client-side. Web deliberately has no SQLite cache and
+uses the API-backed repository implementations directly. Before sign-out or
+account deletion, the app must sync pending data or obtain an explicit
+discard choice, then erase the UID's SQLite rows and account-derived caches.
+The detailed human rollout and recovery gate is in
+[deployment.md](../deployment.md#stage-4--the-deny-all-cutover-human-gated-do-last);
+the deny-all rules file is prepared but must not be deployed without that
+separate approval.
 
 ## Conventions used throughout
 

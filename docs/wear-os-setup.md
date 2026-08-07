@@ -11,7 +11,7 @@ Background on how the two halves talk: [wear/README.md](../wear/README.md).
 
 The Wearable Data Layer connects two apps **only** if they share both:
 
-1. the same `applicationId` (`com.aquinnmo.timber`, or `.dev` for dev builds), and
+1. the same `applicationId` (`com.aquinnmo.timber`, or `com.aquinnmo.timber_dev` for dev builds), and
 2. the same signing key.
 
 If either differs, the phone and watch never see each other and **nothing is logged
@@ -42,7 +42,7 @@ intend to build:
 | Watch flavor | applicationId | Get the keystore from EAS profile |
 | --- | --- | --- |
 | `prod` | `com.aquinnmo.timber` | `preview` or `production` (they share one keystore) |
-| `dev` | `com.aquinnmo.timber.dev` | `development` |
+| `dev` | `com.aquinnmo.timber_dev` | `development` |
 
 ```bash
 npx eas credentials -p android

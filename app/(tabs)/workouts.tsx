@@ -1,19 +1,13 @@
 import { WorkoutCard } from '@/components/workout-card';
-import { db } from '@/config/firebase';
+import { workoutRepository } from '@/db/workout-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { useAuth } from '@/context/auth-context';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
+import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -30,6 +24,7 @@ const FADE_HEIGHT = 24;
 
 export default function WorkoutsScreen() {
   const { user } = useAuth();
+  const dataVersion = useDataVersion();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -40,16 +35,10 @@ export default function WorkoutsScreen() {
   const [layoutHeight, setLayoutHeight] = useState(0);
 
   const fetchWorkouts = useCallback(async () => {
+    void dataVersion; // refetch trigger, not data — see hooks/use-data-version.ts
     if (!user) return;
-    setLoading(true);
     try {
-      const q = query(
-        collection(db, 'workouts'),
-        where('userId', '==', user.uid),
-        orderBy('date', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+      const data = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
       setWorkouts(data);
       setPage(0);
     } catch (err) {
@@ -57,7 +46,7 @@ export default function WorkoutsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, dataVersion]);
 
   useFocusEffect(
     useCallback(() => {
@@ -74,7 +63,9 @@ export default function WorkoutsScreen() {
     if (!pendingDeleteId) return;
     setShowDeleteModal(false);
     try {
-      await deleteDoc(doc(db, 'workouts', pendingDeleteId));
+      if (!user) return;
+      await workoutRepository.softDelete(user.uid, pendingDeleteId);
+      triggerSyncAfterWrite();
       setWorkouts((prev) => prev.filter((w) => w.id !== pendingDeleteId));
     } catch {
       // silently fail
@@ -90,16 +81,8 @@ export default function WorkoutsScreen() {
   const currentPageWorkouts = workouts.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   const formatDate = (d: any) => {
-    if (!d) return '';
-    try {
-      let dt: Date;
-      if (d.toDate && typeof d.toDate === 'function') dt = d.toDate();
-      else if (typeof d === 'number') dt = new Date(d);
-      else dt = new Date(d);
-      return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    } catch {
-      return '';
-    }
+    const date = toDateObj(d);
+    return date ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
   };
 
   if (loading) {

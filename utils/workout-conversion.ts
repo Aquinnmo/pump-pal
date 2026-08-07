@@ -207,12 +207,34 @@ export function workoutTotalReps(w: Workout): number {
   }, 0);
 }
 
-export function toDateObj(date: Workout['date']): Date {
-  if (date instanceof Date) return date;
-  if (typeof (date as { toDate?: () => Date }).toDate === 'function') {
-    return (date as { toDate: () => Date }).toDate();
+export function toDateObj(date: unknown): Date | null {
+  let parsed: Date;
+
+  try {
+    if (date instanceof Date) {
+      parsed = date;
+    } else if (typeof date === 'string' || typeof date === 'number') {
+      if (date === '') return null;
+      parsed = new Date(date);
+    } else if (
+      date &&
+      typeof date === 'object' &&
+      'toDate' in date &&
+      typeof date.toDate === 'function'
+    ) {
+      parsed = date.toDate();
+    } else if (date && typeof date === 'object') {
+      const seconds = 'seconds' in date ? date.seconds : undefined;
+      if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return null;
+      parsed = new Date(seconds * 1000);
+    } else {
+      return null;
+    }
+  } catch {
+    return null;
   }
-  return new Date((date as { seconds: number }).seconds * 1000);
+
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
 }
 
 export function recentExercisesForDay(
@@ -229,7 +251,8 @@ export function recentExercisesForDay(
 
   for (const w of history) {
     if (w.name !== workoutName) continue;
-    if (toDateObj(w.date).getTime() < cutoff) continue;
+    const workoutDate = toDateObj(w.date);
+    if (!workoutDate || workoutDate.getTime() < cutoff) continue;
 
     for (const pe of w.performedExercises) {
       const key = `${pe.exerciseId}:${pe.variationId ?? 'root'}`;

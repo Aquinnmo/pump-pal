@@ -2,22 +2,23 @@ import { Dropdown } from "@/components/ui/dropdown";
 import { Toast } from "@/components/ui/toast";
 import { WorkoutPrefillLoader } from "@/components/ui/workout-prefill-loader";
 import { ExerciseCard } from "@/components/workout/exercise-card";
-import { db } from "@/config/firebase";
-import {
-  formatAIError,
-  TEMPORARY_AI_DAILY_LIMIT,
-} from "@/constants/ai-config";
+import { profileRepository } from "@/db/profile-repository";
+import { workoutRepository } from "@/db/workout-repository";
+import { triggerSyncAfterWrite } from "@/db/sync-trigger";
 import { isSplitOption } from "@/constants/split-options";
 import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
+import { TEMPORARY_AI_DAILY_LIMIT } from "@/shared/ai-contract";
 import {
   DraftExerciseRow,
   PerformedExercise,
   Workout,
   WorkoutStatus,
 } from "@/types/workout";
+import { formatAIError } from "@/utils/ai-client";
+import { useAIGenerationAvailable } from "@/utils/use-ai-connectivity";
 import { showAlert } from "@/utils/alert";
 import { createPendingExercise } from "@/utils/create-pending-exercise";
 import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
@@ -37,21 +38,6 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  serverTimestamp,
-  Timestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -104,6 +90,7 @@ export default function AddWorkoutModal() {
     selectExercise,
   } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName });
   const { options: catalogOptions } = useExerciseCatalog();
+  const aiAvailable = useAIGenerationAvailable();
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(!!id);
   const [prefillLoading, setPrefillLoading] = useState(mode === "plan" && !id);
@@ -156,8 +143,8 @@ export default function AddWorkoutModal() {
 
     const loadNameOptions = async () => {
       try {
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        const data = userSnap.data();
+        const profile = await profileRepository.get(user.uid);
+        const data = profile?.data;
 
         const todayUTC = new Date().toISOString().slice(0, 10);
         const aiUsage = data?.aiUsage as
@@ -200,19 +187,10 @@ export default function AddWorkoutModal() {
         }
 
         // Collect unique names actually used in saved workouts
-        const workoutsSnap = await getDocs(
-          query(
-            collection(db, "workouts"),
-            where("userId", "==", user.uid),
-            orderBy("date", "desc"),
-          ),
-        );
         const usedNames = new Set<string>();
-        const historyData: Workout[] = [];
-        workoutsSnap.docs.forEach((d) => {
-          const data = d.data();
-          if (data.name) usedNames.add(data.name);
-          historyData.push({ id: d.id, ...data } as Workout);
+        const historyData = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
+        historyData.forEach((workout) => {
+          if (workout.name) usedNames.add(workout.name);
         });
         setWorkoutHistory(historyData);
         setSplitType(splitType ?? "");
@@ -277,28 +255,24 @@ export default function AddWorkoutModal() {
 
     const fetchWorkout = async () => {
       try {
-        const docRef = doc(db, "workouts", id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Workout;
-          if (data.userId !== user.uid) {
-            showAlert("Error", "Could not load workout details.");
-            router.back();
-            return;
-          }
+        const stored = await workoutRepository.getById(user.uid, id);
+        if (stored) {
+          const data = stored.data;
           setWorkoutName(data.name || "");
           setNotes(data.notes || "");
           setDocStatus(data.status);
           if (data.date) {
             const date = toDateObj(data.date);
-            setWorkoutDate(date);
-            const today = new Date();
-            if (
-              date.getDate() !== today.getDate() ||
-              date.getMonth() !== today.getMonth() ||
-              date.getFullYear() !== today.getFullYear()
-            ) {
-              setIsToday(false);
+            if (date) {
+              setWorkoutDate(date);
+              const today = new Date();
+              if (
+                date.getDate() !== today.getDate() ||
+                date.getMonth() !== today.getMonth() ||
+                date.getFullYear() !== today.getFullYear()
+              ) {
+                setIsToday(false);
+              }
             }
           }
           if (data.performedExercises && data.performedExercises.length > 0) {
@@ -359,30 +333,21 @@ export default function AddWorkoutModal() {
   };
 
   const handleAISuggest = async () => {
-    if (!user || aiUsesLeft <= 0) return;
+    if (!user || aiUsesLeft <= 0 || !aiAvailable) return;
     const finalName = isCustomWorkoutName
       ? customWorkoutName.trim()
       : workoutName.trim();
     setAiLoading(true);
     try {
-      const suggested = await suggestWorkoutCompletion(
+      // The quota is counted and enforced by /api/ai; the client just reflects it.
+      const { suggestions: suggested, remaining } = await suggestWorkoutCompletion(
         finalName,
         splitType,
         exercises,
         workoutHistory,
         await getOngoingInjuries(user.uid),
       );
-
-      const todayUTC = new Date().toISOString().slice(0, 10);
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-      const existing = userSnap.data()?.aiUsage as
-        | { date: string; count: number }
-        | undefined;
-      const newCount =
-        existing && existing.date === todayUTC ? existing.count + 1 : 1;
-      await updateDoc(userRef, { aiUsage: { date: todayUTC, count: newCount } });
-      setAiUsesLeft(TEMPORARY_AI_DAILY_LIMIT - newCount);
+      if (remaining != null) setAiUsesLeft(remaining);
 
       if (suggested.length === 0) {
         setToast({
@@ -400,7 +365,7 @@ export default function AddWorkoutModal() {
       setExercises((prev) => [...prev, ...newRows]);
     } catch (e) {
       const details = formatAIError(e);
-      console.error("AI workout suggestion failed:", details);
+      console.error("AI workout suggestion failed:", details, e);
       showAlert(
         "Error",
         __DEV__
@@ -415,7 +380,8 @@ export default function AddWorkoutModal() {
   const handleDelete = async () => {
     if (!id || !user) return;
     try {
-      await deleteDoc(doc(db, "workouts", id));
+      await workoutRepository.softDelete(user.uid, id);
+      triggerSyncAfterWrite();
       router.back();
     } catch (err: any) {
       showAlert("Error", "Could not delete workout. " + err.message);
@@ -442,35 +408,29 @@ export default function AddWorkoutModal() {
 
       if (isPlanMode) {
         if (id) {
-          await updateDoc(doc(db, "workouts", id), {
+          const existing = await workoutRepository.getById(user.uid, id);
+          if (!existing) throw new Error('Workout no longer exists.');
+          await workoutRepository.update(user.uid, id, {
+            ...existing.data,
             name: finalName,
             performedExercises,
             notes: notes.trim(),
             status: "planned",
-            updatedAt: serverTimestamp(),
+            updatedAt: new Date().toISOString(),
           });
         } else {
-          const lastQueued = await getDocs(
-            query(
-              collection(db, "workouts"),
-              where("userId", "==", user.uid),
-              where("status", "==", "planned"),
-              orderBy("queueOrder", "desc"),
-              limit(1),
-            ),
-          );
+          const lastQueued = await workoutRepository.getByStatus(user.uid, 'planned');
           const nextQueueOrder =
-            (lastQueued.docs[0]?.data().queueOrder ?? -1) + 1;
-          await addDoc(collection(db, "workouts"), {
-            userId: user.uid,
+            Math.max(-1, ...lastQueued.map((record) => record.data.queueOrder ?? -1)) + 1;
+          await workoutRepository.create(user.uid, {
             name: finalName,
             performedExercises,
             notes: notes.trim(),
             schemaVersion: 2,
             status: "planned",
             queueOrder: nextQueueOrder,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           });
         }
       } else {
@@ -478,30 +438,33 @@ export default function AddWorkoutModal() {
         const injuries = await getOngoingInjuryIds(user.uid);
 
         if (id) {
-          await updateDoc(doc(db, "workouts", id), {
+          const existing = await workoutRepository.getById(user.uid, id);
+          if (!existing) throw new Error('Workout no longer exists.');
+          await workoutRepository.update(user.uid, id, {
+            ...existing.data,
             name: finalName,
-            date: Timestamp.fromDate(finalDate),
+            date: finalDate.toISOString(),
             performedExercises,
             notes: notes.trim(),
             status: "completed",
             injuries,
-            updatedAt: serverTimestamp(),
+            updatedAt: new Date().toISOString(),
           });
         } else {
-          await addDoc(collection(db, "workouts"), {
-            userId: user.uid,
+          await workoutRepository.create(user.uid, {
             name: finalName,
-            date: Timestamp.fromDate(finalDate),
+            date: finalDate.toISOString(),
             performedExercises,
             notes: notes.trim(),
             schemaVersion: 2,
             status: "completed",
             injuries,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
           });
         }
       }
+      triggerSyncAfterWrite();
       router.back();
     } catch (err: any) {
       showAlert("Error", "Could not save workout. " + err.message);
@@ -732,11 +695,11 @@ export default function AddWorkoutModal() {
                 <TouchableOpacity
                   style={[
                     styles.aiSuggestButton,
-                    (aiLoading || isFormLoading || aiUsesLeft <= 0) &&
+                    (aiLoading || isFormLoading || aiUsesLeft <= 0 || !aiAvailable) &&
                       styles.aiSuggestButtonDisabled,
                   ]}
                   onPress={handleAISuggest}
-                  disabled={aiLoading || isFormLoading || aiUsesLeft <= 0}
+                  disabled={aiLoading || isFormLoading || aiUsesLeft <= 0 || !aiAvailable}
                   activeOpacity={0.8}
                 >
                   {aiLoading ? (
@@ -754,7 +717,9 @@ export default function AddWorkoutModal() {
                           aiUsesLeft <= 0 && styles.aiSuggestButtonTextDisabled,
                         ]}
                       >
-                        {aiUsesLeft > 0
+                        {!aiAvailable
+                          ? "AI needs a connection"
+                          : aiUsesLeft > 0
                           ? `Balance Workout with AI (${aiUsesLeft} left)`
                           : "No AI uses left today"}
                       </Text>

@@ -1,5 +1,6 @@
-import { db } from '@/config/firebase';
+import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
 import { loadSplitNames } from '@/utils/split-names';
 import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
@@ -11,20 +12,15 @@ import { dismissWorkoutNotification } from '@/utils/workout-notification';
 import { syncUpNextWidget } from '@/utils/widget-up-next';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  // Re-reads local SQLite when a sync lands rows under an already-focused
+  // screen — on first sign-in this screen mounts before the initial sync.
+  const dataVersion = useDataVersion();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
@@ -36,7 +32,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!inProgress?.startedAt) return;
-    const startMs = toDateObj(inProgress.startedAt as unknown as Workout['date']).getTime();
+    const startMs = toDateObj(inProgress.startedAt as unknown as Workout['date'])?.getTime();
+    if (startMs === undefined) return;
     const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     tick();
     const interval = setInterval(tick, 1000);
@@ -45,19 +42,15 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      void dataVersion; // refetch trigger, not data — see hooks/use-data-version.ts
       if (!user) return;
       (async () => {
-        setLoading(true);
+        // No setLoading(true) here: `loading` starts true for the first pass,
+        // and a refresh triggered by a background sync must swap the content
+        // silently rather than flash a spinner over what the user is reading.
         try {
           // Completed history is only needed to predict the next split workout.
-          const q = query(
-            collection(db, 'workouts'),
-            where('userId', '==', user.uid),
-            orderBy('date', 'desc'),
-            limit(30)
-          );
-          const snapshot = await getDocs(q);
-          const allFetched = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+          const allFetched = (await workoutRepository.getHistory(user.uid)).map((record) => record.data).slice(0, 30);
 
           // Predict next workout type
           const splitNames = await loadSplitNames(user.uid);
@@ -66,31 +59,16 @@ export default function HomeScreen() {
 
           // An in-progress workout (crashed/backgrounded mid-session) takes priority over
           // everything else — Up Next becomes "Resume".
-          const inProgressSnap = await getDocs(
-            query(
-              collection(db, 'workouts'),
-              where('userId', '==', user.uid),
-              where('status', '==', 'in_progress'),
-              limit(1)
-            )
-          );
-          const liveWorkout = inProgressSnap.empty
-            ? null
-            : ({ id: inProgressSnap.docs[0].id, ...inProgressSnap.docs[0].data() } as Workout);
+          const inProgressRows = await workoutRepository.getByStatus(user.uid, 'in_progress');
+          const liveWorkout = inProgressRows[0]?.data ?? null;
           setInProgress(liveWorkout);
           // No live workout → clear any notification orphaned by a force-quit.
-          if (inProgressSnap.empty) dismissWorkoutNotification();
+          if (!liveWorkout) dismissWorkoutNotification();
 
           // Head of the planned queue, if any — takes priority over the predicted name
-          const planSnap = await getDocs(
-            query(
-              collection(db, 'workouts'),
-              where('userId', '==', user.uid),
-              where('status', '==', 'planned'),
-              orderBy('queueOrder')
-            )
-          );
-          const plannedQueue = planSnap.docs.map((d) => ({ id: d.id, ...d.data() } as Workout));
+          const plannedQueue = (await workoutRepository.getByStatus(user.uid, 'planned'))
+            .map((record) => record.data)
+            .sort((a, b) => (a.queueOrder ?? Infinity) - (b.queueOrder ?? Infinity));
           setNextPlan(plannedQueue[0] ?? null);
           setNextWorkoutToPlan(
             predictWorkoutAfterName(splitNames, allFetched, plannedQueue[plannedQueue.length - 1]?.name)
@@ -118,7 +96,7 @@ export default function HomeScreen() {
           setLoading(false);
         }
       })();
-    }, [user])
+    }, [user, dataVersion])
   );
 
   const formatElapsed = (totalSeconds: number) => {

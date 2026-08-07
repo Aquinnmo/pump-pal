@@ -30,6 +30,11 @@ are few, so an array needs no extra reads and no new account-deletion line
 (the user doc is already deleted — see below). Promote to a subcollection only
 if a user ever accrues hundreds of injuries.
 
+On native clients the SQLite cache deliberately mirrors each injury as its own
+UID-scoped row so the API sync manifest can reconcile stable injury ids and
+offline edits independently. This is a client-cache representation only; the
+authoritative Firestore document remains the flat array above.
+
 Each `Injury` has a client-generated `id`, a `bodyPart` (`constants/body-parts.ts`,
 mapped to canonical muscles via `BODY_PART_MUSCLES` so it joins the
 muscle-volume engine in `utils/muscle-analysis.ts`), `severity`, `status`

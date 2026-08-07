@@ -1,6 +1,8 @@
-import { formatAIError, TEMPORARY_AI_DAILY_LIMIT } from "@/constants/ai-config";
+import { TEMPORARY_AI_DAILY_LIMIT } from "@/shared/ai-contract";
 import { useAuth } from "@/context/auth-context";
 import { Workout } from "@/types/workout";
+import { formatAIError } from "@/utils/ai-client";
+import { useAIGenerationAvailable } from "@/utils/use-ai-connectivity";
 import {
   analyzeMuscles,
   MuscleInsights,
@@ -39,6 +41,7 @@ function todayKey(): string {
 
 export function MuscleInsightCards({ workouts }: Props) {
   const { user } = useAuth();
+  const aiAvailable = useAIGenerationAvailable();
   const [insights, setInsights] = useState<MuscleInsights | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,11 +71,16 @@ export function MuscleInsightCards({ workouts }: Props) {
         const raw = await AsyncStorage.getItem(cacheKey);
         if (raw) {
           const cached: InsightsCache = JSON.parse(raw);
-          if (cached.date === todayKey()) {
+          if (cached.date === todayKey() || !aiAvailable) {
             setInsights(normalizeMuscleInsights(cached.insights));
             return;
           }
         }
+      }
+
+      if (!aiAvailable) {
+        setError('AI needs a connection. Cached insights remain available.');
+        return;
       }
 
       const result = await analyzeMuscles(workouts);
@@ -81,7 +89,7 @@ export function MuscleInsightCards({ workouts }: Props) {
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (caughtError) {
       const details = formatAIError(caughtError);
-      console.error("AI muscle analysis failed:", details);
+      console.error("AI muscle analysis failed:", details, caughtError);
       setError(
         __DEV__
           ? `AI error: ${details}`
@@ -93,7 +101,7 @@ export function MuscleInsightCards({ workouts }: Props) {
   };
 
   const handleManualRefresh = async () => {
-    if (!refreshCountKey || refreshesLeft <= 0 || loading) return;
+    if (!refreshCountKey || !aiAvailable || refreshesLeft <= 0 || loading) return;
 
     const raw = await AsyncStorage.getItem(refreshCountKey);
     let newCount = 1;
@@ -121,7 +129,9 @@ export function MuscleInsightCards({ workouts }: Props) {
   if (workouts.length === 0) return null;
 
   const refreshLabel =
-    refreshesLeft > 0
+    !aiAvailable
+      ? 'AI needs a connection'
+      : refreshesLeft > 0
       ? `Refresh · ${refreshesLeft} left`
       : "Daily limit reached";
 
@@ -139,23 +149,25 @@ export function MuscleInsightCards({ workouts }: Props) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
-              refreshesLeft > 0
+              !aiAvailable
+                ? 'AI needs a connection. Cached insights remain available.'
+                : refreshesLeft > 0
                 ? `Refresh AI muscle insights. ${refreshesLeft} refreshes left today.`
                 : "AI muscle insight daily refresh limit reached."
             }
-            accessibilityState={{ disabled: refreshesLeft <= 0 }}
+            accessibilityState={{ disabled: refreshesLeft <= 0 || !aiAvailable }}
             style={({ pressed }) => [
               styles.refreshButton,
-              refreshesLeft <= 0 && styles.refreshButtonDisabled,
-              pressed && refreshesLeft > 0 && styles.buttonPressed,
+              (refreshesLeft <= 0 || !aiAvailable) && styles.refreshButtonDisabled,
+              pressed && refreshesLeft > 0 && aiAvailable && styles.buttonPressed,
             ]}
             onPress={handleManualRefresh}
-            disabled={refreshesLeft <= 0 || loading}
+            disabled={refreshesLeft <= 0 || loading || !aiAvailable}
           >
             <Ionicons
               name="refresh"
               size={17}
-              color={refreshesLeft <= 0 ? "#6c6c6c" : "#f08a8a"}
+              color={refreshesLeft <= 0 || !aiAvailable ? "#6c6c6c" : "#f08a8a"}
             />
             <Text
               style={[

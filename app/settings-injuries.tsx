@@ -1,7 +1,8 @@
 import { DateField } from '@/components/ui/date-field';
 import { Dropdown } from '@/components/ui/dropdown';
 import { Toast } from '@/components/ui/toast';
-import { db } from '@/config/firebase';
+import { injuryRepository } from '@/db/injury-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { BODY_PARTS, BodyPart, bodyPartLabel, isBodyPart } from '@/constants/body-parts';
 import { useAuth } from '@/context/auth-context';
 import { Injury, InjurySeverity, InjurySide } from '@/types/user';
@@ -9,7 +10,6 @@ import { applyInjuryToHistory, removeInjuryFromHistory } from '@/utils/injuries'
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { Timestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,11 +61,8 @@ export default function SettingsInjuriesScreen() {
     const load = async () => {
       setLoading(true);
       try {
-        const snapshot = await getDoc(doc(db, 'users', user.uid));
-        const stored = snapshot.data()?.injuries;
-        if (Array.isArray(stored)) {
-          setInjuries(stored.filter((i: Injury) => isBodyPart(i?.bodyPart)));
-        }
+        const stored = await injuryRepository.getAll(user.uid);
+        setInjuries(stored.map((record) => record.data).filter((i) => isBodyPart(i?.bodyPart)));
       } catch (err) {
         console.error(err);
       } finally {
@@ -79,7 +76,17 @@ export default function SettingsInjuriesScreen() {
     if (!user) return;
     setSaving(true);
     try {
-      await setDoc(doc(db, 'users', user.uid), { injuries: next }, { merge: true });
+      const existing = new Map((await injuryRepository.getAll(user.uid)).map((record) => [record.id, record.data]));
+      for (const injury of next) {
+        await (existing.has(injury.id)
+          ? injuryRepository.update(user.uid, injury)
+          : injuryRepository.create(user.uid, injury));
+        existing.delete(injury.id);
+      }
+      for (const id of existing.keys()) await injuryRepository.softDelete(user.uid, id);
+      // One run for the whole batch, covering the workout rows this cascades
+      // through utils/injuries.ts as well.
+      triggerSyncAfterWrite();
       setInjuries(next);
       return true;
     } catch (err) {
@@ -92,8 +99,8 @@ export default function SettingsInjuriesScreen() {
   };
 
   const handleAdd = async () => {
-    const now = Timestamp.now();
-    const onsetTs = Timestamp.fromDate(onset);
+    const now = new Date().toISOString();
+    const onsetTs = onset.toISOString();
     const avoid = avoidText
       .split(',')
       .map((s) => s.trim())
@@ -106,7 +113,7 @@ export default function SettingsInjuriesScreen() {
       onsetDate: onsetTs,
       createdAt: now,
       updatedAt: now,
-      ...(alreadyResolved ? { resolvedDate: Timestamp.fromDate(resolved) } : {}),
+      ...(alreadyResolved ? { resolvedDate: resolved.toISOString() } : {}),
       ...(labelToSide(sideLabel) ? { side: labelToSide(sideLabel) } : {}),
       ...(avoid.length ? { avoid } : {}),
       ...(notes.trim() ? { notes: notes.trim() } : {}),
@@ -124,7 +131,7 @@ export default function SettingsInjuriesScreen() {
   };
 
   const handleResolve = async (id: string) => {
-    const now = Timestamp.now();
+    const now = new Date().toISOString();
     const next = injuries.map((i) =>
       i.id === id ? { ...i, status: 'resolved' as const, resolvedDate: now, updatedAt: now } : i
     );
@@ -164,10 +171,10 @@ export default function SettingsInjuriesScreen() {
   };
 
   const handleEditOnset = (id: string, date: Date) =>
-    persist(injuries.map((i) => (i.id === id ? { ...i, onsetDate: Timestamp.fromDate(date), updatedAt: Timestamp.now() } : i)));
+    persist(injuries.map((i) => (i.id === id ? { ...i, onsetDate: date.toISOString(), updatedAt: new Date().toISOString() } : i)));
 
   const handleEditResolved = (id: string, date: Date) =>
-    persist(injuries.map((i) => (i.id === id ? { ...i, resolvedDate: Timestamp.fromDate(date), updatedAt: Timestamp.now() } : i)));
+    persist(injuries.map((i) => (i.id === id ? { ...i, resolvedDate: date.toISOString(), updatedAt: new Date().toISOString() } : i)));
 
   const ongoing = injuries.filter((i) => i.status === 'ongoing');
   const past = injuries.filter((i) => i.status === 'resolved');
@@ -183,11 +190,11 @@ export default function SettingsInjuriesScreen() {
       {inj.avoid?.length ? <Text style={styles.cardNotes}>Avoid: {inj.avoid.join(', ')}</Text> : null}
 
       <Text style={styles.cardDateLabel}>Onset</Text>
-      <DateField value={toDateObj(inj.onsetDate)} onChange={(d) => handleEditOnset(inj.id, d)} />
+      <DateField value={toDateObj(inj.onsetDate) ?? new Date()} onChange={(d) => handleEditOnset(inj.id, d)} />
       {inj.status === 'resolved' && inj.resolvedDate ? (
         <>
           <Text style={styles.cardDateLabel}>Resolved</Text>
-          <DateField value={toDateObj(inj.resolvedDate)} onChange={(d) => handleEditResolved(inj.id, d)} />
+          <DateField value={toDateObj(inj.resolvedDate) ?? new Date()} onChange={(d) => handleEditResolved(inj.id, d)} />
         </>
       ) : null}
 

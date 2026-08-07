@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# Day-to-day script: pull the latest code and run the app.
-# Run scripts/ios/setup.sh once first.
+# Get the latest Timber code and install a standalone Release build on an iPhone.
+# Run scripts/ios/setup.sh once before using this command.
 #
-#   bash scripts/ios/update.sh
+#   npm run install:apple
 
 set -uo pipefail
 
@@ -12,110 +12,127 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/_common.sh"
 
 preflight
 
-# Homebrew isn't on the PATH of a non-login shell on Apple Silicon.
+# Homebrew is not always on PATH in a non-login shell on Apple Silicon.
 BREW_PREFIX="/usr/local"
 [ "$(uname -m)" = "arm64" ] && BREW_PREFIX="/opt/homebrew"
 if ! have brew && [ -x "$BREW_PREFIX/bin/brew" ]; then
   eval "$("$BREW_PREFIX/bin/brew" shellenv)"
 fi
 
-banner "Timber — update"
+banner "Timber — install on iPhone"
 
 # ---------------------------------------------------------------------------
-step "Checking your setup"
+step "Checking the one-time setup"
 
-have node || die "Node isn't installed. Run the first-time setup: bash scripts/ios/setup.sh"
-have npx  || die "npm isn't installed properly. Run: bash scripts/ios/setup.sh"
-validate_env .env || die "Your .env is missing or incomplete. Run: bash scripts/ios/setup.sh"
-ok "Node $(node -v), .env looks good."
+have git || die "Git is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+have node || die "Node.js is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+have npm || die "npm is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+have npx || die "npx is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+have pod || die "CocoaPods is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+have xcodebuild || die "Xcode is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+
+NODE_MAJOR=$(node -v | sed 's/^v\([0-9]*\).*/\1/')
+[ "${NODE_MAJOR:-0}" -ge 20 ] \
+  || die "Node $(node -v) is too old. Re-run the one-time setup: bash scripts/ios/setup.sh"
+[[ "$(xcode-select -p 2>/dev/null || true)" == *"Xcode.app"* ]] \
+  || die "The full Xcode toolchain is not selected. Re-run: bash scripts/ios/setup.sh"
+validate_env .env \
+  || die "Your .env is missing or incomplete. Ask Aidan for the latest file, then re-run the setup script."
+load_apple_config "$APPLE_CONFIG_FILE" \
+  || die "The one-time Apple setup is missing. Run: bash scripts/ios/setup.sh"
+
+ok "Node $(node -v), Xcode $(xcodebuild -version | head -n 1), and app settings are ready."
+info "Private iOS app identifier: $TIMBER_IOS_BUNDLE_IDENTIFIER"
 
 # ---------------------------------------------------------------------------
 step "Getting the latest code"
 
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
-  warn "You have local changes to files in this folder."
-  git status --short
+if [ -n "$(git status --porcelain --untracked-files=no 2>/dev/null)" ]; then
+  warn "Tracked files in this repo have local changes:"
+  git status --short --untracked-files=no
   say ""
-  say "Pulling could conflict with them. If you didn't mean to change anything,"
-  say "you can throw the changes away with:  git checkout ."
-  confirm "Try to pull anyway?" n || die "Stopped. Nothing was changed."
+  say "The installer will not merge or discard them. Send Aidan the lines above"
+  say "and ask what to do; after they are resolved, run npm run install:apple again."
+  die "Stopped before pulling or installing anything."
 fi
 
-if git pull --ff-only; then
-  ok "Up to date."
-else
-  say ""
-  warn "Couldn't pull cleanly. Send Aidan the message above — don't try to fix it blind."
-  confirm "Carry on with the code you already have?" y || exit 1
+HEAD_BEFORE=$(git rev-parse HEAD) || die "Could not read the current Git revision."
+git pull --ff-only \
+  || die "Could not fast-forward to the latest code. Send Aidan the Git error above."
+HEAD_AFTER=$(git rev-parse HEAD) || die "Could not read the updated Git revision."
+
+if [ "$HEAD_BEFORE" != "$HEAD_AFTER" ]; then
+  ok "Downloaded the latest code. Restarting with the updated installer..."
+  exec bash scripts/ios/update.sh
 fi
+ok "Code is up to date."
 
 # ---------------------------------------------------------------------------
-step "Updating dependencies"
+step "Installing project dependencies"
 
-if ! npm ci; then
-  warn "npm ci failed — falling back to npm install."
-  npm install || die "Couldn't install dependencies."
-fi
-ok "Dependencies up to date."
+say "Installing the exact package versions from package-lock.json..."
+npm ci \
+  || die "npm ci failed. Send Aidan the last 20 lines above; the lockfile was not changed."
+ok "Dependencies are up to date."
 
-# .env.example can gain new required keys when the app changes.
-validate_env .env || die "Timber now needs extra settings. Ask Aidan for an updated block, then run: bash scripts/ios/setup.sh"
+# A pull can introduce new required settings, so validate again after npm ci.
+validate_env .env \
+  || die "Timber now needs updated settings. Ask Aidan for a new .env file."
 
 # ---------------------------------------------------------------------------
-step "How do you want to run it?"
+step "Connect your iPhone"
 
 cat <<'MSG'
+Connect the iPhone to this Mac with its USB cable, then:
 
-  1) Just start it  (fast, ~30 seconds)
-     Use this normally. Your phone already has the app — this starts the
-     server it talks to.
+  1. Unlock the phone
+  2. Tap Trust and enter the phone passcode if "Trust This Computer?" appears
+  3. Turn on Settings → Privacy & Security → Developer Mode if it is off
+     (the phone restarts and asks for confirmation)
 
-  2) Rebuild and reinstall  (slow, 5-20 minutes)
-     Use this if:
-       • the app says it can't be opened / has expired (happens every 7 days)
-       • it crashes on launch right after an update
-       • Aidan told you a new version needs a rebuild
+During the build, choose the connected iPhone—not a simulator. If Xcode asks
+for a development team, choose the Personal Team for your Apple Account.
 
 MSG
+pause "Press Enter when the iPhone is connected and unlocked."
 
-printf '%s ' "${BOLD}Choose 1 or 2 [1]:${RESET}"
-read -r choice < /dev/tty || choice=""
-choice="${choice:-1}"
+# ---------------------------------------------------------------------------
+step "Build and install"
+
+say "The first Release build normally takes 10-25 minutes. Later builds are faster."
 say ""
 
-case "$choice" in
-  2)
-    cat <<'MSG'
-Plug your iPhone in and unlock it.
+if ! npx expo run:ios --device --configuration Release --no-bundler; then
+  say ""
+  warn "The install did not finish. Common fixes:"
+  cat <<'MSG'
 
-When it asks for an Apple ID, use YOUR OWN — the same one as last time.
+  • Phone not found          → reconnect it, unlock it, and tap Trust
+  • Developer Mode disabled → Settings → Privacy & Security → Developer Mode
+  • No development team     → open Xcode → Settings → Accounts and add your Apple Account
+  • Signing error           → run bash scripts/ios/setup.sh to repair the private app identifier
+  • iOS version unsupported → update Xcode (and macOS if the App Store requires it)
 
+If those do not help, send Aidan the last 20 lines of output.
 MSG
-    pause "Press Enter to start the rebuild."
-    say ""
-    if ! npx expo run:ios --device; then
-      say ""
-      warn "Build failed. Check the phone is plugged in and unlocked, then try again."
-      warn "If it keeps failing, send Aidan the last 20 lines above."
-      exit 1
-    fi
-    say ""
-    ok "Rebuilt and installed."
-    info "If iOS blocks it: Settings → General → VPN & Device Management → trust your Apple ID."
-    ;;
-  1)
-    cat <<'MSG'
-Starting the dev server. Open Timber on your phone and it will connect.
+  die "Build or installation failed."
+fi
 
-  • Keep this terminal window open while you use the app.
-  • Press Ctrl-C here when you're done.
-  • If the app can't connect, make sure the phone and this Mac are on the
-    same Wi-Fi network.
+# ---------------------------------------------------------------------------
+banner "Timber is installed"
 
+cat <<'MSG'
+You can disconnect the phone and close this terminal. This Release build runs
+without the Mac or a development server.
+
+If iOS blocks the app the first time, open:
+  Settings → General → VPN & Device Management → your Apple Account → Trust
+
+A free Apple Personal Team expires after 7 days. When Timber stops opening—or
+when Aidan tells you there is an update—connect the phone and run:
+
+    npm run install:apple
+
+That refreshes the signing period and installs the latest code.
 MSG
-    npx expo start --dev-client
-    ;;
-  *)
-    die "Didn't understand '$choice'. Run the script again and type 1 or 2."
-    ;;
-esac
+ok "Install complete."

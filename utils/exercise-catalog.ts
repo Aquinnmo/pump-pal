@@ -1,7 +1,8 @@
-import { db } from '@/config/firebase';
-import { CatalogExercise, ExerciseCatalogMeta, ExerciseSearchOption } from '@/types/workout';
+import { auth } from '@/config/firebase';
+import { catalogRepository } from '@/db/catalog-repository';
+import { CatalogExercise, ExerciseSearchOption } from '@/types/workout';
+import { createCatalogLoader } from './catalog-loader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 
 const CATALOG_CACHE_KEY = 'pumppal_catalog_v2';
 const CATALOG_VERSION_KEY = 'pumppal_catalog_version_v2';
@@ -21,28 +22,15 @@ async function writeCache(catalog: CatalogExercise[], version: number): Promise<
   await AsyncStorage.setItem(CATALOG_VERSION_KEY, String(version));
 }
 
-export async function loadCatalog(): Promise<CatalogExercise[]> {
-  try {
-    const metaSnap = await getDoc(doc(db, 'exerciseCatalogMeta', 'current'));
-    const meta = metaSnap.exists() ? (metaSnap.data() as ExerciseCatalogMeta) : null;
-    const cachedVersion = await AsyncStorage.getItem(CATALOG_VERSION_KEY);
+const catalogLoader = createCatalogLoader(catalogRepository, { read: readCache, write: writeCache });
 
-    if (meta && cachedVersion !== null && Number(cachedVersion) === meta.version) {
-      const cached = await readCache();
-      if (cached) return cached;
-    }
-
-    const snap = await getDocs(collection(db, 'exercises'));
-    const catalog = snap.docs
-      .map((d) => ({ id: d.id, ...d.data() }) as CatalogExercise)
-      .filter((ex) => ex.schemaVersion === 2 && !!ex.name && ex.status !== 'pending_review');
-
-    if (meta) await writeCache(catalog, meta.version);
-    return catalog;
-  } catch {
-    const cached = await readCache();
-    return cached ?? [];
-  }
+/**
+ * Passing the authenticated uid avoids depending on Firebase's global auth
+ * state during bootstrap; callers outside auth setup can keep using the
+ * current-user default.
+ */
+export function loadCatalog(uid: string | null | undefined = auth.currentUser?.uid): Promise<CatalogExercise[]> {
+  return catalogLoader.load(uid);
 }
 
 export function slugify(text: string): string {

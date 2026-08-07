@@ -54,7 +54,7 @@ Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React
 
 ### Firebase
 
-`config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example`), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
+`config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example.eas` for mobile and `.env.example.vercel` for web), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
 
 The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/data-model/README.md` (`docs/firestore-data-refactor.md` is migration history, not the current schema). The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
 
@@ -64,7 +64,23 @@ One-off, npm-scripted Node scripts (not part of the app bundle) that read/conver
 
 ### AI features
 
-AI SDK Core (`ai`) provides provider-neutral generation and structured output. `constants/ai-config.ts` currently registers Google via `@ai-sdk/google`, with provider/model selected through `EXPO_PUBLIC_AI_PROVIDER` and `EXPO_PUBLIC_AI_MODEL`, and the Google key supplied by `EXPO_PUBLIC_GEMINI_API_KEY`. AI features live in `utils/muscle-analysis.ts`, `utils/workout-suggestions.ts`, and `utils/daily-name.ts`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
+**No AI provider key exists on the client.** All generation runs through a Vercel serverless proxy at `api/ai.ts`; an `EXPO_PUBLIC_*` key would be inlined into every APK and web bundle by Metro. Do not reintroduce one.
+
+**`api/**` imports nothing outside `api/` and `shared/`.** That is what keeps the proxy liftable into its own service. `npm run test:api-isolation` enforces it — if you need an app constant server-side, either move it to `shared/` or send it as request data (this is why the client supplies `regionList`, not just `volumeTable`).
+
+- `shared/ai-contract.ts` is the single source of truth for the wire format: one `AI_OPS` table holding an input and output zod schema per operation (`muscle-analysis`, `workout-completion`, `split-names`, `daily-name`), with the TS types derived via `z.infer`. The same `output` schema constrains generation server-side and types the client's return value, so the two cannot drift. Clients send structured input, never a raw prompt. Must stay free of Expo/React Native imports — both sides import it.
+- `api/_lib/auth.ts` verifies the caller's Firebase ID token with `jose` against Google's cached JWKS. `algorithms: ['RS256']` is pinned deliberately; without the pin a JWT library can be tricked into accepting `alg: none`. **Known ceiling:** no revocation check, so a signed-out or disabled account keeps working until its token expires (≤1h).
+- `api/_lib/ai/` (`model.ts`, `prompts.ts`) owns provider registration and the four prompt templates. No Firestore, no auth.
+- `api/_lib/store/` (`rest.ts`, `quota.ts`, `daily-name.ts`) talks to Firestore over the REST API, authenticating with a service-account OAuth2 token minted by `jose` from the same `FIREBASE_*` env vars. No AI. This replaced `firebase-admin`, whose gRPC dependency tree was ~16MB and dominated cold start. The service-account credential **still bypasses `firestore.rules`**, same as the Admin SDK did — that is a property of the credential, not the SDK.
+  - Every write must carry `updateMask`. Without it a Firestore `:commit` **replaces the whole document** instead of merging.
+  - `quota.ts` enforces `TEMPORARY_AI_DAILY_LIMIT` against `users/{uid}.aiUsage` using an `updateTime` precondition with retry, not a transaction.
+- `api/ai.ts` is the only place auth, `ai/`, and `store/` meet.
+- `utils/ai-client.ts` (`callAI`) is the only client-side entry point; it attaches a Firebase ID token.
+- The AI features still live in `utils/muscle-analysis.ts`, `utils/workout-suggestions.ts`, and `utils/daily-name.ts`, which compute summaries locally and call `callAI`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
+
+### Firestore security rules
+
+`firestore.rules` (wired up by `firebase.json`) is the source of truth; deploy with `npx firebase-tools@latest deploy --only firestore:rules`. `exercises`, `exerciseCatalogMeta`, and `random` are client-read-only, and `users/{uid}.aiUsage` cannot be written by the client.
 
 ### Theming
 

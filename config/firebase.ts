@@ -1,7 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// Not importable from `firebase/auth`: that package's export map has no
+// `react-native` condition at all. The scoped package does, and Metro resolves
+// it to the same single hoisted copy the rest of Firebase Auth already uses
+// (@firebase/auth is pinned to firebase's exact 1.13.4 in package.json so a
+// second Auth instance can't appear). Its type comes from
+// types/firebase-auth-rn.d.ts — see that file for why.
+import { getReactNativePersistence } from '@firebase/auth';
 import { getApps, initializeApp } from 'firebase/app';
-import { getAuth, getReactNativePersistence, initializeAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, initializeAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -15,7 +21,18 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-export const auth = (() => {
+/**
+ * Native (iOS/Android) Auth. Web uses config/firebase.web.ts, which Metro's
+ * platform extension resolution picks instead.
+ *
+ * Without the explicit AsyncStorage persistence, Auth silently falls back to
+ * memory persistence: the session is gone on every app restart, and the first
+ * sync after relaunch never runs because there is no signed-in user.
+ *
+ * initializeAuth throws if Auth was already initialized for this app, which
+ * Fast Refresh causes routinely — fall back to getAuth rather than crashing.
+ */
+function initAuth() {
   try {
     return initializeAuth(app, {
       persistence: getReactNativePersistence(AsyncStorage),
@@ -23,8 +40,8 @@ export const auth = (() => {
   } catch {
     return getAuth(app);
   }
-})();
+}
 
-export const db = getFirestore(app);
+export const auth = initAuth();
 
 export default app;

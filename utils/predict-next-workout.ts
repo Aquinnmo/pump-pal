@@ -13,8 +13,8 @@ export function predictWorkoutAfterName(
   if (splitNames.length === 1) return splitNames[0];
 
   const splitHistory = history
-    .filter((w) => (!w.status || w.status === 'completed') && splitNames.includes(w.name))
-    .sort((a, b) => toDateObj(a.date).getTime() - toDateObj(b.date).getTime());
+    .filter((w) => (!w.status || w.status === 'completed') && splitNames.includes(w.name) && toDateObj(w.date) !== null)
+    .sort((a, b) => (toDateObj(a.date)?.getTime() ?? 0) - (toDateObj(b.date)?.getTime() ?? 0));
 
   const anchorName = afterWorkoutName ?? splitHistory[splitHistory.length - 1]?.name;
   if (!anchorName) return splitNames[0];

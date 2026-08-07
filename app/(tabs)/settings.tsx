@@ -182,7 +182,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   navRowText: {
-    flex: 1,
     fontSize: 15,
     color: '#fff',
     fontWeight: '600',

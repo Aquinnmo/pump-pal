@@ -1,7 +1,7 @@
-import { Timestamp } from 'firebase/firestore';
 import { BodyPart } from '@/constants/body-parts';
 import { MuscleId } from '@/constants/muscles';
 import { SplitOption } from '@/constants/split-options';
+import { FlexibleTimestamp } from '@/types/timestamp';
 
 export type InjurySeverity = 'mild' | 'moderate' | 'severe';
 export type InjurySide = 'left' | 'right' | 'both';
@@ -10,9 +10,10 @@ export type InjurySide = 'left' | 'right' | 'both';
 // future past-injury UI; only its status/resolvedDate change on resolution.
 export type InjuryStatus = 'ongoing' | 'resolved';
 
-// Firestore may hand back a Timestamp or a plain {seconds,nanoseconds} depending
-// on read path — same tolerance used by Workout.date in types/workout.ts.
-type StoredTimestamp = Timestamp | { seconds: number; nanoseconds: number };
+// Firestore may hand back a Timestamp or a plain {seconds,nanoseconds}
+// depending on read path; local SQLite storage and the API wire format use
+// ISO strings — same tolerance used by Workout.date in types/workout.ts.
+type StoredTimestamp = FlexibleTimestamp;
 
 export type Injury = {
   id: string; // client-generated stable id

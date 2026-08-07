@@ -1,17 +1,7 @@
-import { db } from '@/config/firebase';
+import { injuryRepository } from '@/db/injury-repository';
+import { workoutRepository } from '@/db/workout-repository';
 import { Injury } from '@/types/user';
 import { toDateObj } from '@/utils/workout-conversion';
-import {
-  arrayRemove,
-  arrayUnion,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
 
 /**
  * Ids of the user's currently-ongoing injuries. Read at workout-completion time
@@ -29,9 +19,8 @@ export async function getOngoingInjuryIds(uid: string): Promise<string[]> {
  */
 export async function getOngoingInjuries(uid: string): Promise<Injury[]> {
   try {
-    const snap = await getDoc(doc(db, 'users', uid));
-    const injuries = (snap.data()?.injuries ?? []) as Injury[];
-    return injuries.filter((i) => i.status === 'ongoing');
+    const injuries = await injuryRepository.getAll(uid);
+    return injuries.map((record) => record.data).filter((i) => i.status === 'ongoing');
   } catch {
     return [];
   }
@@ -42,8 +31,11 @@ export async function getOngoingInjuries(uid: string): Promise<Injury[]> {
  * [onsetDate, resolvedDate ?? now]. Pure — the one piece worth eyeballing.
  */
 export function injuryCoversDate(injury: Injury, date: Date): boolean {
-  const start = toDateObj(injury.onsetDate).getTime();
-  const end = injury.resolvedDate ? toDateObj(injury.resolvedDate).getTime() : Date.now();
+  const startDate = toDateObj(injury.onsetDate);
+  const endDate = injury.resolvedDate ? toDateObj(injury.resolvedDate) : new Date();
+  if (!startDate || !endDate) return false;
+  const start = startDate.getTime();
+  const end = endDate.getTime();
   const t = date.getTime();
   return t >= start && t <= end;
 }
@@ -56,13 +48,17 @@ export function injuryCoversDate(injury: Injury, date: Date): boolean {
  * hundreds of workouts); chunk into writeBatch(≤450) only if a user ever has thousands.
  */
 export async function applyInjuryToHistory(uid: string, injury: Injury): Promise<number> {
-  const snap = await getDocs(query(collection(db, 'workouts'), where('userId', '==', uid)));
-  const targets = snap.docs.filter((d) => {
-    const data = d.data();
+  const workouts = await workoutRepository.getHistory(uid);
+  const targets = workouts.filter((record) => {
+    const data = record.data;
     if (!data.date) return false; // planned/in_progress — not history
-    return injuryCoversDate(injury, toDateObj(data.date));
+    const date = toDateObj(data.date);
+    return date ? injuryCoversDate(injury, date) : false;
   });
-  await Promise.all(targets.map((d) => updateDoc(d.ref, { injuries: arrayUnion(injury.id) })));
+  await Promise.all(targets.map(({ id, data }) => workoutRepository.update(uid, id, {
+    ...data,
+    injuries: [...new Set([...(data.injuries ?? []), injury.id])],
+  })));
   return targets.length;
 }
 
@@ -71,8 +67,11 @@ export async function applyInjuryToHistory(uid: string, injury: Injury): Promise
  * number of workouts unstamped. (Deleting the user-level record is the caller's job.)
  */
 export async function removeInjuryFromHistory(uid: string, injuryId: string): Promise<number> {
-  const snap = await getDocs(query(collection(db, 'workouts'), where('userId', '==', uid)));
-  const targets = snap.docs.filter((d) => ((d.data().injuries ?? []) as string[]).includes(injuryId));
-  await Promise.all(targets.map((d) => updateDoc(d.ref, { injuries: arrayRemove(injuryId) })));
+  const workouts = await workoutRepository.getHistory(uid);
+  const targets = workouts.filter(({ data }) => (data.injuries ?? []).includes(injuryId));
+  await Promise.all(targets.map(({ id, data }) => workoutRepository.update(uid, id, {
+    ...data,
+    injuries: (data.injuries ?? []).filter((id) => id !== injuryId),
+  })));
   return targets.length;
 }

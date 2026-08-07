@@ -1,0 +1,96 @@
+import { auth } from '@/config/firebase';
+import type { AIOp, AIOpInput, AIResponse } from '@/shared/ai-contract';
+import { fetch as expoFetch } from 'expo/fetch';
+import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
+import { describeError } from './format-ai-error';
+import { normalizeApiBaseUrl } from './api-client-core';
+
+/**
+ * Client for the `/api/ai` proxy.
+ *
+ * No provider API key exists on the device — generation happens server-side.
+ * A configured Preview/API origin is honored on every platform. Web uses a
+ * relative path only when that public configuration is intentionally absent.
+ */
+const BASE_URL = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
+
+/**
+ * AI work is deliberately never queued.  A cached result remains useful while
+ * offline, but a new generation would be paid work that cannot be completed
+ * until there is a server connection.  Keeping this check at the one request
+ * seam makes that invariant hold for every AI feature.
+ */
+export class AIOfflineError extends Error {
+  constructor() {
+    super('AI needs a connection. Cached results are still available.');
+    this.name = 'AIOfflineError';
+  }
+}
+
+async function assertAIConnectivity(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  const state = await NetInfo.fetch();
+  if (state.isConnected === false || state.isInternetReachable === false) {
+    throw new AIOfflineError();
+  }
+}
+
+export async function callAI<Op extends AIOp>(
+  op: Op,
+  input: AIOpInput<Op> = {} as AIOpInput<Op>
+): Promise<AIResponse<Op>> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('You must be signed in to use AI features.');
+
+  await assertAIConnectivity();
+
+  // A relative URL can only resolve in a browser. Off the web an unset base URL
+  // surfaces as an opaque network failure, so name the actual cause instead.
+  if (!BASE_URL && Platform.OS !== 'web') {
+    throw new Error(
+      'EXPO_PUBLIC_API_BASE_URL is not set, so there is no /api/ai endpoint to call. ' +
+        'Set it in .env (local) and in the EAS environment for this build profile.'
+    );
+  }
+
+  const url = `${BASE_URL}/api/ai`;
+
+  let response: Awaited<ReturnType<typeof expoFetch>>;
+  try {
+    response = await expoFetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await user.getIdToken()}`,
+      },
+      body: JSON.stringify({ op, input }),
+    });
+  } catch (cause) {
+    // fetch rejects with wildly varying shapes across platforms; keep the URL
+    // and the original value rather than letting it stringify to [object Object].
+    throw new Error(`Could not reach ${url}: ${describeError(cause)}`, { cause });
+  }
+
+  // `error` is deliberately unknown, not string: our own function returns a
+  // string, but a platform-level failure (an undeployed function, an auth wall)
+  // returns Vercel's own `{ error: { code, message } }` shape. Passing that
+  // object straight to `new Error()` stringifies it to "[object Object]" and
+  // loses the one detail worth reading.
+  const body = (await response.json().catch(() => null)) as
+    | (AIResponse<Op> & { error?: unknown })
+    | null;
+
+  if (!response.ok || !body) {
+    const detail = body?.error == null ? null : describeError(body.error);
+    throw new Error(
+      detail
+        ? `AI request failed (${response.status}): ${detail}`
+        : `AI request failed (${response.status})`
+    );
+  }
+
+  return body;
+}
+
+export { formatAIError } from './format-ai-error';

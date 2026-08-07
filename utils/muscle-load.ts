@@ -132,7 +132,8 @@ export function computeMuscleLoad(
   const baselines = new Map<string, number>();
 
   for (const workout of workouts) {
-    const workoutTime = toDateObj(workout.date).getTime();
+    const workoutTime = toDateObj(workout.date)?.getTime();
+    if (workoutTime === undefined) continue;
     if (!Number.isFinite(workoutTime) || workoutTime > nowMs) continue;
     for (const performed of workout.performedExercises ?? []) {
       if (!mappings.has(mappingKey(performed.exerciseId, performed.variationId))) continue;
@@ -148,7 +149,8 @@ export function computeMuscleLoad(
   const cutoff = nowMs - MUSCLE_LOAD_WINDOW_DAYS * DAY_MS;
   const recent: RecentExercise[] = [];
   for (const workout of workouts) {
-    const workoutTime = toDateObj(workout.date).getTime();
+    const workoutTime = toDateObj(workout.date)?.getTime();
+    if (workoutTime === undefined) continue;
     if (!Number.isFinite(workoutTime) || workoutTime < cutoff || workoutTime > nowMs) continue;
     for (const performed of workout.performedExercises ?? []) {
       recent.push({

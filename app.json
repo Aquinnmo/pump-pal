@@ -2,7 +2,7 @@
   "expo": {
     "name": "Timber",
     "slug": "pump-pal",
-    "version": "0.6.1",
+    "version": "0.7.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pumppal",
@@ -54,6 +54,8 @@
       "@react-native-community/datetimepicker",
       "expo-localization",
       "expo-web-browser",
+      "expo-sqlite",
+      "expo-background-task",
       "./plugins/with-notifee-maven",
       [
         "react-native-android-widget",

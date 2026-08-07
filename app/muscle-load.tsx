@@ -1,13 +1,12 @@
 import { MuscleLoadMap } from "@/components/muscle-load-map";
 import { FadingScrollView } from "@/components/ui/fading-scroll-view";
-import { db } from "@/config/firebase";
+import { workoutRepository } from "@/db/workout-repository";
 import { useAuth } from "@/context/auth-context";
 import type { CatalogExercise, Workout } from "@/types/workout";
 import { loadCatalog } from "@/utils/exercise-catalog";
 import { computeMuscleLoad } from "@/utils/muscle-load";
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import {
   type ReactNode,
   useCallback,
@@ -37,21 +36,11 @@ export default function MuscleLoadScreen() {
     setWorkoutError(false);
     setCatalogUnavailable(false);
     try {
-      const [snapshot, loadedCatalog] = await Promise.all([
-        getDocs(
-          query(
-            collection(db, "workouts"),
-            where("userId", "==", user.uid),
-            orderBy("date", "asc"),
-          ),
-        ),
+      const [storedWorkouts, loadedCatalog] = await Promise.all([
+        workoutRepository.getHistory(user.uid),
         loadCatalog(),
       ]);
-      setWorkouts(
-        snapshot.docs.map(
-          (document) => ({ id: document.id, ...document.data() }) as Workout,
-        ),
-      );
+      setWorkouts(storedWorkouts.map((record) => record.data));
       if (loadedCatalog.length === 0) {
         setCatalogUnavailable(true);
       } else {

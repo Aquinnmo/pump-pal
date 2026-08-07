@@ -1,11 +1,12 @@
 import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import { Dropdown } from '@/components/ui/dropdown';
-import { db } from '@/config/firebase';
+import { notifyAccountDataChanged } from '@/db/initial-sync';
+import { profileRepository } from '@/db/profile-repository';
+import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { SPLIT_OPTIONS, SplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/utils/alert';
 import { router } from 'expo-router';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -36,17 +37,17 @@ export default function SetSplitScreen() {
 
     setSaving(true);
     try {
-      await setDoc(
-        doc(db, 'users', user.uid),
-        {
-          workoutSplit: {
-            type: selectedSplit,
-            custom: selectedSplit === 'Other' ? trimmedCustom : null,
-            updatedAt: serverTimestamp(),
-          },
+      const profile = await profileRepository.get(user.uid);
+      await profileRepository.upsert(user.uid, {
+        ...(profile?.data ?? {}),
+        workoutSplit: {
+          type: selectedSplit,
+          custom: selectedSplit === 'Other' ? trimmedCustom : null,
+          updatedAt: new Date().toISOString(),
         },
-        { merge: true }
-      );
+      });
+      triggerSyncAfterWrite();
+      notifyAccountDataChanged();
 
       router.replace('/(tabs)');
     } catch (err) {

@@ -6,7 +6,8 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 
 > Setting up a Mac from scratch to run this on an iPhone? Use
 > **[docs/ios-setup.md](docs/ios-setup.md)** instead — `bash scripts/ios/setup.sh`
-> handles Xcode, Homebrew, Node, CocoaPods, `.env`, and the device build.
+> handles the one-time Mac setup. After that, `npm run install:apple` updates
+> the repo and installs a standalone copy on the connected iPhone.
 > Android dev builds are covered in [docs/dev-build.md](docs/dev-build.md).
 
 1. Install dependencies
@@ -15,7 +16,9 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
    npm install
    ```
 
-2. Copy `.env.example` to `.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`), AI provider/model settings, and Google provider key (`EXPO_PUBLIC_GEMINI_API_KEY`).
+2. Copy [`.env.example.eas`](.env.example.eas) to `.env` for local/native development and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL`. Native builds require the API URL; web falls back to same-origin `/api` only when it is unset. The Vercel web/API settings are documented in [`.env.example.vercel`](.env.example.vercel).
+
+   AI provider keys are **not** part of the client `.env`. They live only in the Vercel project environment — see the server section of `.env.example.vercel`.
 
 3. Start the dev server
 
@@ -38,9 +41,9 @@ The `preview` profile creates an internally distributed Android APK. It is the p
    npx eas-cli@latest whoami
    ```
 
-2. Add the values from local `.env` to the project's **preview** EAS environment in the Expo dashboard. The remote build cannot read the ignored local `.env` file. Add every value listed in `.env.example`, including the Firebase `EXPO_PUBLIC_FIREBASE_*` values and `EXPO_PUBLIC_GEMINI_API_KEY`.
+2. Add the values from local `.env` to the project's **preview** EAS environment in the Expo dashboard. The remote build cannot read the ignored local `.env` file. Add every `EXPO_PUBLIC_*` value listed in `.env.example.eas`, including the Firebase config and `EXPO_PUBLIC_API_BASE_URL`.
 
-   `EXPO_PUBLIC_*` values are bundled into the app and must be treated as client-visible configuration, not secrets. See [EAS environment variables](https://docs.expo.dev/eas/environment-variables/).
+   `EXPO_PUBLIC_*` values are bundled into the app and must be treated as client-visible configuration, not secrets. Never add a provider API key here — those belong in the Vercel environment, behind the `/api/ai` proxy. See [EAS environment variables](https://docs.expo.dev/eas/environment-variables/).
 
 ### Build and share a preview APK
 
@@ -83,6 +86,7 @@ Use `production` only for a store-ready build; Android production builds are nor
 ```bash
 npm run android      # start + open Android
 npm run ios          # start + open iOS
+npm run install:apple  # update + install standalone Timber on an iPhone
 npm run web          # start + open web
 npm run lint         # expo lint
 npm run build:web    # static web export to dist/ (used by Vercel, see vercel.json)

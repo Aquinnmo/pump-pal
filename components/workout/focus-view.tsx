@@ -31,7 +31,12 @@ type FocusViewProps = {
   onFinish: () => void;
   onEdit: () => void;
   onOpenPlateCalc: () => void;
-  onUpdateSet: (index: number, setIdx: number, field: SetField, value: string) => void;
+  onUpdateSet: (
+    index: number,
+    setIdx: number,
+    field: SetField,
+    value: string,
+  ) => void;
   onIncrementSet: (index: number, setIdx: number) => void;
   onDecrementSet: (index: number, setIdx: number) => void;
 };
@@ -42,6 +47,7 @@ const ACCENT = "#e54242";
 // Amber for partially-logged exercises. Matches the AOD notification's
 // COLOR_IN_PROGRESS in LiveUpdateNotificationModule.kt — keep the two in step.
 const IN_PROGRESS = "#fbbf24";
+const NOT_STARTED = "#444";
 
 // The card you are on takes a solid border in its own state colour, so "where am I"
 // and "how done is it" stay readable as two separate signals.
@@ -49,6 +55,14 @@ const CURRENT_BORDER: Record<CardState, { borderColor: string }> = {
   complete: { borderColor: ACCENT },
   "in-progress": { borderColor: IN_PROGRESS },
   "not-started": { borderColor: "#888" },
+};
+
+// Segment-bar fill colour, one per exercise state — same three-state palette as
+// CURRENT_BORDER above, just solid fills instead of borders.
+const SEGMENT_COLOR: Record<CardState, { backgroundColor: string }> = {
+  complete: { backgroundColor: ACCENT },
+  "in-progress": { backgroundColor: IN_PROGRESS },
+  "not-started": { backgroundColor: NOT_STARTED },
 };
 
 export function FocusView({
@@ -107,7 +121,8 @@ export function FocusView({
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
   const cardState = (row: DraftExerciseRow): CardState => {
-    if (row.sets.length > 0 && row.sets.every((s) => s.completed)) return "complete";
+    if (row.sets.length > 0 && row.sets.every((s) => s.completed))
+      return "complete";
     if (row.sets.some((s) => s.completed)) return "in-progress";
     return "not-started";
   };
@@ -127,6 +142,22 @@ export function FocusView({
 
   return (
     <View style={styles.container}>
+      <View style={styles.segmentBar}>
+        {rows.map((item) => {
+          const state = done ? "complete" : cardState(item);
+          return (
+            <View
+              key={item.uid}
+              style={[
+                styles.segment,
+                { flex: item.sets.length || 1 },
+                SEGMENT_COLOR[state],
+              ]}
+            />
+          );
+        })}
+      </View>
+
       <View style={styles.bar}>
         <ScrollView
           ref={listRef}
@@ -157,7 +188,10 @@ export function FocusView({
                 ]}
               >
                 <Text
-                  style={[styles.exCardText, !isCurrent && styles.exCardTextMuted]}
+                  style={[
+                    styles.exCardText,
+                    !isCurrent && styles.exCardTextMuted,
+                  ]}
                   numberOfLines={1}
                 >
                   {item.label} x
@@ -181,8 +215,12 @@ export function FocusView({
           <>
             <View style={styles.setHeaderRow}>
               <Text style={styles.eyebrow}>
-                SET <Text style={styles.tabularNums}>{current!.setIndex + 1}</Text> OF{" "}
-                <Text style={styles.tabularNums}>{currentRow!.sets.length}</Text>
+                SET{" "}
+                <Text style={styles.tabularNums}>{current!.setIndex + 1}</Text>{" "}
+                OF{" "}
+                <Text style={styles.tabularNums}>
+                  {currentRow!.sets.length}
+                </Text>
               </Text>
               <Text style={styles.exerciseLabel} numberOfLines={1}>
                 {currentRow!.label}
@@ -196,8 +234,12 @@ export function FocusView({
                 onUpdate={(field, v) =>
                   onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
                 }
-                onIncrement={() => onIncrementSet(current!.rowIndex, current!.setIndex)}
-                onDecrement={() => onDecrementSet(current!.rowIndex, current!.setIndex)}
+                onIncrement={() =>
+                  onIncrementSet(current!.rowIndex, current!.setIndex)
+                }
+                onDecrement={() =>
+                  onDecrementSet(current!.rowIndex, current!.setIndex)
+                }
               />
             </View>
           </>
@@ -214,20 +256,25 @@ export function FocusView({
           <ActivityIndicator color="#fff" />
         ) : (
           <>
+            <Text style={styles.completeButtonText}>
+              {done
+                ? "Finish Workout"
+                : `Complete Set ${current!.setIndex + 1}`}
+            </Text>
             <Ionicons
               name={done ? "checkmark-sharp" : "arrow-forward"}
               size={56}
               color="#fff"
             />
-            <Text style={styles.completeButtonText}>
-              {done ? "Finish Workout" : "Complete Set"}
-            </Text>
           </>
         )}
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.undoButton, completedCount === 0 && styles.undoButtonDisabled]}
+        style={[
+          styles.undoButton,
+          completedCount === 0 && styles.undoButtonDisabled,
+        ]}
         onPress={onUndo}
         disabled={completedCount === 0}
         activeOpacity={0.8}
@@ -242,8 +289,14 @@ export function FocusView({
         </Text>
       </TouchableOpacity>
 
-      <View style={[styles.pillRow, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <TouchableOpacity style={styles.pill} onPress={onEdit} activeOpacity={0.8}>
+      <View
+        style={[styles.pillRow, { paddingBottom: Math.max(insets.bottom, 20) }]}
+      >
+        <TouchableOpacity
+          style={styles.pill}
+          onPress={onEdit}
+          activeOpacity={0.8}
+        >
           <Ionicons name="create-outline" size={16} color="#888" />
           <Text style={styles.pillText}>Edit workout</Text>
         </TouchableOpacity>
@@ -253,7 +306,9 @@ export function FocusView({
           activeOpacity={0.8}
         >
           <Ionicons name="calculator-outline" size={16} color="#e54242" />
-          <Text style={[styles.pillText, styles.pillTextAccent]}>Plate calculator</Text>
+          <Text style={[styles.pillText, styles.pillTextAccent]}>
+            Plate calculator
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -267,6 +322,15 @@ const styles = StyleSheet.create({
   },
   tabularNums: {
     fontVariant: ["tabular-nums"],
+  },
+  segmentBar: {
+    flexDirection: "row",
+    gap: 4,
+    paddingTop: 12,
+  },
+  segment: {
+    height: 6,
+    borderRadius: 999,
   },
   bar: {
     // Bleed past the screen gutter so the strip scrolls edge to edge; the gutter is

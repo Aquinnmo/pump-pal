@@ -1,54 +1,30 @@
-import { db } from '@/config/firebase';
-import { AI_MAX_RETRIES, getAIModel } from '@/constants/ai-config';
-import { generateText } from 'ai';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { callAI } from '@/utils/ai-client';
 
-/** Returns today's UTC date as YYYY-MM-DD */
-function todayUTC(): string {
-  const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
+const cacheKey = (date: string) => `pumppal_daily_name_v1_${date}`;
 
-/** Asks the configured AI model for a single random first name to use in the "Swipe left if you lied" prompt. */
-async function generateRandomName(): Promise<string> {
-  const prompt = `Give me one single random human first name. There should be a 10% chance of generating a medieval ruler's name. Return ONLY the name itself with no punctuation, explanation, or extra text. You are allowed 10 characters MAXIMUM.`;
-
-  const { text } = await generateText({ model: getAIModel(), prompt, maxRetries: AI_MAX_RETRIES });
-  const name = text.trim().replace(/[^a-zA-Z'\- ]/g, '').trim();
-  if (!name) throw new Error('AI model returned an empty name');
-  return name;
+function utcDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 /**
- * Returns today's daily name for the "Swipe left if you lied" prompt.
- *
- * - Reads from Firestore `random/{utcDate}`.
- * - If the document doesn't exist (or has a different date), generates a new
- *   name via the configured AI model, writes it to `random/{utcDate}`, and returns it.
- * - Multiple clients hitting this at the same time may write the same doc
- *   concurrently, which is harmless (last write wins with the same date key).
+ * Returns today's daily name for the Pushup Challenge prompt.  The last valid
+ * response is cached per UTC day, so offline native sessions remain readable
+ * without attempting a paid server generation.
  */
 export async function getDailyName(): Promise<string> {
-  const dateKey = todayUTC();
-  const docRef = doc(db, 'random', dateKey);
+  const key = cacheKey(utcDate());
+  const cached = await AsyncStorage.getItem(key);
+  if (cached) return cached;
 
   try {
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-      const stored = snap.data() as { name: string; createdAt: string };
-      if (stored.name) return stored.name;
-    }
-
-    // Not found or missing name — generate a fresh one
-    const name = await generateRandomName();
-    await setDoc(docRef, { name, createdAt: new Date().toISOString() });
-    return name;
+    const { data } = await callAI('daily-name');
+    await AsyncStorage.setItem(key, data.name);
+    return data.name;
   } catch (e) {
     console.error('getDailyName failed:', e);
-    // Fallback so the UI still renders something sensible
+    // The challenge remains usable on a first-time offline launch. This is a
+    // local UI fallback, not a substituted AI result.
     return 'buddy';
   }
 }

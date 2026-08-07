@@ -70,6 +70,24 @@ export const timberAuthStyles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 16,
   },
+  // Same metrics as primaryButton, surface + border instead of fill — depth
+  // comes from the border, not a shadow (docs/design-language.md).
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#181716',
+    borderWidth: 1,
+    borderColor: '#4a3324',
+    borderRadius: 14,
+    paddingVertical: 16,
+  },
+  secondaryButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+  },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',

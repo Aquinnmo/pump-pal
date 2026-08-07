@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-guard search",
+            "command": "graphify hook-guard search",
             "type": "command"
           }
         ],
@@ -13,7 +13,7 @@
       {
         "hooks": [
           {
-            "command": "C:\\Users\\aquin\\.local\\bin\\graphify.EXE hook-guard read",
+            "command": "graphify hook-guard read",
             "type": "command"
           }
         ],

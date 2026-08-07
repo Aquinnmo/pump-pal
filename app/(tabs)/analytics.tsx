@@ -2,8 +2,9 @@ import { DevelopmentProgressSummary } from "@/components/development-progress-su
 import { MuscleInsightCards } from "@/components/muscle-insight-cards";
 import { MuscleLoadSummary } from "@/components/muscle-load-summary";
 import { Dropdown } from "@/components/ui/dropdown";
-import { db } from "@/config/firebase";
+import { workoutRepository } from "@/db/workout-repository";
 import { useAuth } from "@/context/auth-context";
+import { useDataVersion } from "@/hooks/use-data-version";
 import { Workout } from "@/types/workout";
 import {
   exerciseLabel,
@@ -13,7 +14,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
-import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -70,6 +70,7 @@ const chartConfig = {
 
 export default function AnalyticsScreen() {
   const { user } = useAuth();
+  const dataVersion = useDataVersion();
   const { width } = useWindowDimensions();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,33 +86,23 @@ export default function AnalyticsScreen() {
     useState<string | null>(null);
 
   const fetchWorkouts = useCallback(async () => {
+    void dataVersion; // refetch trigger, not data — see hooks/use-data-version.ts
     if (!user) {
       setWorkouts([]);
       setLoading(false);
       return;
     }
 
-    setLoading(true);
     setFetchError(false);
     try {
-      const workoutsQuery = query(
-        collection(db, "workouts"),
-        where("userId", "==", user.uid),
-        orderBy("date", "asc"),
-      );
-      const snapshot = await getDocs(workoutsQuery);
-      setWorkouts(
-        snapshot.docs.map(
-          (document) => ({ id: document.id, ...document.data() }) as Workout,
-        ),
-      );
+      setWorkouts((await workoutRepository.getHistory(user.uid)).map((record) => record.data));
     } catch (error) {
       console.error(error);
       setFetchError(true);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, dataVersion]);
 
   useFocusEffect(
     useCallback(() => {
@@ -164,6 +155,7 @@ export default function AnalyticsScreen() {
 
     workouts.forEach((workout) => {
       const date = toDateObj(workout.date);
+      if (!date) return;
       const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`;
       const dayKey = [
         date.getFullYear(),
