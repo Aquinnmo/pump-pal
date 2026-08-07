@@ -5,6 +5,7 @@ import {
   timberAuthStyles,
 } from "@/components/timber-auth-shell";
 import { auth } from "@/config/firebase";
+import { bumpDataVersion } from "@/db/data-version";
 import { profileRepository } from "@/db/profile-repository";
 import { patchProfile } from "@/repositories/remote/profile";
 import { isValidUsername } from "@/shared/username";
@@ -66,6 +67,7 @@ export default function SignUpScreen() {
         username: dto.username ?? trimmedUsername,
         usernameLower: trimmedUsername.toLowerCase(),
       });
+      bumpDataVersion();
       router.replace("/set-split");
     } catch (err: any) {
       if (err instanceof ApiValidationError && err.code === "username_taken") {

@@ -1,4 +1,5 @@
 import { Toast } from "@/components/ui/toast";
+import { bumpDataVersion } from "@/db/data-version";
 import { profileRepository } from "@/db/profile-repository";
 import { patchProfile } from "@/repositories/remote/profile";
 import { isValidUsername } from "@/shared/username";
@@ -67,6 +68,7 @@ export default function SettingsUsernameScreen() {
         username: dto.username ?? trimmed,
         usernameLower: trimmed.toLowerCase(),
       });
+      bumpDataVersion();
       setOriginalUsername(trimmed);
       setToast({ visible: true, message: "Username updated", type: "success" });
     } catch (err) {

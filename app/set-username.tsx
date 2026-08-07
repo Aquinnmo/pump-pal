@@ -1,4 +1,5 @@
 import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
+import { bumpDataVersion } from '@/db/data-version';
 import { notifyAccountDataChanged } from '@/db/initial-sync';
 import { profileRepository } from '@/db/profile-repository';
 import { patchProfile } from '@/repositories/remote/profile';
@@ -46,6 +47,7 @@ export default function SetUsernameScreen() {
       const dto = await patchProfile({ username: trimmed });
       const current = await profileRepository.get(user.uid);
       await profileRepository.upsert(user.uid, { ...(current?.data ?? {}), username: dto.username ?? trimmed, usernameLower: trimmed.toLowerCase() });
+      bumpDataVersion();
       if (!user.displayName) await updateAuthProfile(user, { displayName: trimmed });
       notifyAccountDataChanged();
       router.replace('/');

@@ -3,6 +3,7 @@ import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
 import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
 import { profileRepository } from "@/db/profile-repository";
+import { useDataVersion } from "@/hooks/use-data-version";
 import { endSession } from "@/utils/active-workout-session";
 import { deleteAccountData } from "@/repositories/remote/account";
 import { getFriendlyAuthError } from "@/utils/firebase-errors";
@@ -28,6 +29,7 @@ const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === "1"
 export default function SettingsAccountScreen() {
   const { user, logOut, googleConnection, connectGoogleAccount } = useAuth();
   const insets = useSafeAreaInsets();
+  const dataVersion = useDataVersion();
   const [username, setUsername] = useState<string | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -57,7 +59,7 @@ export default function SettingsAccountScreen() {
       .get(user.uid)
       .then((profile) => setUsername(profile?.data.username ?? null))
       .catch((err) => console.error(err));
-  }, [user]);
+  }, [user, dataVersion]);
 
   const handleSignOut = () => {
     setSignOutError("");

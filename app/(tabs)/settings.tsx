@@ -1,5 +1,6 @@
 import { useAuth } from '@/context/auth-context';
 import { profileRepository } from '@/db/profile-repository';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -8,6 +9,7 @@ import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'r
 
 export default function SettingsScreen() {
   const { user } = useAuth();
+  const dataVersion = useDataVersion();
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
@@ -16,7 +18,7 @@ export default function SettingsScreen() {
       .get(user.uid)
       .then((profile) => setUsername(profile?.data.username ?? null))
       .catch((err) => console.error(err));
-  }, [user]);
+  }, [user, dataVersion]);
 
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(true);
