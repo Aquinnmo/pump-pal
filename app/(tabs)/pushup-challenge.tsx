@@ -3,6 +3,7 @@ import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { getDailyName } from '@/utils/daily-name';
+import { toDateKey } from '@/utils/date-key';
 import { syncStreakReminders } from '@/utils/streak-notification';
 import { dayNumberOn } from '@/utils/streak-schedule';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,12 +45,6 @@ const SWIPE_TRACK_H = 56;
 const SWIPE_THUMB = 48;
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-function toDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');

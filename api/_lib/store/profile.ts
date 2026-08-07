@@ -53,6 +53,11 @@ export async function updateProfile(
     updateMask.push('workoutSplit');
   }
 
+  if (patch.expoPushToken !== undefined) {
+    fields.expoPushToken = patch.expoPushToken;
+    updateMask.push('expoPushToken');
+  }
+
   const extraWrites: FirestoreWrite[] = [];
   let newLower: string | undefined;
   const currentLower = doc?.fields.usernameLower as string | undefined;

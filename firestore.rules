@@ -64,7 +64,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Anything not matched above is denied.
+    // Anything not matched above is denied. This is load-bearing for the
+    // social graph: `friendships/{pairId}` (docs/data-model/buddies.md) is
+    // deliberately absent from this file. A buddy list has to read other
+    // users' names and streaks, which no client-side rule can safely allow,
+    // so all of it goes through /api/buddies on the service-account
+    // credential. Adding a client rule for `friendships` would open
+    // cross-user reads, not enable a feature.
     match /{document=**} {
       allow read, write: if false;
     }

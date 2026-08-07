@@ -39,6 +39,7 @@ different field needs an entry there first — without one Firestore answers
 | `users/{uid}` | Per-user profile (workout split, username) | [users.md](./users.md) |
 | `usernames/{usernameLower}` | Username uniqueness reservation, server-only | [users.md](./users.md#usernames) |
 | `users/{uid}/pushup-challenge/data` | Pushup Challenge (TPC tab) progress | [pushup-challenge.md](./pushup-challenge.md) |
+| `friendships/{pairId}` | Timber Buddies social graph + chop cooldowns, server-only | [buddies.md](./buddies.md) |
 | `users/{uid}/workouts/{oldWorkoutId}` | **Legacy**, pre-migration workout rows | [legacy.md](./legacy.md) |
 
 ## Native offline-first behavior

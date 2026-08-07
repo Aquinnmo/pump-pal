@@ -36,6 +36,14 @@ const ROUTES: Route[] = [
 
   { pattern: /^\/api\/account\/data$/, load: async () => (await import('./routes/account.js')).data },
 
+  // `search` is static and `:uid/chop` is longer than `:uid` -- both must
+  // precede the bare item route or they parse as a uid named "search" and an
+  // accept on a uid, same failure mode as the injuries pair below.
+  { pattern: /^\/api\/buddies\/search$/, load: async () => (await import('./routes/buddies.js')).search },
+  { pattern: /^\/api\/buddies\/([^/]+)\/chop$/, load: async () => (await import('./routes/notifications.js')).chop },
+  { pattern: /^\/api\/buddies\/([^/]+)$/, load: async () => (await import('./routes/buddies.js')).item },
+  { pattern: /^\/api\/buddies$/, load: async () => (await import('./routes/buddies.js')).collection },
+
   // Static `/pending` before the bare collection is not strictly required
   // (they can't both match), but keeps the catalog pair read as one unit.
   { pattern: /^\/api\/catalog\/pending$/, load: async () => (await import('./routes/catalog.js')).pending },

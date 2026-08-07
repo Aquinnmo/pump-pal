@@ -19,11 +19,26 @@ type UserDoc = {
   usernameLower?: string; // lowercase, matches the usernames/{id} reservation doc key
   injuries?: Injury[]; // types/user.ts — full history; ongoing = status === 'ongoing'
   aiUsage?: { date: string; count: number }; // AI daily-limit counter, shared by plan and active-workout suggestions
+  expoPushToken?: string; // Expo push token for this device — see "Push token" below
 };
 ```
 
 The `UserDoc` / `Injury` types now live in `types/user.ts` (promoted from the
 previously inferred inline shape when `injuries` was added).
+
+## Push token
+
+`expoPushToken` is what makes a user reachable by a Chop
+([buddies.md](./buddies.md)). Registered by `hooks/use-push-token.native.ts`
+from the authenticated tab shell — not from the Social screen, since a chop has
+to reach people who never open that tab — and written through
+`PATCH /api/profile` like any other allowlisted profile field. The hook caches
+the last-sent value in AsyncStorage so an unchanged token doesn't spend a write
+every cold start.
+
+One token per account, so the most recent device wins. Web has no Expo push
+token and never writes this field; those users record chops normally but
+receive nothing.
 
 ## Usernames
 
