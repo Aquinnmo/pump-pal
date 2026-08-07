@@ -28,7 +28,18 @@ that runs eas-cli** — gradle can't find the SDK/NDK otherwise.
 
 ---
 
-## 2. Fix `DEVELOPER_ERROR` first — this is the blocker
+## 2. Two separate Google sign-in blockers
+
+Getting Google sign-in working on a preview APK took fixing **both** of these.
+They mask each other: the fingerprint problem fails first, and only once it's
+fixed does the missing client ID surface.
+
+| Order | Symptom | Cause |
+| ----- | ------- | ----- |
+| 1 | `ApiException: 10` — surfaced as "Internal error. Please try again later." | EAS keystore SHA-1 not registered — § 2.1–2.5 below |
+| 2 | `Google did not return an ID token. Check EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.` | `EXPO_PUBLIC_*` not inlined into the release bundle — § 2.6 |
+
+## 2A. Fix the signing fingerprint
 
 Google matches an Android OAuth client by **package name + signing SHA-1**.
 Nothing about that lives in the APK; it's all server-side registration.
@@ -100,6 +111,31 @@ App ID and will not work (`config/google-oauth.js` throws on that at config time
 Fingerprint registration is server-side — **no rebuild needed** once the APK is
 installed. Give it a few minutes, then force-stop Timber and clear Google Play
 Services cache before trying sign-in again.
+
+### 2.6 `EXPO_PUBLIC_*` must be read as literal member expressions
+
+Metro replaces `process.env.EXPO_PUBLIC_FOO` with a string literal at build time.
+There is **no runtime env object in a release bundle** — so anything that reads the
+variables indirectly gets `undefined`, and only in release. A dev build hides this
+completely, because the Expo dev server injects a real environment.
+
+```ts
+// Broken in a release APK — nothing gets inlined:
+getGoogleOAuthConfig(process.env);
+
+// Correct — each read is a literal member expression Metro can see:
+getGoogleOAuthConfig({
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+});
+```
+
+`utils/google-sign-in.ts` had the broken form; `config/firebase.ts` did not, which
+is why Firebase worked while Google sign-in returned no ID token. Unlike § 2.1–2.5,
+this fix is in the bundle: **it requires a rebuild**.
+
+Same rule applies to `process.env[someKey]` and object spreads. `app.config.js` is
+exempt — it runs in Node, where `process.env` is real.
 
 ---
 
@@ -196,7 +232,7 @@ The short version:
 | Symptom | Cause / fix |
 | ------- | ----------- |
 | `DEVELOPER_ERROR` / status code 10 | SHA-1 not registered for `com.aquinnmo.timber`, or wrong web client ID — § 2 |
-| `Google did not return an ID token. Check EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.` | Web client ID missing or not the Firebase web client — § 2.4 |
+| `Google did not return an ID token. Check EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.` | Client ID `undefined` in the release bundle (§ 2.6), or the value isn't the Firebase web client (§ 2.4) |
 | Picker opens then closes, no error | User cancelled; `signInWithGoogle` returns `false` by design |
 | Status code 7 / network error | Device offline, or Google Play Services out of date |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID must be a Google OAuth client ID…` at build time | A Firebase App ID (`1:…`) or a trailing comment in the EAS variable — `config/google-oauth.js` |

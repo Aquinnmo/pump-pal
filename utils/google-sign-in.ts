@@ -15,7 +15,17 @@ import { getGoogleOAuthConfig } from '@/config/google-oauth';
 import { assertGoogleLinkIdentity } from '@/utils/google-account-link';
 
 // Public identifiers, not secrets — they ship inside every APK/IPA regardless.
-const { webClientId, iosClientId } = getGoogleOAuthConfig(process.env);
+//
+// Each variable must be read as a literal `process.env.EXPO_PUBLIC_*` member
+// expression. Metro inlines those as string literals at build time; there is no
+// runtime env object in a release bundle. Passing `process.env` itself to
+// getGoogleOAuthConfig inlines nothing, so both IDs came back undefined in the
+// APK — sign-in then failed with "Google did not return an ID token" while a
+// dev build (whose dev server injects a real env) worked fine.
+const { webClientId, iosClientId } = getGoogleOAuthConfig({
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+});
 GoogleSignin.configure({
   webClientId,
   iosClientId,
