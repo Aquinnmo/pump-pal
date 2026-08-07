@@ -241,6 +241,13 @@ async function sendRequest<TOut>(
   const idToken = await deps.getIdToken(forceRefresh);
   if (!idToken) throw new ApiAuthError();
 
+  // Pulled off `deps` so the call below is a free call, never `deps.fetchImpl(...)`:
+  // on web `expo/fetch` is the *unbound* `globalThis.fetch`, and a method call binds
+  // `this` to the deps object, which the browser rejects with
+  // "Failed to execute 'fetch' on 'Window': Illegal invocation" before any request is
+  // sent. That silently killed every API call in the web build.
+  const { fetchImpl } = deps;
+
   // Combine an internal timeout controller with any caller-supplied signal —
   // whichever fires first aborts the request.
   const timeoutController = new AbortController();
@@ -253,7 +260,7 @@ async function sendRequest<TOut>(
 
   let response: Awaited<ReturnType<FetchLike>>;
   try {
-    response = await deps.fetchImpl(url, {
+    response = await fetchImpl(url, {
       method,
       headers: {
         'Content-Type': 'application/json',

@@ -12,7 +12,11 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.aquinnmo.timber",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSSupportsLiveActivities": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.aquinnmo.timber.liveactivity"]
       }
     },
     "android": {
@@ -57,6 +61,7 @@
       "expo-sqlite",
       "expo-background-task",
       "./plugins/with-notifee-maven",
+      "@bacons/apple-targets",
       [
         "react-native-android-widget",
         {

@@ -22,6 +22,13 @@ deny-all rules deployment described in
 until then, treat this doc as describing the shapes, not the only way they get
 written.
 
+**Indexes:** composite indexes live in
+[`firestore.indexes.json`](../../firestore.indexes.json) (deployed with
+`npx firebase-tools@latest deploy --only firestore:indexes`). Any new
+`runQuery` in `api/_lib/store/` that combines a `where` with an `orderBy` on a
+different field needs an entry there first — without one Firestore answers
+`400 FAILED_PRECONDITION` and the route 500s.
+
 ## Collections
 
 | Path | Purpose | Doc |

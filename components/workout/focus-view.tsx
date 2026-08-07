@@ -236,14 +236,6 @@ export function FocusView({
         ) : (
           <>
             <View style={styles.setHeaderRow}>
-              <Text style={styles.eyebrow}>
-                SET{" "}
-                <Text style={styles.tabularNums}>{current!.setIndex + 1}</Text>{" "}
-                OF{" "}
-                <Text style={styles.tabularNums}>
-                  {currentRow!.sets.length}
-                </Text>
-              </Text>
               <Text style={styles.exerciseLabel} numberOfLines={1}>
                 {currentRow!.label}
               </Text>

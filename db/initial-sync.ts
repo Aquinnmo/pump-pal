@@ -38,7 +38,9 @@ export function subscribeAccountDataChanged(listener: () => void): () => void {
 
 function isOfflineError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /network|fetch|ENOTFOUND|ECONNREFUSED|timed out/i.test(message);
+  // `reach` covers ApiNetworkError's "Could not reach <url>." — without it a real
+  // transport failure fell through to the generic "could not load your account".
+  return /network|fetch|reach|ENOTFOUND|ECONNREFUSED|timed out/i.test(message);
 }
 
 function safeErrorMessage(error: unknown): string {
