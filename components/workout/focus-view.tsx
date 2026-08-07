@@ -102,6 +102,8 @@ export function FocusView({
     : -1;
 
   const currentUid = currentRowIndex >= 0 ? rows[currentRowIndex].uid : null;
+  const previousCompletedCount = useRef(completedCount);
+  const previousCurrentUid = useRef(currentUid);
 
   const centerCurrent = (animated: boolean) => {
     if (!currentUid) return;
@@ -117,6 +119,26 @@ export function FocusView({
     centerCurrent(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUid]);
+
+  // A set completed within the same exercise advances the cursor without changing
+  // currentUid, so the transition effect above does not run. Detect that progress
+  // separately and restore the current card after the user has scrolled the strip.
+  // Exercise transitions remain owned by the effect above, and the final set has no
+  // currentUid, so it deliberately leaves the bar where it is.
+  useEffect(() => {
+    const completionAdvanced =
+      completedCount > previousCompletedCount.current;
+    const stayedOnCurrentExercise =
+      currentUid === previousCurrentUid.current;
+
+    previousCompletedCount.current = completedCount;
+    previousCurrentUid.current = currentUid;
+
+    if (completionAdvanced && stayedOnCurrentExercise && currentUid) {
+      centerCurrent(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completedCount, currentUid]);
 
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.

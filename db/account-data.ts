@@ -1,6 +1,17 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { purgeUidData } from './client';
+import { getDb, purgeUidData } from './client';
+import { listAll } from './outbox';
 import { syncNow } from './sync';
+
+/**
+ * How many local changes have not reached the server yet. Sign-out warns on
+ * this, because purgeLocalAccountData drops whatever the final sync could not
+ * push. The outbox is coalesced to one row per entity, so listAll is cheap
+ * enough not to warrant a dedicated COUNT.
+ */
+export async function countPendingSync(uid: string): Promise<number> {
+  return (await listAll(await getDb(), uid)).length;
+}
 
 /**
  * One last push before the local data is purged. Best-effort on purpose: a

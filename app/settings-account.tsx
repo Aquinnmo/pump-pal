@@ -1,7 +1,7 @@
 import { Toast } from "@/components/ui/toast";
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
-import { purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
+import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
 import { endSession } from "@/utils/active-workout-session";
 import { deleteAccountData } from "@/repositories/remote/account";
 import { getFriendlyAuthError } from "@/utils/firebase-errors";
@@ -30,6 +30,7 @@ export default function SettingsAccountScreen() {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
+  const [pendingSync, setPendingSync] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -50,7 +51,15 @@ export default function SettingsAccountScreen() {
 
   const handleSignOut = () => {
     setSignOutError("");
+    setPendingSync(0);
     setShowSignOutModal(true);
+    // Sign-out purges local data, so anything the final sync can't push is gone.
+    // Count first so the modal can say so; a failed count just omits the warning
+    // rather than blocking sign-out.
+    if (user)
+      countPendingSync(user.uid)
+        .then(setPendingSync)
+        .catch((err) => console.warn("[sign-out] pending count failed", err));
   };
 
   const handleChangePassword = () => {
@@ -277,6 +286,13 @@ export default function SettingsAccountScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Sign out?</Text>
+            {pendingSync > 0 ? (
+              <Text style={styles.modalMessage}>
+                {pendingSync === 1 ? "1 change hasn’t" : `${pendingSync} changes haven’t`}{" "}
+                reached the cloud yet. We’ll try once more, but anything that
+                doesn’t make it will be lost.
+              </Text>
+            ) : null}
             {signOutError ? (
               <Text style={styles.modalErrorText}>{signOutError}</Text>
             ) : null}
