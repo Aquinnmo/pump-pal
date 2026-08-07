@@ -4,7 +4,12 @@ import {
   TimberBrand,
   timberAuthStyles,
 } from "@/components/timber-auth-shell";
+import { auth } from "@/config/firebase";
+import { profileRepository } from "@/db/profile-repository";
+import { patchProfile } from "@/repositories/remote/profile";
+import { isValidUsername } from "@/shared/username";
 import { useAuth } from "@/context/auth-context";
+import { ApiValidationError } from "@/utils/api-client";
 import { getFriendlyAuthError } from "@/utils/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
@@ -27,7 +32,7 @@ const IS_PERSONAL_IOS_BUILD =
 
 export default function SignUpScreen() {
   const { signUp } = useAuth();
-  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,8 +40,13 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     setError(null);
-    if (!name.trim() || !email.trim() || !password.trim()) {
+    const trimmedUsername = username.trim().toLowerCase();
+    if (!trimmedUsername || !email.trim() || !password.trim()) {
       setError("Please fill in all fields.");
+      return;
+    }
+    if (!isValidUsername(trimmedUsername)) {
+      setError("Username must be 3-20 characters: lowercase letters, digits, underscore, starting with a letter.");
       return;
     }
     if (password.length < 6) {
@@ -45,10 +55,24 @@ export default function SignUpScreen() {
     }
     setLoading(true);
     try {
-      await signUp(email.trim(), password, name.trim());
+      // Account already exists past this point — a username_taken failure
+      // below is not fatal, the user just retries with the same account.
+      if (!auth.currentUser) await signUp(email.trim(), password, trimmedUsername);
+      const dto = await patchProfile({ username: trimmedUsername });
+      const uid = auth.currentUser!.uid;
+      const current = await profileRepository.get(uid);
+      await profileRepository.upsert(uid, {
+        ...(current?.data ?? {}),
+        username: dto.username ?? trimmedUsername,
+        usernameLower: trimmedUsername,
+      });
       router.replace("/set-split");
     } catch (err: any) {
-      setError(getFriendlyAuthError(err));
+      if (err instanceof ApiValidationError && err.code === "username_taken") {
+        setError("That username is taken. Try another.");
+      } else {
+        setError(getFriendlyAuthError(err));
+      }
     } finally {
       setLoading(false);
     }
@@ -84,11 +108,12 @@ export default function SignUpScreen() {
             <View style={styles.fields}>
               <TextInput
                 style={timberAuthStyles.field}
-                placeholder="Name"
+                placeholder="Username"
                 placeholderTextColor="#666"
-                autoCapitalize="words"
-                value={name}
-                onChangeText={setName}
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={username}
+                onChangeText={(text) => setUsername(text.toLowerCase())}
               />
               <TextInput
                 style={timberAuthStyles.field}

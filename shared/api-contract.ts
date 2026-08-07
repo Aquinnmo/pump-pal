@@ -77,6 +77,7 @@ export const aiUsage = z.object({ date: z.string(), count: z.number().int().min(
 
 export const profileDTO = z.object({
   workoutSplit: workoutSplit.nullable(),
+  username: z.string().nullable(),
   aiUsage: aiUsage.nullable(),
   version,
 });
@@ -84,9 +85,17 @@ export type ProfileDTO = z.infer<typeof profileDTO>;
 export const profileResponse = z.object({ profile: profileDTO });
 export type ProfileResponse = z.infer<typeof profileResponse>;
 
-/** PATCH /api/profile — allowlisted fields only; UID always comes from the token, never the body. */
+/**
+ * PATCH /api/profile — allowlisted fields only; UID always comes from the
+ * token, never the body. `username` format (see `shared/username.ts`
+ * `USERNAME_REGEX`) is validated in application code, not here — the server
+ * route (`api/_lib/store/profile.ts`) needs to distinguish "bad format" from
+ * "already taken" with different error codes, which a schema-level `.regex()`
+ * can't do.
+ */
 export const profilePatchInput = z.object({
   workoutSplit: workoutSplit.optional(),
+  username: z.string().optional(),
   baseVersion: version.optional(),
 });
 export type ProfilePatchInput = z.infer<typeof profilePatchInput>;

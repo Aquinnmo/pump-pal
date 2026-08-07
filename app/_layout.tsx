@@ -131,15 +131,18 @@ function RootLayoutNav() {
     if (loading || onboardingSeen === null || (user && accountGate.state === 'pending')) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inSetSplit = segments[0] === 'set-split';
+    const inSetUsername = segments[0] === 'set-username';
 
     if (!user && !inAuthGroup) {
       router.replace(onboardingSeen ? '/(auth)/sign-in' : '/(auth)/welcome');
-    } else if (user && accountGate.state === 'onboarding' && !inSetSplit) {
+    } else if (user && accountGate.state === 'onboarding' && accountGate.step === 'username' && !inSetUsername) {
+      router.replace('/set-username');
+    } else if (user && accountGate.state === 'onboarding' && accountGate.step === 'split' && !inSetSplit) {
       router.replace('/set-split');
-    } else if (user && accountGate.state === 'ready' && (inAuthGroup || inSetSplit)) {
+    } else if (user && accountGate.state === 'ready' && (inAuthGroup || inSetSplit || inSetUsername)) {
       router.replace('/(tabs)');
     }
-  }, [accountGate.state, user, loading, segments, onboardingSeen]);
+  }, [accountGate, user, loading, segments, onboardingSeen]);
 
   const gateUndecided = loading || onboardingSeen === null || (!!user && accountGate.state === 'pending');
 
@@ -155,7 +158,9 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="set-username" options={{ headerShown: false }} />
         <Stack.Screen name="set-split" options={{ headerShown: false }} />
+        <Stack.Screen name="settings-username" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="planned-workouts" options={{ presentation: 'modal', headerShown: false }} />
         <Stack.Screen name="active-workout" options={{ headerShown: false, gestureEnabled: false }} />

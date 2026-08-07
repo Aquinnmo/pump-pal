@@ -5,6 +5,7 @@ const okPhases = {
   deleteWorkouts: async () => 3,
   deleteLegacyWorkouts: async () => 1,
   deletePushupChallenge: async () => {},
+  deleteUsernameReservation: async () => {},
   deleteUserDoc: async () => {},
 };
 

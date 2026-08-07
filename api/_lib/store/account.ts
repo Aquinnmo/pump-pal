@@ -1,24 +1,28 @@
 import type { DeleteAccountDataResponse } from '../../../shared/api-contract.js';
-import { deleteDoc, runQuery } from './rest.js';
+import { deleteDoc, getDoc, runQuery } from './rest.js';
 
 /**
  * Server-side port of `app/settings-account.tsx confirmDeleteAccount`'s
  * Firestore cleanup, same order: canonical `workouts` (by `userId`), the
  * legacy `users/{uid}/workouts/*` subcollection, `users/{uid}/pushup-
- * challenge/data`, then `users/{uid}` itself. Does NOT delete the Firebase
- * Auth user -- that stays a client `deleteUser(auth.currentUser)` call,
- * invoked only after this succeeds.
+ * challenge/data`, the `usernames/{usernameLower}` reservation, then
+ * `users/{uid}` itself. Does NOT delete the Firebase Auth user -- that
+ * stays a client `deleteUser(auth.currentUser)` call, invoked only after
+ * this succeeds.
  *
  * Every phase runs even if an earlier one fails (best-effort, not
  * fail-fast) and every phase is independently idempotent (`deleteDoc`
  * treats 404 as success, a query over an already-emptied collection just
  * returns fewer docs) — so a caller that sees `partial: true` can retry the
  * whole call safely instead of needing to know which phase to resume from.
+ * The username reservation phase must run before `deleteUserDoc` — it reads
+ * `usernameLower` off the user doc, which `deleteUserDoc` removes.
  */
 export interface AccountDeletionPhases {
   deleteWorkouts(uid: string): Promise<number>;
   deleteLegacyWorkouts(uid: string): Promise<number>;
   deletePushupChallenge(uid: string): Promise<void>;
+  deleteUsernameReservation(uid: string): Promise<void>;
   deleteUserDoc(uid: string): Promise<void>;
 }
 
@@ -36,13 +40,18 @@ const realPhases: AccountDeletionPhases = {
   async deletePushupChallenge(uid) {
     await deleteDoc(`users/${uid}/pushup-challenge/data`);
   },
+  async deleteUsernameReservation(uid) {
+    const doc = await getDoc(`users/${uid}`);
+    const usernameLower = doc?.fields.usernameLower as string | undefined;
+    if (usernameLower) await deleteDoc(`usernames/${usernameLower}`);
+  },
   async deleteUserDoc(uid) {
     await deleteDoc(`users/${uid}`);
   },
 };
 
 /**
- * The orchestration logic, with the four Firestore phases injected so it's
+ * The orchestration logic, with the Firestore phases injected so it's
  * unit-testable without a live Firestore connection (there isn't one in this
  * sandbox). `deleteAccountData` below is the real entry point; tests call
  * this directly with mock phases.
@@ -50,6 +59,13 @@ const realPhases: AccountDeletionPhases = {
 export async function deleteAccountDataWith(uid: string, phases: AccountDeletionPhases): Promise<DeleteAccountDataResponse> {
   const deleted = { workouts: 0, legacyWorkouts: 0, pushupChallenge: false, userDoc: false };
   let partial = false;
+
+  try {
+    await phases.deleteUsernameReservation(uid);
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting username reservation`, e);
+  }
 
   try {
     deleted.workouts = await phases.deleteWorkouts(uid);

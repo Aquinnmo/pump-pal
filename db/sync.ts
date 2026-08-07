@@ -120,12 +120,17 @@ const workoutAdapter: EntityAdapter = {
 function profileFromDto(dto: ProfileDTO): UserDoc {
   return {
     ...(dto.workoutSplit ? { workoutSplit: { ...dto.workoutSplit, updatedAt: new Date().toISOString() } } : {}),
+    ...(dto.username ? { username: dto.username, usernameLower: dto.username.toLowerCase() } : {}),
     ...(dto.aiUsage ? { aiUsage: dto.aiUsage } : {}),
   };
 }
 function profilePatch(payload: unknown, baseVersion: string | null) {
   const profile = payload as UserDoc;
-  return { ...(profile.workoutSplit ? { workoutSplit: { type: profile.workoutSplit.type, custom: profile.workoutSplit.custom } } : {}), ...(baseVersion ? { baseVersion } : {}) };
+  return {
+    ...(profile.workoutSplit ? { workoutSplit: { type: profile.workoutSplit.type, custom: profile.workoutSplit.custom } } : {}),
+    ...(profile.username !== undefined ? { username: profile.username } : {}),
+    ...(baseVersion ? { baseVersion } : {}),
+  };
 }
 function challengeFromDto(dto: PushupChallengeDTO): ChallengeData {
   return { startDate: dto.startDate ?? '', days: dto.days, longestStreak: dto.longestStreak };

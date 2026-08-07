@@ -22,6 +22,8 @@ function toStoredRecord(dto: ProfileDTO): StoredRecord<UserDoc> {
       workoutSplit: dto.workoutSplit
         ? { ...dto.workoutSplit, updatedAt: new Date().toISOString() }
         : undefined,
+      username: dto.username ?? undefined,
+      usernameLower: dto.username ? dto.username.toLowerCase() : undefined,
       aiUsage: dto.aiUsage ?? undefined,
     },
     syncState: 'synced',

@@ -36,7 +36,8 @@ different field needs an entry there first — without one Firestore answers
 | `exercises/{exerciseId}` | Global exercise catalog (with embedded variations) | [exercises.md](./exercises.md) |
 | `exerciseCatalogMeta/current` | Cache-invalidation version marker for the catalog | [exercises.md](./exercises.md#exercisecatalogmetacurrent) |
 | `workouts/{workoutId}` | Canonical set-by-set workout history | [workouts.md](./workouts.md) |
-| `users/{uid}` | Per-user profile (currently just workout split) | [users.md](./users.md) |
+| `users/{uid}` | Per-user profile (workout split, username) | [users.md](./users.md) |
+| `usernames/{usernameLower}` | Username uniqueness reservation, server-only | [users.md](./users.md#usernames) |
 | `users/{uid}/pushup-challenge/data` | Pushup Challenge (TPC tab) progress | [pushup-challenge.md](./pushup-challenge.md) |
 | `users/{uid}/workouts/{oldWorkoutId}` | **Legacy**, pre-migration workout rows | [legacy.md](./legacy.md) |
 

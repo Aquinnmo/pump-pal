@@ -16,7 +16,7 @@ export type InitialSyncOutcome =
 
 export type AccountBootstrapDecision =
   | { state: 'ready'; source: 'cached' | 'remote' }
-  | { state: 'onboarding' }
+  | { state: 'onboarding'; step: 'username' | 'split' }
   | { state: 'error'; message: string }
   | { state: 'pending' };
 
@@ -72,20 +72,31 @@ function hasSplit(profile: UserDoc | null): boolean {
   return isSplitOption(profile?.workoutSplit?.type);
 }
 
+function hasUsername(profile: UserDoc | null): boolean {
+  return !!profile?.username;
+}
+
+function onboardingStep(profile: UserDoc | null): 'username' | 'split' {
+  return hasUsername(profile) ? 'split' : 'username';
+}
+
 /**
- * A cached split is enough to open the app offline. Only a successful,
- * authoritative bootstrap that still has no split can enter onboarding.
+ * A cached split+username is enough to open the app offline. Only a
+ * successful, authoritative bootstrap that's still missing one of them can
+ * enter onboarding. Username clears before split when both are missing.
  */
 export function decideAccountBootstrap(
   cachedProfile: UserDoc | null,
   hydratedProfile: UserDoc | null,
   outcome: InitialSyncOutcome
 ): AccountBootstrapDecision {
-  if (hasSplit(cachedProfile)) return { state: 'ready', source: 'cached' };
+  if (hasSplit(cachedProfile) && hasUsername(cachedProfile)) return { state: 'ready', source: 'cached' };
 
   if (outcome.kind === 'auth-transition') return { state: 'pending' };
   if (outcome.kind === 'success') {
-    return hasSplit(hydratedProfile) ? { state: 'ready', source: 'remote' } : { state: 'onboarding' };
+    return hasSplit(hydratedProfile) && hasUsername(hydratedProfile)
+      ? { state: 'ready', source: 'remote' }
+      : { state: 'onboarding', step: onboardingStep(hydratedProfile) };
   }
 
   return { state: 'error', message: outcome.message };
