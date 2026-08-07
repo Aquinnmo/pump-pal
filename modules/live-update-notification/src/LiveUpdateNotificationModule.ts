@@ -8,6 +8,11 @@ declare class LiveUpdateNotificationNativeModule extends NativeModule<{
   isSupported(): boolean;
   show(payload: LiveUpdateNotificationPayload): boolean;
   dismiss(): void;
+  // iOS-only: drains the App Group outbox an App Intent may have written while the
+  // host process was fully dead. Android doesn't implement this — its headless-JS
+  // fallback already reaches the JS handler directly, so only utils/live-update-
+  // notification-actions.ios.ts may call it.
+  drainPendingAction?(): string | null;
 }
 
 // Android-only native module (see expo-module.config.json) that also won't
@@ -33,4 +38,8 @@ export function subscribeActions(onAction: (json: string) => void): () => void {
   if (!nativeModule) return () => {};
   const subscription = nativeModule.addListener('onNotificationAction', ({ json }) => onAction(json));
   return () => subscription.remove();
+}
+
+export function drainPendingAction(): string | null {
+  return nativeModule?.drainPendingAction?.() ?? null;
 }

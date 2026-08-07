@@ -65,6 +65,7 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.12",
     "@ai-sdk/openai": "^4.0.27",
+    "@bacons/apple-targets": "^5.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@firebase/auth": "1.13.4",
     "@notifee/react-native": "^9.1.8",

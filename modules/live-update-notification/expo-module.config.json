@@ -1,6 +1,9 @@
 {
-  "platforms": ["android"],
+  "platforms": ["android", "ios"],
   "android": {
     "modules": ["com.aquinnmo.timber.liveupdate.LiveUpdateNotificationModule"]
+  },
+  "ios": {
+    "modules": ["LiveUpdateNotificationModule"]
   }
 }
