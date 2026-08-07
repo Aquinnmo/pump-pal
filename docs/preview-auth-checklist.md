@@ -58,6 +58,10 @@ bd close pump-pal-ehb --reason="Google authentication and account hydration repa
 
 For deeper troubleshooting, see [deployment.md](deployment.md#troubleshooting).
 
+To build the Preview APK on your own machine instead of on EAS servers, see
+[preview-local-build.md](preview-local-build.md) — the same OAuth registration
+applies, since a local build uses the same EAS-managed signing keystore.
+
 ## Local Android development build
 
 `npm run development:android` uses package `com.aquinnmo.timber_dev`, not the

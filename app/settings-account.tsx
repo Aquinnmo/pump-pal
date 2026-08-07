@@ -1,12 +1,9 @@
 import { Toast } from "@/components/ui/toast";
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
-import {
-  getSignOutSafety,
-  purgeLocalAccountData,
-  SignOutSafety,
-  syncBeforeSignOut,
-} from "@/db/account-data";
+import { purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
+import { workoutRepository } from "@/db/workout-repository";
+import { discardActiveWorkout } from "@/utils/discard-workout";
 import { deleteAccountData } from "@/repositories/remote/account";
 import { getFriendlyAuthError } from "@/utils/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,9 +25,6 @@ export default function SettingsAccountScreen() {
   const { user, logOut, googleConnection, connectGoogleAccount } = useAuth();
   const insets = useSafeAreaInsets();
   const [showSignOutModal, setShowSignOutModal] = useState(false);
-  const [signOutSafety, setSignOutSafety] = useState<SignOutSafety | null>(
-    null,
-  );
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -51,18 +45,9 @@ export default function SettingsAccountScreen() {
     type: "success",
   });
 
-  const handleSignOut = async () => {
-    if (!user) return;
+  const handleSignOut = () => {
     setSignOutError("");
-    setSignOutSafety(null);
     setShowSignOutModal(true);
-    try {
-      setSignOutSafety(await getSignOutSafety(user.uid));
-    } catch {
-      setSignOutError(
-        "Could not inspect local changes. Stay signed in and try again.",
-      );
-    }
   };
 
   const handleChangePassword = () => {
@@ -137,30 +122,29 @@ export default function SettingsAccountScreen() {
     }
   };
 
-  const finishSignOut = async (discard = false) => {
+  const finishSignOut = async () => {
     if (!user) return;
     setSigningOut(true);
     setSignOutError("");
     try {
-      if (discard) {
-        await purgeLocalAccountData(user.uid);
-      } else {
-        const remaining = await syncBeforeSignOut(user.uid);
-        if (remaining.pending) {
-          setSignOutSafety(remaining);
-          setSignOutError(
-            "Sync did not finish. Your changes are still safe on this device.",
-          );
-          return;
-        }
-        await purgeLocalAccountData(user.uid);
+      // An in-progress workout only exists on this device, so the purge below
+      // would destroy it silently. Discard it first — and before the sync, so a
+      // plan-backed session restored to the queue still reaches the server.
+      const inProgress = await workoutRepository.getByStatus(
+        user.uid,
+        "in_progress",
+      );
+      if (inProgress[0]) {
+        await discardActiveWorkout(user.uid, inProgress[0].id);
       }
+      await syncBeforeSignOut(user.uid);
+      await purgeLocalAccountData(user.uid);
       setShowSignOutModal(false);
       await logOut();
       router.replace("/(auth)/sign-in");
     } catch (error) {
       console.error(error);
-      setSignOutError("Could not sync local changes. You are still signed in.");
+      setSignOutError("Could not sign out. Please try again.");
     } finally {
       setSigningOut(false);
     }
@@ -307,47 +291,18 @@ export default function SettingsAccountScreen() {
               >
                 <Text style={styles.modalCancelText}>Stay Signed In</Text>
               </TouchableOpacity>
-              {signOutSafety && signOutSafety.pending ? (
-                <>
-                  <TouchableOpacity
-                    style={styles.modalConfirmButton}
-                    onPress={() => finishSignOut(false)}
-                    activeOpacity={0.8}
-                    disabled={signingOut}
-                  >
-                    {signingOut ? (
-                      <ActivityIndicator size="small" color="#fff" />
-                    ) : (
-                      <Text style={styles.modalConfirmText}>
-                        Sync and Sign Out
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.modalConfirmButton}
-                    onPress={() => finishSignOut(true)}
-                    activeOpacity={0.8}
-                    disabled={signingOut}
-                  >
-                    <Text style={styles.modalConfirmText}>
-                      Discard and Sign Out
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <TouchableOpacity
-                  style={styles.modalConfirmButton}
-                  onPress={() => finishSignOut(false)}
-                  activeOpacity={0.8}
-                  disabled={signingOut || signOutSafety === null}
-                >
-                  {signingOut ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.modalConfirmText}>Sign Out</Text>
-                  )}
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={finishSignOut}
+                activeOpacity={0.8}
+                disabled={signingOut}
+              >
+                {signingOut ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Sign Out</Text>
+                )}
+              </TouchableOpacity>
             </View>
           </View>
         </View>

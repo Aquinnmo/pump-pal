@@ -224,4 +224,5 @@ when you:
 | First build / after native change (cloud)        | `eas build --profile development --platform android`   |
 | Everyday JS work                                 | `npx expo start --dev-client`                          |
 | Preview (release) build onto the plugged-in phone | `npm run install:android`                             |
+| Preview APK built locally via EAS (Google sign-in works) | see [preview-local-build.md](preview-local-build.md) |
 | Web / non-native work (Notifee is a no-op there) | `npx expo start` (Expo Go still fine for web)          |
