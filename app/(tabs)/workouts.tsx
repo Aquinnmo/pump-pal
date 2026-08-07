@@ -2,6 +2,7 @@ import { WorkoutCard } from '@/components/workout-card';
 import { workoutRepository } from '@/db/workout-repository';
 import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { useAuth } from '@/context/auth-context';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
 import { toDateObj } from '@/utils/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +24,7 @@ const FADE_HEIGHT = 24;
 
 export default function WorkoutsScreen() {
   const { user } = useAuth();
+  const dataVersion = useDataVersion();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -33,8 +35,8 @@ export default function WorkoutsScreen() {
   const [layoutHeight, setLayoutHeight] = useState(0);
 
   const fetchWorkouts = useCallback(async () => {
+    void dataVersion; // refetch trigger, not data — see hooks/use-data-version.ts
     if (!user) return;
-    setLoading(true);
     try {
       const data = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
       setWorkouts(data);
@@ -44,7 +46,7 @@ export default function WorkoutsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, dataVersion]);
 
   useFocusEffect(
     useCallback(() => {

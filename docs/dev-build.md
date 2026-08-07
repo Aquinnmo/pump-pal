@@ -151,7 +151,7 @@ when you:
    it has no current-set detail and **no controls**.
 10. **Check the AOD/lock screen** → the header reads `Logging Push Workout`
     (without doubling a name that already ends in “Workout”), and the detail
-    reads the current set, for example `Bench Press · Set 1 · 135 lbs` or
+    reads the current set, for example `Bench Press · Set 1 · 10 reps · 135 lbs` or
     `Plank · Set 1 · 0:45`. Bodyweight, zero weight, and zero/irrelevant
     duration are omitted rather than shown as placeholders.
 11. **Tap Complete set once** → the chip becomes `1/9 · elapsed time`; the

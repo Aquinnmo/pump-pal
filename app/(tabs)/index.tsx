@@ -1,5 +1,6 @@
 import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
 import { loadSplitNames } from '@/utils/split-names';
 import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
@@ -17,6 +18,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  // Re-reads local SQLite when a sync lands rows under an already-focused
+  // screen — on first sign-in this screen mounts before the initial sync.
+  const dataVersion = useDataVersion();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
@@ -38,9 +42,12 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      void dataVersion; // refetch trigger, not data — see hooks/use-data-version.ts
       if (!user) return;
       (async () => {
-        setLoading(true);
+        // No setLoading(true) here: `loading` starts true for the first pass,
+        // and a refresh triggered by a background sync must swap the content
+        // silently rather than flash a spinner over what the user is reading.
         try {
           // Completed history is only needed to predict the next split workout.
           const allFetched = (await workoutRepository.getHistory(user.uid)).map((record) => record.data).slice(0, 30);
@@ -89,7 +96,7 @@ export default function HomeScreen() {
           setLoading(false);
         }
       })();
-    }, [user])
+    }, [user, dataVersion])
   );
 
   const formatElapsed = (totalSeconds: number) => {

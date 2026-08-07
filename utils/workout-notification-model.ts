@@ -63,9 +63,13 @@ function currentSetDetail(current: FlatSet | undefined): string | null {
   if (row.exerciseType === 'Sets of Duration') {
     const seconds = (Number(set.durationMinutes) || 0) * 60 + (Number(set.durationSeconds) || 0);
     if (seconds > 0) detail.push(formatDuration(seconds));
-  } else if (!row.bodyweight) {
-    const weight = Number(set.weight);
-    if (Number.isFinite(weight) && weight > 0) detail.push(`${weight} lbs`);
+  } else {
+    const reps = Number(set.reps);
+    if (Number.isFinite(reps) && reps > 0) detail.push(`${reps} rep${reps === 1 ? '' : 's'}`);
+    if (!row.bodyweight) {
+      const weight = Number(set.weight);
+      if (Number.isFinite(weight) && weight > 0) detail.push(`${weight} lbs`);
+    }
   }
 
   return detail.join(' · ');

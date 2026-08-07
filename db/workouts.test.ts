@@ -158,6 +158,52 @@ async function main() {
     assert.equal(afterOutbox.length, beforeOutbox.length, 'failed create must not leave an orphan outbox row');
   }
 
+  // --- in-progress workouts never queue an outbox intent ---
+  {
+    const outboxFor = async (id: string) => (await listAll(db, 'u9')).filter((r) => r.entityId === id);
+
+    // Created in-progress: local row exists, nothing queued.
+    const live = await create(db, 'u9', baseWorkout({ status: 'in_progress', date: undefined }));
+    assert.ok(await getById(db, 'u9', live));
+    assert.equal((await outboxFor(live)).length, 0, 'in_progress create must not queue an intent');
+
+    // Autosaves while in progress stay local too.
+    for (let i = 0; i < 3; i++) {
+      const row = await getById(db, 'u9', live);
+      await update(db, 'u9', live, { ...row!.data, name: `set ${i}` });
+    }
+    assert.equal((await outboxFor(live)).length, 0, 'in_progress autosaves must not queue an intent');
+
+    // Finishing is the first thing the server hears about it — as a create.
+    const finishing = await getById(db, 'u9', live);
+    await update(db, 'u9', live, { ...finishing!.data, status: 'completed' });
+    const finished = await outboxFor(live);
+    assert.equal(finished.length, 1);
+    assert.equal(finished[0].op, 'create');
+    assert.equal(finished[0].baseVersion, null);
+
+    // A planned workout the server already has comes back as an update.
+    const planned = await create(db, 'u9', baseWorkout({ status: 'planned', date: undefined }));
+    const plannedRow = await getById(db, 'u9', planned);
+    // Simulate the sync engine having pushed the planned doc and applied the result.
+    await db.runAsync('DELETE FROM outbox WHERE uid = ? AND entity_id = ?', ['u9', planned]);
+    await update(db, 'u9', planned, plannedRow!.data, { syncState: 'synced', serverVersion: 'v7' });
+    assert.equal((await outboxFor(planned)).length, 0, 'server-applied write must not queue an intent');
+    await update(db, 'u9', planned, { ...plannedRow!.data, status: 'in_progress' });
+    assert.equal((await outboxFor(planned)).length, 0, 'planned -> in_progress must not queue an intent');
+    await update(db, 'u9', planned, { ...plannedRow!.data, status: 'completed' });
+    const plannedIntents = await outboxFor(planned);
+    assert.equal(plannedIntents.length, 1);
+    assert.equal(plannedIntents[0].op, 'update');
+    assert.equal(plannedIntents[0].baseVersion, 'v7');
+
+    // Discarding a never-synced workout tombstones locally with nothing to push.
+    const discarded = await create(db, 'u9', baseWorkout({ status: 'in_progress', date: undefined }));
+    await softDelete(db, 'u9', discarded);
+    assert.equal(await getById(db, 'u9', discarded), null);
+    assert.equal((await outboxFor(discarded)).length, 0, 'never-synced delete must not queue an intent');
+  }
+
   // --- UID isolation ---
   await create(db, 'u2', baseWorkout({ name: 'u2 workout' }));
   const u1All = await getAll(db, 'u1');

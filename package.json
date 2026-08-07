@@ -33,7 +33,7 @@
     "test:ai-error": "tsx utils/format-ai-error.test.ts",
     "test:api-isolation": "node scripts/check-api-isolation.js",
     "test:boundary-isolation": "node scripts/check-boundary-isolation.js",
-    "test:db": "tsx db/migrate.test.ts && tsx db/outbox.test.ts && tsx db/sync-cursors.test.ts && tsx db/normalize-timestamps.test.ts && tsx db/singleton-repository.test.ts && tsx db/catalog.test.ts && tsx db/workouts.test.ts && tsx db/sync-engine.test.ts && tsx db/keyed-mutex.test.ts",
+    "test:db": "tsx db/migrate.test.ts && tsx db/outbox.test.ts && tsx db/sync-cursors.test.ts && tsx db/normalize-timestamps.test.ts && tsx db/singleton-repository.test.ts && tsx db/catalog.test.ts && tsx db/workouts.test.ts && tsx db/data-version.test.ts && tsx db/sync-engine.test.ts && tsx db/keyed-mutex.test.ts",
     "test:initial-sync": "tsx db/initial-sync.test.ts",
     "test:api-client": "tsx utils/api-client.test.ts",
     "test:oauth-config": "node config/google-oauth.test.js",

@@ -11,6 +11,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { AppState, AppStateStatus, Platform } from 'react-native';
 import * as TaskManager from 'expo-task-manager';
 import { syncNow } from './sync';
+import { bumpDataVersion } from './data-version';
 import { InitialSyncOutcome, initialSyncOutcomeFromError, initialSyncOutcomeFromSync } from './initial-sync';
 import type { SyncOutcome } from './sync-engine';
 
@@ -26,6 +27,17 @@ export function configureSyncTrigger(provider: UidProvider): void {
 
 type ReportedSyncResult = { outcome: SyncOutcome } | { error: unknown };
 
+/**
+ * Tells the UI that local rows moved. Screens load on focus, so a run that
+ * pulls data underneath an already-focused screen (the first sign-in, where
+ * Home mounts before the initial sync lands) would otherwise stay invisible
+ * until the user navigated. A push-only run changes nothing the UI is not
+ * already showing, hence the pulled/deleted condition.
+ */
+function announceLocalChanges(outcome: SyncOutcome): void {
+  if (outcome.status === 'ok' && (outcome.pulled > 0 || outcome.remoteDeletions > 0)) bumpDataVersion();
+}
+
 async function runAndReportSync(): Promise<ReportedSyncResult> {
   const { uid, currentUid } = getUids();
   if (!uid || !currentUid || uid !== currentUid) return { outcome: { status: 'auth-required' } };
@@ -35,6 +47,7 @@ async function runAndReportSync(): Promise<ReportedSyncResult> {
     // in-app status surface any more, so these two lines are the only place a
     // sync outcome is observable at all.
     console.log('[sync]', JSON.stringify(outcome));
+    announceLocalChanges(outcome);
     return { outcome };
   } catch (err) {
     console.warn('[sync] run failed:', err);
@@ -72,6 +85,7 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   try {
     const outcome = await syncNow(uid, currentUid, { maxOutboxItems: 50, signal: controller.signal });
     console.log('[sync] background', JSON.stringify(outcome));
+    announceLocalChanges(outcome);
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (err) {
     console.warn('[sync] background run failed:', err);

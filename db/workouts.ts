@@ -8,7 +8,7 @@
 // entity mutated without a matching queued intent (or vice versa) — see
 // docs/purpose.md's fidelity rule: a half-written workout is wrong data.
 import { SqlExecutor } from './executor';
-import { enqueue } from './outbox';
+import { enqueue, discardEntity } from './outbox';
 import { normalizeTimestampsDeep } from './normalize-timestamps';
 import { randomId } from './id';
 import { Workout, WorkoutStatus } from '@/types/workout';
@@ -137,12 +137,21 @@ async function writeRowStatements(
   );
   // Server-applied writes (sync engine downloading the authoritative doc)
   // must not re-queue an outbox intent — only user-originated writes do.
-  if (syncState === 'dirty') {
+  //
+  // An in-progress session is device-local: the row is saved to SQLite but no
+  // intent is queued, so no sync trigger can push a half-finished workout to
+  // the server. The first intent is queued when it leaves in_progress
+  // (finished -> 'completed', discarded back to 'planned').
+  if (syncState === 'dirty' && workout.status !== 'in_progress') {
     await enqueue(db, {
       uid,
       entityType: ENTITY_TYPE,
       entityId: id,
-      op,
+      // No server version means the server has never seen this row, whatever
+      // the caller called the write — a workout created and performed offline
+      // reaches the server as a create on finish, not an update against
+      // nothing.
+      op: serverVersion ? op : 'create',
       payload: normalized,
       baseVersion: serverVersion,
     });
@@ -186,7 +195,10 @@ export async function softDelete(db: SqlExecutor, uid: string, id: string): Prom
   const now = new Date().toISOString();
   await db.withTransactionAsync(async () => {
     const existing = await db.getFirstAsync<{ server_version: string | null }>(
-      'SELECT server_version FROM workouts WHERE uid = ? AND id = ? AND deleted = 0',
+      // Deliberately not filtered on `deleted = 0`: an already-tombstoned row
+      // still knows its last server version, and a repeated delete must carry
+      // it rather than read as never-synced.
+      'SELECT server_version FROM workouts WHERE uid = ? AND id = ?',
       [uid, id]
     );
     const result = await db.runAsync(
@@ -194,6 +206,13 @@ export async function softDelete(db: SqlExecutor, uid: string, id: string): Prom
       ['dirty', now, uid, id]
     );
     if (result.changes === 0) return; // nothing to delete — no-op, no orphan outbox row
+    if (!existing?.server_version) {
+      // Never reached the server (an in-progress workout started and discarded
+      // on this device). A delete intent would 404 forever; drop any queued
+      // intent instead and let the local tombstone be the whole story.
+      await discardEntity(db, uid, ENTITY_TYPE, id);
+      return;
+    }
     await enqueue(db, {
       uid,
       entityType: ENTITY_TYPE,

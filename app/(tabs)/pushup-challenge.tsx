@@ -1,6 +1,7 @@
 import { pushupRepository } from '@/db/pushup-repository';
 import { triggerSyncAfterWrite } from '@/db/sync-trigger';
 import { useAuth } from '@/context/auth-context';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { getDailyName } from '@/utils/daily-name';
 import { syncStreakReminders } from '@/utils/streak-notification';
 import { dayNumberOn } from '@/utils/streak-schedule';
@@ -274,6 +275,7 @@ function SwipeComplete({ label, onUndo }: { label: string; onUndo: () => void })
 
 export default function PushupChallengeScreen() {
   const { user } = useAuth();
+  const dataVersion = useDataVersion();
   const [data, setData] = useState<ChallengeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false); // last read succeeded
@@ -432,8 +434,8 @@ export default function PushupChallengeScreen() {
   }, [data, loading, loaded]);
 
   const load = useCallback(async () => {
+    void dataVersion; // refetch trigger, not data — see hooks/use-data-version.ts
     if (!user) return;
-    setLoading(true);
     try {
       const [stored, name] = await Promise.all([pushupRepository.get(user.uid), getDailyName()]);
       setData((stored?.data as ChallengeData | undefined) ?? null);
@@ -445,7 +447,7 @@ export default function PushupChallengeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, dataVersion]);
 
   useFocusEffect(
     useCallback(() => {

@@ -38,7 +38,7 @@ const weighted = present([
 ]);
 assert.deepEqual([weighted.completedSets, weighted.totalSets], [3, 21]);
 assert.equal(weighted.title, 'Logging Push Workout');
-assert.equal(weighted.detail, 'Incline Press · Set 1 · 135 lbs');
+assert.equal(weighted.detail, 'Incline Press · Set 1 · 10 reps · 135 lbs');
 assert.deepEqual(weighted.actions, ['completeSet', 'uncompleteSet']);
 assert.deepEqual(weighted.segments, [
   { sets: 3, started: true, completed: true },
@@ -60,15 +60,21 @@ assert.equal(present([row('Bench', [set()])], '').title, 'Logging Workout');
 
 // The current set follows the last completed one, not the first gap.
 const skipped = present([row('Bench', [set(), set({ completed: true }), set()])]);
-assert.equal(skipped.detail, 'Bench · Set 3 · 135 lbs');
+assert.equal(skipped.detail, 'Bench · Set 3 · 10 reps · 135 lbs');
 
 const first = present([row('Bench', [set()])]);
-assert.equal(first.detail, 'Bench · Set 1 · 135 lbs');
+assert.equal(first.detail, 'Bench · Set 1 · 10 reps · 135 lbs');
 assert.deepEqual(first.actions, ['completeSet']);
 
+const advanced = present([row('Bench', [set({ reps: 5, completed: true }), set({ reps: 8 })])]);
+assert.equal(advanced.detail, 'Bench · Set 2 · 8 reps · 135 lbs');
+assert.equal(present([row('Bench', [set({ reps: 1 })])]).detail, 'Bench · Set 1 · 1 rep · 135 lbs');
+assert.equal(present([row('Bench', [set({ reps: 0 })])]).detail, 'Bench · Set 1 · 135 lbs');
+assert.equal(present([row('Bench', [set({ reps: Number.NaN })])]).detail, 'Bench · Set 1 · 135 lbs');
+
 const bodyweight = present([row('Pull-up', [set({ weight: '200' })], { bodyweight: true })]);
-assert.equal(bodyweight.detail, 'Pull-up · Set 1');
-assert.equal(present([row('Bench', [set({ weight: '0' })])]).detail, 'Bench · Set 1');
+assert.equal(bodyweight.detail, 'Pull-up · Set 1 · 10 reps');
+assert.equal(present([row('Bench', [set({ weight: '0' })])]).detail, 'Bench · Set 1 · 10 reps');
 
 const duration = present([
   row('Plank', [set({ durationMinutes: 1, durationSeconds: 5 })], { exerciseType: 'Sets of Duration' }),
