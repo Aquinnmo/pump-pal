@@ -405,6 +405,27 @@ async function main() {
     assert.equal(entries[0].status, undefined);
   }
 
+  // --- fetchImpl is called as a free function, not as a method on deps ---
+  // Web's `expo/fetch` export is the unbound `globalThis.fetch`; calling it as
+  // `deps.fetchImpl(...)` binds `this` to the deps object and the browser throws
+  // "Illegal invocation" before any request leaves the page.
+  {
+    let receiver: unknown = 'never called';
+    const impl = function (this: unknown) {
+      receiver = this;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        json: async () => ({ ok: true }),
+      });
+    } as unknown as FetchLike;
+    const requestDeps = deps(impl);
+    await apiRequestCore('/api/x', requestDeps, { responseSchema: echoSchema });
+    assert.notEqual(receiver, requestDeps);
+    assert.equal(receiver, undefined);
+  }
+
   console.log('utils/api-client.test.ts: all assertions passed');
 }
 
