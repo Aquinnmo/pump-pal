@@ -1,10 +1,14 @@
-import { GoogleSignInButton } from '@/components/google-sign-in-button';
-import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
-import { useAuth } from '@/context/auth-context';
-import { getFriendlyAuthError } from '@/utils/firebase-errors';
-import { Ionicons } from '@expo/vector-icons';
-import { Link, router } from 'expo-router';
-import { useState } from 'react';
+import { GoogleSignInButton } from "@/components/google-sign-in-button";
+import {
+  TimberAuthShell,
+  TimberBrand,
+  timberAuthStyles,
+} from "@/components/timber-auth-shell";
+import { useAuth } from "@/context/auth-context";
+import { getFriendlyAuthError } from "@/utils/firebase-errors";
+import { Ionicons } from "@expo/vector-icons";
+import { Link, router } from "expo-router";
+import { useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -15,29 +19,30 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
+} from "react-native";
 
 // This is injected only by scripts/ios/update.sh. The personal installer uses
 // a generated bundle ID, so its published iOS Google OAuth client cannot work.
-const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === '1';
+const IS_PERSONAL_IOS_BUILD =
+  process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === "1";
 
 export default function SignInScreen() {
   const { signIn } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     setError(null);
     if (!email.trim() || !password.trim()) {
-      setError('Please fill in all fields.');
+      setError("Please fill in all fields.");
       return;
     }
     setLoading(true);
     try {
       await signIn(email.trim(), password);
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     } catch (err: any) {
       setError(getFriendlyAuthError(err));
     } finally {
@@ -47,17 +52,27 @@ export default function SignInScreen() {
 
   return (
     <TimberAuthShell>
-      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.inner} keyboardShouldPersistTaps="handled">
-          <TimberBrand eyebrow="Your workout log" subtitle="Your sessions, plans, and progress are waiting." />
+      <KeyboardAvoidingView
+        style={styles.keyboard}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.inner}
+          keyboardShouldPersistTaps="handled"
+        >
+          <TimberBrand />
 
           <View style={styles.formCard}>
-            <Text style={styles.heading}>Pick up your log</Text>
-            <Text style={styles.hint}>Sign in and keep building from your last session.</Text>
+            <Text style={styles.heading}>Pick Up Your Log</Text>
 
             {error && (
-              <View style={[timberAuthStyles.errorBanner, styles.errorBanner]}>
-                <Ionicons name="alert-circle" size={16} color="#f87171" style={styles.errorIcon} />
+              <View style={timberAuthStyles.errorBanner}>
+                <Ionicons
+                  name="alert-circle"
+                  size={16}
+                  color="#f87171"
+                  style={styles.errorIcon}
+                />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
             )}
@@ -66,7 +81,7 @@ export default function SignInScreen() {
               <TextInput
                 style={timberAuthStyles.field}
                 placeholder="Email"
-                placeholderTextColor="#9f9a92"
+                placeholderTextColor="#666"
                 autoCapitalize="none"
                 keyboardType="email-address"
                 value={email}
@@ -75,7 +90,7 @@ export default function SignInScreen() {
               <TextInput
                 style={timberAuthStyles.field}
                 placeholder="Password"
-                placeholderTextColor="#9f9a92"
+                placeholderTextColor="#666"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
@@ -84,18 +99,29 @@ export default function SignInScreen() {
 
             <TouchableOpacity
               accessibilityLabel="Sign in to Timber"
-              style={[timberAuthStyles.primaryButton, loading && styles.buttonDisabled]}
+              style={[
+                timberAuthStyles.primaryButton,
+                loading && styles.buttonDisabled,
+              ]}
               onPress={handleSignIn}
-              disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Sign In</Text>}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={timberAuthStyles.primaryButtonText}>Sign In</Text>
+              )}
             </TouchableOpacity>
 
-            {!IS_PERSONAL_IOS_BUILD && <GoogleSignInButton onError={setError} disabled={loading} />}
+            {!IS_PERSONAL_IOS_BUILD && (
+              <GoogleSignInButton onError={setError} disabled={loading} />
+            )}
 
             <Link href="/(auth)/sign-up" asChild>
               <TouchableOpacity style={styles.linkButton}>
                 <Text style={styles.linkText}>
-                  New to Timber? <Text style={styles.linkBold}>Create Account</Text>
+                  New to Timber?{" "}
+                  <Text style={styles.linkBold}>Create Account</Text>
                 </Text>
               </TouchableOpacity>
             </Link>
@@ -112,59 +138,53 @@ const styles = StyleSheet.create({
   },
   inner: {
     flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 24,
+    justifyContent: "center",
+    paddingHorizontal: 20,
     paddingVertical: 24,
   },
   formCard: {
-    marginTop: 30,
-    padding: 20,
-    borderRadius: 22,
-    backgroundColor: 'rgba(20, 19, 18, 0.94)',
+    marginTop: 24,
+    padding: 16,
+    borderRadius: 14,
+    borderCurve: "continuous",
+    backgroundColor: "#1c1c1c",
     borderWidth: 1,
-    borderColor: '#4a3324',
+    borderColor: "#2a2a2a",
+    // One gap owns the whole card's vertical rhythm. Children set no top or
+    // bottom margins, so adding or removing one (a hint line, the error banner)
+    // can't leave two elements touching.
+    gap: 20,
   },
   heading: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 24,
-    fontWeight: '900',
+    fontWeight: "700",
     letterSpacing: -0.5,
-  },
-  hint: {
-    color: '#aaa39a',
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 6,
-    marginBottom: 20,
   },
   fields: {
     gap: 12,
-  },
-  errorBanner: {
-    marginBottom: 14,
   },
   errorIcon: {
     marginRight: 8,
   },
   errorText: {
-    color: '#f87171',
-    fontSize: 13,
+    color: "#f87171",
+    fontSize: 14,
     flex: 1,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   linkButton: {
-    alignItems: 'center',
-    paddingTop: 18,
-    paddingBottom: 2,
+    alignItems: "center",
+    paddingVertical: 8,
   },
   linkText: {
-    color: '#aaa39a',
+    color: "#888",
     fontSize: 14,
   },
   linkBold: {
-    color: '#c9a567',
-    fontWeight: '800',
+    color: "#c9a567",
+    fontWeight: "800",
   },
 });

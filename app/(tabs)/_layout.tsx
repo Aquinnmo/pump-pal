@@ -31,11 +31,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />,
         }}
       />
+      <Tabs.Screen name="pushup-challenge" options={{ href: null }} />
       <Tabs.Screen
-        name="pushup-challenge"
+        name="social"
         options={{
-          title: 'TPC',
-          tabBarIcon: ({ color, size }) => <Ionicons name="trophy" size={size} color={color} />,
+          title: 'Social',
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
         }}
       />
       <Tabs.Screen

@@ -62,11 +62,13 @@ export function GoogleSignInButton({ onError, disabled, label = 'Continue with G
 }
 
 const styles = StyleSheet.create({
+  // No top spacing: the parent card's gap already separates this block from the
+  // primary button above it.
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 16,
+    marginBottom: 16,
   },
   dividerLine: {
     flex: 1,
@@ -74,8 +76,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2a2a2a',
   },
   dividerText: {
-    color: '#aaa39a',
-    fontSize: 13,
+    color: '#888',
+    fontSize: 14,
   },
   buttonDisabled: {
     opacity: 0.6,

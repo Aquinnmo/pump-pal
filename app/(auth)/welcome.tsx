@@ -1,4 +1,4 @@
-import { TimberAuthShell, TimberBrand } from '@/components/timber-auth-shell';
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/components/timber-auth-shell';
 import { TimberLogo } from '@/components/timber-logo';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -132,10 +132,10 @@ export default function WelcomeScreen() {
           </View>
           <TouchableOpacity
             accessibilityLabel={isLast ? 'Get started with Timber' : 'Next welcome screen'}
-            style={styles.button}
+            style={[timberAuthStyles.primaryButton, styles.button]}
             onPress={handleNext}
-            activeOpacity={0.85}>
-            <Text style={styles.buttonText}>{isLast ? 'Get Started' : 'Next'}</Text>
+            activeOpacity={0.8}>
+            <Text style={timberAuthStyles.primaryButtonText}>{isLast ? 'Get Started' : 'Next'}</Text>
             <Ionicons name={isLast ? 'arrow-forward-circle-outline' : 'chevron-forward'} size={20} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: 10,
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   brandSlot: {
     flex: 1,
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
   skip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     paddingVertical: 12,
-    paddingLeft: 14,
+    paddingLeft: 16,
   },
   skipText: {
     color: '#c9a567',
@@ -174,54 +174,58 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 34,
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
+  // Bark fill + sapwood border kept deliberately — same arrival marker as the
+  // logo frame in components/timber-auth-shell.tsx.
   iconFrame: {
-    width: 132,
-    height: 132,
-    borderRadius: 42,
+    width: 128,
+    height: 128,
+    borderRadius: 24,
     backgroundColor: 'rgba(74, 51, 36, 0.28)',
     borderWidth: 1,
     borderColor: '#6e4a30',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
   },
   slideNumber: {
     color: '#c9a567',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     letterSpacing: 1.4,
-    marginBottom: 13,
+    marginBottom: 12,
   },
   title: {
     fontSize: 30,
-    fontWeight: '900',
+    fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
     letterSpacing: -0.8,
-    marginBottom: 14,
+    marginBottom: 16,
   },
+  // Hierarchy between subtitle and detail comes from size and weight, not a
+  // second grey — the palette has one secondary text colour.
   subtitle: {
-    fontSize: 17,
-    color: '#e3d7c0',
+    fontSize: 15,
+    color: '#888',
     textAlign: 'center',
-    lineHeight: 25,
+    lineHeight: 21,
     fontWeight: '600',
   },
   detail: {
     fontSize: 14,
-    color: '#9f9a92',
+    color: '#888',
     textAlign: 'center',
-    lineHeight: 21,
-    marginTop: 14,
+    lineHeight: 20,
+    marginTop: 16,
     maxWidth: 330,
   },
   footer: {
-    paddingHorizontal: 24,
-    paddingBottom: 22,
-    gap: 18,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    gap: 16,
   },
   dots: {
     flexDirection: 'row',
@@ -231,30 +235,18 @@ const styles = StyleSheet.create({
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4a3324',
+    borderRadius: 999,
+    backgroundColor: '#2a2a2a',
   },
   dotActive: {
-    width: 26,
+    width: 24,
     backgroundColor: '#c9a567',
   },
+  // Only the row layout is local; fill, radius and the sanctioned accent shadow
+  // come from timberAuthStyles.primaryButton.
   button: {
-    minHeight: 54,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#e54242',
-    borderRadius: 16,
-    shadowColor: '#e54242',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 4,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '800',
   },
 });

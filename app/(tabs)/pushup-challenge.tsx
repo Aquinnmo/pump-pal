@@ -7,7 +7,7 @@ import { syncStreakReminders } from '@/utils/streak-notification';
 import { dayNumberOn } from '@/utils/streak-schedule';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -292,6 +292,9 @@ export default function PushupChallengeScreen() {
   const undoAnim = useRef(new Animated.Value(0)).current;
   const [undoingToday, setUndoingToday] = useState(false);
   const [dailyName, setDailyName] = useState<string | null>(null);
+  // Restart shows the intro screen again instead of writing straight away, so
+  // nothing is destroyed until the user taps Start Challenge.
+  const [restarting, setRestarting] = useState(false);
 
   // Ember particle animation values (connector fire)
   const emberData = useRef(
@@ -464,6 +467,7 @@ export default function PushupChallengeScreen() {
     await pushupRepository.upsert(user.uid, newData);
     triggerSyncAfterWrite();
     setData(newData);
+    setRestarting(false);
   };
 
   const completeTodayPushups = async () => {
@@ -572,15 +576,17 @@ export default function PushupChallengeScreen() {
     }
   };
 
-  const resetChallenge = async () => {
-    if (!user) return;
-    const today = toDateKey(new Date());
-    const prev = data?.longestStreak ?? 0;
-    const newData: ChallengeData = { startDate: today, days: [], longestStreak: prev };
-    await pushupRepository.upsert(user.uid, newData);
-    triggerSyncAfterWrite();
-    setData(newData);
-  };
+  // Send the user back to the rules screen. The write happens in
+  // startChallenge, so backing out of the intro leaves the old data intact.
+  const resetChallenge = () => setRestarting(true);
+
+  // Reached by a push from the Social tab, so every state needs a way back.
+  const backButton = (
+    <TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+      <Ionicons name="chevron-back" size={22} color={RED} />
+      <Text style={styles.backButtonText}>Back</Text>
+    </TouchableOpacity>
+  );
 
   if (loading) {
     return (
@@ -590,18 +596,21 @@ export default function PushupChallengeScreen() {
     );
   }
 
-  // No challenge started yet
-  if (!data) {
+  // No challenge started yet, or the user tapped Restart on a broken streak
+  if (!data || restarting) {
     return (
-      <View style={styles.center}>
-        <Ionicons name="flame-outline" size={64} color={RED} />
-        <Text style={styles.emptyTitle}>The Pushup Challenge</Text>
-        <Text style={styles.emptySubtitle}>
-          Day 1 → 1 pushup{'\n'}Day 2 → 2 pushups{'\n'}Keep the streak alive!
-        </Text>
-        <TouchableOpacity style={styles.startBtn} onPress={startChallenge}>
-          <Text style={styles.startBtnText}>Start Challenge</Text>
-        </TouchableOpacity>
+      <View style={styles.introContainer}>
+        <View style={styles.introHeader}>{backButton}</View>
+        <View style={styles.center}>
+          <Ionicons name="flame-outline" size={64} color={RED} />
+          <Text style={styles.emptyTitle}>The Pushup Challenge</Text>
+          <Text style={styles.emptySubtitle}>
+            Day 1 → 1 pushup{'\n'}Day 2 → 2 pushups{'\n'}Keep the streak alive!
+          </Text>
+          <TouchableOpacity style={styles.startBtn} onPress={startChallenge}>
+            <Text style={styles.startBtnText}>Start Challenge</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -618,6 +627,7 @@ export default function PushupChallengeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
+        {backButton}
         <Text style={styles.title}>The Pushup Challenge</Text>
         <View style={styles.headerRight}>
           {longest > 0 && (
@@ -1047,8 +1057,34 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#fff',
-    fontSize: 24,
+    fontSize: 17,
     fontWeight: '700',
+  },
+  introContainer: {
+    flex: 1,
+    backgroundColor: DARK_BG,
+    paddingTop: 60,
+  },
+  introHeader: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 10,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1c1c1c',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    gap: 2,
+  },
+  backButtonText: {
+    color: RED,
+    fontSize: 15,
+    fontWeight: '600',
   },
   streakBadge: {
     flexDirection: 'row',
