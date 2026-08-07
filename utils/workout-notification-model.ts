@@ -30,7 +30,6 @@ export type WorkoutNotificationPresentation = {
 type FlatSet = {
   row: DraftExerciseRow;
   set: DraftSet;
-  setIndex: number;
 };
 
 function nonblankRows(rows: DraftExerciseRow[]): DraftExerciseRow[] {
@@ -39,7 +38,7 @@ function nonblankRows(rows: DraftExerciseRow[]): DraftExerciseRow[] {
 
 function flattenSets(rows: DraftExerciseRow[]): FlatSet[] {
   return rows.flatMap((row) =>
-    row.sets.map((set, setIndex) => ({ row, set, setIndex })),
+    row.sets.map((set) => ({ row, set })),
   );
 }
 
@@ -58,8 +57,8 @@ function formatDuration(totalSeconds: number): string {
 function currentSetDetail(current: FlatSet | undefined): string | null {
   if (!current) return null;
 
-  const { row, set, setIndex } = current;
-  const detail = [row.label.trim(), `Set ${setIndex + 1}`];
+  const { row, set } = current;
+  const detail = [row.label.trim()];
   if (row.exerciseType === 'Sets of Duration') {
     const seconds = (Number(set.durationMinutes) || 0) * 60 + (Number(set.durationSeconds) || 0);
     if (seconds > 0) detail.push(formatDuration(seconds));
