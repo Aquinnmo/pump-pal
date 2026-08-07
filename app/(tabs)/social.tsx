@@ -10,8 +10,15 @@ export default function SocialScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-        <Text style={styles.headerTitle}>Social</Text>
+      <View
+        style={[
+          styles.fixedHeader,
+          { paddingTop: Math.max(insets.top + 18, 36) },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <Text style={styles.pageTitle}>Social</Text>
+        </View>
       </View>
 
       <View style={styles.content}>
@@ -46,19 +53,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0f0f0f',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e1e1e',
+  fixedHeader: {
+    width: '100%',
+    backgroundColor: '#0f0f0f',
+    paddingBottom: 8,
   },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+  headerContent: {
+    width: '100%',
+    maxWidth: 760,
+    alignSelf: 'center',
+    paddingHorizontal: 20,
+  },
+  pageTitle: {
     color: '#fff',
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   content: {
     padding: 20,

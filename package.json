@@ -47,6 +47,7 @@
     "test:workout-notification": "tsx utils/workout-notification-model.test.ts",
     "test:workout-action": "tsx utils/workout-action.test.ts",
     "test:active-workout-session": "tsx utils/active-workout-session.test.ts",
+    "test:set-consistency": "tsx utils/set-consistency.test.ts",
     "test:muscle-load": "tsx utils/muscle-load.test.ts && tsx utils/muscle-development.test.ts && node scripts/generate-muscle-pebble-map.test.js && tsx constants/muscle-map-paths.test.ts",
     "migration:test": "node scripts/migration/convert-legacy-workout.test.js && node scripts/migration/legacy-inventory.test.js && node scripts/migration/canonical-muscles.test.js && node scripts/migration/catalog-seed.test.js && node scripts/migration/review-pending-exercises.test.js",
     "migration:inventory": "node scripts/migration/legacy-inventory.js",

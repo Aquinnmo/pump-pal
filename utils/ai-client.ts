@@ -28,6 +28,19 @@ export class AIOfflineError extends Error {
   }
 }
 
+/**
+ * The daily quota is counted and enforced server-side (`api/_lib/store/quota.ts`),
+ * which answers with 429. Thrown as its own type so callers can tell "you are
+ * out of uses" from "the request failed" — the two need different copy, and one
+ * of them must not offer a retry.
+ */
+export class AIQuotaError extends Error {
+  constructor(message?: string) {
+    super(message || 'Sorry, you are out of insights for today.');
+    this.name = 'AIQuotaError';
+  }
+}
+
 async function assertAIConnectivity(): Promise<void> {
   if (Platform.OS === 'web') return;
   const state = await NetInfo.fetch();
@@ -83,6 +96,7 @@ export async function callAI<Op extends AIOp>(
 
   if (!response.ok || !body) {
     const detail = body?.error == null ? null : describeError(body.error);
+    if (response.status === 429) throw new AIQuotaError(detail ?? undefined);
     throw new Error(
       detail
         ? `AI request failed (${response.status}): ${detail}`
