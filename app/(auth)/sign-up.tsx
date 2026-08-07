@@ -17,6 +17,9 @@ import {
   View,
 } from 'react-native';
 
+// Set only for the generated-bundle personal iPhone build. See sign-in.tsx.
+const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === '1';
+
 export default function SignUpScreen() {
   const { signUp } = useAuth();
   const [name, setName] = useState('');
@@ -99,7 +102,9 @@ export default function SignUpScreen() {
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Create Account</Text>}
             </TouchableOpacity>
 
-            <GoogleSignInButton onError={setError} disabled={loading} label="Sign up with Google" />
+            {!IS_PERSONAL_IOS_BUILD && (
+              <GoogleSignInButton onError={setError} disabled={loading} label="Sign up with Google" />
+            )}
 
             <Link href="/(auth)/sign-in" asChild>
               <TouchableOpacity style={styles.linkButton}>

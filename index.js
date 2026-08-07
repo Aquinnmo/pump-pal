@@ -9,9 +9,9 @@ if (Platform.OS === 'android') {
   const { widgetTaskHandler } = require('./widgets/widget-task-handler');
   registerWidgetTaskHandler(widgetTaskHandler);
 
-  // Must match TASK_NAME in modules/wear-sync/.../WearActionTaskService.kt.
-  const { wearActionTask } = require('./utils/wear-action-task');
-  AppRegistry.registerHeadlessTask('TimberWearAction', () => wearActionTask);
+  // Wear OS actions no longer have a headless path: a cold process has no in-memory
+  // session to apply them to (see utils/active-workout-session.ts), so there is
+  // nothing left for TimberWearAction to run while the app process is dead.
 
   // Must match TASK_NAME in LiveUpdateNotificationActionTaskService.kt.
   const { liveUpdateNotificationActionTask } = require('./utils/live-update-notification-action-task');

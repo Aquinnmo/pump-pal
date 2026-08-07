@@ -80,6 +80,14 @@ Field notes:
   time as the primary metric); `holdSeconds` is a hold component attached to
   an otherwise reps-based set (e.g. "3 reps with a 2s hold at the bottom").
   Both can be absent, and in practice are mutually exclusive per set.
+- `status?: WorkoutStatus` (`'planned' | 'in_progress' | 'completed'`, `types/workout.ts`)
+  — the client no longer creates or writes `'in_progress'`. An active workout lives
+  entirely in memory now (`utils/active-workout-session.ts`) and the DB is written
+  once, on Finish, going straight from `'planned'` (or nothing, for an ad-hoc
+  workout) to `'completed'`. `'in_progress'` remains in the status union and in
+  `api/_lib/store/workouts.ts` only because already-synced server documents still use
+  it; a one-time client-side sweep (`utils/discard-workout.ts`) cleans up any row a
+  pre-rewrite build left in that state.
 - `injuries?: string[]` holds the ids of the user's injuries
   (`users/{uid}.injuries`, see [users.md](./users.md)) that were active when
   this workout was logged. It is a **materialized as-of-then record**, written

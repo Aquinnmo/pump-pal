@@ -2,7 +2,7 @@
 #
 # One-time Mac setup for installing Timber on an iPhone.
 #
-#   bash scripts/ios/setup.sh
+#   npm run ios:setup
 #
 # After this succeeds, only use: npm run install:apple
 
@@ -43,7 +43,7 @@ script cannot perform for you.
   4. Run this script again
 
 MSG
-  die "Install Xcode first, then re-run: bash scripts/ios/setup.sh"
+  die "Install Xcode first, then re-run: npm run ios:setup"
 fi
 ok "Xcode is installed."
 
@@ -147,15 +147,33 @@ have pod || die "CocoaPods installed but 'pod' is not on PATH. Open a new termin
 ok "CocoaPods $(pod --version)"
 
 # ---------------------------------------------------------------------------
+step "Git update source"
+
+if ! have git; then
+  die "Git is missing. Install Xcode's Command Line Tools, then re-run: npm run ios:setup"
+fi
+if ! require_tracking_branch; then
+  cat <<'MSG'
+The recurring installer downloads the latest code before it builds. This clone
+must be on a normal Git branch that tracks a remote branch.
+
+Clone Timber from its published repository, or ask Aidan to set this branch's
+upstream. Then re-run this setup command.
+MSG
+  die "No Git tracking branch is configured for this clone."
+fi
+ok "Git will update this clone from: $(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}')"
+
+# ---------------------------------------------------------------------------
 step "App settings"
 
 validate_env .env \
-  || die "Add the complete .env file Aidan sent you to this repo, then re-run: bash scripts/ios/setup.sh"
+  || die "Add the complete .env file Aidan sent you to this repo, then re-run: npm run ios:setup"
 ok ".env contains the required Timber settings."
 
 ensure_apple_config "$APPLE_CONFIG_FILE"
 load_apple_config "$APPLE_CONFIG_FILE" \
-  || die "Could not validate the local Apple setup. Re-run: bash scripts/ios/setup.sh"
+  || die "Could not validate the local Apple setup. Re-run: npm run ios:setup"
 ok "Using this clone's private app identifier: $TIMBER_IOS_BUNDLE_IDENTIFIER"
 
 # ---------------------------------------------------------------------------
@@ -186,6 +204,11 @@ From now on, this is the only command you need:
 
 That command gets the latest code and installs a standalone copy of Timber on
 your connected iPhone. The first install normally takes 10-25 minutes.
+
+This personal build uses email and password sign-in. Google Sign-In is not
+available because its iOS OAuth configuration is tied to Timber's published
+bundle identifier, while this installer creates a private one for your Apple
+Account.
 
 Have your iPhone, USB cable, phone passcode, and Apple Account available before
 you run it.

@@ -17,20 +17,18 @@ import { formatAIError } from "@/utils/ai-client";
 import { useAIGenerationAvailable } from "@/utils/use-ai-connectivity";
 import { showAlert } from "@/utils/alert";
 import {
-  ActiveWorkoutDraftSnapshot,
-  flushActiveWorkoutDraft,
-  flushPendingActiveWorkoutDraft,
-  releaseActiveWorkoutDraft,
-  scheduleActiveWorkoutDraft,
-} from "@/utils/active-workout-persistence";
+  endSession,
+  getSession,
+  startSession,
+  subscribe as subscribeSession,
+  updateSession,
+} from "@/utils/active-workout-session";
 import { createPendingExercise } from "@/utils/create-pending-exercise";
-import { discardActiveWorkout } from "@/utils/discard-workout";
 import { getOngoingInjuries, getOngoingInjuryIds } from "@/utils/injuries";
 import { describeUpNext } from "@/utils/up-next";
 import { subscribeLiveUpdateNotificationActions } from "@/utils/live-update-notification-actions";
 import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/utils/workout-action";
 import { buildWorkoutNotificationPresentation } from "@/utils/workout-notification-model";
-import { setScreenOwnsWorkoutActions } from "@/utils/wear-action-task";
 import {
   applyWearAction,
   buildWearIdleState,
@@ -43,7 +41,6 @@ import {
   buildPerformedExercise,
   collapseSetsToDraft,
   recentExercisesForDay,
-  toDateObj,
 } from "@/utils/workout-conversion";
 import {
   dismissWorkoutNotification,
@@ -57,15 +54,12 @@ import {
   suggestWorkoutCompletion,
 } from "@/utils/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, usePreventRemove } from "@react-navigation/native";
-import type { NavigationAction } from "@react-navigation/routers";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  AppState,
   BackHandler,
   KeyboardAvoidingView,
   Platform,
@@ -106,7 +100,6 @@ function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
 
 export default function ActiveWorkoutScreen() {
   const { user } = useAuth();
-  const navigation = useNavigation();
   const { id, suggestion } = useLocalSearchParams<{
     id: string;
     suggestion: string;
@@ -115,15 +108,19 @@ export default function ActiveWorkoutScreen() {
   const { options: catalogOptions } = useExerciseCatalog();
   const aiAvailable = useAIGenerationAvailable();
 
-  const [workoutId, setWorkoutId] = useState<string | null>(null);
+  // sessionId correlates this screen with the in-memory session (utils/active-workout-session.ts)
+  // and with notification/wear actions — it exists as soon as a session starts, well before
+  // any Firestore document does. planId is only set when the session came from a planned
+  // workout; that row is read once to seed state and is never touched again until Finish.
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [planId, setPlanId] = useState<string | null>(null);
   const [cameFromPlan, setCameFromPlan] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const exercisesRef = useRef<DraftExerciseRow[]>([]);
   // Focus (single-set-at-a-time) is the default view for a workout that already has
   // exercises; a blank/new workout opens straight into the editor. Local state — no
-  // new route — so hydration, autosave and watch/notification ownership stay owned
-  // by this one screen.
+  // new route — so hydration and watch/notification ownership stay owned by this screen.
   const [mode, setMode] = useState<"focus" | "editor">("editor");
   const [hasEnteredFocus, setHasEnteredFocus] = useState(false);
 
@@ -183,10 +180,25 @@ export default function ActiveWorkoutScreen() {
 
     (async () => {
       try {
-        if (id) {
-          // A previous mount may still be finishing its last local write. Never
-          // hydrate an older repository row over that newer snapshot.
-          await flushPendingActiveWorkoutDraft(user.uid, id);
+        // A live session already in memory (the user navigated Home mid-workout and
+        // came back, or the watch's "start" deep-linked back here) always wins — it
+        // reflects state newer than anything in the repository.
+        const existing = getSession();
+        if (existing && existing.uid === user.uid) {
+          const hasExercises = existing.rows.some((r) => r.label.trim() !== "");
+          setWorkoutName(existing.name);
+          setExercises(existing.rows.length > 0 ? existing.rows : [blankRow()]);
+          if (hasExercises) {
+            setMode("focus");
+            setHasEnteredFocus(true);
+          }
+          setCameFromPlan(existing.cameFromPlan);
+          setPlanId(existing.planId);
+          setStartedAt(new Date(existing.startedAt));
+          setSessionId(existing.id);
+        } else if (id) {
+          // `id` only ever points at a planned-queue row (see utils/up-next-target.ts) —
+          // it is read once to seed the session and is never written back to.
           const stored = await workoutRepository.getById(user.uid, id);
           if (!stored) {
             showAlert("Error", "Could not load workout.");
@@ -194,46 +206,50 @@ export default function ActiveWorkoutScreen() {
             return;
           }
           const data = stored.data;
-          setWorkoutName(data.name || "");
           const hasExercises =
             !!data.performedExercises && data.performedExercises.length > 0;
-          setExercises(
-            hasExercises
-              ? data.performedExercises.map(collapseSetsToDraft)
-              : [blankRow()],
-          );
+          const rows = hasExercises
+            ? data.performedExercises.map(collapseSetsToDraft)
+            : [blankRow()];
+          const name = data.name || "";
+          // queueOrder is only ever set on docs that passed through the planned queue.
+          const cameFromPlanNow = data.queueOrder !== undefined;
+
+          setWorkoutName(name);
+          setExercises(rows);
           if (hasExercises) {
             setMode("focus");
             setHasEnteredFocus(true);
           }
-          // queueOrder is only ever set on docs that passed through the planned
-          // queue — it's left in place through the in_progress transition, so
-          // its presence tells us how "discard" should behave even on resume.
-          setCameFromPlan(data.queueOrder !== undefined);
-          if (data.status === "planned") {
-            await workoutRepository.update(user.uid, id, { ...data, status: "in_progress", startedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-            setStartedAt(new Date());
-          } else {
-            setStartedAt(
-              (data.startedAt ? toDateObj(data.startedAt) : null) ?? new Date(),
-            );
-          }
-          setWorkoutId(id);
+          setCameFromPlan(cameFromPlanNow);
+          setPlanId(id);
+          setStartedAt(new Date());
+
+          const started = startSession({
+            uid: user.uid,
+            planId: id,
+            name,
+            rows,
+            cameFromPlan: cameFromPlanNow,
+          });
+          setSessionId(started.id);
         } else {
           const name = suggestion || "";
-          const newId = await workoutRepository.create(user.uid, {
-            name,
-            performedExercises: [],
-            status: "in_progress",
-            startedAt: new Date().toISOString(),
-            schemaVersion: 2,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
-          setWorkoutId(newId);
+          const rows = [blankRow()];
           setWorkoutName(name);
+          setExercises(rows);
           setCameFromPlan(false);
+          setPlanId(null);
           setStartedAt(new Date());
+
+          const started = startSession({
+            uid: user.uid,
+            planId: null,
+            name,
+            rows,
+            cameFromPlan: false,
+          });
+          setSessionId(started.id);
         }
       } catch (err: any) {
         showAlert("Error", "Could not start workout. " + err.message);
@@ -390,158 +406,50 @@ export default function ActiveWorkoutScreen() {
   };
 
   const terminalRef = useRef(false);
-  const draftSnapshotRef = useRef<ActiveWorkoutDraftSnapshot | null>(null);
-  const pendingNavigationActionRef = useRef<NavigationAction | null>(null);
-  const terminalNavigationRef = useRef(false);
-  const leaveInFlightRef = useRef(false);
-  const [navigationUnlocked, setNavigationUnlocked] = useState(false);
 
-  draftSnapshotRef.current =
-    user && workoutId
-      ? {
-          uid: user.uid,
-          workoutId,
-          workoutName: effectiveWorkoutName,
-          rows: exercises,
-        }
-      : null;
-
-  const showSaveErrorRef = useRef(() => {});
-  showSaveErrorRef.current = () => {
-    setToast({
-      visible: true,
-      message: "Couldn’t save workout. Try again.",
-      type: "error",
-    });
-  };
-
-  const flushDraftRef = useRef<() => Promise<void>>(async () => {});
-  flushDraftRef.current = async () => {
-    const snapshot = draftSnapshotRef.current;
-    if (snapshot) await flushActiveWorkoutDraft(snapshot);
-  };
-
-  const scheduleDraftRef = useRef<(rows: DraftExerciseRow[]) => void>(() => {});
-  scheduleDraftRef.current = (rows: DraftExerciseRow[]) => {
-    const snapshot = draftSnapshotRef.current;
-    if (!snapshot || terminalRef.current) return;
-    scheduleActiveWorkoutDraft({ ...snapshot, rows }).catch(() => {
-      // The queue retains the latest failed snapshot. Lifecycle boundaries
-      // surface the error and retry instead of silently considering it saved.
-    });
-  };
-
-  const redrawNotification = (rows: DraftExerciseRow[]) => {
-    if (!workoutId || !startedAt) return;
-    showWorkoutNotification(
-      buildWorkoutNotificationPresentation({
-        workoutId,
-        workoutName: effectiveWorkoutName,
-        startedAt,
-        rows,
-      }),
-    ).catch((e) => console.warn("[workout-notification] show failed", e));
-  };
-  const redrawNotificationRef = useRef(redrawNotification);
-  redrawNotificationRef.current = redrawNotification;
-
-  // Native's repository is SQLite, so every change starts a local write
-  // immediately. Web is deliberately network-only; retain a short debounce
-  // there, then force a flush at every lifecycle/navigation boundary.
+  // The only place local edits leave this screen: every change to the draft rows or
+  // name is mirrored into the in-memory session so Home's Resume card, the notification
+  // fallback (utils/wear-action-task.ts) and a re-mount of this same screen all see it.
+  // Nothing here touches the database — that happens exactly once, in finishWorkout.
   useEffect(() => {
-    if (!workoutId || initializing || terminalRef.current) return;
-    if (Platform.OS !== "web") {
-      scheduleDraftRef.current(exercises);
-      return;
-    }
-    const timeout = setTimeout(() => scheduleDraftRef.current(exercises), 800);
-    return () => clearTimeout(timeout);
-  }, [exercises, effectiveWorkoutName, workoutId, initializing]);
+    if (!sessionId || initializing) return;
+    updateSession(exercises, effectiveWorkoutName);
+  }, [exercises, effectiveWorkoutName, sessionId, initializing]);
 
-  // Flush on the way out, re-read on the way back in. The screen hydrates once
-  // per mount, so without this it can hold state older than the row — a
-  // notification tap handled by the headless task, or by this screen in a tick
-  // that never got flushed, would be overwritten by the stale draft.
-  //
-  // Order matters: foreground hydration awaits the serialized flush before it
-  // reads, and keeps memory authoritative if that flush fails.
+  // The mirror image of the effect above: a completeSet/uncompleteSet action applied
+  // by app/_layout.tsx's handler while this screen is unmounted (or racing this
+  // screen's own mount) lands in the session store, not here — so pick up rows that
+  // changed underneath this screen and re-render with them.
   useEffect(() => {
-    if (!workoutId || initializing || !user) return;
-    const uid = user.uid;
-    const sub = AppState.addEventListener("change", (state) => {
-      if (state !== "active") {
-        void flushDraftRef.current().catch(() => showSaveErrorRef.current());
-        return;
+    if (!sessionId) return;
+    return subscribeSession(() => {
+      const current = getSession();
+      if (current && current.id === sessionId && current.rows !== exercisesRef.current) {
+        exercisesRef.current = current.rows;
+        setExercises(current.rows);
       }
-      void (async () => {
-        try {
-          await flushDraftRef.current();
-          if (terminalRef.current) return;
-          const stored = await workoutRepository.getById(uid, workoutId);
-          const rows = stored?.data.performedExercises;
-          // A row mid-initialisation has no exercises yet; adopting it would
-          // blank a screen that already has the user's sets.
-          if (!rows || rows.length === 0) return;
-          const draft = rows.map(collapseSetsToDraft);
-          exercisesRef.current = draft;
-          setExercises(draft);
-          if (stored?.data.name) setWorkoutName(stored.data.name);
-        } catch {
-          showSaveErrorRef.current();
-        }
-      })();
     });
-    return () => sub.remove();
-  }, [workoutId, initializing, user, setExercises]);
-
-  // All route removal paths (Android/browser Back and programmatic navigation)
-  // wait for the latest snapshot. A failed flush keeps this screen mounted.
-  usePreventRemove(
-    !navigationUnlocked && !!workoutId && !initializing,
-    ({ data }) => {
-      if (leaveInFlightRef.current || terminalRef.current) return;
-      leaveInFlightRef.current = true;
-      void flushDraftRef.current()
-        .then(() => {
-          const snapshot = draftSnapshotRef.current;
-          if (snapshot) releaseActiveWorkoutDraft(snapshot.uid, snapshot.workoutId);
-          pendingNavigationActionRef.current = data.action;
-          setNavigationUnlocked(true);
-        })
-        .catch(() => {
-          leaveInFlightRef.current = false;
-          showSaveErrorRef.current();
-        });
-    },
-  );
-
-  // Dispatch only after React has removed the navigation guard. Terminal
-  // actions use the same unlock path so their final repository state cannot be
-  // followed by an unmount autosave.
-  useEffect(() => {
-    if (!navigationUnlocked) return;
-    const action = pendingNavigationActionRef.current;
-    if (action) {
-      pendingNavigationActionRef.current = null;
-      navigation.dispatch(action);
-      return;
-    }
-    if (terminalNavigationRef.current) {
-      terminalNavigationRef.current = false;
-      router.replace("/(tabs)");
-    }
-  }, [navigation, navigationUnlocked]);
+  }, [sessionId, setExercises]);
 
   // The notification is a live control surface, not a save artifact, so it redraws on
-  // its own short timer rather than riding the autosave above — a set tapped here or on
-  // the notification itself lands visibly at once, and the action PendingIntents (which
-  // carry expectedCompletedSets) re-arm immediately so a fast second tap isn't rejected.
+  // its own short timer — a set tapped here or on the notification itself lands visibly
+  // at once, and the action PendingIntents (which carry expectedCompletedSets) re-arm
+  // immediately so a fast second tap isn't rejected.
   // The 100ms only coalesces keystroke bursts: weight/duration feed the detail line.
   useEffect(() => {
-    if (!workoutId || !startedAt || initializing) return;
-    const t = setTimeout(() => redrawNotificationRef.current(exercises), 100);
+    if (!sessionId || !startedAt || initializing) return;
+    const t = setTimeout(() => {
+      showWorkoutNotification(
+        buildWorkoutNotificationPresentation({
+          workoutId: sessionId,
+          workoutName: effectiveWorkoutName,
+          startedAt,
+          rows: exercises,
+        }),
+      ).catch((e) => console.warn("[workout-notification] show failed", e));
+    }, 100);
     return () => clearTimeout(t);
-  }, [exercises, effectiveWorkoutName, workoutId, initializing, startedAt]);
+  }, [exercises, effectiveWorkoutName, sessionId, initializing, startedAt]);
 
   const incompleteSetCount = () =>
     exercises
@@ -549,14 +457,11 @@ export default function ActiveWorkoutScreen() {
       .reduce((sum, ex) => sum + ex.sets.filter((s) => !s.completed).length, 0);
 
   const finishWorkout = async () => {
-    if (!workoutId || terminalRef.current || leaveInFlightRef.current) return;
+    if (!sessionId || terminalRef.current) return;
     terminalRef.current = true;
     setSaving(true);
     try {
       if (!user) throw new Error('You must be signed in to finish a workout.');
-      // Drain every older snapshot before the terminal write. Once terminalRef
-      // is set, no UI/watch/lifecycle path can enqueue a newer autosave.
-      await flushDraftRef.current();
       const performedExercises: PerformedExercise[] = exercises
         .filter((ex) => ex.label.trim() !== "")
         .map((ex, order) =>
@@ -572,28 +477,47 @@ export default function ActiveWorkoutScreen() {
         }));
 
       const injuries = await getOngoingInjuryIds(user.uid);
-      const stored = await workoutRepository.getById(user.uid, workoutId);
-      if (!stored) throw new Error('Workout no longer exists.');
-      await workoutRepository.update(user.uid, workoutId, {
-        ...stored.data,
-        name: effectiveWorkoutName || "Workout",
-        date: new Date().toISOString(),
-        performedExercises,
-        status: "completed",
-        injuries,
-        updatedAt: new Date().toISOString(),
-      });
+      const now = new Date().toISOString();
+      const sessionStartedAt = (startedAt ?? new Date()).toISOString();
+
+      // This is the only write this screen ever makes: a plan-sourced session
+      // completes the row it was seeded from, an ad-hoc one is created fresh here.
+      if (planId) {
+        const stored = await workoutRepository.getById(user.uid, planId);
+        if (!stored) throw new Error('Workout no longer exists.');
+        await workoutRepository.update(user.uid, planId, {
+          ...stored.data,
+          name: effectiveWorkoutName || "Workout",
+          date: now,
+          performedExercises,
+          status: "completed",
+          injuries,
+          startedAt: sessionStartedAt,
+          updatedAt: now,
+        });
+      } else {
+        await workoutRepository.create(user.uid, {
+          name: effectiveWorkoutName || "Workout",
+          date: now,
+          performedExercises,
+          status: "completed",
+          injuries,
+          schemaVersion: 2,
+          startedAt: sessionStartedAt,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
       // The session is done — push it now rather than leaving it on the device
-      // until the next foreground. The autosave above deliberately does not.
+      // until the next foreground.
       triggerSyncAfterWrite();
       await dismissWorkoutNotification();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
       // moment later when it regains focus.
       pushWearState(buildWearIdleState(describeUpNext({})));
-      releaseActiveWorkoutDraft(user.uid, workoutId);
-      terminalNavigationRef.current = true;
-      setNavigationUnlocked(true);
+      endSession();
+      router.replace("/(tabs)");
     } catch (err: any) {
       terminalRef.current = false;
       showAlert("Error", "Could not finish workout. " + err.message);
@@ -649,87 +573,56 @@ export default function ActiveWorkoutScreen() {
     currentFlatSet!.set.weight.trim() !== "";
 
   const handleCompleteSet = () => {
-    if (!workoutId) return;
-    setExercises((prev) => applyWearAction(prev, { action: "completeSet", workoutId }));
+    if (!sessionId) return;
+    setExercises((prev) => applyWearAction(prev, { action: "completeSet", workoutId: sessionId }));
   };
 
   const handleUndoSet = () => {
-    if (!workoutId) return;
-    setExercises((prev) => applyWearAction(prev, { action: "uncompleteSet", workoutId }));
+    if (!sessionId) return;
+    setExercises((prev) => applyWearAction(prev, { action: "uncompleteSet", workoutId: sessionId }));
   };
 
-  // Watch actions land here whenever the app process is alive (otherwise the headless
-  // task in utils/wear-action-task.ts handles them). Routing them through the same
-  // draft state as a tap gets the autosave, notification and watch push for free, and
-  // the resulting state push doubles as the watch's ack.
+  // Only a remote finishWorkout action is handled directly by this screen — completeSet/
+  // uncompleteSet from the watch or notification are applied by app/_layout.tsx's
+  // handler onto the session store (see the subscribeSession effect above), because
+  // finishing has to run this screen's own finishWorkout: it writes to the repository
+  // and navigates, neither of which belongs in the store-only fallback path
+  // (utils/wear-action-task.ts) that also has to work with this screen unmounted.
   const finishRef = useRef(finishWorkout);
   finishRef.current = finishWorkout;
 
   useEffect(() => {
-    if (!workoutId) return;
-    // Claim the actions so the root layout's fallback handler stands down; otherwise
-    // both would apply the same set and it would land twice.
-    setScreenOwnsWorkoutActions(true);
-    const applyRemoteAction = (action: WearAction | LiveUpdateNotificationAction) => {
+    if (!sessionId) return;
+    const handleRemoteFinish = (action: WearAction | LiveUpdateNotificationAction) => {
+      if (action.action !== "finishWorkout") return;
       if (terminalRef.current) return;
-      // A stale watch acting on a workout that already ended must not touch this one.
-      if ("workoutId" in action && action.workoutId !== workoutId) return;
-      if (action.action === "startWorkout") return;
+      // A stale watch/notification acting on a session that already ended must not
+      // touch the next one.
+      if (action.workoutId !== sessionId) return;
       if (
         "expectedCompletedSets" in action &&
         !matchesExpectedCompletedSets(exercisesRef.current, action)
       ) return;
-      if (action.action === "finishWorkout") {
-        finishRef.current();
-        return;
-      }
-      // Persist and redraw right here rather than leaving it to the debounced
-      // effects. A backgrounded app may not run those timers, so the set would
-      // live only in memory — lost if Android kills the process — and the
-      // notification would keep advertising a stale expectedCompletedSets,
-      // which makes the guard above silently reject the next tap.
-      const next = applyWearAction(exercisesRef.current, action);
-      // Advance the ref synchronously: two taps landing in the same tick would
-      // otherwise both read the pre-action rows and the second would be
-      // rejected by the expectedCompletedSets guard above.
-      exercisesRef.current = next;
-      setExercises(next);
-      scheduleDraftRef.current(next);
-      redrawNotificationRef.current(next);
+      finishRef.current();
     };
-    const unsubscribeWear = subscribeWearActions(applyRemoteAction);
-    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(applyRemoteAction);
+    const unsubscribeWear = subscribeWearActions(handleRemoteFinish);
+    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleRemoteFinish);
     return () => {
-      setScreenOwnsWorkoutActions(false);
       unsubscribeWear();
       unsubscribeNotification();
     };
-  }, [workoutId, setExercises]);
+  }, [sessionId]);
 
-  const discardWorkout = async () => {
-    if (!workoutId || terminalRef.current || leaveInFlightRef.current) return;
+  const discardWorkout = () => {
+    if (!sessionId || terminalRef.current) return;
     terminalRef.current = true;
-    setSaving(true);
-    try {
-      if (!user) throw new Error('You must be signed in to discard a workout.');
-      await flushDraftRef.current();
-      // The live rows, not the last autosave — a discard can land inside the
-      // web debounce window.
-      const draft: PerformedExercise[] = exercises
-        .filter((ex) => ex.label.trim() !== "")
-        .map((ex, order) => buildPerformedExercise(ex, order));
-      await discardActiveWorkout(user.uid, workoutId, draft);
-      triggerSyncAfterWrite();
-      releaseActiveWorkoutDraft(user.uid, workoutId);
-      terminalNavigationRef.current = true;
-      setNavigationUnlocked(true);
-    } catch (err: any) {
-      terminalRef.current = false;
-      showAlert("Error", "Could not discard workout. " + err.message);
-    } finally {
-      setSaving(false);
-      setShowDiscardConfirm(false);
-    }
+    // A plan-sourced session never left 'planned' and an ad-hoc one was never
+    // created, so there is nothing to undo in the database — just tear down the
+    // in-memory session and the notification/watch surfaces pointing at it.
+    endSession();
+    dismissWorkoutNotification().catch(() => {});
+    setShowDiscardConfirm(false);
+    router.replace("/(tabs)");
   };
 
   if (initializing) {

@@ -4,12 +4,13 @@ import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFro
 import { WorkoutPrefillLoader } from '@/components/ui/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { subscribeLiveUpdateNotificationActions } from '@/utils/live-update-notification-actions';
-import { handleWorkoutAction, screenOwnsWorkoutActions } from '@/utils/wear-action-task';
+import { sweepLegacyInProgressWorkouts } from '@/utils/discard-workout';
+import { handleWorkoutAction } from '@/utils/wear-action-task';
 import { subscribeWearActions } from '@/utils/wear-sync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-get-random-values';
@@ -88,8 +89,25 @@ function RootLayoutNav() {
     };
   }, [loading, retryAttempt, userId]);
 
-  // Watch actions, for every case except "the active-workout screen is mounted" —
-  // that screen subscribes itself and applies them to its own draft state.
+  // Devices updated from a pre-rewrite build can still have an 'in_progress' row on
+  // disk (see utils/discard-workout.ts) — nothing in the new code will ever finish or
+  // discard it, so sweep it once per account per app start, right after the account
+  // is confirmed open.
+  const sweptUidRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (accountGate.state !== 'ready' || !userId || sweptUidRef.current === userId) return;
+    sweptUidRef.current = userId;
+    sweepLegacyInProgressWorkouts(userId).catch((err) =>
+      console.warn('Legacy in_progress sweep failed', err)
+    );
+  }, [accountGate.state, userId]);
+
+  // Applies completeSet/uncompleteSet actions to the in-memory session, whether or
+  // not the active-workout screen is mounted — both converge on the same store (see
+  // utils/wear-action-task.ts), so there's no ownership flag to coordinate anymore.
+  // finishWorkout is the one action handleWorkoutAction always no-ops on; that write
+  // only happens through the active-workout screen's own Finish flow, which subscribes
+  // to these same actions separately while it's mounted.
   useEffect(() => {
     if (!user) return;
     const handleAction = (action: Parameters<typeof handleWorkoutAction>[0]) => {
@@ -99,8 +117,7 @@ function RootLayoutNav() {
         router.push('/up-next');
         return;
       }
-      if (screenOwnsWorkoutActions()) return;
-      handleWorkoutAction(action, user.uid).catch((err) => console.warn('Workout action failed', err));
+      handleWorkoutAction(action).catch((err) => console.warn('Workout action failed', err));
     };
     const unsubscribeWear = subscribeWearActions(handleAction);
     const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleAction);

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Get the latest Timber code and install a standalone Release build on an iPhone.
-# Run scripts/ios/setup.sh once before using this command.
+# Run npm run ios:setup once before using this command.
 #
 #   npm run install:apple
 
@@ -24,22 +24,24 @@ banner "Timber — install on iPhone"
 # ---------------------------------------------------------------------------
 step "Checking the one-time setup"
 
-have git || die "Git is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
-have node || die "Node.js is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
-have npm || die "npm is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
-have npx || die "npx is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
-have pod || die "CocoaPods is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
-have xcodebuild || die "Xcode is missing. Re-run the one-time setup: bash scripts/ios/setup.sh"
+have git || die "Git is missing. Re-run the one-time setup: npm run ios:setup"
+have node || die "Node.js is missing. Re-run the one-time setup: npm run ios:setup"
+have npm || die "npm is missing. Re-run the one-time setup: npm run ios:setup"
+have npx || die "npx is missing. Re-run the one-time setup: npm run ios:setup"
+have pod || die "CocoaPods is missing. Re-run the one-time setup: npm run ios:setup"
+have xcodebuild || die "Xcode is missing. Re-run the one-time setup: npm run ios:setup"
 
 NODE_MAJOR=$(node -v | sed 's/^v\([0-9]*\).*/\1/')
 [ "${NODE_MAJOR:-0}" -ge 20 ] \
-  || die "Node $(node -v) is too old. Re-run the one-time setup: bash scripts/ios/setup.sh"
+  || die "Node $(node -v) is too old. Re-run the one-time setup: npm run ios:setup"
 [[ "$(xcode-select -p 2>/dev/null || true)" == *"Xcode.app"* ]] \
-  || die "The full Xcode toolchain is not selected. Re-run: bash scripts/ios/setup.sh"
+  || die "The full Xcode toolchain is not selected. Re-run: npm run ios:setup"
 validate_env .env \
   || die "Your .env is missing or incomplete. Ask Aidan for the latest file, then re-run the setup script."
 load_apple_config "$APPLE_CONFIG_FILE" \
-  || die "The one-time Apple setup is missing. Run: bash scripts/ios/setup.sh"
+  || die "The one-time Apple setup is missing. Run: npm run ios:setup"
+require_tracking_branch \
+  || die "This clone has no tracked Git branch to update. Run npm run ios:setup for guidance."
 
 ok "Node $(node -v), Xcode $(xcodebuild -version | head -n 1), and app settings are ready."
 info "Private iOS app identifier: $TIMBER_IOS_BUNDLE_IDENTIFIER"
@@ -110,7 +112,7 @@ if ! npx expo run:ios --device --configuration Release --no-bundler; then
   • Phone not found          → reconnect it, unlock it, and tap Trust
   • Developer Mode disabled → Settings → Privacy & Security → Developer Mode
   • No development team     → open Xcode → Settings → Accounts and add your Apple Account
-  • Signing error           → run bash scripts/ios/setup.sh to repair the private app identifier
+  • Signing error           → run npm run ios:setup to repair the private app identifier
   • iOS version unsupported → update Xcode (and macOS if the App Store requires it)
 
 If those do not help, send Aidan the last 20 lines of output.

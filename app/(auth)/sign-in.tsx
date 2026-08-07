@@ -17,6 +17,10 @@ import {
   View,
 } from 'react-native';
 
+// This is injected only by scripts/ios/update.sh. The personal installer uses
+// a generated bundle ID, so its published iOS Google OAuth client cannot work.
+const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === '1';
+
 export default function SignInScreen() {
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
@@ -86,7 +90,7 @@ export default function SignInScreen() {
               {loading ? <ActivityIndicator color="#fff" /> : <Text style={timberAuthStyles.primaryButtonText}>Sign In</Text>}
             </TouchableOpacity>
 
-            <GoogleSignInButton onError={setError} disabled={loading} />
+            {!IS_PERSONAL_IOS_BUILD && <GoogleSignInButton onError={setError} disabled={loading} />}
 
             <Link href="/(auth)/sign-up" asChild>
               <TouchableOpacity style={styles.linkButton}>

@@ -153,7 +153,22 @@ load_apple_config() {
   local file="$1"
   validate_apple_config "$file" || return 1
   TIMBER_IOS_BUNDLE_IDENTIFIER=$(read_apple_bundle_id "$file")
-  export TIMBER_IOS_BUNDLE_IDENTIFIER
+  # This public build flag is deliberately scoped to the locally signed iPhone
+  # build. It prevents the app from offering Google sign-in, which needs an
+  # iOS OAuth client registered to this clone's generated bundle identifier.
+  EXPO_PUBLIC_PERSONAL_IOS_BUILD=1
+  export TIMBER_IOS_BUNDLE_IDENTIFIER EXPO_PUBLIC_PERSONAL_IOS_BUILD
+}
+
+# Require the branch that the recurring installer updates to have an upstream.
+# `git pull --ff-only` otherwise fails with Git's internal tracking error,
+# which is not actionable for someone only trying to install the app.
+require_tracking_branch() {
+  local branch upstream
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || return 1
+  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null) || return 1
+  upstream=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null) || return 1
+  [ -n "$branch" ] && [ -n "$upstream" ]
 }
 
 # --- preflight ---------------------------------------------------------------
@@ -235,6 +250,12 @@ _self_test() {
   second_bundle=$(read_apple_bundle_id "$dir/apple-generated")
   if [ "$first_bundle" = "$second_bundle" ]; then status=0; else status=1; fi
   _assert "preserves the generated Apple bundle ID" 0 $status
+
+  # Loading the config marks this as the deliberately limited personal build.
+  load_apple_config "$dir/apple-generated"; status=$?
+  _assert "loads the generated Apple bundle ID" 0 $status
+  if [ "${EXPO_PUBLIC_PERSONAL_IOS_BUILD:-}" = "1" ]; then status=0; else status=1; fi
+  _assert "marks local iPhone installs as personal builds" 0 $status
 
   # Every key in the mobile example that we require is spelled correctly.
   if [ -f "$(dirname -- "${BASH_SOURCE[0]}")/../../.env.example.eas" ]; then
