@@ -141,8 +141,13 @@ export function computeMuscleVolume(recent: Workout[], catalog: CatalogExercise[
  * over-trained and up to 3 under-trained muscle groups. Muscle attribution
  * comes from the exercise catalog (real primary/secondary muscles), not from
  * the model guessing what each exercise trains.
+ *
+ * `remaining` is the server's own count of AI uses left today, or null when the
+ * early returns below answered without spending one.
  */
-export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsights> {
+export async function analyzeMuscles(
+  workouts: Workout[]
+): Promise<{ insights: MuscleInsights; remaining: number | null }> {
   const now = Date.now();
   const thirtyDaysAgo = now - WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
@@ -151,7 +156,7 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
     return date !== null && date.getTime() >= thirtyDaysAgo;
   });
   if (recent.length === 0) {
-    return { overTrained: [], underTrained: [] };
+    return { insights: { overTrained: [], underTrained: [] }, remaining: null };
   }
 
   const catalog = await loadCatalog();
@@ -159,7 +164,7 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
 
   // No muscle attribution at all (e.g. catalog failed to load) — don't emit garbage.
   if (stats.every((s) => s.weeklySets === 0)) {
-    return { overTrained: [], underTrained: [] };
+    return { insights: { overTrained: [], underTrained: [] }, remaining: null };
   }
 
   const volumeTable = stats
@@ -178,7 +183,7 @@ export async function analyzeMuscles(workouts: Workout[]): Promise<MuscleInsight
 
   // The prompt template and output schema live server-side in
   // api/_lib/ai/prompts.ts; only the computed data crosses the wire.
-  const { data } = await callAI('muscle-analysis', { volumeTable, regionList });
+  const { data, remaining } = await callAI('muscle-analysis', { volumeTable, regionList });
 
-  return normalizeMuscleInsights(data);
+  return { insights: normalizeMuscleInsights(data), remaining };
 }

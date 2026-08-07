@@ -1,8 +1,8 @@
-import { TEMPORARY_AI_DAILY_LIMIT } from "@/shared/ai-contract";
 import { useAuth } from "@/context/auth-context";
 import { Workout } from "@/types/workout";
-import { formatAIError } from "@/utils/ai-client";
+import { AIQuotaError, formatAIError } from "@/utils/ai-client";
 import { useAIGenerationAvailable } from "@/utils/use-ai-connectivity";
+import { useAIQuota } from "@/utils/use-ai-quota";
 import {
   analyzeMuscles,
   MuscleInsights,
@@ -23,16 +23,9 @@ interface Props {
   workouts: Workout[];
 }
 
-const MAX_DAILY_REFRESHES = TEMPORARY_AI_DAILY_LIMIT;
-
 interface InsightsCache {
   date: string;
   insights: MuscleInsights;
-}
-
-interface RefreshCache {
-  date: string;
-  count: number;
 }
 
 function todayKey(): string {
@@ -45,27 +38,20 @@ export function MuscleInsightCards({ workouts }: Props) {
   const [insights, setInsights] = useState<MuscleInsights | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [refreshesLeft, setRefreshesLeft] = useState(MAX_DAILY_REFRESHES);
+  const [quotaExhausted, setQuotaExhausted] = useState(false);
+  // The server counts AI uses across every feature, so this is the only honest
+  // source for the meter — a per-card local tally drifts the moment the user
+  // spends a use in the workout builder.
+  const { usesLeft, setUsesLeft } = useAIQuota();
   const hasLoadedRef = useRef(false);
 
   const cacheKey = user ? `muscle_insights_${user.uid}` : null;
-  const refreshCountKey = user ? `muscle_insights_refreshes_${user.uid}` : null;
-
-  useEffect(() => {
-    if (!refreshCountKey) return;
-    AsyncStorage.getItem(refreshCountKey).then((raw) => {
-      if (!raw) return;
-      const cached: RefreshCache = JSON.parse(raw);
-      if (cached.date === todayKey()) {
-        setRefreshesLeft(Math.max(0, MAX_DAILY_REFRESHES - cached.count));
-      }
-    });
-  }, [refreshCountKey]);
 
   const runAnalysis = async (force = false) => {
     if (workouts.length === 0 || !cacheKey) return;
     setLoading(true);
     setError(null);
+    setQuotaExhausted(false);
     try {
       if (!force) {
         const raw = await AsyncStorage.getItem(cacheKey);
@@ -83,11 +69,18 @@ export function MuscleInsightCards({ workouts }: Props) {
         return;
       }
 
-      const result = await analyzeMuscles(workouts);
+      const { insights: result, remaining } = await analyzeMuscles(workouts);
+      // The auto-run spends a use too, so reflect the server's count either way.
+      if (remaining != null) setUsesLeft(remaining);
       setInsights(result);
       const payload: InsightsCache = { date: todayKey(), insights: result };
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (caughtError) {
+      if (caughtError instanceof AIQuotaError) {
+        setQuotaExhausted(true);
+        setUsesLeft(0);
+        return;
+      }
       const details = formatAIError(caughtError);
       console.error("AI muscle analysis failed:", details, caughtError);
       setError(
@@ -100,20 +93,8 @@ export function MuscleInsightCards({ workouts }: Props) {
     }
   };
 
-  const handleManualRefresh = async () => {
-    if (!refreshCountKey || !aiAvailable || refreshesLeft <= 0 || loading) return;
-
-    const raw = await AsyncStorage.getItem(refreshCountKey);
-    let newCount = 1;
-    if (raw) {
-      const cached: RefreshCache = JSON.parse(raw);
-      newCount = cached.date === todayKey() ? cached.count + 1 : 1;
-    }
-    await AsyncStorage.setItem(
-      refreshCountKey,
-      JSON.stringify({ date: todayKey(), count: newCount }),
-    );
-    setRefreshesLeft(Math.max(0, MAX_DAILY_REFRESHES - newCount));
+  const handleManualRefresh = () => {
+    if (!aiAvailable || usesLeft <= 0 || loading) return;
     runAnalysis(true);
   };
 
@@ -128,11 +109,12 @@ export function MuscleInsightCards({ workouts }: Props) {
 
   if (workouts.length === 0) return null;
 
+  const refreshDisabled = usesLeft <= 0 || !aiAvailable;
   const refreshLabel =
     !aiAvailable
       ? 'AI needs a connection'
-      : refreshesLeft > 0
-      ? `Refresh · ${refreshesLeft} left`
+      : usesLeft > 0
+      ? `Refresh · ${usesLeft} left`
       : "Daily limit reached";
 
   return (
@@ -151,28 +133,28 @@ export function MuscleInsightCards({ workouts }: Props) {
             accessibilityLabel={
               !aiAvailable
                 ? 'AI needs a connection. Cached insights remain available.'
-                : refreshesLeft > 0
-                ? `Refresh AI muscle insights. ${refreshesLeft} refreshes left today.`
-                : "AI muscle insight daily refresh limit reached."
+                : usesLeft > 0
+                ? `Refresh AI muscle insights. ${usesLeft} AI uses left today.`
+                : "No AI uses left today."
             }
-            accessibilityState={{ disabled: refreshesLeft <= 0 || !aiAvailable }}
+            accessibilityState={{ disabled: refreshDisabled }}
             style={({ pressed }) => [
               styles.refreshButton,
-              (refreshesLeft <= 0 || !aiAvailable) && styles.refreshButtonDisabled,
-              pressed && refreshesLeft > 0 && aiAvailable && styles.buttonPressed,
+              refreshDisabled && styles.refreshButtonDisabled,
+              pressed && !refreshDisabled && styles.buttonPressed,
             ]}
             onPress={handleManualRefresh}
-            disabled={refreshesLeft <= 0 || loading || !aiAvailable}
+            disabled={refreshDisabled || loading}
           >
             <Ionicons
               name="refresh"
               size={17}
-              color={refreshesLeft <= 0 || !aiAvailable ? "#6c6c6c" : "#f08a8a"}
+              color={refreshDisabled ? "#6c6c6c" : "#f08a8a"}
             />
             <Text
               style={[
                 styles.refreshButtonText,
-                refreshesLeft <= 0 && styles.refreshButtonTextDisabled,
+                usesLeft <= 0 && styles.refreshButtonTextDisabled,
               ]}
             >
               {refreshLabel}
@@ -193,6 +175,22 @@ export function MuscleInsightCards({ workouts }: Props) {
               Reading your training pattern
             </Text>
             <Text style={styles.statusText}>This can take a moment.</Text>
+          </View>
+        </View>
+      ) : quotaExhausted ? (
+        // Deliberately not a Pressable: retrying cannot succeed until tomorrow,
+        // and nothing went wrong — the user simply spent the day's uses.
+        <View
+          style={styles.statusPanel}
+          accessible
+          accessibilityLabel="Sorry, you are out of insights for today."
+        >
+          <Ionicons name="time-outline" size={24} color="#888" />
+          <View style={styles.statusCopy}>
+            <Text style={styles.statusTitle}>Out of insights</Text>
+            <Text style={styles.statusText} selectable>
+              Sorry, you are out of insights for today.
+            </Text>
           </View>
         </View>
       ) : error ? (

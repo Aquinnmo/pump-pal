@@ -133,6 +133,12 @@ pattern to extend.
   🔥/💔 notification emoji.
 - **The arrival-zone gradient** (`components/timber-auth-shell.tsx:20`) — a
   narrow warm-to-black wash, not decoration; it is the [zone](#two-zones) marker.
+- **The arrival-zone rings** (`components/timber-auth-shell.tsx:114-139`) — three
+  1px hairline circle outlines bleeding off-screen behind the auth content. They
+  read as growth rings, which is the logo's own motif, and they are outlines: not
+  the banned glow, orb, or blob layer. Now that the auth surfaces are neutral,
+  they and the gradient are what carry arrival. Do not fill them, blur them, or
+  animate them, and do not add a fourth.
 - **Scroll-edge fade gradients** — functional affordance signalling more content,
   not ornament.
 
@@ -143,19 +149,28 @@ Timber runs two palettes on purpose. The logo is the key to both:
 `SAPWOOD #6E4A30`, `FACE #C9A567`, and `RING`/`PITH #E54242` — and every one of
 those appears in the app.
 
+The two zones differ in **atmosphere, not in materials**. Surfaces, borders, and
+text are the same tokens everywhere; arrival adds a warm wash and a gold
+signature on top of them. A login form and a workout card are built from the
+same parts.
+
 | | **Arrival** | **Tool** |
 | --- | --- | --- |
 | Where | `app/(auth)/*`, `app/set-split.tsx`, `components/timber-auth-shell.tsx`, logo and app icon | everything after login |
 | Job | say what this is and who made it | get out of the way |
-| Surfaces | warm — gradient `['#18120f', '#0f0f0f', '#0f0f0f']` (`components/timber-auth-shell.tsx:20`), card `rgba(20, 19, 18, 0.94)`, field `#181716` |  neutral — see [color](#color) |
-| Signature color | gold `#c9a567` (the log face) | none; the accent carries it |
-| Borders | bark `#4a3324` | `#2a2a2a` |
-| Body text | `#aaa39a`, placeholder `#9f9a92` | `#888`, placeholder `#666` |
-| Type | may go big — 38 / 700 / -1.2 tracking (`components/timber-auth-shell.tsx:163`) | the [scale](#typography), no exceptions |
+| Surfaces | the shared [color](#color) tokens — card `#1c1c1c`, field `#151515` — over a gradient wash `['#18120f', '#0f0f0f', '#0f0f0f']` (`components/timber-auth-shell.tsx:20`) | the same tokens, flat `#0f0f0f` |
+| Signature color | gold `#c9a567` — eyebrows, links, brand title, active dot | none; the accent carries it |
+| Borders | `#2a2a2a`, same as tool | `#2a2a2a` |
+| Body text | `#888`, placeholder `#666`, same as tool | `#888`, placeholder `#666` |
+| Bark and sapwood | the logo frame only — `rgba(74, 51, 36, 0.28)` fill, `#6e4a30` border (`components/timber-auth-shell.tsx:147`, `app/(auth)/welcome.tsx:180`) | never |
+| Type | may go big — 38 / 700 / -1.2 tracking (`components/timber-auth-shell.tsx:177`) | the [scale](#typography), no exceptions |
 
 **Rules:**
 
 - Gold, bark, and sapwood **never** appear in the tool zone. They mark arrival.
+- Bark and sapwood are **frame colors, not surface colors**, even in arrival.
+  They hold the logo and the onboarding icon; they do not fill cards, inputs, or
+  buttons. `#4a3324` as a border and `#181716` as a field are retired.
 - The accent `#e54242` appears in **both** — it is the log's pith ring, and it is
   the thread that makes the two zones one product.
 - The arrival zone is a small, fixed set of screens. It does not grow. A new
@@ -501,9 +516,9 @@ Files by hex-literal count: `pushup-challenge.tsx` 57, `analytics.tsx` 56,
 - **Secondary text, 5+ values** — `#888` (36), `#555` (20), `#666` (14), `#aaa`
   (9), `#999` (7), plus `#898989` / `#858585` / `#c9c9c9` unique to
   `app/(tabs)/index.tsx`.
-- **Placeholder, 4 values** — `#9f9a92` (arrival, correct), `#555`
-  (`active-workout.tsx`), `#777` (`settings-injuries.tsx`), `#666`
-  (`exercise-picker.tsx`).
+- **Placeholder, 3 values** — `#666` (canonical; `exercise-picker.tsx` and all of
+  `app/(auth)/*`), `#555` (`active-workout.tsx`), `#777`
+  (`settings-injuries.tsx`).
 - **Error red, 6 values** — `#f87171`, `#ff6b6b` (`exercise-card.tsx:185`),
   `#b00020` (`settings-account.tsx:325`), plus tinted variants.
 - **Success green, 5 unrelated values** — `#4ade80` (`toast.tsx:56`), `#81cf9b`

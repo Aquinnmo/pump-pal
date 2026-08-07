@@ -45,13 +45,13 @@ export function TimberBrand({ eyebrow, title = 'Timber', subtitle, compact = fal
 
 export const timberAuthStyles = StyleSheet.create({
   field: {
-    backgroundColor: '#181716',
+    backgroundColor: '#151515',
     borderWidth: 1,
-    borderColor: '#4a3324',
-    borderRadius: 14,
+    borderColor: '#2a2a2a',
+    borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 15,
-    fontSize: 16,
+    paddingVertical: 12,
+    fontSize: 15,
     color: '#fff',
   },
   primaryButton: {
@@ -76,10 +76,10 @@ export const timberAuthStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#181716',
+    gap: 12,
+    backgroundColor: '#151515',
     borderWidth: 1,
-    borderColor: '#4a3324',
+    borderColor: '#2a2a2a',
     borderRadius: 14,
     paddingVertical: 16,
   },
@@ -88,15 +88,17 @@ export const timberAuthStyles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 16,
   },
+  // Tinted-surface recipe: card surface + error at 8%, same hue at 24% for the
+  // border. No bespoke hex (docs/design-language.md).
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#291919',
+    backgroundColor: 'rgba(248, 113, 113, 0.08)',
     borderWidth: 1,
-    borderColor: '#69302b',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
+    borderColor: 'rgba(248, 113, 113, 0.24)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
 });
 
@@ -144,21 +146,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  // Bark fill + sapwood border are kept on purpose: the logo frame is the one
+  // place the warm palette still marks arrival.
   logoWrap: {
     width: 96,
     height: 96,
-    borderRadius: 28,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(74, 51, 36, 0.28)',
     borderWidth: 1,
     borderColor: '#6e4a30',
-    marginBottom: 14,
+    marginBottom: 16,
   },
   logoWrapCompact: {
     width: 56,
     height: 56,
-    borderRadius: 18,
+    borderRadius: 14,
     marginBottom: 0,
     marginRight: 12,
   },
@@ -167,8 +171,8 @@ const styles = StyleSheet.create({
   },
   eyebrow: {
     color: '#c9a567',
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 12,
+    fontWeight: '700',
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     textAlign: 'center',
@@ -177,26 +181,26 @@ const styles = StyleSheet.create({
   brandTitle: {
     color: '#fff',
     fontSize: 38,
-    fontWeight: '900',
+    fontWeight: '700',
     letterSpacing: -1.2,
     textAlign: 'center',
   },
   brandTitleCompact: {
     color: '#c9a567',
-    fontSize: 25,
+    fontSize: 24,
     textAlign: 'left',
   },
   brandSubtitle: {
-    color: '#aaa',
+    color: '#888',
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 21,
     textAlign: 'center',
-    marginTop: 7,
+    marginTop: 8,
   },
   brandSubtitleCompact: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: 'left',
-    marginTop: 2,
+    marginTop: 4,
   },
 });

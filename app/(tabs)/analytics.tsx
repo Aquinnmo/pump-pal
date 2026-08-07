@@ -1,9 +1,10 @@
 import { DevelopmentProgressSummary } from "@/components/development-progress-summary";
 import { MuscleInsightCards } from "@/components/muscle-insight-cards";
 import { MuscleLoadSummary } from "@/components/muscle-load-summary";
+import { SetConsistencySummary } from "@/components/set-consistency-summary";
 import { Dropdown } from "@/components/ui/dropdown";
-import { workoutRepository } from "@/db/workout-repository";
 import { useAuth } from "@/context/auth-context";
+import { workoutRepository } from "@/db/workout-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
 import { Workout } from "@/types/workout";
 import {
@@ -95,7 +96,11 @@ export default function AnalyticsScreen() {
 
     setFetchError(false);
     try {
-      setWorkouts((await workoutRepository.getHistory(user.uid)).map((record) => record.data));
+      setWorkouts(
+        (await workoutRepository.getHistory(user.uid)).map(
+          (record) => record.data,
+        ),
+      );
     } catch (error) {
       console.error(error);
       setFetchError(true);
@@ -633,6 +638,13 @@ export default function AnalyticsScreen() {
                 </View>
               )}
             </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Consistency</Text>
+            </View>
+            <SetConsistencySummary workouts={workouts} />
           </View>
 
           <View style={styles.section}>

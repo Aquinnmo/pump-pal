@@ -2,12 +2,12 @@ import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
+import { getSession } from '@/utils/active-workout-session';
 import { loadSplitNames } from '@/utils/split-names';
 import { predictNextWorkoutName, predictWorkoutAfterName } from '@/utils/predict-next-workout';
 import { describeUpNext } from '@/utils/up-next';
 import { buildWearIdleState } from '@/utils/wear-state';
 import { pushWearState } from '@/utils/wear-sync';
-import { toDateObj } from '@/utils/workout-conversion';
 import { dismissWorkoutNotification } from '@/utils/workout-notification';
 import { syncUpNextWidget } from '@/utils/widget-up-next';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,13 +27,14 @@ export default function HomeScreen() {
   const [nextWorkout, setNextWorkout] = useState<string | null>(null);
   const [nextWorkoutToPlan, setNextWorkoutToPlan] = useState<string | null>(null);
   const [nextPlan, setNextPlan] = useState<Workout | null>(null);
-  const [inProgress, setInProgress] = useState<Workout | null>(null);
+  // Only the display slice of the in-memory session (utils/active-workout-session.ts) —
+  // there is no Firestore id to carry until the user finishes it.
+  const [inProgress, setInProgress] = useState<{ name: string; startedAt: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     if (!inProgress?.startedAt) return;
-    const startMs = toDateObj(inProgress.startedAt as unknown as Workout['date'])?.getTime();
-    if (startMs === undefined) return;
+    const startMs = new Date(inProgress.startedAt).getTime();
     const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startMs) / 1000)));
     tick();
     const interval = setInterval(tick, 1000);
@@ -57,12 +58,16 @@ export default function HomeScreen() {
           const predictedNext = predictNextWorkoutName(splitNames, allFetched);
           setNextWorkout(predictedNext);
 
-          // An in-progress workout (crashed/backgrounded mid-session) takes priority over
-          // everything else — Up Next becomes "Resume".
-          const inProgressRows = await workoutRepository.getByStatus(user.uid, 'in_progress');
-          const liveWorkout = inProgressRows[0]?.data ?? null;
+          // A live in-memory session (crashed/backgrounded mid-session, or the user just
+          // navigated Home mid-workout) takes priority over everything else — Up Next
+          // becomes "Resume". No Firestore read: a live session is memory-only until Finish.
+          const liveSession = getSession();
+          const liveWorkout =
+            liveSession && liveSession.uid === user.uid
+              ? { name: liveSession.name, startedAt: liveSession.startedAt }
+              : null;
           setInProgress(liveWorkout);
-          // No live workout → clear any notification orphaned by a force-quit.
+          // No live session → clear any notification orphaned by a force-quit.
           if (!liveWorkout) dismissWorkoutNotification();
 
           // Head of the planned queue, if any — takes priority over the predicted name
@@ -165,7 +170,8 @@ export default function HomeScreen() {
             ]}
             onPress={() => {
               if (inProgress) {
-                router.push({ pathname: '/active-workout', params: { id: inProgress.id } });
+                // No id: the screen resumes straight from the in-memory session.
+                router.push('/active-workout');
               } else if (nextPlan) {
                 router.push({ pathname: '/active-workout', params: { id: nextPlan.id } });
               } else if (nextWorkout) {

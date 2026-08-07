@@ -1,9 +1,8 @@
 import { Toast } from "@/components/ui/toast";
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
-import { purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
-import { workoutRepository } from "@/db/workout-repository";
-import { discardActiveWorkout } from "@/utils/discard-workout";
+import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
+import { endSession } from "@/utils/active-workout-session";
 import { deleteAccountData } from "@/repositories/remote/account";
 import { getFriendlyAuthError } from "@/utils/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,12 +20,17 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+// Set only for the generated-bundle personal iPhone build. Its OAuth client
+// cannot be used with the private bundle identifier created by the installer.
+const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === "1";
+
 export default function SettingsAccountScreen() {
   const { user, logOut, googleConnection, connectGoogleAccount } = useAuth();
   const insets = useSafeAreaInsets();
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
+  const [pendingSync, setPendingSync] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmName, setDeleteConfirmName] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
@@ -47,7 +51,15 @@ export default function SettingsAccountScreen() {
 
   const handleSignOut = () => {
     setSignOutError("");
+    setPendingSync(0);
     setShowSignOutModal(true);
+    // Sign-out purges local data, so anything the final sync can't push is gone.
+    // Count first so the modal can say so; a failed count just omits the warning
+    // rather than blocking sign-out.
+    if (user)
+      countPendingSync(user.uid)
+        .then(setPendingSync)
+        .catch((err) => console.warn("[sign-out] pending count failed", err));
   };
 
   const handleChangePassword = () => {
@@ -127,16 +139,11 @@ export default function SettingsAccountScreen() {
     setSigningOut(true);
     setSignOutError("");
     try {
-      // An in-progress workout only exists on this device, so the purge below
-      // would destroy it silently. Discard it first — and before the sync, so a
-      // plan-backed session restored to the queue still reaches the server.
-      const inProgress = await workoutRepository.getByStatus(
-        user.uid,
-        "in_progress",
-      );
-      if (inProgress[0]) {
-        await discardActiveWorkout(user.uid, inProgress[0].id);
-      }
+      // A live workout only ever exists in memory now (see
+      // utils/active-workout-session.ts) — nothing was written to it, so there's
+      // nothing to discard on the way out. Just drop the session so it doesn't
+      // resurrect for whoever signs in next on this device.
+      endSession();
       await syncBeforeSignOut(user.uid);
       await purgeLocalAccountData(user.uid);
       setShowSignOutModal(false);
@@ -279,6 +286,13 @@ export default function SettingsAccountScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Sign out?</Text>
+            {pendingSync > 0 ? (
+              <Text style={styles.modalMessage}>
+                {pendingSync === 1 ? "1 change hasn’t" : `${pendingSync} changes haven’t`}{" "}
+                reached the cloud yet. We’ll try once more, but anything that
+                doesn’t make it will be lost.
+              </Text>
+            ) : null}
             {signOutError ? (
               <Text style={styles.modalErrorText}>{signOutError}</Text>
             ) : null}
@@ -309,7 +323,7 @@ export default function SettingsAccountScreen() {
       </Modal>
 
       <View style={styles.content}>
-        {isPasswordAccount && (
+        {isPasswordAccount && !IS_PERSONAL_IOS_BUILD && (
           <View style={styles.googleConnection}>
             {googleConnection === "connected" ? (
               <View

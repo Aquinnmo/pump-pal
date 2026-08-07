@@ -4357,6 +4357,128 @@
           ]
         }
       ]
+    },
+    {
+      "id": "pending-hang-power-clean",
+      "name": "Hang Power Clean",
+      "normalizedName": "hang power clean",
+      "aliases": [
+        "hang clean"
+      ],
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "quads",
+        "upper traps"
+      ],
+      "secondaryMuscles": [
+        "lower back",
+        "upper back",
+        "mid traps",
+        "front delts",
+        "forearm flexors"
+      ],
+      "movementPattern": "",
+      "equipment": [
+        "barbell"
+      ],
+      "bodyRegion": "full_body",
+      "mechanics": "compound",
+      "forceType": "hinge",
+      "trackingModes": [
+        "reps_weight"
+      ],
+      "variations": [],
+      "status": "approved"
+    },
+    {
+      "id": "pending-supermans",
+      "name": "Supermans",
+      "normalizedName": "supermans",
+      "aliases": [
+        "superman",
+        "superman hold"
+      ],
+      "primaryMuscles": [
+        "lower back",
+        "glutes"
+      ],
+      "secondaryMuscles": [
+        "hamstrings",
+        "mid traps",
+        "rear delts"
+      ],
+      "movementPattern": "",
+      "equipment": [
+        "bodyweight"
+      ],
+      "bodyRegion": "core",
+      "mechanics": "isolation",
+      "forceType": "mixed",
+      "trackingModes": [
+        "reps_bodyweight",
+        "duration"
+      ],
+      "variations": [],
+      "status": "approved"
+    },
+    {
+      "id": "pending-iron-crosses",
+      "name": "Iron Crosses",
+      "normalizedName": "iron crosses",
+      "aliases": [
+        "iron cross"
+      ],
+      "primaryMuscles": [
+        "obliques"
+      ],
+      "secondaryMuscles": [
+        "lower back",
+        "glute medius",
+        "hip flexors"
+      ],
+      "movementPattern": "",
+      "equipment": [
+        "bodyweight"
+      ],
+      "bodyRegion": "core",
+      "mechanics": "isolation",
+      "forceType": "rotation",
+      "trackingModes": [
+        "reps_bodyweight"
+      ],
+      "variations": [],
+      "status": "approved"
+    },
+    {
+      "id": "pending-feet-to-hands",
+      "name": "Feet-to-Hands",
+      "normalizedName": "feet-to-hands",
+      "aliases": [
+        "toes to bar",
+        "toes-to-bar"
+      ],
+      "primaryMuscles": [
+        "lower abs",
+        "hip flexors"
+      ],
+      "secondaryMuscles": [
+        "upper abs",
+        "lats",
+        "forearm flexors"
+      ],
+      "movementPattern": "",
+      "equipment": [
+        "bodyweight"
+      ],
+      "bodyRegion": "core",
+      "mechanics": "compound",
+      "forceType": "pull",
+      "trackingModes": [
+        "reps_bodyweight"
+      ],
+      "variations": [],
+      "status": "approved"
     }
   ]
 }

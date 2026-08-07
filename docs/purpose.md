@@ -55,12 +55,12 @@ less insight; it is never acceptable to show a wrong one.
 | Autofill from the last time you did this exercise *on this same split day*, falling back to any day (`hooks/use-draft-exercises.ts:44`) | ingestion |
 | Cascade an edit forward through following sets, stopping at the first deliberately different one so pyramids and drop sets survive (`hooks/use-draft-exercises.ts:21`) | ingestion |
 | Exercise picker offers recents-for-this-day before it offers search (`components/ui/exercise-picker.tsx:319`) | ingestion |
-| Per-set completion checkbox; unchecked sets are dropped at finish (`app/active-workout.tsx:452-456`) | fidelity |
-| Every active-workout change writes immediately to local SQLite on native; web coalesces API typing writes but flushes before lifecycle/navigation boundaries (`app/active-workout.tsx`) | never lose data |
+| Per-set completion checkbox; unchecked sets are dropped at finish (`app/active-workout.tsx`, `finishWorkout`) | fidelity |
+| An active workout lives in memory only (`utils/active-workout-session.ts`) and the DB is written exactly once, on Finish — a process death loses the in-flight session by design rather than risking a half-written row (`app/active-workout.tsx`) | fidelity over never-lose-data, deliberately |
 | Live Android notification + Pixel Live Update showing current exercise and running totals (`utils/workout-notification.android.ts`, `modules/live-update-notification/`) | log without opening the app |
 | Plate calculator solves minimum plates per side (`utils/plate-math.ts`) | removes gym math |
 | Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`utils/muscle-analysis.ts:51`) | fidelity |
-| Ongoing injuries auto-stamped onto every finished workout (`app/active-workout.tsx:458`, `utils/injuries.ts:21`) | insight with zero extra data entry |
+| Ongoing injuries auto-stamped onto every finished workout (`app/active-workout.tsx`, `finishWorkout`, `utils/injuries.ts:21`) | insight with zero extra data entry |
 | TPC: one swipe, zero fields (`app/(tabs)/pushup-challenge.tsx`) | habit, at zero ingestion cost |
 
 Read that table as a specification, not a changelog. New features should be able
