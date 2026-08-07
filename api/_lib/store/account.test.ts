@@ -5,6 +5,8 @@ const okPhases = {
   deleteWorkouts: async () => 3,
   deleteLegacyWorkouts: async () => 1,
   deletePushupChallenge: async () => {},
+  deleteFriendships: async () => 2,
+  deleteUsernameReservation: async () => {},
   deleteUserDoc: async () => {},
 };
 
@@ -14,7 +16,10 @@ const okPhases = {
   console.error = () => {};
   const result = await deleteAccountDataWith('uid1', okPhases);
   console.error = suppressed;
-  assert.deepEqual(result, { deleted: { workouts: 3, legacyWorkouts: 1, pushupChallenge: true, userDoc: true }, partial: false });
+  assert.deepEqual(result, {
+    deleted: { workouts: 3, legacyWorkouts: 1, pushupChallenge: true, friendships: 2, userDoc: true },
+    partial: false,
+  });
 }
 
 // One phase failing marks partial but doesn't stop the others from running
@@ -51,6 +56,7 @@ const okPhases = {
   assert.equal(result.deleted.userDoc, false);
   assert.equal(result.deleted.workouts, 3);
   assert.equal(result.deleted.pushupChallenge, true);
+  assert.equal(result.deleted.friendships, 2);
 }
 
 console.log('account: all assertions passed');

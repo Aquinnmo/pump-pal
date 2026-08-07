@@ -1,12 +1,24 @@
 import { useAuth } from '@/context/auth-context';
+import { profileRepository } from '@/db/profile-repository';
+import { useDataVersion } from '@/hooks/use-data-version';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const { user } = useAuth();
+  const dataVersion = useDataVersion();
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    profileRepository
+      .get(user.uid)
+      .then((profile) => setUsername(profile?.data.username ?? null))
+      .catch((err) => console.error(err));
+  }, [user, dataVersion]);
 
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(true);
@@ -43,7 +55,7 @@ export default function SettingsScreen() {
       >
 
       <View style={styles.avatarContainer}>
-        <Text style={styles.displayName}>{user?.displayName ?? 'Athlete'}</Text>
+        <Text style={styles.displayName}>{username ?? 'Athlete'}</Text>
         <Text style={styles.email}>{user?.email}</Text>
       </View>
 

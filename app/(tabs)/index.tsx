@@ -1,3 +1,4 @@
+import { profileRepository } from '@/db/profile-repository';
 import { workoutRepository } from '@/db/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
@@ -31,6 +32,15 @@ export default function HomeScreen() {
   // there is no Firestore id to carry until the user finishes it.
   const [inProgress, setInProgress] = useState<{ name: string; startedAt: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    profileRepository
+      .get(user.uid)
+      .then((profile) => setUsername(profile?.data.username ?? null))
+      .catch((err) => console.error(err));
+  }, [user, dataVersion]);
 
   useEffect(() => {
     if (!inProgress?.startedAt) return;
@@ -128,7 +138,7 @@ export default function HomeScreen() {
     );
   }
 
-  const displayName = user?.displayName?.trim() || 'Athlete';
+  const displayName = username?.trim() || 'Athlete';
   const isCompact = height < 650;
   const {
     label: upNextEyebrow,

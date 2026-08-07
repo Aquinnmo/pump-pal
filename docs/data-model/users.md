@@ -15,13 +15,50 @@ type UserDoc = {
     custom: string | null; // free text when type === 'Other', else null
     updatedAt: Timestamp;
   };
+  username?: string; // canonical display casing — see "Usernames" below
+  usernameLower?: string; // lowercase, matches the usernames/{id} reservation doc key
   injuries?: Injury[]; // types/user.ts — full history; ongoing = status === 'ongoing'
   aiUsage?: { date: string; count: number }; // AI daily-limit counter, shared by plan and active-workout suggestions
+  expoPushToken?: string; // Expo push token for this device — see "Push token" below
 };
 ```
 
 The `UserDoc` / `Injury` types now live in `types/user.ts` (promoted from the
 previously inferred inline shape when `injuries` was added).
+
+## Push token
+
+`expoPushToken` is what makes a user reachable by a Chop
+([buddies.md](./buddies.md)). Registered by `hooks/use-push-token.native.ts`
+from the authenticated tab shell — not from the Social screen, since a chop has
+to reach people who never open that tab — and written through
+`PATCH /api/profile` like any other allowlisted profile field. The hook caches
+the last-sent value in AsyncStorage so an unchanged token doesn't spend a write
+every cold start.
+
+One token per account, so the most recent device wins. Web has no Expo push
+token and never writes this field; those users record chops normally but
+receive nothing.
+
+## Usernames
+
+Path: `usernames/{usernameLower}` — `{ uid: string; username: string; createdAt: Timestamp }`.
+
+A separate top-level collection reserves usernames for uniqueness: the doc ID
+*is* the lock (lowercased), so a same-batch Firestore `:commit` with
+`currentDocument: { exists: false }` on this doc is what actually prevents a
+race, not any pre-check read. Written and read exclusively server-side, from
+`api/_lib/store/profile.ts`'s `updateProfile` — never touched by client
+Firestore rules or the outbox/sync layer directly. A rename deletes the old
+`usernames/{oldLower}` doc and creates the new one in the same commit as the
+`users/{uid}` update, so the three writes succeed or fail together.
+
+Sign-up (manual and Google OAuth) and Settings → Account → Username all reach
+this through `PATCH /api/profile` (`repositories/remote/profile.ts`'s
+`patchProfile`), called directly rather than through the offline-first
+`profileRepository.upsert()` path — a unique username has to be confirmed by
+the server before the UI can call it saved, unlike `workoutSplit`, which
+tolerates eventual consistency fine.
 
 ## Injuries
 
@@ -58,17 +95,17 @@ The injuries screen manages both **ongoing** and **past** (resolved) injuries:
 add (with a past onset, optionally already-resolved), edit onset/resolved dates
 inline, resolve, apply-to-history, or remove.
 
-## The doc doesn't exist until onboarding completes
+## The doc is created at sign-up, to hold the username
 
-There is no "create user doc on sign-up" step. The doc is written for the
-first time via `setDoc(doc(db, 'users', uid), { workoutSplit: {...} },
-{ merge: true })` when the user finishes the forced first-run `set-split`
-screen. Before that, `getDoc` on `users/{uid}` returns a non-existent
-snapshot — `app/_layout.tsx`'s gating logic (`isSplitOption(splitType)` on a
-`snapshot.data()?.workoutSplit?.type` read) already treats "no doc" and "doc
-exists but no split" identically, both routing to the `set-split` screen. Any
-new code reading this doc must handle the same non-existence case; don't
-assume the doc is always there just because the user is authenticated.
+Sign-up (`PATCH /api/profile` with `{ username }`, from `app/(auth)/sign-up.tsx`
+or the forced `app/set-username.tsx` screen for Google OAuth) now creates this
+doc immediately, ahead of `set-split`. `app/_layout.tsx`'s gating logic
+(`db/initial-sync.ts`'s `decideAccountBootstrap`) checks username before split
+— `{ state: 'onboarding', step: 'username' | 'split' }` — routing to
+`/set-username` first, then `/set-split`, when either is missing. Code reading
+this doc must still handle non-existence (a user can be authenticated with
+neither step complete yet, e.g. mid-onboarding or on a fresh read before the
+first PATCH lands); don't assume the doc is always there.
 
 `{ merge: true }` matters here too — settings.tsx re-saves `workoutSplit`
 after onboarding (to let users change their split later) and merge ensures
@@ -77,10 +114,13 @@ later.
 
 ## Account deletion
 
-`app/(tabs)/settings.tsx`'s delete-account flow deletes, in order: all
-`workouts` docs where `userId == uid`, the legacy `users/{uid}/workouts/*`
-subcollection (see [legacy.md](./legacy.md)), `users/{uid}/pushup-challenge/data`
-(see [pushup-challenge.md](./pushup-challenge.md)), then `users/{uid}`
-itself, then the Firebase Auth user. This is the one place that touches every
-per-user collection — if a new per-user collection is added, it needs a line
-added here too, or account deletion will silently leave orphaned data.
+`api/_lib/store/account.ts`'s `deleteAccountData` (invoked from
+`app/settings-account.tsx`'s delete-account flow) deletes, in order: the
+`usernames/{usernameLower}` reservation (read off `users/{uid}` before it's
+gone — must run first), all `workouts` docs where `userId == uid`, the legacy
+`users/{uid}/workouts/*` subcollection (see [legacy.md](./legacy.md)),
+`users/{uid}/pushup-challenge/data` (see
+[pushup-challenge.md](./pushup-challenge.md)), then `users/{uid}` itself, then
+the Firebase Auth user. This is the one place that touches every per-user
+collection — if a new per-user collection is added, it needs a line added
+here too, or account deletion will silently leave orphaned data.

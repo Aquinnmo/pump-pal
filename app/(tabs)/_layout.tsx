@@ -1,9 +1,14 @@
 import { HapticTab } from '@/components/haptic-tab';
 import { TimberTabIcon } from '@/components/timber-tab-icon';
+import { usePushToken } from '@/hooks/use-push-token';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 export default function TabLayout() {
+  // Everything below this point is behind auth, so a token registered here is
+  // always attributable to a signed-in uid.
+  usePushToken();
+
   return (
     <Tabs
       screenOptions={{

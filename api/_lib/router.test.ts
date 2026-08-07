@@ -67,6 +67,19 @@ async function run() {
   await assertResolves('/api/catalog/pending', './routes/catalog.js', 'pending');
   await assertResolves('/api/catalog', './routes/catalog.js', 'catalog');
 
+  // Buddies: `search` must not parse as a uid, and `:uid/chop` must reach the
+  // notifications module rather than the accept handler.
+  const search = await assertResolves('/api/buddies/search', './routes/buddies.js', 'search');
+  assert.equal(search.id, undefined, 'search must not be captured as a buddy uid');
+
+  const chop = await assertResolves('/api/buddies/uid-1/chop', './routes/notifications.js', 'chop');
+  assert.equal(chop.id, 'uid-1');
+
+  const buddyItem = await assertResolves('/api/buddies/uid-1', './routes/buddies.js', 'item');
+  assert.equal(buddyItem.id, 'uid-1');
+
+  await assertResolves('/api/buddies', './routes/buddies.js', 'collection');
+
   // Every remaining route still reachable at its original URL.
   await assertResolves('/api/ai', './routes/ai.js', 'ai');
   await assertResolves('/api/account/data', './routes/account.js', 'data');

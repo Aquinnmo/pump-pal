@@ -2,13 +2,15 @@ import { Toast } from "@/components/ui/toast";
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
 import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/db/account-data";
+import { profileRepository } from "@/db/profile-repository";
+import { useDataVersion } from "@/hooks/use-data-version";
 import { endSession } from "@/utils/active-workout-session";
 import { deleteAccountData } from "@/repositories/remote/account";
 import { getFriendlyAuthError } from "@/utils/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { deleteUser, sendPasswordResetEmail } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
@@ -27,6 +29,8 @@ const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === "1"
 export default function SettingsAccountScreen() {
   const { user, logOut, googleConnection, connectGoogleAccount } = useAuth();
   const insets = useSafeAreaInsets();
+  const dataVersion = useDataVersion();
+  const [username, setUsername] = useState<string | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState("");
@@ -48,6 +52,14 @@ export default function SettingsAccountScreen() {
     message: "",
     type: "success",
   });
+
+  useEffect(() => {
+    if (!user) return;
+    profileRepository
+      .get(user.uid)
+      .then((profile) => setUsername(profile?.data.username ?? null))
+      .catch((err) => console.error(err));
+  }, [user, dataVersion]);
 
   const handleSignOut = () => {
     setSignOutError("");
@@ -113,7 +125,7 @@ export default function SettingsAccountScreen() {
   };
 
   const confirmDeleteAccount = async () => {
-    if (!user || deleteConfirmName !== user.displayName) return;
+    if (!user || deleteConfirmName !== username) return;
     setDeletingAccount(true);
     try {
       await deleteAccountData();
@@ -226,16 +238,16 @@ export default function SettingsAccountScreen() {
             <Text style={styles.modalTitle}>Delete Account</Text>
             <Text style={styles.modalMessage}>
               {
-                "This will permanently delete your account and all associated data. This cannot be undone.\n\nType your name "
+                "This will permanently delete your account and all associated data. This cannot be undone.\n\nType your username "
               }
               <Text style={{ color: "#fff", fontWeight: "700" }}>
-                {user?.displayName}
+                {username}
               </Text>
               {" to confirm."}
             </Text>
             <TextInput
               style={styles.deleteConfirmInput}
-              placeholder="Your name"
+              placeholder="Your username"
               placeholderTextColor="#555"
               value={deleteConfirmName}
               onChangeText={setDeleteConfirmName}
@@ -261,14 +273,14 @@ export default function SettingsAccountScreen() {
                 style={[
                   styles.modalConfirmButton,
                   styles.modalDeleteButton,
-                  (deleteConfirmName !== user?.displayName ||
+                  (deleteConfirmName !== username ||
                     deletingAccount) &&
                     styles.modalButtonDisabled,
                 ]}
                 onPress={confirmDeleteAccount}
                 activeOpacity={0.8}
                 disabled={
-                  deleteConfirmName !== user?.displayName || deletingAccount
+                  deleteConfirmName !== username || deletingAccount
                 }
               >
                 {deletingAccount ? (
@@ -394,6 +406,22 @@ export default function SettingsAccountScreen() {
             ) : null}
           </View>
         )}
+
+        <TouchableOpacity
+          style={[styles.changePasswordButton, { marginBottom: 12 }]}
+          onPress={() => router.push("/settings-username")}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name="at"
+            size={20}
+            color="#fff"
+            style={styles.rowIcon}
+          />
+          <Text style={styles.changePasswordText}>
+            {username ? `Username · ${username}` : "Username"}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.changePasswordButton, { marginBottom: 12 }]}

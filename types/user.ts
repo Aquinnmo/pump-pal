@@ -46,6 +46,9 @@ export type UserDoc = {
     custom: string | null;
     updatedAt: StoredTimestamp;
   };
+  username?: string; // canonical display casing
+  usernameLower?: string; // matches the usernames/{id} reservation doc key
   injuries?: Injury[]; // full history; ongoing = status === 'ongoing'
   aiUsage?: { date: string; count: number };
+  expoPushToken?: string; // most recent device; what makes a Chop deliverable
 };

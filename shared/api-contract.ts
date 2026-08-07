@@ -77,6 +77,7 @@ export const aiUsage = z.object({ date: z.string(), count: z.number().int().min(
 
 export const profileDTO = z.object({
   workoutSplit: workoutSplit.nullable(),
+  username: z.string().nullable(),
   aiUsage: aiUsage.nullable(),
   version,
 });
@@ -84,9 +85,19 @@ export type ProfileDTO = z.infer<typeof profileDTO>;
 export const profileResponse = z.object({ profile: profileDTO });
 export type ProfileResponse = z.infer<typeof profileResponse>;
 
-/** PATCH /api/profile — allowlisted fields only; UID always comes from the token, never the body. */
+/**
+ * PATCH /api/profile — allowlisted fields only; UID always comes from the
+ * token, never the body. `username` format (see `shared/username.ts`
+ * `USERNAME_REGEX`) is validated in application code, not here — the server
+ * route (`api/_lib/store/profile.ts`) needs to distinguish "bad format" from
+ * "already taken" with different error codes, which a schema-level `.regex()`
+ * can't do.
+ */
 export const profilePatchInput = z.object({
   workoutSplit: workoutSplit.optional(),
+  username: z.string().optional(),
+  /** Expo push token for this device; the only thing that makes a Chop deliverable. */
+  expoPushToken: z.string().max(200).optional(),
   baseVersion: version.optional(),
 });
 export type ProfilePatchInput = z.infer<typeof profilePatchInput>;
@@ -372,20 +383,96 @@ export const putPushupChallengeInput = z.object({
 });
 export type PutPushupChallengeInput = z.infer<typeof putPushupChallengeInput>;
 
+// ------------------------------------------------------------ timber buddies
+
+/**
+ * Social graph. Every read here crosses user boundaries, which `firestore.rules`
+ * denies outright — so all of it runs server-side against `friendships/{pairId}`
+ * (see docs/data-model/buddies.md), never as a client query.
+ */
+
+/** Relationship between the caller and another user, from the caller's side. */
+export const buddyState = z.enum(['none', 'outgoing', 'incoming', 'buddies']);
+export type BuddyState = z.infer<typeof buddyState>;
+
+export const buddySearchResult = z.object({
+  uid: z.string(),
+  username: z.string(),
+  state: buddyState,
+});
+export type BuddySearchResult = z.infer<typeof buddySearchResult>;
+export const buddySearchResponse = z.object({ results: z.array(buddySearchResult) });
+export type BuddySearchResponse = z.infer<typeof buddySearchResponse>;
+
+export const buddyDTO = z.object({
+  uid: z.string(),
+  username: z.string(),
+  /** Derived server-side from the buddy's pushup-challenge days; not a stored field. */
+  currentStreak: z.number().int().min(0),
+  longestStreak: z.number().int().min(0),
+  /** Buddy logged a completed workout on the caller's local `today` — chopping is off. */
+  workedOutToday: z.boolean(),
+  /** When the CALLER last chopped this buddy, for the cooldown. Null = never. */
+  lastChoppedAt: isoTimestamp.nullable(),
+});
+export type BuddyDTO = z.infer<typeof buddyDTO>;
+
+export const buddyRequestDTO = z.object({
+  uid: z.string(),
+  username: z.string(),
+  direction: z.enum(['incoming', 'outgoing']),
+});
+export type BuddyRequestDTO = z.infer<typeof buddyRequestDTO>;
+
+export const buddiesResponse = z.object({
+  buddies: z.array(buddyDTO),
+  requests: z.array(buddyRequestDTO),
+});
+export type BuddiesResponse = z.infer<typeof buddiesResponse>;
+
+/** POST /api/buddies — send a buddy request to `uid`. */
+export const sendBuddyRequestInput = z.object({ uid: z.string().min(1) });
+export type SendBuddyRequestInput = z.infer<typeof sendBuddyRequestInput>;
+
+/** A calendar day in the caller's local timezone. The server has no idea what that is. */
+export const localDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/** GET /api/buddies?today=YYYY-MM-DD */
+export const buddiesQuery = z.object({ today: localDate });
+export type BuddiesQuery = z.infer<typeof buddiesQuery>;
+
+/** POST /api/buddies/:uid — accept is the only action on the item route. */
+export const buddyActionInput = z.object({ action: z.literal('accept') });
+export type BuddyActionInput = z.infer<typeof buddyActionInput>;
+
+/**
+ * POST /api/buddies/:uid/chop — the notification route. The caller names a
+ * buddy and their local date, never a title or body, so there is no path from
+ * the client to an arbitrary push.
+ */
+export const chopInput = z.object({ today: localDate });
+export type ChopInput = z.infer<typeof chopInput>;
+
+/** `delivered: false` means the chop was recorded but no push went out (no token, or Expo rejected it). */
+export const chopResponse = z.object({ chopped: z.boolean(), delivered: z.boolean() });
+export type ChopResponse = z.infer<typeof chopResponse>;
+
 // ----------------------------------------------------------------- account
 
 /**
  * DELETE /api/account/data — server-side purge of every per-user
  * Firestore collection/doc (`workouts` where `userId == uid`, legacy
  * `users/{uid}/workouts/*`, `users/{uid}/pushup-challenge/data`,
- * `users/{uid}` itself). Does NOT delete the Firebase Auth account — that
- * stays a client Auth operation, invoked only after this succeeds.
+ * `friendships` the user is a member of, `users/{uid}` itself). Does NOT
+ * delete the Firebase Auth account — that stays a client Auth operation,
+ * invoked only after this succeeds.
  */
 export const deleteAccountDataResponse = z.object({
   deleted: z.object({
     workouts: z.number().int(),
     legacyWorkouts: z.number().int(),
     pushupChallenge: z.boolean(),
+    friendships: z.number().int(),
     userDoc: z.boolean(),
   }),
   /** Present when a later step failed after earlier ones committed — safe to retry. */

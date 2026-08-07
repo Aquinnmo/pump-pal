@@ -248,7 +248,11 @@ export async function deleteDoc(path: string): Promise<void> {
 
 // ------------------------------------------------------------------- query
 
-export type QueryFilter = { field: string; op: 'EQUAL' | 'GREATER_THAN_OR_EQUAL' | 'LESS_THAN_OR_EQUAL'; value: unknown };
+export type QueryFilter = {
+  field: string;
+  op: 'EQUAL' | 'GREATER_THAN_OR_EQUAL' | 'LESS_THAN_OR_EQUAL' | 'ARRAY_CONTAINS';
+  value: unknown;
+};
 
 export interface RunQueryOptions {
   collectionId: string;
