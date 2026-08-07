@@ -59,7 +59,7 @@ export async function updateProfile(
 
   if (patch.username !== undefined) {
     if (!USERNAME_REGEX.test(patch.username)) {
-      throw new ApiError(400, 'Username must be 3-20 characters: lowercase letters, digits, underscore, starting with a letter.', 'invalid_username');
+      throw new ApiError(400, 'Username must be 3-20 characters: letters, digits, underscore, starting with a letter.', 'invalid_username');
     }
     newLower = patch.username.toLowerCase();
 

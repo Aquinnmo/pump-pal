@@ -40,13 +40,13 @@ export default function SignUpScreen() {
 
   const handleSignUp = async () => {
     setError(null);
-    const trimmedUsername = username.trim().toLowerCase();
+    const trimmedUsername = username.trim();
     if (!trimmedUsername || !email.trim() || !password.trim()) {
       setError("Please fill in all fields.");
       return;
     }
     if (!isValidUsername(trimmedUsername)) {
-      setError("Username must be 3-20 characters: lowercase letters, digits, underscore, starting with a letter.");
+      setError("Username must be 3-20 characters: letters, digits, underscore, starting with a letter.");
       return;
     }
     if (password.length < 6) {
@@ -64,7 +64,7 @@ export default function SignUpScreen() {
       await profileRepository.upsert(uid, {
         ...(current?.data ?? {}),
         username: dto.username ?? trimmedUsername,
-        usernameLower: trimmedUsername,
+        usernameLower: trimmedUsername.toLowerCase(),
       });
       router.replace("/set-split");
     } catch (err: any) {
@@ -113,7 +113,7 @@ export default function SignUpScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 value={username}
-                onChangeText={(text) => setUsername(text.toLowerCase())}
+                onChangeText={setUsername}
               />
               <TextInput
                 style={timberAuthStyles.field}

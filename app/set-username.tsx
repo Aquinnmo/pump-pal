@@ -34,9 +34,9 @@ export default function SetUsernameScreen() {
   const handleContinue = async () => {
     if (!user) return;
 
-    const trimmed = username.trim().toLowerCase();
+    const trimmed = username.trim();
     if (!isValidUsername(trimmed)) {
-      setError('3-20 characters: lowercase letters, digits, underscore, starting with a letter.');
+      setError('3-20 characters: letters, digits, underscore, starting with a letter.');
       return;
     }
 
@@ -45,7 +45,7 @@ export default function SetUsernameScreen() {
     try {
       const dto = await patchProfile({ username: trimmed });
       const current = await profileRepository.get(user.uid);
-      await profileRepository.upsert(user.uid, { ...(current?.data ?? {}), username: dto.username ?? trimmed, usernameLower: trimmed });
+      await profileRepository.upsert(user.uid, { ...(current?.data ?? {}), username: dto.username ?? trimmed, usernameLower: trimmed.toLowerCase() });
       if (!user.displayName) await updateAuthProfile(user, { displayName: trimmed });
       notifyAccountDataChanged();
       router.replace('/');
@@ -78,7 +78,7 @@ export default function SetUsernameScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               value={username}
-              onChangeText={(text) => setUsername(text.toLowerCase())}
+              onChangeText={setUsername}
             />
 
             {error && <Text style={styles.errorText}>{error}</Text>}

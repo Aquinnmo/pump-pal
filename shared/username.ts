@@ -5,8 +5,12 @@
  * ai-contract.ts/api-contract.ts, enforced by `npm run test:api-isolation`.
  */
 
-/** Lowercase letter start, 3-20 chars, letters/digits/underscore. */
-export const USERNAME_REGEX = /^[a-z][a-z0-9_]{2,19}$/;
+/**
+ * Letter start (either case), 3-20 chars, letters/digits/underscore.
+ * Case is preserved for display; uniqueness is enforced separately via the
+ * lowercase `usernameLower` field / `usernames/{usernameLower}` doc key.
+ */
+export const USERNAME_REGEX = /^[A-Za-z][A-Za-z0-9_]{2,19}$/;
 
 export function isValidUsername(value: string): boolean {
   return USERNAME_REGEX.test(value);

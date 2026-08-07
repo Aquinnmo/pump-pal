@@ -46,13 +46,13 @@ export default function SettingsUsernameScreen() {
   const handleSaveUsername = async () => {
     if (!user) return;
 
-    const trimmed = username.trim().toLowerCase();
+    const trimmed = username.trim();
     if (trimmed === originalUsername) return;
 
     if (!isValidUsername(trimmed)) {
       setToast({
         visible: true,
-        message: "3-20 characters: lowercase letters, digits, underscore, starting with a letter.",
+        message: "3-20 characters: letters, digits, underscore, starting with a letter.",
         type: "error",
       });
       return;
@@ -65,7 +65,7 @@ export default function SettingsUsernameScreen() {
       await profileRepository.upsert(user.uid, {
         ...(current?.data ?? {}),
         username: dto.username ?? trimmed,
-        usernameLower: trimmed,
+        usernameLower: trimmed.toLowerCase(),
       });
       setOriginalUsername(trimmed);
       setToast({ visible: true, message: "Username updated", type: "success" });
@@ -112,17 +112,17 @@ export default function SettingsUsernameScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             value={username}
-            onChangeText={(text) => setUsername(text.toLowerCase())}
+            onChangeText={setUsername}
           />
 
           <TouchableOpacity
             style={[
               styles.saveButton,
-              (savingUsername || loadingUsername || username.trim().toLowerCase() === originalUsername) &&
+              (savingUsername || loadingUsername || username.trim() === originalUsername) &&
                 styles.saveButtonDisabled,
             ]}
             onPress={handleSaveUsername}
-            disabled={savingUsername || loadingUsername || username.trim().toLowerCase() === originalUsername}>
+            disabled={savingUsername || loadingUsername || username.trim() === originalUsername}>
             {savingUsername ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
