@@ -76,7 +76,11 @@ has to prove is an accepted buddy. There is deliberately no generic
 
 A user with no token (web, or notification permission denied) is simply not
 deliverable. The chop still records and the response reports
-`delivered: false`.
+`delivered: false`; the sender sees that outcome rather than mistaking the HTTP
+200 for notification delivery. The API logs missing tokens, rejected tickets,
+and accepted Expo ticket IDs. An accepted ticket only means Expo queued the
+message for FCM/APNs, not that the device displayed it; use the ticket ID to
+query an Expo push receipt when deeper delivery diagnosis is needed.
 
 ## Not implemented
 

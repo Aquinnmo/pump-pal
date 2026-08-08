@@ -1,4 +1,5 @@
 import { FadingScrollView } from '@/components/ui/fading-scroll-view';
+import { Toast } from '@/components/ui/toast';
 import {
   acceptBuddyRequest,
   chopBuddy,
@@ -55,6 +56,7 @@ export default function SocialScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'error' as const });
 
   const today = toDateKey(new Date());
   const trimmed = query.trim();
@@ -143,7 +145,14 @@ export default function SocialScreen() {
     setBuddies((bs) => bs.map((b) => (b.uid === uid ? { ...b, lastChoppedAt: stamp } : b)));
     setNow(Date.now());
     try {
-      await chopBuddy(uid, today);
+      const result = await chopBuddy(uid, today);
+      if (!result.delivered) {
+        setToast({
+          visible: true,
+          message: 'Chop recorded, but their device could not be reached.',
+          type: 'error',
+        });
+      }
     } catch (e) {
       const code = (e as { code?: string }).code;
       // 'already_worked_out' means they trained since this list loaded — the
@@ -159,6 +168,12 @@ export default function SocialScreen() {
 
   return (
     <View style={styles.container}>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((current) => ({ ...current, visible: false }))}
+      />
       <View style={[styles.fixedHeader, { paddingTop: Math.max(insets.top + 18, 36) }]}>
         <View style={styles.headerContent}>
           <Text style={styles.pageTitle}>Social</Text>

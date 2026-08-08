@@ -33,8 +33,14 @@ previously inferred inline shape when `injuries` was added).
 from the authenticated tab shell — not from the Social screen, since a chop has
 to reach people who never open that tab — and written through
 `PATCH /api/profile` like any other allowlisted profile field. The hook caches
-the last-sent value in AsyncStorage so an unchanged token doesn't spend a write
-every cold start.
+the last-sent value in AsyncStorage under a UID-scoped key so an unchanged token
+doesn't spend a write every cold start and switching accounts on one device
+cannot suppress registration for the new account.
+
+Android creates a dedicated high-importance `chops` notification channel
+before requesting permission or a token. Native Firebase initialization comes
+from the tracked `google-services.json`, which includes both Timber Android
+package identities; this is separate from the Firebase JS SDK used by Auth.
 
 One token per account, so the most recent device wins. Web has no Expo push
 token and never writes this field; those users record chops normally but

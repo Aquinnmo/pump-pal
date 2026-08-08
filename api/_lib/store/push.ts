@@ -23,36 +23,78 @@ export interface PushMessage {
   data?: Record<string, string>;
 }
 
+interface PushTicket {
+  status?: string;
+  id?: string;
+  message?: string;
+  details?: { error?: string };
+}
+
+interface PushDeps {
+  loadToken: (uid: string) => Promise<string | undefined>;
+  fetch: typeof fetch;
+  log: Pick<Console, 'info' | 'warn' | 'error'>;
+}
+
+const defaultDeps: PushDeps = {
+  loadToken: async (uid) => {
+    const user = await getDoc(`users/${uid}`, ['expoPushToken']);
+    return user?.fields.expoPushToken as string | undefined;
+  },
+  fetch,
+  log: console,
+};
+
 /**
  * Sends one push to `toUid`. Returns whether Expo accepted it. Never throws:
  * a failed notification must not fail the action that triggered it.
  */
-export async function sendPush(toUid: string, message: PushMessage): Promise<boolean> {
+export async function sendPush(
+  toUid: string,
+  message: PushMessage,
+  deps: PushDeps = defaultDeps
+): Promise<boolean> {
   try {
-    const user = await getDoc(`users/${toUid}`, ['expoPushToken']);
-    const token = user?.fields.expoPushToken as string | undefined;
-    if (!token) return false;
+    const token = await deps.loadToken(toUid);
+    if (!token) {
+      deps.log.warn(`[push] ${toUid}: no registered Expo push token`);
+      return false;
+    }
 
-    const res = await fetch(EXPO_PUSH_URL, {
+    const res = await deps.fetch(EXPO_PUSH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ to: token, sound: 'default', ...message }),
+      body: JSON.stringify({
+        to: token,
+        sound: 'default',
+        priority: 'high',
+        channelId: 'chops',
+        ...message,
+      }),
     });
     if (!res.ok) {
-      console.error(`sendPush(${toUid}): Expo returned ${res.status}`);
+      deps.log.error(`[push] ${toUid}: Expo returned HTTP ${res.status}`);
       return false;
     }
 
     // Expo answers 200 even for a per-message error (e.g. DeviceNotRegistered),
     // so the status alone doesn't mean delivered-to-device.
-    const body = (await res.json()) as { data?: { status?: string; message?: string } };
-    if (body.data?.status !== 'ok') {
-      console.error(`sendPush(${toUid}): ${body.data?.status} ${body.data?.message ?? ''}`);
+    const body = (await res.json()) as { data?: PushTicket };
+    const ticket = body.data;
+    if (ticket?.status !== 'ok') {
+      const detail = ticket?.details?.error ? ` (${ticket.details.error})` : '';
+      deps.log.error(
+        `[push] ${toUid}: Expo rejected ticket: ${ticket?.message ?? ticket?.status ?? 'invalid response'}${detail}`
+      );
       return false;
     }
+
+    // A ticket means Expo accepted the request, not that FCM/APNs delivered it.
+    // Keeping its id in server logs makes a later receipt lookup possible.
+    deps.log.info(`[push] ${toUid}: Expo accepted ticket ${ticket.id ?? '(no receipt id)'}`);
     return true;
   } catch (e) {
-    console.error(`sendPush(${toUid}) failed`, e);
+    deps.log.error(`[push] ${toUid}: request failed`, e);
     return false;
   }
 }

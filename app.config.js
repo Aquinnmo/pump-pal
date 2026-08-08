@@ -23,7 +23,19 @@ const googleSignInPlugin = IOS_CLIENT_ID && !LOCAL_IOS_BUNDLE_ID
   : null;
 
 module.exports = ({ config }) => {
-  const plugins = googleSignInPlugin ? [...(config.plugins ?? []), googleSignInPlugin] : config.plugins;
+  const notificationsPlugin = [
+    'expo-notifications',
+    {
+      color: '#e54242',
+      defaultChannel: 'chops',
+      mode: IS_DEV ? 'development' : 'production',
+    },
+  ];
+  const plugins = [
+    ...(config.plugins ?? []),
+    notificationsPlugin,
+    ...(googleSignInPlugin ? [googleSignInPlugin] : []),
+  ];
 
   if (!IS_DEV && !LOCAL_IOS_BUNDLE_ID) return { ...config, plugins };
 

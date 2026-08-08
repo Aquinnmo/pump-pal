@@ -51,10 +51,23 @@ Nothing about that lives in the APK; it's all server-side registration.
   a completely different fingerprint, under a different package. Unregistered
   fingerprint = `DEVELOPER_ERROR`, status code 10.
 
-This app uses the Firebase **JS** SDK, not react-native-firebase, so there is no
-`google-services.json` to fix. The native module's only job is to hand back a
-Google ID token (`utils/google-sign-in.ts`). Client IDs + fingerprints are the
-entire surface.
+Google Sign-In itself uses the Firebase **JS** SDK, so its OAuth failure is not
+fixed by `google-services.json`; the native module's only job there is to hand
+back a Google ID token (`utils/google-sign-in.ts`). Client IDs + fingerprints
+are the entire Google Sign-In surface.
+
+Remote Chop notifications are different: Android FCM requires a native
+Firebase app. The tracked root `google-services.json` contains clients for both
+`com.aquinnmo.timber` and `com.aquinnmo.timber_dev`, and `app.json` points Expo
+prebuild at it. If token registration reports `Default FirebaseApp is not
+initialized`, confirm the installed APK was rebuilt after that config was
+added; an OTA update cannot add native Firebase resources.
+
+The Expo project also needs an FCM V1 service-account key for each Android
+application identity. Check with `eas credentials -p android` → the relevant
+build profile → **Google Service Account** → **Push Notifications (FCM V1)**.
+This private service-account JSON belongs in EAS credentials, never in the repo;
+`google-services.json` is the public client configuration and is safe to track.
 
 ### 2.1 Get the EAS preview keystore fingerprints
 
