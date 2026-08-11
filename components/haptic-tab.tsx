@@ -11,11 +11,15 @@ type HapticTabProps = Omit<PressableProps, 'style'> & {
   style?: StyleProp<ViewStyle>;
 };
 
-export function HapticTab({ style, onPressIn, ...props }: HapticTabProps) {
+export function HapticTab({ onPressIn, ...props }: HapticTabProps) {
   return (
     <Pressable
       {...props}
-      style={({ pressed }) => [style, pressed && { opacity: 0.8 }]}
+      // Must come after the spread: the tab bar forwards an android_ripple that
+      // PlatformPressable used to consume, and a bare Pressable would hand it to
+      // native as a borderless ripple that the tab bar then clips. Press feedback
+      // is the active tint change, plus the haptic below on iOS.
+      android_ripple={null}
       onPressIn={(ev) => {
         if (process.env.EXPO_OS === 'ios') {
           // Add a soft haptic feedback when pressing down on the tabs.
