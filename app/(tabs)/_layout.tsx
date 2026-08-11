@@ -3,6 +3,7 @@ import { TimberTabIcon } from '@/components/timber-tab-icon';
 import { usePushToken } from '@/hooks/use-push-token';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import type { ComponentProps } from 'react';
 
 export default function TabLayout() {
   // Everything below this point is behind auth, so a token registered here is
@@ -15,7 +16,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#e54242',
         tabBarInactiveTintColor: '#555',
         headerShown: false,
-        tabBarButton: HapticTab,
+        // Cast: expo-router's vendored BottomTabBarButtonProps types pressColor as
+        // ColorValue while the real @react-navigation/elements it renders with types
+        // it as string. Same shape at runtime, just a stale type re-export upstream.
+        tabBarButton: (props) => <HapticTab {...(props as ComponentProps<typeof HapticTab>)} />,
         tabBarStyle: {
           backgroundColor: '#111',
           borderTopColor: '#1e1e1e',

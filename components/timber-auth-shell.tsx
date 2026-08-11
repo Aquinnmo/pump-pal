@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ambient: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
   },
   ring: {

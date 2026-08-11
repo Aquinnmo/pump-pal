@@ -148,7 +148,7 @@ export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <Animated.View style={[styles.overlay, overlayAnimatedStyle]}>
-          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={handleClose} />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose} />
           <Animated.View
             accessibilityViewIsModal
             style={[styles.card, cardAnimatedStyle, { paddingBottom: Math.max(20, insets.bottom) }]}>

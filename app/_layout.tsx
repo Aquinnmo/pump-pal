@@ -201,11 +201,11 @@ function RootLayoutNav() {
 
 const styles = StyleSheet.create({
   bootOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: '#0f0f0f',
   },
   errorOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     backgroundColor: '#0f0f0f',
     justifyContent: 'center',
