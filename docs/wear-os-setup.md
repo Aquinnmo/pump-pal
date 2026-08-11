@@ -3,7 +3,7 @@
 Everything you have to do to get the watch app talking to the phone app the first
 time, then the short loop you repeat for every change after that.
 
-Background on how the two halves talk: [wear/README.md](../wear/README.md).
+Background on how the two halves talk: [apps/wear/README.md](../apps/wear/README.md).
 
 ---
 
@@ -58,12 +58,12 @@ show them again, though you can always re-download.
 ### 3. Wire the keystore into the watch project
 
 ```bash
-mkdir -p wear/keystore
-mv <downloaded>.jks wear/keystore/timber.jks
-cp wear/keystore.properties.example wear/keystore.properties
+mkdir -p apps/wear/keystore
+mv <downloaded>.jks apps/wear/keystore/timber.jks
+cp apps/wear/keystore.properties.example apps/wear/keystore.properties
 ```
 
-Fill in `wear/keystore.properties` with the three values from step 2. Both the
+Fill in `apps/wear/keystore.properties` with the three values from step 2. Both the
 `keystore/` directory and `keystore.properties` are gitignored — never commit either.
 
 ### 4. Build and install the phone app
@@ -96,12 +96,12 @@ visible to `adb`.
 
 ### 6. Open and build the watch app
 
-Open **`wear/`** in Android Studio — the directory itself, not the repo root. It is a
+Open **`apps/wear/`** in Android Studio — the directory itself, not the repo root. It is a
 standalone Gradle project and Android Studio will not find it from the top level.
 
 On first sync Gradle downloads its distribution, which takes a few minutes. If
 Android Studio complains that the Gradle wrapper is incomplete, either let it
-regenerate the wrapper when prompted, or run `gradle wrapper` inside `wear/` if you
+regenerate the wrapper when prompted, or run `gradle wrapper` inside `apps/wear/` if you
 have Gradle installed system-wide. The wrapper JAR is intentionally not committed.
 
 Then, in the **Build Variants** panel (left edge), select:
@@ -136,8 +136,8 @@ What you have to rebuild depends entirely on **what you touched**.
 
 ### Changed only JavaScript / TypeScript (phone)
 
-Includes `utils/wear-state.ts`, `utils/wear-sync.android.ts`,
-`utils/wear-action-task.ts`, `index.js`, and every screen. Ship it over the air —
+Includes `apps/mobile/src/lib/wear-state.ts`, `apps/mobile/src/lib/wear-sync.android.ts`,
+`apps/mobile/src/lib/wear-action-task.ts`, `index.js`, and every screen. Ship it over the air —
 no rebuild, no reinstall:
 
 ```bash
@@ -154,7 +154,7 @@ Then force-close and reopen Timber on the phone to pull the update.
 > `appVersion`, so **bumping `version` in app.json cuts off every already-installed
 > build** — after a version bump you must run a new `eas build`, not an update.
 
-### Changed Kotlin under `modules/wear-sync/`
+### Changed Kotlin under `apps/mobile/modules/wear-sync/`
 
 Native code cannot go over the air. New build, reinstall on the phone:
 
@@ -164,7 +164,7 @@ npx eas build --profile preview --platform android
 
 The watch app itself does not need rebuilding unless the protocol changed too.
 
-### Changed anything under `wear/`
+### Changed anything under `apps/wear/`
 
 Just press Run in Android Studio against the same variant. Nothing on the phone
 changes.
@@ -175,9 +175,9 @@ Both halves have to move together, or the older half silently ignores the newer 
 Rebuild the phone (`eas build`) **and** re-run the watch app, and check that these
 three still agree:
 
-- [`utils/wear-state.ts`](../utils/wear-state.ts) — the payload shape
-- [`Protocol.kt`](../wear/app/src/main/java/com/aquinnmo/timber/wear/Protocol.kt) — the watch's parser
-- [`wear.xml`](../modules/wear-sync/android/src/main/res/values/wear.xml) — the `timber_phone` capability name
+- [`apps/mobile/src/lib/wear-state.ts`](../apps/mobile/src/lib/wear-state.ts) — the payload shape
+- [`Protocol.kt`](../apps/wear/app/src/main/java/com/aquinnmo/timber/wear/Protocol.kt) — the watch's parser
+- [`wear.xml`](../apps/mobile/modules/wear-sync/android/src/main/res/values/wear.xml) — the `timber_phone` capability name
 
 ---
 
@@ -205,7 +205,7 @@ build you are about to hand out.
 7. **Phone app killed** (swipe it from recents), then tap Complete set on the watch.
    It should still work, via the headless task. If it times out with "No answer —
    check your phone", Android refused the background start; see the `ponytail:` note
-   in [`WearMessageService.kt`](../modules/wear-sync/android/src/main/java/com/aquinnmo/timber/wearsync/WearMessageService.kt).
+   in [`WearMessageService.kt`](../apps/mobile/modules/wear-sync/android/src/main/java/com/aquinnmo/timber/wearsync/WearMessageService.kt).
 8. **Phone on the Home tab, workout still running**, tap Complete set on the watch →
    handled by the root-layout fallback, should still log.
 9. **Watch out of range**: walk away, complete sets on the phone, come back → the

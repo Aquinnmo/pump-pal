@@ -1,0 +1,206 @@
+import { TimberLogo } from '@/ui/timber-logo';
+import { LinearGradient } from 'expo-linear-gradient';
+import { PropsWithChildren } from 'react';
+import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+type TimberAuthShellProps = PropsWithChildren<{
+  contentStyle?: StyleProp<ViewStyle>;
+}>;
+
+type TimberBrandProps = {
+  eyebrow?: string;
+  title?: string;
+  subtitle?: string;
+  compact?: boolean;
+};
+
+export function TimberAuthShell({ children, contentStyle }: TimberAuthShellProps) {
+  return (
+    <LinearGradient colors={['#18120f', '#0f0f0f', '#0f0f0f']} style={styles.background}>
+      <View pointerEvents="none" style={styles.ambient}>
+        <View style={[styles.ring, styles.ringLarge]} />
+        <View style={[styles.ring, styles.ringMedium]} />
+        <View style={[styles.ring, styles.ringSmall]} />
+      </View>
+      <SafeAreaView style={[styles.safeArea, contentStyle]}>{children}</SafeAreaView>
+    </LinearGradient>
+  );
+}
+
+export function TimberBrand({ eyebrow, title = 'Timber', subtitle, compact = false }: TimberBrandProps) {
+  return (
+    <View style={[styles.brand, compact && styles.brandCompact]}>
+      <View style={[styles.logoWrap, compact && styles.logoWrapCompact]}>
+        <TimberLogo size={compact ? 42 : 74} />
+      </View>
+      <View style={compact ? styles.brandCopyCompact : undefined}>
+        {eyebrow ? <Text style={styles.eyebrow}>{eyebrow}</Text> : null}
+        <Text style={[styles.brandTitle, compact && styles.brandTitleCompact]}>{title}</Text>
+        {subtitle ? <Text style={[styles.brandSubtitle, compact && styles.brandSubtitleCompact]}>{subtitle}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+export const timberAuthStyles = StyleSheet.create({
+  field: {
+    backgroundColor: '#151515',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#fff',
+  },
+  primaryButton: {
+    backgroundColor: '#e54242',
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: '#e54242',
+    shadowOpacity: 0.22,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 4,
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  // Same metrics as primaryButton, surface + border instead of fill — depth
+  // comes from the border, not a shadow (docs/design-language.md).
+  secondaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: '#151515',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 14,
+    paddingVertical: 16,
+  },
+  secondaryButtonText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  // Tinted-surface recipe: card surface + error at 8%, same hue at 24% for the
+  // border. No bespoke hex (docs/design-language.md).
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(248, 113, 113, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(248, 113, 113, 0.24)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+});
+
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  ambient: {
+    ...StyleSheet.absoluteFill,
+    overflow: 'hidden',
+  },
+  ring: {
+    position: 'absolute',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(201, 165, 103, 0.12)',
+  },
+  ringLarge: {
+    width: 520,
+    height: 520,
+    right: -280,
+    top: -180,
+  },
+  ringMedium: {
+    width: 380,
+    height: 380,
+    right: -210,
+    top: -110,
+    borderColor: 'rgba(229, 66, 66, 0.12)',
+  },
+  ringSmall: {
+    width: 240,
+    height: 240,
+    left: -150,
+    bottom: -120,
+    borderColor: 'rgba(74, 51, 36, 0.72)',
+  },
+  brand: {
+    alignItems: 'center',
+  },
+  brandCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  // Bark fill + sapwood border are kept on purpose: the logo frame is the one
+  // place the warm palette still marks arrival.
+  logoWrap: {
+    width: 96,
+    height: 96,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(74, 51, 36, 0.28)',
+    borderWidth: 1,
+    borderColor: '#6e4a30',
+    marginBottom: 16,
+  },
+  logoWrapCompact: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    marginBottom: 0,
+    marginRight: 12,
+  },
+  brandCopyCompact: {
+    flexShrink: 1,
+  },
+  eyebrow: {
+    color: '#c9a567',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  brandTitle: {
+    color: '#fff',
+    fontSize: 38,
+    fontWeight: '700',
+    letterSpacing: -1.2,
+    textAlign: 'center',
+  },
+  brandTitleCompact: {
+    color: '#c9a567',
+    fontSize: 24,
+    textAlign: 'left',
+  },
+  brandSubtitle: {
+    color: '#888',
+    fontSize: 15,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  brandSubtitleCompact: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'left',
+    marginTop: 4,
+  },
+});

@@ -1,0 +1,18 @@
+{
+  "name": "@timber/contract",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    "./api": "./src/api-contract.ts",
+    "./ai": "./src/ai-contract.ts",
+    "./username": "./src/username.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx src/api-contract.test.ts"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

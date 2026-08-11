@@ -11,8 +11,8 @@ denies all of that to clients and there is no rule that could safely allow it,
 so `friendships` is deliberately absent from the rules file and falls through
 to the catch-all deny.
 
-All access goes through `/api/buddies` (`api/_lib/routes/buddies.ts`,
-`api/_lib/routes/notifications.ts`, `api/_lib/store/buddies.ts`) on the
+All access goes through `/api/buddies` (`apps/api/src/routes/buddies.ts`,
+`apps/api/src/routes/notifications.ts`, `apps/api/src/store/buddies.ts`) on the
 service-account credential, which bypasses rules. Because that credential can
 read anything, each store function re-derives the caller's relationship to the
 target rather than trusting the request.
@@ -64,9 +64,9 @@ is a timezone field on the user doc.
 
 ## Notifications
 
-Delivery is the Expo Push Service (`api/_lib/store/push.ts`), reading
+Delivery is the Expo Push Service (`apps/api/src/store/push.ts`), reading
 `users/{uid}.expoPushToken` — see [users.md](./users.md). Not `firebase-admin`:
-`api/_lib/store/` dropped that dependency for cold-start size, and a push SDK
+`apps/api/src/store/` dropped that dependency for cold-start size, and a push SDK
 would undo it for one notification type.
 
 `POST /api/buddies/:uid/chop` is the only route that sends a push, and the
@@ -85,7 +85,7 @@ as a pending doc. Add a `DELETE` on the item route when there's a reason to.
 
 ## Account deletion
 
-`deleteFriendships` in `api/_lib/store/account.ts` queries
+`deleteFriendships` in `apps/api/src/store/account.ts` queries
 `users ARRAY_CONTAINS uid` and deletes each doc outright — which also removes
 the relationship from the buddy's side, since half a friendship isn't a thing.
 `expoPushToken` dies with the user doc.

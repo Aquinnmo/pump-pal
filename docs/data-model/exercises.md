@@ -1,6 +1,6 @@
 # Exercise Catalog
 
-Path: `exercises/{exerciseId}` · Type: `CatalogExercise` (`types/workout.ts`)
+Path: `exercises/{exerciseId}` · Type: `CatalogExercise` (`apps/mobile/src/types/workout.ts`)
 
 One document per exercise **family** (e.g. `bench-press`). Variations
 (equipment/angle/grip differences) are embedded arrays inside the parent doc,
@@ -9,7 +9,7 @@ subcollection. This keeps the exercise picker a single-query, in-memory-search
 UX (see "Exercise picker" below) and keeps a family's data atomic.
 
 The catalog currently has 74 exercise docs, seeded from
-`migration/catalog-seed.json` by `scripts/migration/seed-exercise-catalog.js`
+`tools/catalog/catalog-seed.json` by `tools/catalog/seed-exercise-catalog.js`
 (dry-run by default; `--apply` writes to Firestore — see that script's
 `--help`-equivalent usage in its own header comments).
 
@@ -56,24 +56,24 @@ Field notes:
   on `ExerciseVariation.equipment` (see below) and is the one that matters for
   display/search.
 - `status: 'pending_review'` marks exercises created in-app by a user via the
-  "can't find my exercise" flow (`utils/create-pending-exercise.ts`) rather
+  "can't find my exercise" flow (`apps/mobile/src/lib/create-pending-exercise.ts`) rather
   than seeded from the catalog. These have `primaryMuscles: []`,
   `secondaryMuscles: []`, and `variations: []` — the muscle-required
   invariant described below is enforced by the seed script's validator, not
   by Firestore, and pending exercises are the one legitimate exception.
   `createdBy` is the creating user's uid on these; absent on seeded exercises.
-- `trackingModes` — **the `TrackingMode` type is stale** (`types/workout.ts`
+- `trackingModes` — **the `TrackingMode` type is stale** (`apps/mobile/src/types/workout.ts`
   defines `'reps' | 'duration' | 'distance' | 'calories'`), but the actual
   data (and the code that reads it) uses `'reps_weight' | 'reps_bodyweight' |
   'duration' | 'distance'`. This forces a cast in
-  `utils/create-pending-exercise.ts`. Known issue, not fixed as part of the
+  `apps/mobile/src/lib/create-pending-exercise.ts`. Known issue, not fixed as part of the
   muscle-data work — fix the type to match reality before adding a 5th
   tracking mode.
 
 ## Muscle taxonomy
 
 `primaryMuscles` and `secondaryMuscles` are `MuscleId[]`, drawn from a single
-canonical vocabulary defined in [`constants/muscles.ts`](../../constants/muscles.ts)
+canonical vocabulary defined in [`apps/mobile/src/constants/muscles.ts`](../../apps/mobile/src/constants/muscles.ts)
 (the `MUSCLES` const array). That file is the source of truth for valid
 values — this doc lists them for reference but **read the constant**, not
 this table, if they ever diverge:
@@ -108,7 +108,7 @@ additions stay consistent):
   in the seed data — there's a test for this (see "Validation" below), so
   the vocabulary can't drift into containing dead entries.
 
-`isMuscleId()` and `muscleLabel()` (also in `constants/muscles.ts`) are the
+`isMuscleId()` and `muscleLabel()` (also in `apps/mobile/src/constants/muscles.ts`) are the
 runtime guard and the Title-Case display formatter, respectively — use those
 instead of ad-hoc casing/validation anywhere muscle IDs cross a boundary
 (user input, AI prompt output, etc).
@@ -168,7 +168,7 @@ type ExerciseCatalogMeta = {
 ```
 
 The app loads the catalog once after auth, caches it in `AsyncStorage`
-(`utils/exercise-catalog.ts`), and only refetches when `version` here differs
+(`apps/mobile/src/lib/exercise-catalog.ts`), and only refetches when `version` here differs
 from the cached `version`. **Any time the seed script writes new catalog
 data with `--apply`, bump `--catalog-version` so clients actually pick up the
 change** — writing new exercise docs without bumping this is a silent no-op
@@ -177,7 +177,7 @@ for every device with a warm cache.
 ## Exercise picker (why the shape is flattened at read time)
 
 The picker must stay a single search field, no "pick family then pick
-variation" step. At runtime `utils/exercise-catalog.ts` flattens every
+variation" step. At runtime `apps/mobile/src/lib/exercise-catalog.ts` flattens every
 exercise + variation combination into `ExerciseSearchOption[]`:
 
 ```ts
@@ -200,7 +200,7 @@ own (now-populated) `primaryMuscles` instead is a follow-up, not done yet.
 
 ## Validation
 
-`scripts/migration/seed-exercise-catalog.js`'s `validateCatalog()` enforces,
+`tools/catalog/seed-exercise-catalog.js`'s `validateCatalog()` enforces,
 on every seed run (dry-run or `--apply`):
 
 - unique exercise ids, unique variation ids within a parent
@@ -208,15 +208,15 @@ on every seed run (dry-run or `--apply`):
   (`secondaryMuscles` may legitimately be empty — e.g. `lateral-raise` has no
   secondary muscle worth tracking)
 - every muscle value is a canonical id from
-  `scripts/migration/canonical-muscles.js` (a CommonJS mirror of
-  `constants/muscles.ts` — Node scripts can't `import` the `.ts` file
+  `tools/catalog/canonical-muscles.js` (a CommonJS mirror of
+  `apps/mobile/src/constants/muscles.ts` — Node scripts can't `import` the `.ts` file
   directly, so this list must be kept in sync by hand; the sync itself is
-  enforced by `scripts/migration/canonical-muscles.test.js`, which diffs the
+  enforced by `tools/catalog/canonical-muscles.test.js`, which diffs the
   two files)
 
-`scripts/migration/catalog-seed.test.js` runs the same validation plus a
-few extra invariants against the checked-in `migration/catalog-seed.json`,
-and is wired into `npm run migration:test`.
+`tools/catalog/catalog-seed.test.js` runs the same validation plus a
+few extra invariants against the checked-in `tools/catalog/catalog-seed.json`,
+and is wired into `npm run test:catalog-tools`.
 
 ## Writing to Firestore
 
@@ -224,7 +224,7 @@ and is wired into `npm run migration:test`.
 exercise object into the write payload — any field present in
 `catalog-seed.json` (including the muscle arrays) flows to Firestore with no
 extra mapping step. Adding a new field to the schema means: add it to
-`CatalogExercise`/`ExerciseVariation` in `types/workout.ts`, add it to the
+`CatalogExercise`/`ExerciseVariation` in `apps/mobile/src/types/workout.ts`, add it to the
 JSON, and (if it needs enforcement) add a check to `validateCatalog()` — no
 change needed to the write path itself.
 

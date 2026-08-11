@@ -1,0 +1,28 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "customConditions": ["react-native"],
+    // The installer hoists @types/* to the workspace root, and automatic @types
+    // discovery does not pick up @types/node from here (it does find
+    // @types/react). Without naming it, every `node:*` import in a *.test.ts
+    // fails to resolve with TS2591, because @types/node's ambient module
+    // declarations never load. Naming any package here disables auto-discovery,
+    // so `react` has to be listed too.
+    "typeRoots": ["../../node_modules/@types", "./node_modules/@types"],
+    "types": ["node", "react"],
+    "paths": {
+      // src/ first so `@/lib/x` and `@/data/x` resolve; the bare `./*` fallback
+      // is what keeps `@/app/...`, `@/widgets/...` and `@/modules/...` working,
+      // since those stay at the package root (expo-router, the Android widget
+      // registry and Expo autolinking all resolve them from there).
+      "@/*": ["./src/*", "./*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
+  ]
+}

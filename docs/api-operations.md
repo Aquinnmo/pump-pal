@@ -2,8 +2,8 @@
 
 Every route the Vercel API boundary exposes, matching what's actually
 implemented under `api/`. Wire types are defined once in
-[`shared/api-contract.ts`](../shared/api-contract.ts) (domain routes) and
-[`shared/ai-contract.ts`](../shared/ai-contract.ts) (`/api/ai`) — read those
+[`packages/contract/src/api-contract.ts`](../packages/contract/src/api-contract.ts) (domain routes) and
+[`packages/contract/src/ai-contract.ts`](../packages/contract/src/ai-contract.ts) (`/api/ai`) — read those
 for the exact Zod schemas; this doc is the route map and the semantics that
 don't fit in a type signature.
 
@@ -15,18 +15,18 @@ Firestore shapes these routes read/write, see
 
 - **Auth:** `Authorization: Bearer <Firebase ID token>` on every request
   except `OPTIONS` preflight. The uid is taken exclusively from the verified
-  token (`api/_lib/auth.ts`) — no route accepts a uid in the body, query, or
+  token (`apps/api/src/auth.ts`) — no route accepts a uid in the body, query, or
   path as anything other than a resource id to look up, and every lookup is
   scoped to the caller's own uid.
 - **CORS:** origins are an allowlist (`API_ALLOWED_ORIGINS` env var, see
-  `api/_lib/http.ts`). Requests with no `Origin` header (native app) skip CORS
+  `apps/api/src/http.ts`). Requests with no `Origin` header (native app) skip CORS
   entirely. `api/ai.ts` is the one exception — same-origin only, no CORS
   handling, predates the domain routes.
 - **Timestamps:** ISO-8601 UTC strings on the wire, always. Server routes
   convert Firestore `Timestamp`/REST `timestampValue` at the edge; a client
   never sees a Firestore sentinel type.
 - **Versions:** every mutable entity carries an opaque string `version`
-  (`shared/api-contract.ts` — derived from the backing Firestore doc's
+  (`packages/contract/src/api-contract.ts` — derived from the backing Firestore doc's
   `updateTime`). Mutations that need optimistic concurrency accept
   `baseVersion` in the body; a mismatch returns **409** with
   `{ error, code: 'conflict', remote: <current entity>, remoteVersion }` — the
@@ -63,11 +63,11 @@ Firestore shapes these routes read/write, see
 | DELETE | `/api/account/data` | yes | purges every per-user Firestore collection/doc (see below); does **not** delete the Firebase Auth account |
 | GET | `/api/sync/manifest?cursor=&limit=` | yes | `{kind,id,version}` for every entity the caller owns, paginated |
 | POST | `/api/sync/pull` | yes | bounded (≤200) batch fetch of full entities by `{kind,id}` |
-| POST | `/api/ai` | yes | AI proxy — see `shared/ai-contract.ts`; unchanged by this epic except its provider/model/effort are now fully env-driven, see below |
+| POST | `/api/ai` | yes | AI proxy — see `packages/contract/src/ai-contract.ts`; unchanged by this epic except its provider/model/effort are now fully env-driven, see below |
 
 ## Account deletion (`DELETE /api/account/data`)
 
-Ports `app/settings-account.tsx confirmDeleteAccount`'s Firestore cleanup
+Ports `apps/mobile/app/settings-account.tsx confirmDeleteAccount`'s Firestore cleanup
 server-side, same order: canonical `workouts` (by `userId`) → legacy
 `users/{uid}/workouts/*` → `users/{uid}/pushup-challenge/data` →
 `users/{uid}`. Every phase runs even if an earlier one fails (best-effort),
@@ -93,7 +93,7 @@ unsupported values fail at cold start. `AI_REASONING_EFFORT` is optional
 (`provider-default` if unset) and validated per-provider: OpenAI accepts the
 full portable set including `max`; Google tops out at `high` (`xhigh`/`max`
 are rejected at cold start, not silently clamped). See
-`api/_lib/ai/model.ts`.
+`apps/api/src/ai/model.ts`.
 
 ## What's NOT implemented yet
 

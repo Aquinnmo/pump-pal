@@ -5,14 +5,15 @@ writes. Firebase project: `pumppal-c9199`. When code and this doc disagree,
 treat this doc as correct and fix the code (or fix the doc in the same PR that
 changes the shape).
 
-For the historical record of the legacy-to-canonical migration (what changed,
-when, and why), see [`firestore-data-refactor.md`](../firestore-data-refactor.md).
-This directory describes the schema as it exists today.
+This directory describes the schema as it exists today. The legacy-to-canonical
+migration is complete; the shape it left behind is described in
+[legacy.md](./legacy.md), and its blow-by-blow historical record has been
+retired (recoverable from git history as `docs/firestore-data-refactor.md`).
 
 **Access path (grace period, in progress):** a Vercel API boundary
 (`api/**`, routes documented in [api-operations.md](../api-operations.md))
 now covers every collection below with an authenticated REST route, wire-typed
-via [`shared/api-contract.ts`](../../shared/api-contract.ts). It runs
+via [`packages/contract/src/api-contract.ts`](../../packages/contract/src/api-contract.ts). It runs
 *additively* alongside direct client Firestore access under the current
 `firestore.rules` — both paths write the same shapes described here, so
 neither is more authoritative than the other during the grace period. Direct
@@ -25,7 +26,7 @@ written.
 **Indexes:** composite indexes live in
 [`firestore.indexes.json`](../../firestore.indexes.json) (deployed with
 `npx firebase-tools@latest deploy --only firestore:indexes`). Any new
-`runQuery` in `api/_lib/store/` that combines a `where` with an `orderBy` on a
+`runQuery` in `apps/api/src/store/` that combines a `where` with an `orderBy` on a
 different field needs an entry there first — without one Firestore answers
 `400 FAILED_PRECONDITION` and the route 500s.
 
@@ -68,7 +69,7 @@ separate approval.
 ## Conventions used throughout
 
 - **Types live in code.** Every shape below has a matching TypeScript type,
-  named in each doc, usually in `types/workout.ts`. Read the type for the
+  named in each doc, usually in `apps/mobile/src/types/workout.ts`. Read the type for the
   exact field list; these docs add the *why* and the parts types can't
   express (which fields are optional in practice, what values actually show
   up, id conventions).
@@ -80,7 +81,7 @@ separate approval.
   `serverTimestamp()` on write). One exception — `Workout.date` also accepts a
   plain `{ seconds, nanoseconds }` shape and `Date`, because migrated rows and
   freshly-created rows go through different code paths before they're
-  normalized for display (see `utils/workout-conversion.ts`).
+  normalized for display (see `apps/mobile/src/lib/workout-conversion.ts`).
 - **IDs are deterministic where possible.** Exercise doc IDs are slugs
   (`bench-press`), not auto-generated — this is what makes catalog reseeding
   idempotent (see [exercises.md](./exercises.md)). Migrated workout doc IDs

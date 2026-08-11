@@ -46,7 +46,7 @@ The Home "Up Next" hero is the worked example. It went through a decorative
 gradient, then an internal glow, then a "true" glow, then a pass to make the Log
 actions "feel intentionally product-designed rather than generically generated"
 which stripped the gradient and glow layers and the oversized icon wells — and
-it ended up **flat**: `app/(tabs)/index.tsx` today contains no shadow, no
+it ended up **flat**: `apps/mobile/app/(tabs)/index.tsx` today contains no shadow, no
 elevation, and no gradient. Several rounds of decoration to arrive back at
 nothing. That is the cost this list exists to avoid paying twice.
 
@@ -66,7 +66,7 @@ nothing. That is the cost this list exists to avoid paying twice.
 
 | Off-limits | Instead |
 | --- | --- |
-| The marketing triptych — centered hero, then three equal icon-title-body cards | Real hierarchy. One primary action, supporting actions visibly subordinate — `app/(tabs)/index.tsx` is the reference |
+| The marketing triptych — centered hero, then three equal icon-title-body cards | Real hierarchy. One primary action, supporting actions visibly subordinate — `apps/mobile/app/(tabs)/index.tsx` is the reference |
 | Bento grids of stat tiles where the stats weren't chosen for a reason | Show a number because the user needs it. Every metric earns its place |
 | Oversized rounded-square icon wells at the top of every card | Explicitly removed once already in bead `pump-pal-pga`. Don't reintroduce them |
 | Pill-shaped everything; radius 24+ on cards | The [four radii](#spacing-radius-depth) |
@@ -128,12 +128,12 @@ ever arrives at one *by default*.
 Deliberate, chosen, and narrow. Each one is a decision someone made, not a
 pattern to extend.
 
-- **TPC's fire animation** (`app/(tabs)/pushup-challenge.tsx`) — extravagant on
+- **TPC's fire animation** (`apps/mobile/app/(tabs)/pushup-challenge.tsx`) — extravagant on
   purpose; the feature's job is emotional payoff, not information. Includes its
   🔥/💔 notification emoji.
-- **The arrival-zone gradient** (`components/timber-auth-shell.tsx:20`) — a
+- **The arrival-zone gradient** (`apps/mobile/src/ui/timber-auth-shell.tsx:20`) — a
   narrow warm-to-black wash, not decoration; it is the [zone](#two-zones) marker.
-- **The arrival-zone rings** (`components/timber-auth-shell.tsx:114-139`) — three
+- **The arrival-zone rings** (`apps/mobile/src/ui/timber-auth-shell.tsx:114-139`) — three
   1px hairline circle outlines bleeding off-screen behind the auth content. They
   read as growth rings, which is the logo's own motif, and they are outlines: not
   the banned glow, orb, or blob layer. Now that the auth surfaces are neutral,
@@ -145,7 +145,7 @@ pattern to extend.
 ## Two zones
 
 Timber runs two palettes on purpose. The logo is the key to both:
-`components/timber-logo.tsx:10-15` defines `GROUND #111111`, `BARK #4A3324`,
+`apps/mobile/src/ui/timber-logo.tsx:10-15` defines `GROUND #111111`, `BARK #4A3324`,
 `SAPWOOD #6E4A30`, `FACE #C9A567`, and `RING`/`PITH #E54242` — and every one of
 those appears in the app.
 
@@ -156,14 +156,14 @@ same parts.
 
 | | **Arrival** | **Tool** |
 | --- | --- | --- |
-| Where | `app/(auth)/*`, `app/set-split.tsx`, `components/timber-auth-shell.tsx`, logo and app icon | everything after login |
+| Where | `apps/mobile/app/(auth)/*`, `apps/mobile/app/set-split.tsx`, `apps/mobile/src/ui/timber-auth-shell.tsx`, logo and app icon | everything after login |
 | Job | say what this is and who made it | get out of the way |
-| Surfaces | the shared [color](#color) tokens — card `#1c1c1c`, field `#151515` — over a gradient wash `['#18120f', '#0f0f0f', '#0f0f0f']` (`components/timber-auth-shell.tsx:20`) | the same tokens, flat `#0f0f0f` |
+| Surfaces | the shared [color](#color) tokens — card `#1c1c1c`, field `#151515` — over a gradient wash `['#18120f', '#0f0f0f', '#0f0f0f']` (`apps/mobile/src/ui/timber-auth-shell.tsx:20`) | the same tokens, flat `#0f0f0f` |
 | Signature color | gold `#c9a567` — eyebrows, links, brand title, active dot | none; the accent carries it |
 | Borders | `#2a2a2a`, same as tool | `#2a2a2a` |
 | Body text | `#888`, placeholder `#666`, same as tool | `#888`, placeholder `#666` |
-| Bark and sapwood | the logo frame only — `rgba(74, 51, 36, 0.28)` fill, `#6e4a30` border (`components/timber-auth-shell.tsx:147`, `app/(auth)/welcome.tsx:180`) | never |
-| Type | may go big — 38 / 700 / -1.2 tracking (`components/timber-auth-shell.tsx:177`) | the [scale](#typography), no exceptions |
+| Bark and sapwood | the logo frame only — `rgba(74, 51, 36, 0.28)` fill, `#6e4a30` border (`apps/mobile/src/ui/timber-auth-shell.tsx:147`, `apps/mobile/app/(auth)/welcome.tsx:180`) | never |
+| Type | may go big — 38 / 700 / -1.2 tracking (`apps/mobile/src/ui/timber-auth-shell.tsx:177`) | the [scale](#typography), no exceptions |
 
 **Rules:**
 
@@ -205,7 +205,7 @@ If you need a fifth grey, you need a different layout.
 Timber has **one** action color. Destructive intent is carried by **copy and
 placement**, not hue.
 
-The app already does this and it works: `app/active-workout.tsx:790` labels the
+The app already does this and it works: `apps/mobile/app/active-workout.tsx:790` labels the
 escape hatch "Keep Going" and `:734` labels the commit "Finish Anyway". The user
 reads what will happen; they don't decode a color.
 
@@ -230,8 +230,8 @@ text:     #fff / #888 as normal, or the status color for the icon
 ```
 
 This replaces the six bespoke greens in
-`components/muscle-insight-cards.tsx:383-407` and the bespoke blue duplicated
-across `app/modal.tsx:1055-1068` and `app/active-workout.tsx:920-933`.
+`apps/mobile/src/ui/muscle-insight-cards.tsx:383-407` and the bespoke blue duplicated
+across `apps/mobile/app/modal.tsx:1055-1068` and `apps/mobile/app/active-workout.tsx:920-933`.
 
 ## Typography
 
@@ -241,7 +241,7 @@ a deliberate default, not an oversight: the system font is the most legible
 option on each platform at small sizes, ships at zero cost, and respects the
 user's accessibility text settings. Don't add one.
 
-`constants/theme.ts` exports a `Fonts` object. Nothing uses it. See
+`apps/mobile/src/constants/theme.ts` exports a `Fonts` object. Nothing uses it. See
 [drift](#appendix-known-drift).
 
 | Step | Size | Weight | Tracking | Use |
@@ -273,8 +273,8 @@ Proportional digits change width as they change value, so a scanning eye has to
 re-find the number every time it ticks, and columns of sets don't align. That is
 precisely the failure the [principle](#the-principle) forbids.
 
-The three strength-metric styles in `app/(tabs)/analytics.tsx` and the rest timer
-at `app/(tabs)/index.tsx:397` already do this and are the reference. Everywhere
+The three strength-metric styles in `apps/mobile/app/(tabs)/analytics.tsx` and the rest timer
+at `apps/mobile/app/(tabs)/index.tsx:397` already do this and are the reference. Everywhere
 else showing a number should.
 
 ## Spacing, radius, depth
@@ -296,7 +296,7 @@ Odd values (3, 5, 7, 9, 11) and off-grid 14/18 are drift.
 | `999` | pills, grabbers, circular elements |
 
 `12`, `16`, `18`, `22`, `24`, `28`, `100` are drift. Add
-`borderCurve: 'continuous'` on cards — `app/(tabs)/index.tsx:316,404` is the
+`borderCurve: 'continuous'` on cards — `apps/mobile/app/(tabs)/index.tsx:316,404` is the
 reference.
 
 **Depth comes from surface and a 1px border, not shadow.** This is already true:
@@ -308,13 +308,13 @@ The two sanctioned shadows:
 
 - **Arrival-zone primary button** — accent glow: color `#e54242`, offset
   `{0, 5}`, opacity `0.22`, radius `12`, elevation `4`
-  (`components/timber-auth-shell.tsx:62-66`).
+  (`apps/mobile/src/ui/timber-auth-shell.tsx:62-66`).
 - **Toast** — `#000`, offset `{0, 4}`, opacity `0.3`, radius `8`, elevation `5`
-  (`components/ui/toast.tsx:99-103`).
+  (`apps/mobile/src/ui/primitives/toast.tsx:99-103`).
 
 Everything else is flat. Tool-zone buttons do not glow — including the Up Next
 hero, which went through several rounds of gradient and glow treatments before
-landing flat. `app/(tabs)/index.tsx` currently contains no shadow, elevation, or
+landing flat. `apps/mobile/app/(tabs)/index.tsx` currently contains no shadow, elevation, or
 gradient at all. Keep it that way.
 
 ## Component canon
@@ -322,10 +322,10 @@ gradient at all. Keep it that way.
 Each pattern has one correct implementation already in the tree. Copy from the
 named file rather than re-deriving.
 
-**Card** — `components/workout-card.tsx:236-243`
+**Card** — `apps/mobile/src/ui/workout-card.tsx:236-243`
 `#1c1c1c` · border 1px `#2a2a2a` · radius 14 · padding 16.
 
-**Bottom sheet** — `components/ui/dropdown.tsx:190-216`
+**Bottom sheet** — `apps/mobile/src/ui/primitives/dropdown.tsx:190-216`
 Full-screen overlay `rgba(0,0,0,0.6)` → content `#1c1c1c` with
 `borderTopLeft/RightRadius: 20`, `maxHeight: '70%'`, `paddingBottom: 30` →
 grabber pill 36×4 `#444` at the top → `navBarFill` strip behind the Android nav
@@ -333,14 +333,14 @@ bar. Pan-to-dismiss via `react-native-gesture-handler`.
 This logic is currently triplicated verbatim (see
 [drift](#appendix-known-drift)); until it's extracted, copy from `dropdown.tsx`.
 
-**Confirm dialog** — `app/active-workout.tsx:770-800`
+**Confirm dialog** — `apps/mobile/app/active-workout.tsx:770-800`
 Centered card `#1c1c1c`, radius 14, padding 24. Title states the question
 ("Discard workout?"), body states the consequence in plain language, two
 buttons. **The copy carries the intent** — the escape button says what you keep
 ("Keep Going"), the commit button says what it does ("Finish Anyway"). Neither is
 color-coded. Never write a dialog whose buttons are just "Cancel" / "OK".
 
-**Primary button** — `components/timber-auth-shell.tsx:57-72`
+**Primary button** — `apps/mobile/src/ui/timber-auth-shell.tsx:57-72`
 `#e54242` · radius 14 · `paddingVertical: 16` · text `#fff` / 800 / 16 ·
 `activeOpacity={0.8}`.
 
@@ -348,7 +348,7 @@ color-coded. Never write a dialog whose buttons are just "Cancel" / "OK".
 text 15 · `placeholderTextColor` `#666`.
 
 **Header row** — `paddingHorizontal: 20`, `borderBottomWidth: 1` `#1e1e1e`,
-title at header step (17/700). Reference: `app/settings-account.tsx:248,257`.
+title at header step (17/700). Reference: `apps/mobile/app/settings-account.tsx:248,257`.
 
 **Option row** — `minHeight: 52`, padding 16v/14h, bottom border `#2a2a2a`.
 Selected state: accent-tinted background per the
@@ -359,11 +359,11 @@ text.
 scroll-edge fades to signal content beyond the viewport. Each fade is visible
 only while overflow exists in its direction, does not intercept touches, and
 uses the screen background into transparent rather than a decorative color.
-Use `components/ui/fading-scroll-view.tsx`; the Analytics page is the reference
+Use `apps/mobile/src/ui/primitives/fading-scroll-view.tsx`; the Analytics page is the reference
 behavior. This is expected page chrome, not an optional per-screen treatment.
 
 **Empty state** — title, one line of subtitle, **and the action that fixes it**.
-The "no workouts yet" state in `app/(tabs)/analytics.tsx` is the model: "Your progress starts with one
+The "no workouts yet" state in `apps/mobile/app/(tabs)/analytics.tsx` is the model: "Your progress starts with one
 workout" / "Log a session and Timber will turn it into records, trends, and
 muscle insights." / `[Start a workout]`.
 
@@ -383,12 +383,12 @@ Motion clarifies where things came from. It is never ornamental in the tool zone
 | Press feedback | `activeOpacity={0.8}` |
 
 **`useReducedMotion()` is required** on anything that loops or runs longer than
-~400ms. `components/ui/workout-prefill-loader.tsx:89-95` is the reference
+~400ms. `apps/mobile/src/ui/primitives/workout-prefill-loader.tsx:89-95` is the reference
 implementation — it falls back to a static progress value rather than removing
 the element. Currently it is the *only* component that honors it.
 
 **Reanimated for new work.** The legacy RN `Animated` API in
-`app/(tabs)/pushup-challenge.tsx` and `components/ui/toast.tsx` is grandfathered.
+`apps/mobile/app/(tabs)/pushup-challenge.tsx` and `apps/mobile/src/ui/primitives/toast.tsx` is grandfathered.
 Don't copy it, and note the pushup screen runs `useNativeDriver: false`
 throughout.
 
@@ -400,7 +400,7 @@ data.
 
 ### Haptics
 
-Currently one call site: `components/haptic-tab.tsx:12`, on tab press.
+Currently one call site: `apps/mobile/src/ui/haptic-tab.tsx:12`, on tab press.
 
 **Spec — these should fire and currently don't:**
 
@@ -424,7 +424,7 @@ history", "Pick up your log". Charming on the way in; friction when you're
 looking for a number mid-set. **Never in the tool zone.**
 
 **2. Loading states speak gym, not software.**
-"Racking your last session" (`components/ui/workout-prefill-loader.tsx:144`),
+"Racking your last session" (`apps/mobile/src/ui/primitives/workout-prefill-loader.tsx:144`),
 "Crunching your numbers", "Reading your training pattern". Never "Loading…".
 
 **3. Optionality is stated out loud.**
@@ -447,12 +447,12 @@ are not acceptable.
 
 **Errors** are terse and never blame the user: "Invalid credentials. Please try
 again.", "Network error. Please check your connection."
-(`utils/firebase-errors.ts`). AI failures degrade quietly with a retry
+(`apps/mobile/src/lib/firebase-errors.ts`). AI failures degrade quietly with a retry
 affordance — "Could not load AI insights. Tap to retry."
 
 ## Accessibility
 
-`app/(tabs)/analytics.tsx` sets the bar and the rest of the app should meet it —
+`apps/mobile/app/(tabs)/analytics.tsx` sets the bar and the rest of the app should meet it —
 see the Strength summary and chart labels, which speak the full metric as a
 sentence:
 
@@ -461,7 +461,7 @@ sentence:
 - **Values are `selectable`** so they can be copied out.
 - **Reduced motion** is honored per the [motion](#motion) rule.
 - **Touch targets ≥ 44pt.** The option-row `minHeight: 52` is the reference; the
-  ±28px rep steppers in `components/workout/exercise-card.tsx` are the known
+  ±28px rep steppers in `apps/mobile/src/ui/workout/exercise-card.tsx` are the known
   violation.
 - **Contrast**: `#888` on `#1c1c1c` is the minimum for secondary text. `#666` is
   for placeholder and disabled only — never for content the user must read.
@@ -476,29 +476,29 @@ gap is visible, not so anyone goes and fixes it all at once.
 
 ### Structural
 
-- **`constants/theme.ts` is dead.** Untouched Expo scaffolding — the header
+- **`apps/mobile/src/constants/theme.ts` is dead.** Untouched Expo scaffolding — the header
   comment at `:1-4` is still the template's. Its `Colors` map is a light/dark
   scheme no screen consumes; its `Fonts` export has zero references. The app is
-  hardcoded dark-only. Likewise `components/themed-text.tsx`,
-  `components/themed-view.tsx`, `hooks/use-theme-color.ts`: referenced only by
-  other unused scaffolding (`components/parallax-scroll-view.tsx`,
-  `components/ui/collapsible.tsx`, `components/hello-wave.tsx`,
-  `components/external-link.tsx`).
+  hardcoded dark-only. Likewise `apps/mobile/src/ui/themed-text.tsx`,
+  `apps/mobile/src/ui/themed-view.tsx`, `apps/mobile/src/hooks/use-theme-color.ts`: referenced only by
+  other unused scaffolding (`apps/mobile/src/ui/parallax-scroll-view.tsx`,
+  `apps/mobile/src/ui/primitives/collapsible.tsx`, `apps/mobile/src/ui/hello-wave.tsx`,
+  `apps/mobile/src/ui/external-link.tsx`).
 - **No token file.** Every value in this doc is currently a literal at each call
   site.
 
 ### Verbatim duplication
 
-- **Bottom-sheet logic ×3** — `components/ui/dropdown.tsx:60-85`,
-  `components/workout-card.tsx:61-75`, `components/ui/exercise-picker.tsx:89-134`
+- **Bottom-sheet logic ×3** — `apps/mobile/src/ui/primitives/dropdown.tsx:60-85`,
+  `apps/mobile/src/ui/workout-card.tsx:61-75`, `apps/mobile/src/ui/primitives/exercise-picker.tsx:89-134`
   are the same 200ms/damping-20/stiffness-300 implementation, with the
   `modalContent` + grabber + `navBarFill` style blocks copy-pasted and only
   `maxHeight` differing.
-- **AI panel styles ×2** — `app/modal.tsx:1055-1068` and
-  `app/active-workout.tsx:920-933`.
+- **AI panel styles ×2** — `apps/mobile/app/modal.tsx:1055-1068` and
+  `apps/mobile/app/active-workout.tsx:920-933`.
 - **Split-name AI generation + AsyncStorage cache ×3** —
-  `app/(tabs)/index.tsx:70-84`, `app/active-workout.tsx:247-268`,
-  `app/planned-workouts.tsx:85-99`.
+  `apps/mobile/app/(tabs)/index.tsx:70-84`, `apps/mobile/app/active-workout.tsx:247-268`,
+  `apps/mobile/app/planned-workouts.tsx:85-99`.
 
 ### Color
 
@@ -515,9 +515,9 @@ Files by hex-literal count: `pushup-challenge.tsx` 57, `analytics.tsx` 56,
   `#242424`, `#222`, `#3a3a3a`, `#262626`, `#332626`.
 - **Secondary text, 5+ values** — `#888` (36), `#555` (20), `#666` (14), `#aaa`
   (9), `#999` (7), plus `#898989` / `#858585` / `#c9c9c9` unique to
-  `app/(tabs)/index.tsx`.
+  `apps/mobile/app/(tabs)/index.tsx`.
 - **Placeholder, 3 values** — `#666` (canonical; `exercise-picker.tsx` and all of
-  `app/(auth)/*`), `#555` (`active-workout.tsx`), `#777`
+  `apps/mobile/app/(auth)/*`), `#555` (`active-workout.tsx`), `#777`
   (`settings-injuries.tsx`).
 - **Error red, 6 values** — `#f87171`, `#ff6b6b` (`exercise-card.tsx:185`),
   `#b00020` (`settings-account.tsx:325`), plus tinted variants.
@@ -525,10 +525,10 @@ Files by hex-literal count: `pushup-challenge.tsx` 57, `analytics.tsx` 56,
   (`analytics.tsx` strength-positive value), `#73c69a`, `#dff4e8`, `#9eb9aa`
   (`muscle-insight-cards.tsx`).
 - **Case inconsistency** — `#e54242` (102) vs `#E54242` in
-  `components/timber-logo.tsx:14-15`; same for the gold, bark, and sapwood
+  `apps/mobile/src/ui/timber-logo.tsx:14-15`; same for the gold, bark, and sapwood
   constants.
 - **Not drift:** the ~25 oranges and yellows in
-  `app/(tabs)/pushup-challenge.tsx:298-346` are a fire gradient ramp. Ramps are
+  `apps/mobile/app/(tabs)/pushup-challenge.tsx:298-346` are a fire gradient ramp. Ramps are
   data, not tokens. Leave them.
 
 ### Typography and spacing
@@ -562,19 +562,19 @@ is mostly clean — no glassmorphism, no blur, no decorative blobs, and the
 oversized icon wells were already removed in bead `pump-pal-pga`. Two live
 instances:
 
-- **Sparkle icon as the AI affordance** — `app/modal.tsx:747` and
-  `app/active-workout.tsx:660` render `name="sparkles"` on the AI suggestion
+- **Sparkle icon as the AI affordance** — `apps/mobile/app/modal.tsx:747` and
+  `apps/mobile/app/active-workout.tsx:660` render `name="sparkles"` on the AI suggestion
   button. The adjacent label already says "Balance Workout with AI", so the glyph
   adds nothing but the signature. Replace with a neutral icon or none.
 - **Emoji in streak notification titles** — 🔥 and 💔 in
-  `utils/streak-notification.native.ts`. Covered by the TPC
+  `apps/mobile/src/lib/streak-notification.native.ts`. Covered by the TPC
   [exception](#sanctioned-exceptions); listed here so it is a decision on the
   record rather than an oversight.
 
 ### Copy
 
-- **`app/(tabs)/workouts.tsx:151`** — "Tap + to log your first workout" refers to
+- **`apps/mobile/app/(tabs)/workouts.tsx:151`** — "Tap + to log your first workout" refers to
   a `+` button that no longer exists.
-- **Quote style** — `app/modal.tsx`, `app/active-workout.tsx`,
-  `app/(tabs)/analytics.tsx`, `components/muscle-insight-cards.tsx` use
+- **Quote style** — `apps/mobile/app/modal.tsx`, `apps/mobile/app/active-workout.tsx`,
+  `apps/mobile/app/(tabs)/analytics.tsx`, `apps/mobile/src/ui/muscle-insight-cards.tsx` use
   double-quoted style values; the rest of the tree uses single quotes.

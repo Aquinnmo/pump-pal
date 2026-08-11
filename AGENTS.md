@@ -11,6 +11,20 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
+## Workspace layout
+
+npm workspaces (bun-compatible). The root package holds no application code — commands run from the root and delegate.
+
+```
+apps/mobile/        @timber/mobile   — Expo app; routes in app/, the rest in src/{ui,data,lib,hooks,context,constants,types,config}/
+apps/api/           @timber/api      — serverless API, its own Vercel project; one function in api/index.ts, logic in src/
+apps/wear/          Wear OS app (Gradle, not an npm package)
+packages/contract/  @timber/contract — client/server wire schemas shared by both
+tools/              repo-scoped Node scripts, incl. tools/catalog/ for the exercise catalog
+```
+
+`apps/api` must stay liftable: its only workspace dependency is `@timber/contract`. Never import from `apps/mobile` into it. `apps/mobile/tsconfig.json` maps `@/*` to `["./src/*", "./*"]`. Full detail in [CLAUDE.md](CLAUDE.md#architecture).
+
 ## Source-of-truth docs
 
 Read these before changing the app. They take precedence over patterns you find in the code.

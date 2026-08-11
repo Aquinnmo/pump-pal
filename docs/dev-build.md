@@ -184,7 +184,7 @@ when you:
     chronometer, but has **no action controls**. Confirm no crash and no
     duplicate notification. This is the subtlest part of the feature: two
     surfaces (the native `LiveUpdateNotification` module and Notifee) post this
-    notification, and `utils/workout-notification.android.ts` keeps them
+    notification, and `apps/mobile/src/lib/workout-notification.android.ts` keeps them
     mutually exclusive — a regression shows up as two notifications instead
     of one, not as a crash.
 
@@ -209,7 +209,7 @@ when you:
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | "This project uses a native module not in Expo Go" | You opened Expo Go. Open the **dev-build** app instead.                                                                                                 |
 | No notification appears                            | Permission denied → enable in system Settings → app → Notifications.                                                                                    |
-| Small icon looks oversized or letterboxed          | Add padding around the glyph in `scripts/generate-ic-stat-timber.js` and regenerate (`node scripts/generate-ic-stat-timber.js`) — don't hand-edit the PNGs. |
+| Small icon looks oversized or letterboxed          | Add padding around the glyph in `tools/generate-ic-stat-timber.js` and regenerate (`node tools/generate-ic-stat-timber.js`) — don't hand-edit the PNGs. |
 | Timer not ticking                                  | Confirm you're on a real dev build, not Expo Go; the chronometer needs the native Notifee module.                                                       |
 | Changes not showing                                | JS change → save should hot-reload. Native/`app.json` change → rebuild (one-time setup again).                                                          |
 | Metro connects but app is old                      | Rebuild — you likely changed a native dep without recompiling.                                                                                          |

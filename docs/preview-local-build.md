@@ -53,7 +53,7 @@ Nothing about that lives in the APK; it's all server-side registration.
 
 This app uses the Firebase **JS** SDK, not react-native-firebase, so there is no
 `google-services.json` to fix. The native module's only job is to hand back a
-Google ID token (`utils/google-sign-in.ts`). Client IDs + fingerprints are the
+Google ID token (`apps/mobile/src/lib/google-sign-in.ts`). Client IDs + fingerprints are the
 entire surface.
 
 ### 2.1 Get the EAS preview keystore fingerprints
@@ -130,7 +130,7 @@ getGoogleOAuthConfig({
 });
 ```
 
-`utils/google-sign-in.ts` had the broken form; `config/firebase.ts` did not, which
+`apps/mobile/src/lib/google-sign-in.ts` had the broken form; `apps/mobile/src/config/firebase.ts` did not, which
 is why Firebase worked while Google sign-in returned no ID token. Unlike § 2.1–2.5,
 this fix is in the bundle: **it requires a rebuild**.
 

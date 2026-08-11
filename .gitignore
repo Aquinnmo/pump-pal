@@ -22,6 +22,7 @@ expo-env.d.ts
 .metro-health-check*
 
 # debug
+firebase-debug.log
 npm-debug.*
 yarn-debug.*
 yarn-error.*
@@ -42,16 +43,14 @@ db-agent-write-perms.json
 temp/
 .idea/
 
-app-example
-
-# generated native folders
-/ios
-/android
-
-# migration generated output
-migration/reports/
-migration/*.generated.json
-migration/*.snapshot.json
+# Generated native folders (prebuild output). Anchored with a leading slash on
+# purpose: a bare `android/` would also match modules/*/android/, which is the
+# hand-written Kotlin source of the local Expo modules. The repo-root pair is
+# the stale pre-workspace copy, ignored until it is deleted.
+/ios/
+/android/
+/apps/mobile/ios/
+/apps/mobile/android/
 
 # Beads / Dolt files (added by bd init)
 .dolt/
@@ -65,10 +64,10 @@ migration/*.snapshot.json
 graphify-out/**
 
 # Gradle output for local Expo modules
-/modules/*/android/.gradle/
-/modules/*/android/build/
-/modules/*/android/.cxx/
-/modules/*/android/local.properties
+/apps/mobile/modules/*/android/.gradle/
+/apps/mobile/modules/*/android/build/
+/apps/mobile/modules/*/android/.cxx/
+/apps/mobile/modules/*/android/local.properties
 
 *.apk
 

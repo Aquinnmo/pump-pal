@@ -17,6 +17,35 @@ prepares and orders them; it does not perform them.
 
 ---
 
+## 0a. Two Vercel projects
+
+The web bundle and the API are separate deployments from the same repository.
+Each Vercel project points at its own workspace directory and reads the
+`vercel.json` inside it:
+
+| Vercel project | Root Directory | Build | `vercel.json` supplies |
+| --- | --- | --- | --- |
+| web | `apps/mobile` | `npx expo export -p web` → `dist` | SPA rewrite to `/index.html` |
+| API | `apps/api` | none — Vercel builds `api/index.ts` as a function | `fluid: true` + the `/api/:path*` rewrite |
+
+That `/api/:path*` rewrite is not decoration. `apps/api/api/index.ts` is a plain
+index route, not a `[...path].ts` catch-all; as a catch-all it was only ever
+routed one segment deep in production, so `/api/profile` dispatched while
+`/api/sync/manifest` returned a platform 404 that never invoked the function —
+invisible in the runtime logs, which is why it survived so long.
+
+Because the two projects have different origins, every browser call is
+cross-origin. The pairing below must hold or the web app cannot reach the API
+at all:
+
+- web project: `EXPO_PUBLIC_API_BASE_URL` = the API project's origin
+- API project: `API_ALLOWED_ORIGINS` includes the web project's origin
+
+Native builds are unaffected by the second one — they send no `Origin` header
+and skip CORS entirely — but they still need the first.
+
+---
+
 ## 0. What talks to what
 
 ```
@@ -25,11 +54,12 @@ Expo app ──┬─ web:    EXPO_PUBLIC_API_BASE_URL + /api/*  (cross-origin -
                               │
                               │  Authorization: Bearer <Firebase ID token>
                               ▼
-                    api/*.ts  (Vercel functions)
-                        ├─ api/_lib/http.ts ......... CORS/method/auth wrapper, request id, structured logs
-                        ├─ api/_lib/auth.ts ......... verifies the token (jose)
-                        ├─ api/_lib/store/ .......... Firestore REST, service account
-                        └─ api/_lib/ai/ ............. Gemini / OpenAI, server-only key
+        apps/api/api/index.ts  (the single Vercel function)
+                        ├─ apps/api/src/router.ts ....... path -> handler table, lazy imports
+                        ├─ apps/api/src/http.ts ......... CORS/method/auth wrapper, request id, structured logs
+                        ├─ apps/api/src/auth.ts ......... verifies the token (jose)
+                        ├─ apps/api/src/store/ .......... Firestore REST, service account
+                        └─ apps/api/src/ai/ ............. Gemini / OpenAI, server-only key
 ```
 
 Two dedicated origins, separate from each other and from the app's own web
@@ -46,7 +76,7 @@ Two separate credential classes, easy to confuse:
 | --- | --- | --- |
 | Firebase **web config** (`EXPO_PUBLIC_FIREBASE_*`) | the client, publicly | identifies the project. Not a secret — it's protected by `firestore.rules`, not by being hidden. |
 | Firebase **service account** (`FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`) | Vercel only | lets the API read/write Firestore, **bypassing `firestore.rules`**. A real secret. |
-| AI provider key (`GEMINI_API_KEY` or `OPENAI_API_KEY`) | Vercel only | only the *selected* provider's key is ever required (`api/_lib/ai/model.ts`) |
+| AI provider key (`GEMINI_API_KEY` or `OPENAI_API_KEY`) | Vercel only | only the *selected* provider's key is ever required (`apps/api/src/ai/model.ts`) |
 
 ---
 
@@ -72,7 +102,7 @@ rules or server-side token verification.
 | `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase web config | Firebase app ID (not an OAuth client ID) |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth web client ID | browser sign-in/linking |
 | `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client ID | installed iOS sign-in/linking |
-| `EXPO_PUBLIC_API_BASE_URL` | Preview API origin | required for native Preview builds; optional only for same-origin web |
+| `EXPO_PUBLIC_API_BASE_URL` | Preview API origin | required for **every** build, native and web. The API is its own Vercel project, so there is no same-origin `/api/*` to fall back to. |
 
 Before testing, enable Google in Firebase Authentication → Sign-in method. In
 Google Cloud/Firebase OAuth settings, register the exact Preview web origin as
@@ -91,7 +121,7 @@ bundle, which is the exact leak this API exists to close.
 
 | Variable | Value | Notes |
 | --- | --- | --- |
-| `AI_PROVIDER` | `google` or `openai` | **required**, no default — see `api/_lib/ai/model.ts` |
+| `AI_PROVIDER` | `google` or `openai` | **required**, no default — see `apps/api/src/ai/model.ts` |
 | `AI_MODEL` | e.g. `gemini-3.5-flash` | **required**, no default |
 | `AI_REASONING_EFFORT` | optional | `provider-default` (unset), `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max` (OpenAI-only — rejected at cold start against `google`) |
 | `GEMINI_API_KEY` | from Google AI Studio | only if `AI_PROVIDER=google` |
@@ -109,7 +139,7 @@ private key*. Downloads a JSON file. From it:
 - `client_email` → `FIREBASE_CLIENT_EMAIL`
 - `private_key` → `FIREBASE_PRIVATE_KEY`, pasted **exactly as it appears**,
   literal `\n` two-character escapes intact — do not convert to real
-  newlines. `api/_lib/store/rest.ts` converts them back at runtime.
+  newlines. `apps/api/src/store/rest.ts` converts them back at runtime.
 
 Delete the downloaded JSON afterwards. It is a full-access credential to
 Firestore and belongs in exactly one place: Vercel.
@@ -141,7 +171,7 @@ not a substitute for it — none of these tests touch a live deployment.
 ### 1e. Cold-start check (Preview only, requires deployment)
 
 The Firebase Admin cold-start gate is **p95 < 2s**. This API stayed on the
-Firestore REST adapter (`api/_lib/store/rest.ts`) rather than reintroducing
+Firestore REST adapter (`apps/api/src/store/rest.ts`) rather than reintroducing
 `firebase-admin`, specifically to avoid this risk — but verify it, don't
 assume it.
 
@@ -219,7 +249,7 @@ with "You've used all your AI suggestions for today." Then open
 every other field on the document is still there** — Firestore's REST
 `:commit` replaces the whole document unless the write carries an
 `updateMask`; a bug there would silently wipe the user's split and injuries.
-The type system enforces the mask (`api/_lib/store/rest.ts`'s `FirestoreWrite`
+The type system enforces the mask (`apps/api/src/store/rest.ts`'s `FirestoreWrite`
 requires it); confirm it against real data once anyway.
 
 ---
@@ -229,7 +259,7 @@ requires it); confirm it against real data once anyway.
 ### Monitoring
 
 Vercel dashboard → the deployment → **Logs**. Every route logs one
-structured, redacted JSON line per request (`api/_lib/http.ts` /
+structured, redacted JSON line per request (`apps/api/src/http.ts` /
 `api/ai.ts`): `requestId`, `route`, `method`, `status`, `durationMs`, and for
 `/api/ai` additionally `op`/`provider`/`model`. Never a request body,
 response payload, or secret. Filter on `"status":5` to find server errors; a
@@ -305,10 +335,10 @@ live with a client not yet migrated is a minute that client is fully broken).
    the one non-negotiable gate.
 3. Both client repositories (native, SQLite-backed; web, REST-backed — the
    offline-first epic's deliverable) no longer read/write Firestore directly
-   outside `config/firebase.ts`/auth-only files. Confirm with a repo-wide
+   outside `apps/mobile/src/config/firebase.ts`/auth-only files. Confirm with a repo-wide
    grep for `from 'firebase/firestore'` outside those files, or once it
    exists, a repo-wide isolation check equivalent to
-   `scripts/check-boundary-isolation.js`'s api-scoped version.
+   `tools/check-boundary-isolation.js`'s api-scoped version.
 
 **The cutover itself**, only after all three:
 

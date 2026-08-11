@@ -4,20 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
+All of these run from the workspace root; the root scripts delegate into the right package.
+
 ```bash
-npm install              # install deps
-npx expo start            # start dev server (Metro) — press a/i/w for android/ios/web
+npm install              # install every workspace package
+npm start                 # dev server (Metro) — press a/i/w for android/ios/web
 npm run android            # start + open Android
 npm run ios                # start + open iOS
 npm run web                 # start + open web
 npm run lint                 # expo lint (eslint-config-expo flat config)
+npm run typecheck             # tsc --noEmit in all three TS packages
+npm test                       # contract + api + mobile + tools
 ```
 
-There is no test runner configured for the app itself. The only automated tests are for the legacy migration scripts:
+To work inside one package, use `npm -w <name> run <script>` (`@timber/mobile`, `@timber/api`, `@timber/contract`) or `cd` into it.
 
-```bash
-npm run migration:test    # runs scripts/migration/convert-legacy-workout.test.js and legacy-inventory.test.js directly with node
-```
+There is no single test runner. Suites are individual `npm run test:*` scripts driven by `tsx`/`node`; each package's `test` script aggregates its own, and the root `test` runs all four groups.
 
 YOU ARE NEVER ALLOWED TO RUN A LOCAL BUILD `npx expo run:android` or anything similar. ALL DEV BUILDS WILL BE CREATED BY THE USER
 
@@ -42,11 +44,43 @@ These rules override the generated Beads session-completion protocol below unles
 
 ## Architecture
 
-Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React Native 0.81, new architecture enabled. Path alias `@/*` maps to repo root (tsconfig.json).
+### Workspace layout
+
+npm workspaces (`workspaces: ["apps/*", "packages/*"]` in the root `package.json`; the field is bun-compatible verbatim). The root package holds no application code — only scripts, shared dev tooling, and the `overrides` block.
+
+```
+apps/mobile/        @timber/mobile   — the Expo app
+apps/api/           @timber/api      — the Vercel serverless service
+apps/wear/          (Gradle, no npm package) — the Wear OS app
+packages/contract/  @timber/contract — the client/server wire contract
+tools/              repo-scoped Node scripts (no package of their own)
+docs/
+```
+
+`apps/api` is deliberately liftable: it has its own `package.json`, `tsconfig.json`, and `vercel.json`, deploys as its own Vercel project, and its only workspace dependency is `@timber/contract`. Removing that one dependency (vendoring whatever schemas it still needs into `apps/api/src/`) makes the directory standalone. **Do not add an `apps/mobile` dependency to it, and do not import across from `apps/mobile` into it.**
+
+Inside `apps/api`, `api/index.ts` is the only file Vercel treats as a serverless function — it counts every file under a project's `api/` directory as one, against a Hobby-plan cap of 12. All logic therefore lives in `apps/api/src/`, and `api/index.ts` stays a thin adapter. That split is also what makes a future move to another host or framework a rewrite of one file.
+
+### Mobile app
+
+Expo Router (file-based routing, typed routes), TypeScript, React 19 / React Native 0.81, new architecture enabled.
+
+`apps/mobile/tsconfig.json` maps `@/*` to `["./src/*", "./*"]` — src/ first, package root as fallback. So `@/lib/x` → `src/lib/x`, while `@/app/...`, `@/widgets/...` and `@/modules/...` resolve at the package root, where expo-router, the Android widget registry, and Expo autolinking all require them to stay.
+
+```
+apps/mobile/app/        expo-router routes (name is fixed by the router)
+apps/mobile/src/ui/     components; src/ui/primitives/ holds the low-level ones
+apps/mobile/src/data/   local SQLite + repositories; src/data/remote/ is the API-backed side
+apps/mobile/src/lib/    non-UI helpers
+apps/mobile/src/{hooks,context,constants,types,config}/
+apps/mobile/{assets,modules,plugins,targets,widgets}/   must stay at the package root
+```
+
+`apps/mobile/metro.config.js` is required, not optional: Metro must watch the workspace root and resolve from both `node_modules` trees, because the installer hoists dependencies upward. Without it `@timber/contract` does not resolve and edits to it never trigger a rebuild.
 
 ### Navigation / auth gating
 
-`app/_layout.tsx` wraps everything in `AuthProvider` (`context/auth-context.tsx`, Firebase email/password + phone auth) and does redirect gating in one place based on three pieces of state: Firebase `user`, whether onboarding was seen (`AsyncStorage` key `pumppal_onboarding_seen`), and whether the user's Firestore doc (`users/{uid}`) has a valid `workoutSplit.type` (see `constants/split-options.ts`). Route groups:
+`apps/mobile/app/_layout.tsx` wraps everything in `AuthProvider` (`apps/mobile/src/context/auth-context.tsx`, Firebase email/password + phone auth) and does redirect gating in one place based on three pieces of state: Firebase `user`, whether onboarding was seen (`AsyncStorage` key `pumppal_onboarding_seen`), and whether the user's Firestore doc (`users/{uid}`) has a valid `workoutSplit.type` (see `apps/mobile/src/constants/split-options.ts`). Route groups:
 
 - `(auth)` — welcome/sign-in/sign-up/phone-auth, shown when logged out
 - `set-split` — forced first-run screen when logged in but no split chosen yet
@@ -54,29 +88,38 @@ Expo Router (file-based routing, typed routes) app, TypeScript, React 19 / React
 
 ### Firebase
 
-`config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `.env.example.eas` for mobile and `.env.example.vercel` for web), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
+`apps/mobile/src/config/firebase.ts` initializes a single Firebase app from `EXPO_PUBLIC_FIREBASE_*` env vars (see `apps/mobile/.env.example.eas` for native and `apps/mobile/.env.example.vercel` for web; the API's server-only vars are in `apps/api/.env.example`), with `initializeAuth`+AsyncStorage persistence falling back to `getAuth` (needed because Fast Refresh re-invokes `initializeAuth` on an already-initialized app). Firestore project is `pumppal-c9199`.
 
-The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/data-model/README.md` (`docs/firestore-data-refactor.md` is migration history, not the current schema). The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
+The app reads/writes workouts exclusively at the canonical top-level path: `exercises/{exerciseId}` (catalog with variations), `workouts/{workoutId}` (has a `userId` field, set-by-set `performedExercises[].sets`), and `exerciseCatalogMeta/current` for cache invalidation. Full schema reference: `docs/data-model/README.md`. The only remaining touch of the legacy `users/{uid}/workouts/{workoutId}` path is in `apps/mobile/app/(tabs)/settings.tsx`'s account-deletion flow, which intentionally also purges the old subcollection as part of a full account wipe.
 
-### Migration scripts (`scripts/migration/`, `migration/`)
+### Exercise-catalog tooling (`tools/catalog/`)
 
-One-off, npm-scripted Node scripts (not part of the app bundle) that read/convert/validate/write the legacy → canonical Firestore data described above. They operate on local JSON artifacts first (`temp/` snapshots, `migration/*.json` mapping/catalog files) and only write to Firestore as an explicit final step (`migration:write:workouts`, `migration:seed:exercises`). Treat any script that writes to Firestore as a real, one-directional data migration, not a dev-loop command — don't re-run write scripts without understanding idempotency (migrated workout doc IDs are deterministic from the source path, so reruns update rather than duplicate, per the doc above).
+Node scripts (not part of the app bundle) that own the exercise catalog. `tools/catalog/catalog-seed.json` is the checked-in source of truth for the catalog's contents; `seed-exercise-catalog.js` (`npm run catalog:seed`) validates it and upserts it into Firestore, and `review-pending-exercises.js` (`npm run catalog:review`) promotes user submissions from the `/api/catalog/pending` route into that file. Both are dry-run by default and need an explicit `--apply` to write. `canonical-muscles.js` is a hand-maintained CommonJS mirror of `apps/mobile/src/constants/muscles.ts`; `npm run test:catalog-tools` fails if the two drift.
+
+The one-off legacy → canonical Firestore migration scripts are finished and have been removed; recover them from git history (`scripts/migration/`) if a legacy question ever needs them. The shape they left behind is documented in `docs/data-model/legacy.md`.
+
+### The API service (`apps/api`)
+
+Every route lives behind one function. Requests enter at `apps/api/api/index.ts`, which calls `dispatch` in `apps/api/src/router.ts` — a path→handler table with lazy `import()` per entry, so a plain workout GET never pays to evaluate the AI provider SDK at cold start. Two properties of that table are load-bearing: static patterns must precede dynamic ones (`/api/workouts/reorder` before `/api/workouts/:id`), and the `/api/:path*` rewrite in `apps/api/vercel.json` is what routes multi-segment paths at all.
+
+`apps/api/src/http.ts` wraps every route: CORS → origin check → method check → auth → handler, and owns the 405 + `Allow` header. Its `API_ALLOWED_ORIGINS` allowlist is now required rather than optional — the web bundle deploys as a separate Vercel project, so browser calls are cross-origin and are rejected before reaching a handler if its origin is not listed. Native calls send no `Origin` and skip CORS entirely.
+
+**No AI provider key exists on the client.** All generation runs through this service; an `EXPO_PUBLIC_*` key would be inlined into every APK and web bundle by Metro. Do not reintroduce one.
+
+**The package boundary replaces the old import-direction check.** `apps/api` cannot reach `apps/mobile` — separate package, no dependency, no relative path between them — so `scripts/check-api-isolation.js` was deleted rather than repathed. What is *not* structural is dependency leakage: the installer hoists everything into the root `node_modules`, so a mobile file could still resolve `ai` (or an API file `firebase`) without declaring it. `tools/check-boundary-isolation.js` is the only thing that catches that; `npm run test:tools` runs it. If you need an app constant server-side, move it to `packages/contract` or send it as request data (this is why the client supplies `regionList`, not just `volumeTable`).
 
 ### AI features
 
-**No AI provider key exists on the client.** All generation runs through a Vercel serverless proxy at `api/ai.ts`; an `EXPO_PUBLIC_*` key would be inlined into every APK and web bundle by Metro. Do not reintroduce one.
-
-**`api/**` imports nothing outside `api/` and `shared/`.** That is what keeps the proxy liftable into its own service. `npm run test:api-isolation` enforces it — if you need an app constant server-side, either move it to `shared/` or send it as request data (this is why the client supplies `regionList`, not just `volumeTable`).
-
-- `shared/ai-contract.ts` is the single source of truth for the wire format: one `AI_OPS` table holding an input and output zod schema per operation (`muscle-analysis`, `workout-completion`, `split-names`, `daily-name`), with the TS types derived via `z.infer`. The same `output` schema constrains generation server-side and types the client's return value, so the two cannot drift. Clients send structured input, never a raw prompt. Must stay free of Expo/React Native imports — both sides import it.
-- `api/_lib/auth.ts` verifies the caller's Firebase ID token with `jose` against Google's cached JWKS. `algorithms: ['RS256']` is pinned deliberately; without the pin a JWT library can be tricked into accepting `alg: none`. **Known ceiling:** no revocation check, so a signed-out or disabled account keeps working until its token expires (≤1h).
-- `api/_lib/ai/` (`model.ts`, `prompts.ts`) owns provider registration and the four prompt templates. No Firestore, no auth.
-- `api/_lib/store/` (`rest.ts`, `quota.ts`, `daily-name.ts`) talks to Firestore over the REST API, authenticating with a service-account OAuth2 token minted by `jose` from the same `FIREBASE_*` env vars. No AI. This replaced `firebase-admin`, whose gRPC dependency tree was ~16MB and dominated cold start. The service-account credential **still bypasses `firestore.rules`**, same as the Admin SDK did — that is a property of the credential, not the SDK.
+- `packages/contract/src/api-contract.ts` is the source of truth for the whole domain REST API's wire format — the DTOs, inputs, and response envelopes every route and every client repository share. `packages/contract/src/ai-contract.ts` covers only the four AI operations. The package exports source `.ts` through its `exports` map (`@timber/contract/api`, `/ai`, `/username`) with no build step: Metro transpiles TS directly and Vercel's Node builder handles it, so a `dist/` would only add a watch-mode rebuild.
+- `packages/contract/src/ai-contract.ts` holds one `AI_OPS` table with an input and output zod schema per operation (`muscle-analysis`, `workout-completion`, `split-names`, `daily-name`), with the TS types derived via `z.infer`. The same `output` schema constrains generation server-side and types the client's return value, so the two cannot drift. Clients send structured input, never a raw prompt. Must stay free of Expo/React Native imports — both sides import it.
+- `apps/api/src/auth.ts` verifies the caller's Firebase ID token with `jose` against Google's cached JWKS. `algorithms: ['RS256']` is pinned deliberately; without the pin a JWT library can be tricked into accepting `alg: none`. **Known ceiling:** no revocation check, so a signed-out or disabled account keeps working until its token expires (≤1h).
+- `apps/api/src/ai/` (`model.ts`, `prompts.ts`) owns provider registration and the four prompt templates. No Firestore, no auth.
+- `apps/api/src/store/` (`rest.ts`, `quota.ts`, `daily-name.ts`) talks to Firestore over the REST API, authenticating with a service-account OAuth2 token minted by `jose` from the same `FIREBASE_*` env vars. No AI. This replaced `firebase-admin`, whose gRPC dependency tree was ~16MB and dominated cold start. The service-account credential **still bypasses `firestore.rules`**, same as the Admin SDK did — that is a property of the credential, not the SDK.
   - Every write must carry `updateMask`. Without it a Firestore `:commit` **replaces the whole document** instead of merging.
   - `quota.ts` enforces `TEMPORARY_AI_DAILY_LIMIT` against `users/{uid}.aiUsage` using an `updateTime` precondition with retry, not a transaction.
-- `api/ai.ts` is the only place auth, `ai/`, and `store/` meet.
-- `utils/ai-client.ts` (`callAI`) is the only client-side entry point; it attaches a Firebase ID token.
-- The AI features still live in `utils/muscle-analysis.ts`, `utils/workout-suggestions.ts`, and `utils/daily-name.ts`, which compute summaries locally and call `callAI`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
+- `apps/api/src/routes/ai.ts` is the only place auth, `ai/`, and `store/` meet.
+- `apps/mobile/src/lib/ai-client.ts` (`callAI`) is the only client-side entry point; it attaches a Firebase ID token.
+- The AI features still live in `apps/mobile/src/lib/muscle-analysis.ts`, `apps/mobile/src/lib/workout-suggestions.ts`, and `apps/mobile/src/lib/daily-name.ts`, which compute summaries locally and call `callAI`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
 
 ### Firestore security rules
 
@@ -84,7 +127,7 @@ One-off, npm-scripted Node scripts (not part of the app bundle) that read/conver
 
 ### Theming
 
-`constants/theme.ts` + `hooks/use-color-scheme(.web).ts` + `hooks/use-theme-color.ts` drive light/dark theming consumed by `components/themed-text.tsx` / `components/themed-view.tsx`. Tab bar and accent colors are currently hardcoded dark-style values in `app/(tabs)/_layout.tsx` rather than pulled from the theme constants.
+`apps/mobile/src/constants/theme.ts` + `apps/mobile/src/hooks/use-color-scheme(.web).ts` + `apps/mobile/src/hooks/use-theme-color.ts` drive light/dark theming consumed by `apps/mobile/src/ui/themed-text.tsx` / `apps/mobile/src/ui/themed-view.tsx`. Tab bar and accent colors are currently hardcoded dark-style values in `apps/mobile/app/(tabs)/_layout.tsx` rather than pulled from the theme constants.
 
 ## graphify
 
