@@ -16,7 +16,9 @@
         "NSSupportsLiveActivities": true
       },
       "entitlements": {
-        "com.apple.security.application-groups": ["group.com.aquinnmo.timber.liveactivity"]
+        "com.apple.security.application-groups": [
+          "group.com.aquinnmo.timber.liveactivity"
+        ]
       }
     },
     "android": {
@@ -26,7 +28,6 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
       "package": "com.aquinnmo.timber",

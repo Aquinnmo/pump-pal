@@ -1,8 +1,9 @@
+import type { ColorValue } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 type TimberTabIconProps = {
   size: number;
-  color: string;
+  color: ColorValue;
 };
 
 /** A felled timber with cut-end rings and a small leafy sprig for the Logs tab. */

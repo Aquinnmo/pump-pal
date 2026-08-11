@@ -15,7 +15,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#e54242',
         tabBarInactiveTintColor: '#555',
         headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarButton: (props) => <HapticTab {...props} />,
         tabBarStyle: {
           backgroundColor: '#111',
           borderTopColor: '#1e1e1e',

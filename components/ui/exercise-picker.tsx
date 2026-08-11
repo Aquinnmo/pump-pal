@@ -152,7 +152,7 @@ const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
       onRequestClose={() => close()}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <Animated.View style={[styles.modalOverlay, isDialog && styles.dialogOverlay, overlayAnimatedStyle]}>
-          <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => close()} />
+          <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => close()} />
           {isDialog ? (
             <Animated.View
               style={[
