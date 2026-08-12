@@ -42,7 +42,13 @@ function requestId(): string {
 function routeError(error: unknown, request?: { requestId?: string; route?: string; method?: string }): Response {
   const status = error instanceof ApiError ? error.status : (error as { status?: number }).status ?? 500;
   const code = error instanceof ApiError ? error.code : undefined;
-  if (status >= 500) console.error('[worker] request failed', { ...request, status });
+  // Hono catches everything, so workerd never surfaces the exception itself —
+  // without this a `wrangler tail` 500 carries no name, message, or stack. The
+  // response body below stays generic; only the server-side log gets the cause.
+  if (status >= 500) {
+    const { name, message, stack } = (error ?? {}) as Partial<Error>;
+    console.error('[worker] request failed', { ...request, status, name, message, stack });
+  }
   return Response.json({ error: status >= 500 ? 'Internal error' : (error as Error).message, ...(code ? { code } : {}) }, { status });
 }
 

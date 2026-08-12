@@ -67,6 +67,24 @@ async function main() {
   assert.equal(typeof requestLog.durationMs, 'number');
   assert.doesNotMatch(JSON.stringify(logged), /Bearer test|verified-uid|workoutSplit/);
 
+  // A 5xx keeps its cause in the server log while the client body stays generic.
+  {
+    const errors: unknown[][] = [];
+    const originalError = console.error;
+    const originalInfoAgain = console.info;
+    console.error = (...args: unknown[]) => { errors.push(args); };
+    console.info = () => {};
+    const failing = createWorkerApp(async () => { throw new Error('Missing required env var: AI_PROVIDER'); });
+    const response = await failing.request('https://worker.example/api/ai', {
+      method: 'POST', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' }, body: '{}',
+    }, env);
+    console.error = originalError;
+    console.info = originalInfoAgain;
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), { error: 'Internal error' }, 'the cause never reaches the client');
+    assert.match(JSON.stringify(errors), /Missing required env var: AI_PROVIDER/, 'the cause does reach the server log');
+  }
+
   console.log('worker: auth, CORS, and route validation assertions passed');
 }
 
