@@ -177,13 +177,20 @@ async function request(
       if (response.status === 409) throw new FirestoreConflictError();
       if (response.status === 429) throw new FirestoreRateLimitError(parseRetryAfter(response.headers.get('Retry-After')));
       if (response.status >= 500) throw new FirestoreNetworkError(`Firestore failed with ${response.status}.`, response.status);
-      if (!response.ok) throw new FirestoreValidationError(`Firestore rejected this request (${response.status}).`, response.status);
+      if (!response.ok) {
+        // Firestore's body names the real cause — a missing composite index arrives here with
+        // the console URL that creates it. Only read on the failure path.
+        const failure = (await response.json().catch(() => undefined)) as { error?: { message?: unknown } } | undefined;
+        const detail = typeof failure?.error?.message === 'string' ? ` ${failure.error.message}` : '';
+        throw new FirestoreValidationError(`Firestore rejected this request (${response.status}).${detail}`, response.status);
+      }
       deps.log?.({ method, url, status, retried: retried || undefined });
       return response.json().catch(() => undefined);
     }
     throw new FirestoreAuthError('Session expired — please sign in again.', 401);
   } catch (error) {
-    deps.log?.({ method, url, status, retried: retried || undefined, error: (error as Error).name });
+    const { name, message } = error as Error;
+    deps.log?.({ method, url, status, retried: retried || undefined, error: message ? `${name}: ${message}` : name });
     throw error;
   }
 }

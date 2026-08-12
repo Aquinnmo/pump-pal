@@ -46,12 +46,12 @@ Then, from the repo root (**set `APP_VARIANT` so it installs as "Timber Dev"**):
 
 ```powershell
 # Windows PowerShell
-$env:APP_VARIANT="development"; bunx expo run:android
+$env:APP_VARIANT="development"; bun run android
 ```
 
 ```bash
 # macOS / Linux / Git Bash
-APP_VARIANT=development bunx expo run:android
+APP_VARIANT=development bun run android
 ```
 
 First run generates the native `android/` project (CNG prebuild), compiles the
@@ -103,7 +103,7 @@ GIT_CLONE_PROTECTION_ACTIVE=false eas build --profile development --platform and
 The dev build is installed once; day-to-day you just run Metro and edit JS:
 
 ```bash
-bunx expo start --dev-client
+bun start -- --dev-client
 ```
 
 - Open the installed **dev-build app** (not Expo Go) and it connects to Metro.
@@ -121,7 +121,7 @@ when you:
 
 ## Testing the workout notification
 
-1. Start Metro: `bunx expo start --dev-client`; open the dev-build app.
+1. Start Metro: `bun start -- --dev-client`; open the dev-build app.
 2. Grant the notification permission when prompted (Android 13+).
 3. **Start a workout** → a silent ongoing notification appears with a
    **live-ticking elapsed timer**.
@@ -220,9 +220,9 @@ when you:
 
 | Situation                                        | Command                                                |
 | ------------------------------------------------ | ------------------------------------------------------ |
-| First build / after native change (local)        | `$env:APP_VARIANT="development"; bunx expo run:android` |
+| First build / after native change (local)        | `$env:APP_VARIANT="development"; bun run android` |
 | First build / after native change (cloud)        | `eas build --profile development --platform android`   |
-| Everyday JS work                                 | `bunx expo start --dev-client`                          |
+| Everyday JS work                                 | `bun start -- --dev-client`                            |
 | Preview (release) build onto the plugged-in phone | `bun run install:android`                             |
 | Preview APK built locally via EAS (Google sign-in works) | see [preview-local-build.md](preview-local-build.md) |
-| Web / non-native work (Notifee is a no-op there) | `bunx expo start` (Expo Go still fine for web)          |
+| Web / non-native work (Notifee is a no-op there) | `bun run web` (Expo Go still fine for web)              |

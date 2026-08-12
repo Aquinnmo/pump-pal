@@ -72,6 +72,13 @@ async function main() {
     const rest = client(async () => response({ status }));
     await assert.rejects(() => rest.getDocument('workouts/w1'), ErrorType);
   }
+  // A 400 keeps Firestore's own reason — a missing index arrives with the console URL that creates it.
+  {
+    const indexUrl = 'https://console.firebase.google.com/project/demo/firestore/indexes?create_composite=abc';
+    const rest = client(async () => response({ status: 400, body: { error: { message: `The query requires an index. You can create it here: ${indexUrl}` } } }));
+    await assert.rejects(() => rest.runQuery({ collectionId: 'workouts', limit: 1 }), (error: Error) => error instanceof FirestoreValidationError && error.message.includes(indexUrl));
+  }
+
   const missing = client(async () => response({ status: 404 }));
   assert.equal(await missing.getDocument('workouts/missing'), undefined);
   await assert.rejects(() => missing.runQuery({ collectionId: 'workouts', limit: 1 }), FirestoreNotFoundError);

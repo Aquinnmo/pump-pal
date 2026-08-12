@@ -123,7 +123,7 @@ Every route lives behind one function. Requests enter at `apps/api/api/index.ts`
 
 ### Firestore security rules
 
-`firestore.rules` (wired up by `firebase.json`) is the source of truth; deploy with `npx firebase-tools@latest deploy --only firestore:rules`. `exercises`, `exerciseCatalogMeta`, and `random` are client-read-only, and `users/{uid}.aiUsage` cannot be written by the client.
+`firestore.rules` (wired up by `firebase.json`) is the source of truth; deploy with `npx firebase-tools@latest deploy --only firestore:rules`. Composite indexes are a **separate deploy target** — `npx firebase-tools@latest deploy --only firestore:indexes` — and any new direct client query combining a `where` with an `orderBy` on another field needs an entry in `firestore.indexes.json` first, or Firestore answers `400 FAILED_PRECONDITION` (see [docs/data-model/README.md](docs/data-model/README.md)). `exercises`, `exerciseCatalogMeta`, and `random` are client-read-only, and `users/{uid}.aiUsage` cannot be written by the client.
 
 ### Theming
 
