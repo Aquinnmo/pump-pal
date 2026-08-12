@@ -10,6 +10,7 @@ import {
   SyncConflictError,
   SyncAuthError,
   SyncRateLimitError,
+  SyncPermanentError,
 } from './sync-engine';
 
 async function freshDb() {
@@ -410,6 +411,31 @@ async function main() {
     assert.deepEqual(await listOutbox(db, 'u1'), []);
   }
 
+  // --- replayed create: an already-committed document is retried once as an update ---
+  {
+    const db = await freshDb();
+    const server = new FakeServer();
+    const id = await workouts.create(db, 'u1', workoutPayload({ name: 'Replay me' }) as never);
+    server.seed(id, workoutPayload({ name: 'Earlier committed copy' }), 'v-existing');
+    const adapter = makeWorkoutAdapter(server);
+    let createCalls = 0;
+    let updateCalls = 0;
+    adapter.remote.create = async () => {
+      createCalls++;
+      throw new SyncConflictError('already exists', workoutPayload({ name: 'Earlier committed copy' }), 'v-existing');
+    };
+    const realUpdate = adapter.remote.update;
+    adapter.remote.update = async (...args) => {
+      updateCalls++;
+      return realUpdate(...args);
+    };
+    const outcome = await runSync(db, 'u1', [adapter], makeRemote(server), noBackoff);
+    assert.equal(outcome.status, 'ok');
+    assert.equal(createCalls, 1);
+    assert.equal(updateCalls, 1, 'the local-wins retry uses the rebased updateTime');
+    assert.equal((server.get(id)?.data as { name: string }).name, 'Replay me');
+  }
+
   // --- 409 twice in one run: bounded at one retry, rebased for the next run ---
   {
     const db = await freshDb();
@@ -455,6 +481,22 @@ async function main() {
     await runSync(db, 'u1', [makeWorkoutAdapter(server)], makeRemote(server), noBackoff);
     assert.equal((server.get('w1')!.data as { name: string }).name, 'My local edit');
     assert.deepEqual(await listOutbox(db, 'u1'), []);
+  }
+
+  // --- permanent validation/permission rejection is parked and surfaced, not retried forever ---
+  {
+    const db = await freshDb();
+    const server = new FakeServer();
+    const id = await workouts.create(db, 'u1', workoutPayload() as never);
+    const adapter = makeWorkoutAdapter(server);
+    adapter.remote.create = async () => {
+      throw new SyncPermanentError('Firestore rules rejected this write');
+    };
+    const outcome = await runSync(db, 'u1', [adapter], makeRemote(server), noBackoff);
+    assert.equal(outcome.status, 'permanent-failure');
+    if (outcome.status === 'permanent-failure') assert.equal(outcome.entityId, id);
+    const [parked] = await listOutbox(db, 'u1');
+    assert.ok(parked.parkedAt, 'the row remains available for an error surface');
   }
 
   // --- 401: run aborts immediately, outbox row released (not lost) for the next attempt ---

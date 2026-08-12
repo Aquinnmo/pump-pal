@@ -7,6 +7,7 @@ import {
   apiRequestCore,
   normalizeApiBaseUrl,
 } from './api-client-core';
+import { getAppCheckToken } from './app-check-token';
 
 export {
   ApiAuthError,
@@ -83,6 +84,7 @@ export async function apiRequest<TOut = void>(
     clientVersion: CLIENT_VERSION,
     fetchImpl: expoFetch as ApiRequestDeps['fetchImpl'],
     getIdToken: defaultGetIdToken,
+    getAppCheckToken,
     log: devLog,
   };
   return apiRequestCore(path, deps, options);

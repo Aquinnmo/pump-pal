@@ -46,7 +46,7 @@ export default function SetUsernameScreen() {
     try {
       const dto = await patchProfile({ username: trimmed });
       const current = await profileRepository.get(user.uid);
-      await profileRepository.upsert(user.uid, { ...(current?.data ?? {}), username: dto.username ?? trimmed, usernameLower: trimmed.toLowerCase() });
+      await profileRepository.upsert(user.uid, { ...(current?.data ?? {}), username: dto.username ?? trimmed, usernameLower: trimmed.toLowerCase() }, { syncState: 'synced', serverVersion: dto.version });
       bumpDataVersion();
       if (!user.displayName) await updateAuthProfile(user, { displayName: trimmed });
       notifyAccountDataChanged();

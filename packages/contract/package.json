@@ -6,11 +6,12 @@
   "exports": {
     "./api": "./src/api-contract.ts",
     "./ai": "./src/ai-contract.ts",
+    "./firestore": "./src/firestore-rest.ts",
     "./username": "./src/username.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun src/api-contract.test.ts"
+    "test": "bun src/api-contract.test.ts && bun src/firestore-rest.test.ts"
   },
   "dependencies": {
     "zod": "^4.4.3"

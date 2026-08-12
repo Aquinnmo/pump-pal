@@ -19,7 +19,7 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 
 2. Copy [`apps/mobile/.env.example.eas`](apps/mobile/.env.example.eas) to `apps/mobile/.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL`. The API is a separate deployment, so that URL is required.
 
-   AI provider keys and the Firebase service account are **not** part of the client `.env` — they belong only to the API's own Vercel project. See [`apps/api/.env.example`](apps/api/.env.example).
+   AI provider keys and the Firebase service account are **not** part of the client `.env` — they belong only in Cloudflare Worker secrets. See [`apps/api/.env.example`](apps/api/.env.example).
 
 3. Start the dev server
 
@@ -102,12 +102,16 @@ npm workspaces (bun-compatible). The root package holds no application code:
 | Path | Package | What it is |
 | --- | --- | --- |
 | `apps/mobile/` | `@timber/mobile` | The Expo app. Routes in `app/`, everything else under `src/{ui,data,lib,hooks,context,constants,types,config}/`. |
-| `apps/api/` | `@timber/api` | The serverless API, its own Vercel project. One function in `api/index.ts`, all logic in `src/`. |
+| `apps/api/` | `@timber/api` | Hono Cloudflare Worker for privileged operations; its only workspace dependency is `@timber/contract`. |
 | `apps/wear/` | — | The Wear OS app (Gradle, not an npm package). |
 | `packages/contract/` | `@timber/contract` | Zod schemas + types for the client/server wire format, shared by both sides. |
 | `tools/` | — | Repo-scoped Node scripts: icon/muscle-map generators, boundary checks, and the exercise-catalog tooling in `tools/catalog/`. |
 
-The web bundle and the API deploy as **two separate Vercel projects**, with root directories `apps/mobile` and `apps/api`. Because they no longer share an origin, `EXPO_PUBLIC_API_BASE_URL` (web project) and `API_ALLOWED_ORIGINS` (API project) must name each other — see [docs/deployment.md](docs/deployment.md).
+The web bundle may deploy as a Vercel project (`apps/mobile`); the privileged
+API deploys independently as a Cloudflare Worker (`apps/api`). Safe owner data
+uses direct Firestore REST, while `EXPO_PUBLIC_API_BASE_URL` and
+`API_ALLOWED_ORIGINS` connect web clients to the Worker for privileged calls.
+See [docs/deployment.md](docs/deployment.md).
 
 File-based routing via Expo Router, with auth/onboarding gating documented in [CLAUDE.md](CLAUDE.md). The Firestore workout/exercise schema (canonical collections, set-by-set data model, exercise catalog) is documented in [docs/data-model/](docs/data-model/README.md).
 

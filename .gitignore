@@ -32,7 +32,8 @@ yarn-error.*
 *.pem
 
 # local env files
-.env
+.env*
+!.env*.example
 .env*.local
 db-agent-read-perms.json
 db-agent-write-perms.json
@@ -72,3 +73,6 @@ graphify-out/**
 *.apk
 
 google-services.json
+
+**/.dev.vars**
+!**/.dev.vars.example

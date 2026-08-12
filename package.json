@@ -7,6 +7,7 @@
     "packages/*"
   ],
   "scripts": {
+    "check:direct-boundaries": "node tools/check-direct-boundaries.js",
     "start": "cd apps/mobile && bun run start",
     "android": "cd apps/mobile && bun run android",
     "ios": "cd apps/mobile && bun run ios",
@@ -21,7 +22,8 @@
     "test:contract": "cd packages/contract && bun run --silent test",
     "test:api": "cd apps/api && bun run --silent test",
     "test:mobile": "cd apps/mobile && bun run --silent test",
-    "test:tools": "bun run --silent test:boundary-isolation && bun run --silent test:web-native-deps && bun run --silent test:catalog-tools",
+    "test:tools": "bun run --silent test:boundary-isolation && bun run --silent test:web-native-deps && bun run --silent test:catalog-tools && node tools/migrate-trust-domains.test.js",
+    "test:firestore-rules": "firebase emulators:exec --only firestore \"bun tests/firestore.rules.test.ts\"",
     "test:boundary-isolation": "node tools/check-boundary-isolation.js",
     "test:web-native-deps": "node tools/check-web-native-deps.js",
     "test:catalog-tools": "node tools/catalog/canonical-muscles.test.js && node tools/catalog/catalog-seed.test.js && node tools/catalog/review-pending-exercises.test.js",
@@ -31,7 +33,9 @@
     "catalog:review": "node tools/catalog/review-pending-exercises.js"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@types/node": "^22.10.0",
+    "firebase-tools": "^15.26.0",
     "sharp": "^0.35.3",
     "typescript": "~6.0.3"
   },

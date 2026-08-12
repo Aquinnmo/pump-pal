@@ -3,7 +3,7 @@
 // existing setDoc semantics documented in src/types/pushup-challenge.ts).
 import { LocalSingletonRepository, StoredRecord } from '@/data/remote-types';
 import { createVersionCache } from '@/data/version-cache';
-import * as remote from '@/data/remote/pushup';
+import { webFirestore } from './web-direct-firestore';
 import { ChallengeData } from '@/types/pushup-challenge';
 import { PushupChallengeDTO } from '@timber/contract/api';
 
@@ -24,18 +24,12 @@ function toStoredRecord(dto: PushupChallengeDTO): StoredRecord<ChallengeData> | 
 }
 
 export const pushupRepository: LocalSingletonRepository<ChallengeData> = {
-  async get(): Promise<StoredRecord<ChallengeData> | null> {
-    const dto = await remote.getPushupChallenge();
-    return toStoredRecord(dto);
+  async get(uid: string): Promise<StoredRecord<ChallengeData> | null> {
+    return toStoredRecord((await webFirestore(uid).pushup.read()).data);
   },
 
   async upsert(_uid: string, entity: ChallengeData): Promise<void> {
-    const dto = await remote.putPushupChallenge({
-      startDate: entity.startDate,
-      days: entity.days,
-      longestStreak: entity.longestStreak,
-      baseVersion: versions.get(SINGLETON_ID) ?? null,
-    });
+    const dto = (await webFirestore(_uid).pushup.write(entity, versions.get(SINGLETON_ID) ?? null)).data;
     toStoredRecord(dto);
   },
 };

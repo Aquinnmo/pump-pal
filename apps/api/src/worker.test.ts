@@ -1,0 +1,73 @@
+import assert from 'node:assert/strict';
+import { createWorkerApp, type WorkerBindings } from './worker.js';
+
+const env: WorkerBindings = {
+  FIREBASE_PROJECT_ID: 'demo',
+  FIREBASE_CLIENT_EMAIL: 'worker@example.com',
+  FIREBASE_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\\ntest\\n-----END PRIVATE KEY-----',
+  API_ALLOWED_ORIGINS: 'https://timber-preview.adam-montgomery.ca',
+};
+
+const app = createWorkerApp(async (authorization) => {
+  if (authorization === 'Bearer test') return 'verified-uid';
+  throw Object.assign(new Error('Invalid or expired session'), { status: 401 });
+});
+
+async function main() {
+  const logged: unknown[][] = [];
+  const originalInfo = console.info;
+  console.info = (...args: unknown[]) => { logged.push(args); };
+
+  const health = await app.request('https://worker.example/health', undefined, env);
+  assert.equal(health.status, 200);
+  assert.deepEqual(await health.json(), { ok: true });
+
+  const preflight = await app.request('https://worker.example/api/buddies', {
+    method: 'OPTIONS', headers: { Origin: 'https://timber-preview.adam-montgomery.ca' },
+  }, env);
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), 'https://timber-preview.adam-montgomery.ca');
+
+  const deniedOrigin = await app.request('https://worker.example/api/buddies', {
+    method: 'OPTIONS', headers: { Origin: 'https://not-allowed.example' },
+  }, env);
+  assert.equal(deniedOrigin.status, 403);
+
+  const unauthenticated = await app.request('https://worker.example/api/buddies?today=2026-08-12', undefined, env);
+  assert.equal(unauthenticated.status, 401, 'all privileged routes derive uid from a verified token');
+
+  const invalidAi = await app.request('https://worker.example/api/ai', {
+    method: 'POST', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'not-an-operation' }),
+  }, env);
+  assert.equal(invalidAi.status, 400, 'schema validation happens before any provider call');
+
+  const enforced = await app.request('https://worker.example/api/ai', {
+    method: 'POST', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'not-an-operation' }),
+  }, { ...env, APP_CHECK_MODE: 'enforce', FIREBASE_PROJECT_NUMBER: '123', APP_CHECK_ALLOWED_APP_IDS: '1:123:web:allowed' });
+  assert.equal(enforced.status, 401, 'enforcement rejects a missing App Check token');
+
+  const safeProfileField = await app.request('https://worker.example/api/profile', {
+    method: 'PATCH', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workoutSplit: { type: 'Upper / Lower', custom: null } }),
+  }, env);
+  assert.equal(safeProfileField.status, 410, 'the Worker tombstones safe Firestore mutations during cutover');
+  assert.equal((await safeProfileField.json() as { code: string }).code, 'client_upgrade_required');
+
+  for (const path of ['/api/profile', '/api/workouts', '/api/workouts/w1', '/api/injuries', '/api/injuries/i1', '/api/catalog', '/api/pushup-challenge', '/api/sync/manifest']) {
+    const retired = await app.request(`https://worker.example${path}`, { headers: { Authorization: 'Bearer test' } }, env);
+    assert.equal(retired.status, 410, `${path} stays a stable upgrade tombstone`);
+    assert.equal((await retired.json() as { code: string }).code, 'client_upgrade_required');
+  }
+
+  console.info = originalInfo;
+  const requestLog = logged.find(([event]) => event === '[worker] request')?.[1] as Record<string, unknown>;
+  assert.equal(typeof requestLog.requestId, 'string');
+  assert.equal(typeof requestLog.route, 'string');
+  assert.equal(typeof requestLog.status, 'number');
+  assert.equal(typeof requestLog.durationMs, 'number');
+  assert.doesNotMatch(JSON.stringify(logged), /Bearer test|verified-uid|workoutSplit/);
+
+  console.log('worker: auth, CORS, and route validation assertions passed');
+}
+
+void main();

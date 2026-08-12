@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-// buddies.ts pulls in ApiError from http.js, whose cold-start env check runs
+// buddies.ts pulls in ApiError from errors.js, so this test has no runtime
 // at import time -- same reason router.test.ts sets these before importing.
 process.env.FIREBASE_PROJECT_ID = 'test-project';
 process.env.FIREBASE_CLIENT_EMAIL = 'test@example.com';

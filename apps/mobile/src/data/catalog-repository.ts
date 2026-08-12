@@ -3,6 +3,8 @@ import * as catalog from './catalog';
 import type { CatalogExercise, ExerciseCatalogMeta } from '@/types/workout';
 import type { CatalogResponse } from '@timber/contract/api';
 import * as remote from '@/data/remote/catalog';
+import { firestoreRestClient } from '@/lib/firestore-rest-client';
+import { getApprovedCatalogSnapshot } from './firestore-sync-remote';
 
 function approvedSnapshot(exercises: CatalogExercise[]): exercises is CatalogExercise[] {
   return (
@@ -12,7 +14,7 @@ function approvedSnapshot(exercises: CatalogExercise[]): exercises is CatalogExe
 }
 
 async function refresh(uid: string): Promise<CatalogResponse> {
-  const response = await remote.getCatalog();
+  const response = await getApprovedCatalogSnapshot(firestoreRestClient());
   const exercises = response.exercises as CatalogExercise[];
   if (!approvedSnapshot(exercises)) {
     throw new Error('Catalog response did not contain a valid approved snapshot.');

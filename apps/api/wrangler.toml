@@ -1,0 +1,14 @@
+name = "timber-api"
+main = "src/worker.ts"
+compatibility_date = "2026-08-11"
+workers_dev = true
+
+# Human-gated deployment targets. Set secrets with `wrangler secret put`;
+# never place service-account or AI credentials in this file or git.
+[env.preview]
+name = "timber-api-preview"
+routes = [{ pattern = "timber-api-preview.adam-montgomery.ca", custom_domain = true }]
+
+[env.production]
+name = "timber-api"
+routes = [{ pattern = "timber-api.adam-montgomery.ca", custom_domain = true }]

@@ -4,6 +4,8 @@ import { deleteAccountDataWith } from './account.js';
 const okPhases = {
   deleteWorkouts: async () => 3,
   deleteLegacyWorkouts: async () => 1,
+  deleteInjuries: async () => 2,
+  deletePrivateDocs: async () => {},
   deletePushupChallenge: async () => {},
   deleteFriendships: async () => 2,
   deleteUsernameReservation: async () => {},

@@ -10,6 +10,7 @@ import {
   acknowledge,
   rebase,
   recordRetry,
+  park,
   listAll,
 } from './outbox';
 
@@ -128,6 +129,20 @@ async function main() {
     // Not due yet (nextAttemptAt in the future) -> not claimable.
     const notYet = await claimPending(db, 'u1');
     assert.equal(notYet.length, 0);
+  }
+
+  // --- permanent rejections stay visible but are never auto-retried ---
+  {
+    const db = await freshDb();
+    await enqueue(db, {
+      uid: 'u1', entityType: 'workout', entityId: 'w-permanent', op: 'create', payload: {}, baseVersion: null,
+    });
+    const [claimed] = await claimPending(db, 'u1');
+    await park(db, claimed.id, 'Firestore rules rejected this write');
+    const [stored] = await listAll(db, 'u1');
+    assert.ok(stored.parkedAt, 'the permanent failure stays inspectable');
+    assert.equal(stored.lastError, 'Firestore rules rejected this write');
+    assert.equal((await claimPending(db, 'u1')).length, 0, 'parked rows do not retry automatically');
   }
 
   // --- crash recovery: a stale claim (app killed mid-sync) becomes claimable again ---

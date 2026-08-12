@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import { runtimeEnv } from './runtime-env.js';
 
 /**
  * Verifies the caller's Firebase ID token and returns their uid, using `jose`
@@ -22,7 +23,7 @@ export async function requireUid(authorization: string | undefined): Promise<str
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
   if (!token) throw Object.assign(new Error('Missing bearer token'), { status: 401 });
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const projectId = runtimeEnv('FIREBASE_PROJECT_ID');
   if (!projectId) throw new Error('Missing FIREBASE_PROJECT_ID');
 
   try {

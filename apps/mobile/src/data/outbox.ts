@@ -31,6 +31,8 @@ export type OutboxRow = OutboxIntent & {
   lastError: string | null;
   claimedAt: string | null;
   nextAttemptAt: string | null;
+  /** A permanent server rejection; retained for diagnosis but never auto-retried. */
+  parkedAt: string | null;
 };
 
 type Raw = {
@@ -46,6 +48,7 @@ type Raw = {
   last_error: string | null;
   claimed_at: string | null;
   next_attempt_at: string | null;
+  parked_at: string | null;
 };
 
 function fromRow(r: Raw): OutboxRow {
@@ -62,6 +65,7 @@ function fromRow(r: Raw): OutboxRow {
     lastError: r.last_error,
     claimedAt: r.claimed_at,
     nextAttemptAt: r.next_attempt_at,
+    parkedAt: r.parked_at,
   };
 }
 
@@ -128,7 +132,10 @@ export async function enqueue(db: SqlExecutor, intent: OutboxIntent): Promise<vo
        -- leaves attempts/next_attempt_at alone: an active workout autosaves
        -- every ~800ms, and resetting the backoff on each one would hammer a
        -- failing endpoint instead of waiting it out.
-       claimed_at = NULL`,
+       claimed_at = NULL,
+       -- A new explicit local edit is the user's retry after a parked
+       -- validation/permission failure, so it may be claimed again.
+       parked_at = NULL`,
     [
       existing?.id ?? randomId(),
       intent.uid,
@@ -151,7 +158,8 @@ export async function claimPending(
   const now = new Date().toISOString();
   const rows = await db.getAllAsync<Raw>(
     `SELECT * FROM outbox
-     WHERE uid = ? AND claimed_at IS NULL AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
+     WHERE uid = ? AND claimed_at IS NULL AND parked_at IS NULL
+       AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
      ORDER BY created_at ASC LIMIT ?`,
     [uid, now, limit]
   );
@@ -255,6 +263,18 @@ export async function recordRetry(
   await db.runAsync(
     'UPDATE outbox SET claimed_at = NULL, attempts = attempts + 1, last_error = ?, next_attempt_at = ? WHERE id = ?',
     [error, nextAttemptAt, id]
+  );
+}
+
+/** Park a permanently rejected intent without discarding the user's local data or diagnostic. */
+export async function park(
+  db: SqlExecutor,
+  id: string,
+  error: string
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE outbox SET claimed_at = NULL, attempts = attempts + 1, last_error = ?, next_attempt_at = NULL, parked_at = ? WHERE id = ?',
+    [error, new Date().toISOString(), id]
   );
 }
 

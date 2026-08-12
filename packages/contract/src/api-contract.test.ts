@@ -10,6 +10,7 @@ import {
   injuryDTO,
   listResponse,
   performedSet,
+  directProfilePatchInput,
   profilePatchInput,
   profileResponse,
   pullRequest,
@@ -18,6 +19,7 @@ import {
   putPushupChallengeInput,
   reorderWorkoutsInput,
   updateWorkoutInput,
+  updateUsernameInput,
   workoutDTO,
   workoutResponse,
 } from './api-contract.js';
@@ -67,6 +69,12 @@ assert.equal(
   true
 );
 assert.equal(profilePatchInput.safeParse({ workoutSplit: { type: 'Not A Split', custom: null } }).success, false);
+assert.deepEqual(
+  directProfilePatchInput.parse({ workoutSplit: { type: 'Full Body', custom: null }, username: 'not-accepted-here' }),
+  { workoutSplit: { type: 'Full Body', custom: null } }
+);
+assert.equal(updateUsernameInput.safeParse({ username: 'timber' }).success, true);
+assert.equal(updateUsernameInput.safeParse({}).success, false);
 // uid/aiUsage are not part of the input schema at all — extra keys are ignored by
 // default zod object parsing, but the *type* still has no uid field to smuggle through.
 assert.equal(Object.keys(profilePatchInput.shape).includes('uid'), false);
@@ -77,6 +85,7 @@ assert.equal(Object.keys(profilePatchInput.shape).includes('uid'), false);
   assert.equal('uid' in parsed, false);
 }
 assert.equal(profileResponse.safeParse({ profile: { workoutSplit: null, username: null, aiUsage: null, version: 'v1' } }).success, true);
+assert.equal(profileResponse.safeParse({ profile: null }).success, true);
 
 // ---- injuries ----
 assert.equal(

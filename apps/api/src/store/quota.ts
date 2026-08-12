@@ -1,4 +1,5 @@
 import { TEMPORARY_AI_DAILY_LIMIT } from '@timber/contract/ai';
+import { firestorePaths } from '@timber/contract/firestore';
 import { commit, getDoc } from './rest.js';
 
 export interface AIUsage {
@@ -45,12 +46,15 @@ const MAX_ATTEMPTS = 3;
  * slip through the cap.
  */
 export async function consumeQuota(uid: string): Promise<number> {
-  const path = `users/${uid}`;
+  const path = firestorePaths.privateAiUsage(uid);
   const today = todayUTC();
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const doc = await getDoc(path, ['aiUsage']);
-    const existing = doc?.fields.aiUsage as unknown as AIUsage | undefined;
+    const doc = await getDoc(path);
+    // During copy-before-cleanup, a missing private doc reads the legacy value
+    // once, then writes the canonical private document.
+    const legacy = doc ? undefined : await getDoc(firestorePaths.user(uid), ['aiUsage']);
+    const existing = (doc?.fields ?? legacy?.fields.aiUsage) as unknown as AIUsage | undefined;
     const next = nextUsage(existing, today);
 
     if (!next) {
@@ -61,8 +65,8 @@ export async function consumeQuota(uid: string): Promise<number> {
       await commit([
         {
           path,
-          fields: { aiUsage: next },
-          updateMask: ['aiUsage'],
+          fields: { ...next },
+          updateMask: ['date', 'count'],
           currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
         },
       ]);
@@ -88,21 +92,22 @@ export async function consumeQuota(uid: string): Promise<number> {
  * refund can't mask the original failure the caller is reporting.
  */
 export async function refundQuota(uid: string): Promise<void> {
-  const path = `users/${uid}`;
+  const path = firestorePaths.privateAiUsage(uid);
   const today = todayUTC();
 
   try {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const doc = await getDoc(path, ['aiUsage']);
-      const usage = doc?.fields.aiUsage as unknown as AIUsage | undefined;
+      const doc = await getDoc(path);
+      const legacy = doc ? undefined : await getDoc(firestorePaths.user(uid), ['aiUsage']);
+      const usage = (doc?.fields ?? legacy?.fields.aiUsage) as unknown as AIUsage | undefined;
       if (usage?.date !== today || usage.count <= 0) return;
 
       try {
         await commit([
           {
             path,
-            fields: { aiUsage: { date: today, count: usage.count - 1 } },
-            updateMask: ['aiUsage'],
+            fields: { date: today, count: usage.count - 1 },
+            updateMask: ['date', 'count'],
             currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
           },
         ]);

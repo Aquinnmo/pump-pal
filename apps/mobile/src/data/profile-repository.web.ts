@@ -1,13 +1,13 @@
 // Web build of src/data/profile-repository.ts. Same LocalSingletonRepository<UserDoc>
 // shape as native, but `upsert` only ever forwards `workoutSplit` — the wire
-// contract's PATCH /api/profile is allowlisted to that field on purpose
-// (injuries have their own /api/injuries endpoints, aiUsage is server-owned).
+// direct Firestore rules allowlist that field on purpose
+// (injuries have their own repository, and aiUsage is server-owned).
 // A caller passing `injuries`/`aiUsage` here is a bug in the call site, not
 // something this repo can fix by guessing — those go through the injuries
 // repository instead.
 import { LocalSingletonRepository, StoredRecord } from '@/data/remote-types';
 import { createVersionCache } from '@/data/version-cache';
-import * as remote from '@/data/remote/profile';
+import { webFirestore } from './web-direct-firestore';
 import { UserDoc } from '@/types/user';
 import { ProfileDTO } from '@timber/contract/api';
 
@@ -34,17 +34,16 @@ function toStoredRecord(dto: ProfileDTO): StoredRecord<UserDoc> {
 }
 
 export const profileRepository: LocalSingletonRepository<UserDoc> = {
-  async get(): Promise<StoredRecord<UserDoc> | null> {
-    const dto = await remote.getProfile();
-    return toStoredRecord(dto);
+  async get(uid: string): Promise<StoredRecord<UserDoc> | null> {
+    const profile = await webFirestore(uid).profile.get();
+    return profile ? toStoredRecord(profile.data) : null;
   },
 
   async upsert(_uid: string, entity: UserDoc): Promise<void> {
     if (!entity.workoutSplit) return;
-    const dto = await remote.patchProfile({
-      workoutSplit: { type: entity.workoutSplit.type, custom: entity.workoutSplit.custom },
-      baseVersion: versions.get(SINGLETON_ID),
-    });
+    const dto = (await webFirestore(_uid).profile.write(
+      { workoutSplit: { type: entity.workoutSplit.type, custom: entity.workoutSplit.custom } }, versions.get(SINGLETON_ID) ?? null
+    )).data;
     toStoredRecord(dto);
   },
 };

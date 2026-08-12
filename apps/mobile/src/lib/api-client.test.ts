@@ -47,9 +47,10 @@ function fakeFetch(respond: (url: string, init: any) => FakeResponse | Promise<F
 
 function deps(
   fetchImpl: FetchLike,
-  getIdToken: () => Promise<string | null> = async () => 'fake-token'
+  getIdToken: () => Promise<string | null> = async () => 'fake-token',
+  getAppCheckToken: () => Promise<string | null> = async () => null
 ): ApiRequestDeps {
-  return { baseUrl: 'https://api.test', clientVersion: '1.0.0', fetchImpl, getIdToken };
+  return { baseUrl: 'https://api.test', clientVersion: '1.0.0', fetchImpl, getIdToken, getAppCheckToken };
 }
 
 const echoSchema = z.object({ ok: z.boolean() });
@@ -62,6 +63,16 @@ async function main() {
     assert.equal(buildApiUrl(previewOrigin, '/api/profile'), 'https://timber-preview.example.com/api/profile');
     assert.equal(buildApiUrl(previewOrigin, 'api/profile'), 'https://timber-preview.example.com/api/profile');
     assert.equal(buildApiUrl(normalizeApiBaseUrl(undefined), '/api/profile'), '/api/profile');
+  }
+
+  // App Check is sent only as a request header and never becomes persisted state.
+  {
+    let header: string | undefined;
+    await apiRequestCore('/api/x', deps(fakeFetch((_url, init) => {
+      header = init.headers['X-Firebase-AppCheck'];
+      return { status: 200, body: { ok: true } };
+    }), async () => 'auth-token', async () => 'app-check-token'), { responseSchema: echoSchema });
+    assert.equal(header, 'app-check-token');
   }
 
   // --- success: response validated + typed against the schema ---

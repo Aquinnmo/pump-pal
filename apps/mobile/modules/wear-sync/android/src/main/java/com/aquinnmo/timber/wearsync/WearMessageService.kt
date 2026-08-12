@@ -10,9 +10,8 @@ private const val TAG = "WearSync"
 
 // Every watch action lands here. Two delivery paths, because the watch can be tapped
 // whether or not the phone app is running:
-//   app alive  -> emit a JS event; the active-workout screen already owns the draft
-//                 state, so the action flows through the same autosave as a tap.
-//   app killed -> headless JS task, which reads and writes Firestore itself.
+//   app alive  -> emit a JS event; the active-workout screen owns the draft state.
+//   app killed -> headless JS task updates only the phone's in-memory session.
 class WearMessageService : WearableListenerService() {
   override fun onMessageReceived(event: MessageEvent) {
     if (event.path != WearSyncModule.PATH_ACTION) return

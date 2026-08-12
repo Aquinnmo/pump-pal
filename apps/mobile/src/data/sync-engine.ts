@@ -9,7 +9,7 @@
 // design note (legacy direct-Firestore writers may still exist during the
 // migration grace period and would bypass a change log).
 import { SqlExecutor } from './executor';
-import { claimPending, release, releaseStaleClaims, acknowledge, rebase, discardEntity, recordRetry, OutboxRow } from './outbox';
+import { claimPending, release, releaseStaleClaims, acknowledge, rebase, discardEntity, recordRetry, park, OutboxRow } from './outbox';
 import { setSyncCursor } from './sync-cursors';
 
 export class SyncAuthError extends Error {}
@@ -24,6 +24,8 @@ export class SyncRateLimitError extends Error {
   }
 }
 export class SyncNotFoundError extends Error {}
+/** The server rejected this payload permanently (for example Rules or DTO validation). */
+export class SyncPermanentError extends Error {}
 
 export type LocalRow = {
   id: string;
@@ -83,6 +85,7 @@ export type SyncOutcome =
   | { status: 'ok'; pushed: number; pulled: number; remoteDeletions: number }
   | { status: 'auth-required' }
   | { status: 'rate-limited'; retryAfterMs: number | null }
+  | { status: 'permanent-failure'; entityType: string; entityId: string; message: string }
   | { status: 'partial'; pushed: number; reason: 'max-outbox-items' | 'cancelled' };
 
 const DEFAULT_MAX_OUTBOX_ITEMS = 100;
@@ -109,6 +112,11 @@ async function dispatchOne(
   signal?: AbortSignal
 ): Promise<{ version: string; data: unknown } | null> {
   if (row.op === 'create') {
+    // A replayed offline create can discover that a prior attempt committed
+    // just before the app was killed. Conflict handling rebases the row onto
+    // that document's updateTime; the one local-wins retry must then be an
+    // update, not another exists:false create.
+    if (row.baseVersion) return adapter.remote.update(row.entityId, row.payload, row.baseVersion, signal);
     return adapter.remote.create(row.payload, row.entityId, signal);
   }
   if (row.op === 'update') {
@@ -145,8 +153,9 @@ async function pushEntity(
 ): Promise<{
   pushed: number;
   remoteDeletions: number;
-  outcome: 'drained' | 'auth-required' | 'rate-limited' | 'budget-exhausted' | 'cancelled';
+  outcome: 'drained' | 'auth-required' | 'rate-limited' | 'permanent-failure' | 'budget-exhausted' | 'cancelled';
   retryAfterMs?: number | null;
+  permanentFailure?: { entityType: string; entityId: string; message: string };
 }> {
   let pushed = 0;
   let remoteDeletions = 0;
@@ -211,6 +220,14 @@ async function pushEntity(
       } else if (err instanceof SyncRateLimitError) {
         await release(db, row.id);
         return { pushed, remoteDeletions, outcome: 'rate-limited', retryAfterMs: err.retryAfterMs };
+      } else if (err instanceof SyncPermanentError) {
+        await park(db, row.id, err.message);
+        return {
+          pushed,
+          remoteDeletions,
+          outcome: 'permanent-failure',
+          permanentFailure: { entityType: row.entityType, entityId: row.entityId, message: err.message },
+        };
       } else {
         // Anything else (network blip, timeout, transient 5xx, or even a
         // real validation bug) is retry-scheduled rather than dropped, so
@@ -359,6 +376,9 @@ export async function runSync(
     if (result.outcome === 'auth-required') return { status: 'auth-required' };
     if (result.outcome === 'rate-limited') {
       return { status: 'rate-limited', retryAfterMs: result.retryAfterMs ?? null };
+    }
+    if (result.outcome === 'permanent-failure') {
+      return { status: 'permanent-failure', ...(result.permanentFailure ?? { entityType: adapter.entityType, entityId: '', message: 'Sync was rejected.' }) };
     }
     if (result.outcome === 'cancelled') return { status: 'partial', pushed: totalPushed, reason: 'cancelled' };
     if (result.outcome === 'budget-exhausted') {

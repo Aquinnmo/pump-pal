@@ -57,6 +57,8 @@ export function initialSyncOutcomeFromSync(uid: string, outcome: SyncOutcome): I
       return { kind: 'auth-failure', uid, message: 'We could not verify this session. Try again.' };
     case 'rate-limited':
       return { kind: 'retryable-failure', uid, message: 'Could not load your account. Try again.' };
+    case 'permanent-failure':
+      return { kind: 'retryable-failure', uid, message: 'One local change needs attention before it can sync.' };
     case 'partial':
       return { kind: 'retryable-failure', uid, message: 'Could not load your account. Try again.' };
   }

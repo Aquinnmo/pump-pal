@@ -1,423 +1,158 @@
-# Deployment: the staged API rollout
+# Deployment: direct Firestore + privileged Worker
 
-Every Firestore and AI operation the app needs now has a route under `api/`
-(see [api-operations.md](api-operations.md) for the full list). This is the
-staged checklist for taking that from "code that typechecks" to "the only
-path the app uses to talk to Firestore," in order — later stages depend on
-earlier ones actually being verified, not just deployed.
+This is the human-run rollout for Timber's split trust boundary. Nothing in
+this document has been executed by the repository or an agent. Every deploy,
+Firebase Console change, Worker secret, App Check setting, key rotation, and
+legacy cleanup is a human gate.
 
-**Nothing in this document has been executed.** Every `npx firebase-tools`,
-`vercel env`, or Vercel-dashboard step below is a human action. This doc
-prepares and orders them; it does not perform them.
+## Architecture
 
-> **Stage 4 (the deny-all Firestore rules cutover) requires the user's
-> explicit, separate approval, given only after they've personally verified
-> the migrated app.** No fixed time or adoption threshold substitutes for
-> that verification — see Stage 4 below.
+```text
+Native clients: SQLite UI + durable outbox
+  └─ safe owner data ────────────> Firestore REST (Auth + App Check + Rules)
+  └─ privileged operations ─────> Cloudflare Worker (Auth + App Check)
 
----
-
-## 0a. Two Vercel projects
-
-The web bundle and the API are separate deployments from the same repository.
-Each Vercel project points at its own workspace directory and reads the
-`vercel.json` inside it:
-
-| Vercel project | Root Directory | Build | `vercel.json` supplies |
-| --- | --- | --- | --- |
-| web | `apps/mobile` | `bunx expo export -p web` → `dist` | SPA rewrite to `/index.html` |
-| API | `apps/api` | none — Vercel builds `api/index.ts` as a function | `fluid: true` + the `/api/:path*` rewrite |
-
-That `/api/:path*` rewrite is not decoration. `apps/api/api/index.ts` is a plain
-index route, not a `[...path].ts` catch-all; as a catch-all it was only ever
-routed one segment deep in production, so `/api/profile` dispatched while
-`/api/sync/manifest` returned a platform 404 that never invoked the function —
-invisible in the runtime logs, which is why it survived so long.
-
-Because the two projects have different origins, every browser call is
-cross-origin. The pairing below must hold or the web app cannot reach the API
-at all:
-
-- web project: `EXPO_PUBLIC_API_BASE_URL` = the API project's origin
-- API project: `API_ALLOWED_ORIGINS` includes the web project's origin
-
-Native builds are unaffected by the second one — they send no `Origin` header
-and skip CORS entirely — but they still need the first.
-
----
-
-## 0. What talks to what
-
-```
-Expo app ──┬─ web:    EXPO_PUBLIC_API_BASE_URL + /api/*  (cross-origin -> CORS)
-           └─ native: EXPO_PUBLIC_API_BASE_URL + /api/*  (not a browser -> no CORS)
-                              │
-                              │  Authorization: Bearer <Firebase ID token>
-                              ▼
-        apps/api/api/index.ts  (the single Vercel function)
-                        ├─ apps/api/src/router.ts ....... path -> handler table, lazy imports
-                        ├─ apps/api/src/http.ts ......... CORS/method/auth wrapper, request id, structured logs
-                        ├─ apps/api/src/auth.ts ......... verifies the token (jose)
-                        ├─ apps/api/src/store/ .......... Firestore REST, service account
-                        └─ apps/api/src/ai/ ............. Gemini / OpenAI, server-only key
+Web client: online-only
+  └─ safe approved/owner data ──> Firestore REST (Auth + App Check + Rules)
+  └─ privileged operations ─────> Cloudflare Worker
 ```
 
-Two dedicated origins, separate from each other and from the app's own web
-build:
+Safe direct data is: a caller's workouts, profile `workoutSplit`, injury
+documents, pushup challenge, and approved catalog reads. The Worker is only
+for username/push-token updates, buddies/chops, AI, pending catalog
+submissions, injury-history bulk actions, and account deletion. It has no
+generic Firestore proxy. Retired safe `/api/*` paths deliberately return HTTP
+410 `{ code: "client_upgrade_required" }` during cutover.
 
-| Environment | API origin | Purpose |
+Native SQLite remains the only mobile UI source of truth. Its outbox retains
+offline writes, uses opaque Firestore `updateTime` versions, makes one
+local-wins conflict retry, backs off transient errors, retries auth once, and
+parks permanent failures for the UI. Web is online-only and must not add
+SQLite/AsyncStorage persistence for these direct reads.
+
+## Required configuration
+
+| Location | Values | Notes |
 | --- | --- | --- |
-| Preview | `https://timber-preview.adam-montgomery.ca` | staging — Preview Vercel deployments, Preview Firebase env |
-| Production | `https://timber-api.adam-montgomery.ca` | the API every real user's app talks to |
-
-Two separate credential classes, easy to confuse:
-
-| | Who holds it | What it does |
-| --- | --- | --- |
-| Firebase **web config** (`EXPO_PUBLIC_FIREBASE_*`) | the client, publicly | identifies the project. Not a secret — it's protected by `firestore.rules`, not by being hidden. |
-| Firebase **service account** (`FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`) | Vercel only | lets the API read/write Firestore, **bypassing `firestore.rules`**. A real secret. |
-| AI provider key (`GEMINI_API_KEY` or `OPENAI_API_KEY`) | Vercel only | only the *selected* provider's key is ever required (`apps/api/src/ai/model.ts`) |
-
----
-
-## Stage 1 — Preview environment
-
-Everything in this stage targets **Preview only**. Nothing here touches a
-real user.
-
-### 1a. Expo client configuration and Google registrations (Preview)
-
-Set the following **public client** values for the EAS `preview` environment
-(the checked-in `eas.json` selects it). They identify a Firebase/OAuth client;
-they are safe to embed, but they are not a substitute for Firebase security
-rules or server-side token verification.
-
-| Variable | Preview value | Purpose |
-| --- | --- | --- |
-| `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase web config | Firebase client identity |
-| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase web config | Firebase Auth redirect domain |
-| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | `pumppal-c9199` | Firebase project |
-| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase web config | Firebase storage bucket |
-| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase web config | Firebase messaging sender ID |
-| `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase web config | Firebase app ID (not an OAuth client ID) |
-| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth web client ID | browser sign-in/linking |
-| `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` | Google OAuth iOS client ID | installed iOS sign-in/linking |
-| `EXPO_PUBLIC_API_BASE_URL` | Preview API origin | required for **every** build, native and web. The API is its own Vercel project, so there is no same-origin `/api/*` to fall back to. |
-
-Before testing, enable Google in Firebase Authentication → Sign-in method. In
-Google Cloud/Firebase OAuth settings, register the exact Preview web origin as
-an authorized JavaScript origin, the exact Preview iOS bundle identifier on
-the iOS OAuth client, and the Android package plus the SHA-1 and SHA-256 of
-the EAS Preview signing certificate on the Android OAuth client. Use the OAuth
-client IDs only—never a client secret, service-account JSON, or a signing key
-in EAS variables or the repository.
-
-### 1b. Vercel environment variables (Preview)
-
-Vercel dashboard → the project → Settings → Environment Variables → scope to
-**Preview**. None of these are prefixed `EXPO_PUBLIC_`, and none of them ever
-should be — Metro inlines any `EXPO_PUBLIC_*` value into every APK and web
-bundle, which is the exact leak this API exists to close.
-
-| Variable | Value | Notes |
-| --- | --- | --- |
-| `AI_PROVIDER` | `google` or `openai` | **required**, no default — see `apps/api/src/ai/model.ts` |
-| `AI_MODEL` | e.g. `gemini-3.5-flash` | **required**, no default |
-| `AI_REASONING_EFFORT` | optional | `provider-default` (unset), `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, or `max` (OpenAI-only — rejected at cold start against `google`) |
-| `GEMINI_API_KEY` | from Google AI Studio | only if `AI_PROVIDER=google` |
-| `OPENAI_API_KEY` | from the OpenAI dashboard | only if `AI_PROVIDER=openai` |
-| `FIREBASE_PROJECT_ID` | `pumppal-c9199` | |
-| `FIREBASE_CLIENT_EMAIL` | from the service account JSON | |
-| `FIREBASE_PRIVATE_KEY` | from the service account JSON | literal `\n` escapes, see below |
-| `API_ALLOWED_ORIGINS` | `https://timber-preview.adam-montgomery.ca` | comma-separated if more than one; native app calls (no `Origin` header) are unaffected |
-
-#### Getting the service account
-
-Firebase console → Project settings → **Service accounts** → *Generate new
-private key*. Downloads a JSON file. From it:
-
-- `client_email` → `FIREBASE_CLIENT_EMAIL`
-- `private_key` → `FIREBASE_PRIVATE_KEY`, pasted **exactly as it appears**,
-  literal `\n` two-character escapes intact — do not convert to real
-  newlines. `apps/api/src/store/rest.ts` converts them back at runtime.
-
-Delete the downloaded JSON afterwards. It is a full-access credential to
-Firestore and belongs in exactly one place: Vercel.
-
-Preview and Production may use the **same** service account (it's scoped to
-the Firebase project, not the Vercel environment) — the separation that
-matters is the AI provider key and `API_ALLOWED_ORIGINS`, which should differ
-per environment so a Preview key leak doesn't cost Production spend.
-
-### 1c. Point Preview at `timber-preview.adam-montgomery.ca`
-
-Assign that domain to the project's Preview deployments in the Vercel
-dashboard (Settings → Domains). Confirm a Preview deploy actually builds
-`api/**` as functions — check the deployment's **Functions** tab. If it
-produced only static output, nothing past this point will work.
-
-### 1d. Run the focused test suite
-
-```bash
-bun run test:api
-```
-
-Covers isolation (`api/**` only imports `api/`+`shared/`; no Firebase SDK in
-`api/`; no AI provider SDK/key outside `api/`), CORS allow/deny, auth,
-contract schema validation, and ownership/conflict/idempotency for every
-domain (see `docs/api-operations.md`). This is a prerequisite for Stage 1e,
-not a substitute for it — none of these tests touch a live deployment.
-
-### 1e. Cold-start check (Preview only, requires deployment)
-
-The Firebase Admin cold-start gate is **p95 < 2s**. This API stayed on the
-Firestore REST adapter (`apps/api/src/store/rest.ts`) rather than reintroducing
-`firebase-admin`, specifically to avoid this risk — but verify it, don't
-assume it.
-
-Method: after a fresh Preview deploy (or ≥5 minutes idle, to force a genuinely
-cold invocation), hit a representative route (e.g. `GET /api/catalog`) with a
-valid token 20+ times, recording wall-clock time for **each** request
-separately:
-
-```bash
-for i in $(seq 1 20); do
-  curl -s -o /dev/null -w "%{time_total}\n" \
-    -H "Authorization: Bearer $TOKEN" \
-    https://timber-preview.adam-montgomery.ca/api/catalog
-  sleep 20   # long enough that most requests are genuinely cold
-done
-```
-
-Bucket by cold-vs-warm (first request after an idle gap vs. immediately
-following one), compute p50/p95 for each bucket separately — a blended number
-hides a bad cold p95 behind a fast warm p95.
-
-**If cold p95 > 2s: stop and flag it for human review. Do not silently swap
-the REST adapter for `firebase-admin`** — that trade only makes sense with
-the actual measurement in hand, and it changes the isolation/dependency
-story this whole epic was built around.
-
----
-
-## Stage 2 — Production environment
-
-Only after Stage 1 is fully green (tests pass, cold-start measured and under
-gate) and someone has manually exercised each `api-operations.md` route
-against Preview.
-
-### 2a. Vercel environment variables (Production)
-
-Same table as 1a, scoped to **Production**, with:
-
-- `API_ALLOWED_ORIGINS=https://timber-api.adam-montgomery.ca` — a
-  **different** value than Preview's, not a superset. If the web app is
-  served from a separate origin than the API (rather than the same-origin
-  setup `api/ai.ts` historically assumed), add that origin too,
-  comma-separated.
-- Provider keys **should be freshly issued**, not copy-pasted from Preview —
-  see Stage 5 (key rotation) for why and the required order.
-
-### 2b. Point Production at `timber-api.adam-montgomery.ca`
-
-Same domain-assignment step as 1b, scoped to Production.
-
-### 2c. Deploy
-
-`api/` deploys automatically alongside the static web export — Vercel picks
-up a root `api/` directory as functions with no extra config. Production
-builds from `main`, so the branch has to land first (standard PR/merge flow,
-not covered here).
-
-### 2d. Verify — every operation, once, against Production
-
-Exercise each route in `api-operations.md` at least once against the real
-Production origin before treating this as done. At minimum:
-
-| Op | Where in the app | What proves it worked |
-| --- | --- | --- |
-| `muscle-analysis` (AI) | Analytics tab → muscle insight cards | over/under-trained muscles render |
-| `workout-completion` (AI) | Active workout → suggest exercises | 2–5 suggestions appear |
-| `split-names` (AI) | Set-split screen → custom split description | day names generate |
-| `daily-name` (AI) | Pushup Challenge tab | a name shows, and is the *same* name on a second device |
-| `POST /api/workouts` → `PATCH .../:id` | log and complete a real workout | shows up in history, `injuries[]` reflects ongoing injuries |
-| `GET /api/sync/manifest` | — | returns every workout/injury/profile/challenge id the test account owns |
-
-**AI quota.** Call a metered op four times as one user. The fourth must fail
-with "You've used all your AI suggestions for today." Then open
-`users/{uid}` in the Firestore console and confirm `aiUsage.count == 3` **and
-every other field on the document is still there** — Firestore's REST
-`:commit` replaces the whole document unless the write carries an
-`updateMask`; a bug there would silently wipe the user's split and injuries.
-The type system enforces the mask (`apps/api/src/store/rest.ts`'s `FirestoreWrite`
-requires it); confirm it against real data once anyway.
-
----
-
-## Stage 3 — Monitoring & rollback
-
-### Monitoring
-
-Vercel dashboard → the deployment → **Logs**. Every route logs one
-structured, redacted JSON line per request (`apps/api/src/http.ts` /
-`api/ai.ts`): `requestId`, `route`, `method`, `status`, `durationMs`, and for
-`/api/ai` additionally `op`/`provider`/`model`. Never a request body,
-response payload, or secret. Filter on `"status":5` to find server errors; a
-5xx also gets a full `console.error` line with the real error (still
-server-side only — never returned to the client, since provider/Firestore
-error bodies can echo request content and key hints).
-
-Watch for:
-- A spike in `401` — usually `FIREBASE_PROJECT_ID` drift or expired-token
-  churn, not an attack.
-- A spike in `403` with `code: origin_denied` — `API_ALLOWED_ORIGINS` missing
-  an origin a real client is calling from.
-- A spike in `409` (`conflict`) — expected at some background rate from
-  concurrent edits (e.g. two devices); a sustained spike suggests a client
-  retry loop isn't rebasing onto the returned `remote` correctly.
-
-### Rollback
-
-The API is stateless per-request (no migrations, no schema changes to
-Firestore docs beyond what routes already write today) — rollback is a
-Vercel deployment rollback (dashboard → Deployments → previous deployment →
-**Promote to Production**), nothing else to undo. Firestore data written by
-the new routes is shape-compatible with what the old direct-client writes
-produced, so rolling the API back does not require rolling back data.
-
-The one thing rollback does **not** undo: if Stage 4 (deny-all rules) has
-already been deployed, rolling the API back would leave clients with no
-Firestore access at all (deny-all + no working API = fully broken). **Do not
-roll back the API after Stage 4 without also reverting `firestore.rules`
-first.**
-
----
-
-## Stage 4 — the deny-all cutover (human-gated, do LAST)
-
-### Native offline-first verification checklist
-
-Before the Stage 4 gate, a human must verify this on both iOS and Android
-against the production API:
-
-- Start, edit, finish, plan, reorder, and delete workouts while airplane mode
-  is enabled; each committed change must remain visible after a force-close.
-- Reconnect and confirm the same records arrive on a second device without
-  duplicates. Make an intentional two-device edit and use both conflict
-  choices once; a remote deletion must explain that the server copy was
-  removed rather than silently losing the local workout.
-- Confirm the Settings Sync row distinguishes offline, syncing, retrying, and
-  attention-needed states.
-- With pending data, attempt sign-out: verify **Sync and Sign Out**, **Discard
-  and Sign Out**, and **Stay Signed In**. After either allowed sign-out path,
-  sign into a different account and confirm no prior workout, widget, queue,
-  or conflict data appears.
-- Verify cached AI results remain readable offline and new AI generation says
-  it needs a connection; reconnect and confirm normal generation resumes.
-
-**Rollback while this checklist is in progress:** leave the local SQLite
-database intact, stop the rollout, and restore the prior API deployment if
-needed. Do not deploy deny-all rules and do not erase the device: the outbox
-is the recovery copy for unsynced work.
-
-This is the one step in this whole document that is genuinely
-one-directional in practice (technically reversible, but every minute it's
-live with a client not yet migrated is a minute that client is fully broken).
-
-**Preconditions, all required:**
-
-1. Stages 1–3 are done and stable in Production for a real usage period (not
-   a fixed number — long enough that the user is confident, per the design
-   note below).
-2. **The user has personally verified the migrated app** — native and web,
-   against Production, doing real workouts/injuries/pushup-challenge/AI
-   flows. No fixed time or adoption threshold substitutes for this. This is
-   the one non-negotiable gate.
-3. Both client repositories (native, SQLite-backed; web, REST-backed — the
-   offline-first epic's deliverable) no longer read/write Firestore directly
-   outside `apps/mobile/src/config/firebase.ts`/auth-only files. Confirm with a repo-wide
-   grep for `from 'firebase/firestore'` outside those files, or once it
-   exists, a repo-wide isolation check equivalent to
-   `tools/check-boundary-isolation.js`'s api-scoped version.
-
-**The cutover itself**, only after all three:
-
-```bash
-cp firestore.deny-all.rules firestore.rules
-git add firestore.rules
-git commit -m "Cut client Firestore access over to deny-all; API is now the only path"
-npx firebase-tools@latest login          # once
-npx firebase-tools@latest deploy --only firestore:rules
-```
-
-> Use `firebase-tools`, **not** `npx firebase`. This repo depends on the
-> `firebase` package — that's the client JS SDK, ships no executable. The CLI
-> is the separate package `firebase-tools`.
-
-Check the Firebase console afterwards and confirm the deployed rules match
-`firestore.deny-all.rules`. The API is unaffected — its service-account
-credential bypasses `firestore.rules` by design, same as it does today.
-
-**If anything looks wrong after deploying:** revert with
-`git revert`, redeploy the prior `firestore.rules` the same way. This is the
-scenario Stage 3's rollback note above is about — reverting the API without
-also reverting the rules leaves clients broken either way.
-
----
-
-## Stage 5 — key rotation (after Stage 2 verification, not before)
-
-Rotating a provider key before the proxy is verified working breaks the app
-and makes the failure ambiguous — always confirm Stage 2d first.
-
-1. Confirm all four AI ops work through Production (Stage 2d).
-2. Provider dashboard (OpenAI / Google AI Studio) → revoke the old key →
-   issue a new one.
-3. Put the new key **only** in Vercel, for the environment it belongs to.
-4. If any `EXPO_PUBLIC_*` provider-key/model/provider variable still exists
-   in a client `.env` or EAS environment from before this API existed,
-   delete it — Metro bundles `EXPO_PUBLIC_*` into every build regardless of
-   whether code still reads it.
-5. Rebuild and redistribute any client build that shipped with the old key
-   embedded. Revoking the key is what makes old builds harmless; the rebuild
-   is just cleanup.
-
----
+| Mobile/EAS and web build | `EXPO_PUBLIC_FIREBASE_*`, `EXPO_PUBLIC_API_BASE_URL`, `EXPO_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` (web) | Public identifiers only; never a secret. |
+| Cloudflare Worker secret/variable | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, one AI key, `AI_PROVIDER`, `AI_MODEL`, `API_ALLOWED_ORIGINS` | See `apps/api/.dev.vars.example`; secrets never enter `wrangler.toml`. |
+| Cloudflare Worker variable | `FIREBASE_PROJECT_NUMBER`, `APP_CHECK_ALLOWED_APP_IDS`, `APP_CHECK_MODE` | Start with `monitor`; app IDs are comma-separated Firebase app IDs. |
+| Firebase | Firestore rules/indexes, Auth providers, App Check providers | Separate preview and production projects are strongly preferred. |
+
+The Worker targets are declared but not deployed in
+[`apps/api/wrangler.toml`](../apps/api/wrangler.toml):
+`timber-api-preview.adam-montgomery.ca` and
+`timber-api.adam-montgomery.ca`. The Expo web bundle may remain a separate
+Vercel project (`apps/mobile`); it needs the Worker origin in
+`EXPO_PUBLIC_API_BASE_URL`, and the Worker allowlist must contain the web
+origin. The former Vercel API project is obsolete.
+
+## Preview checklist — human gate
+
+1. Create or select an isolated Firebase **preview** project. Register the
+   iOS, Android, and web apps; configure Auth providers and the exact preview
+   web OAuth origin.
+2. Add preview public config to the EAS/web environment. Add preview Worker
+   secrets/variables through Cloudflare, not files. Set
+   `APP_CHECK_MODE=monitor` and list only preview app IDs.
+3. Run local checks before deploying:
+
+   ```bash
+   bun run test:contract
+   bun run test:api
+   bun apps/mobile/src/data/firestore-sync-remote.test.ts
+   bun apps/mobile/src/data/sync-engine.test.ts
+   bun run test:firestore-rules
+   bun run check:direct-boundaries
+   ```
+
+   The rules emulator needs JDK 21 or newer. Do not claim emulator success
+   from a JDK 17 machine.
+4. Deploy preview Firestore rules and indexes with the Firebase CLI, then
+   deploy the preview Worker using Wrangler. These are intentional remote
+   mutations and require an operator to run them.
+5. Run `tools/migrate-trust-domains.js --snapshot <export.json>` first as a
+   dry run. An authorized operator copies only missing destination documents,
+   verifies the produced count/hash report, and retains legacy source fields.
+   The supplied tool does not contact Firebase or delete data.
+6. Release preview web and native clients together. Test a 200-workout user,
+   empty account, cross-account denial, approved-only catalog query, direct
+   safe writes, and every privileged Worker operation. Confirm safe traffic
+   does not reach Worker logs; a deliberately stale safe API call returns 410.
+7. Check Worker logs for redacted `requestId`, route, method, status, and
+   duration. Never log headers, tokens, UID, request body, response body, or
+   AI prompts. Measure direct-operation p50/p95 in Preview; do not substitute
+   fixture latency for remote latency. Investigate a direct path more than 20%
+   slower than the retired API baseline before production.
+
+## App Check progression — human gate
+
+Configure App Attest with DeviceCheck fallback (iOS), Play Integrity
+(Android), and reCAPTCHA Enterprise (web). Debug providers are local/preview
+only and must never be bundled into production clients or Worker bindings.
+
+Keep the Worker in monitor mode until Preview telemetry shows 100% verified
+privileged traffic for a continuous 24 hours. The operator may then enable
+Firebase App Check enforcement and Worker `APP_CHECK_MODE=enforce`. Keep a
+documented owner and a tested rollback to monitor mode. Rules/Auth/App Check
+must never be weakened merely to unblock a client.
+
+## Production checklist — human gate
+
+1. Repeat the Preview configuration in the production Firebase project and
+   production Worker environment. Use distinct Worker/AI credentials where
+   possible; do not copy preview secrets into source control.
+2. Run the same local checks and deploy production rules/indexes before
+   client rollout. Do not run a production build or deployment as part of
+   local implementation verification.
+3. Copy/verify trust-domain documents in production. Keep legacy fields for
+   14 days after verification; existing destination documents are never
+   overwritten.
+4. Release the Worker first in monitor mode, then release the web client and
+   native update/build. Coordinate with the roughly ten users and confirm all
+   active clients upgraded before tightening enforcement.
+5. Personally verify on iOS, Android, and web: direct workout/injury/split/
+   pushup/catalog flows; username, buddies, AI, pending catalog,
+   injury-history, and account deletion; an empty account; an owner-denied
+   query; and a stale client receiving the 410 upgrade response.
+6. Perform the native offline matrix: make, edit, finish, plan, reorder, and
+   delete workouts in airplane mode; force-close; reconnect; confirm a second
+   device sees each change once; test a two-device conflict; test parked
+   permanent failure and sign-out choices. Cached AI remains readable offline;
+   new AI generation reports that connectivity is required.
+7. Only after the above is stable and App Check observation is clean, enable
+   App Check enforcement. Remove/retire the obsolete Vercel API project after
+   confirming no live safe requests rely on it; Vercel web hosting itself is
+   unaffected.
+8. Rotate any previously exposed AI or service credentials **after** the
+   replacement Worker configuration is verified. Revoke the old credential
+   only after the replacement is live and monitoring is clean.
+9. At day 14, run a separately authorized legacy cleanup. Before removal,
+   verify migration hashes/counts again and retain an export. Do not delete
+   legacy fields during the initial copy.
+
+## Rollback and incident response
+
+Before legacy cleanup, rollback is additive: set Worker App Check back to
+monitor (or disable Firebase enforcement), restore the prior rules/indexes if
+needed, and restore the prior Worker/client release. Do not erase native
+SQLite; it is the recovery copy for unsynced changes. If a legacy consumer
+must be restored before the 14-day cleanup, reverse-materialize legacy fields
+from the new injury/private documents using an authorized, reviewed one-off
+operation; never overwrite newer canonical data.
+
+After cleanup, recovery requires the retained export and an explicit data
+repair plan. Treat it as a one-way production change.
+
+For an incident: stop enforcement changes, preserve redacted Worker logs and
+the migration report, identify whether the fault is Auth/App Check/Rules/
+Worker/client, and only then roll back the smallest affected layer. Do not
+solve an incident by opening broad Firestore rules or introducing a generic
+proxy.
 
 ## Local development
 
-**Native** (dev build or Expo Go on device) — no local server needed. Point
-`EXPO_PUBLIC_API_BASE_URL` at the deployed Preview or Production URL and
-`bunx expo start` as usual. Native isn't a browser, so there's no CORS
-preflight; calls to the deployed API just work.
-
-**Web** — `bunx expo start --web` serves from Metro on `localhost:8081`, which
-does **not** run Vercel functions.
-- `npx vercel dev` serves the static output and every `api/**` function on
-  one origin. Slower loop (runs the `expo export` build command), but it's
-  the only way to exercise the API locally.
-- Pointing web dev at a deployed API origin instead works too, since CORS is
-  now handled (`API_ALLOWED_ORIGINS`) — add `http://localhost:8081` to the
-  Preview environment's `API_ALLOWED_ORIGINS` if you want that loop.
-
----
-
-## Troubleshooting
-
-| Symptom | Likely cause |
-| --- | --- |
-| `You must be signed in to use AI features.` | thrown client-side before any request; no Firebase user |
-| `Invalid or expired session` (401) | the client force-refreshes its Firebase token and replays once; if the replay still fails, compare Preview `FIREBASE_PROJECT_ID` with the client config and use the safe route/status/code/request ID diagnostic to find the server log |
-| `403` with `code: origin_denied` | the caller's `Origin` isn't in Preview `API_ALLOWED_ORIGINS`; this is not retried, so correct the allowlist and correlate the route/status/code/request ID with Vercel logs |
-| JSON parse error, response looks like HTML | hit a Vercel-SSO-protected `*.vercel.app` URL instead of the custom domain |
-| `404` with API code `not_found` | the API route ran but the requested resource is absent; inspect the route and request ID rather than treating it as a deploy failure |
-| `404` on every `/api/*` route, especially an HTML/non-API response | Vercel didn't build the function (check the Functions tab), the origin is wrong, or you're on `expo start --web` without `vercel dev` |
-| `Missing required env var: ...` at cold start | one of `AI_PROVIDER`/`AI_MODEL`/`FIREBASE_PROJECT_ID`/`FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY` unset for that environment |
-| `Unsupported AI_REASONING_EFFORT "max"` for google | `max` is OpenAI-only; use `high` or switch `AI_PROVIDER` |
-| 401 from the token exchange, function-side | `FIREBASE_PRIVATE_KEY` newlines mangled — must be literal `\n`, not real line breaks |
-| Every AI request 429s immediately | `aiUsage` stuck from testing; clear the field on `users/{uid}` |
-| `409 conflict` on every mutation from one client | that client is sending a stale/wrong `baseVersion` — check it's using the `version` from its last GET/mutation response, not a cached one |
-| Works on web, fails on native (or vice versa) | `EXPO_PUBLIC_API_BASE_URL` unset for that build profile, or `API_ALLOWED_ORIGINS` missing the web origin |
-
-Function logs are in the Vercel dashboard under the deployment → Logs (see
-Stage 3, Monitoring).
+Copy `apps/mobile/.env.example.eas` to the ignored mobile `.env` and
+`apps/api/.dev.vars.example` to ignored `apps/api/.dev.vars`. Use only
+non-production credentials. Worker local development uses Wrangler; Firestore
+rule tests use the local emulator. Neither command authorizes a remote deploy.

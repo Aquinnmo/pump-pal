@@ -1,6 +1,7 @@
 import { createGoogle } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { defaultSettingsMiddleware, wrapLanguageModel } from 'ai';
+import { runtimeEnv } from '../runtime-env.js';
 
 /**
  * Server-side model resolution. Deliberately reads NON-prefixed env vars: an
@@ -45,8 +46,8 @@ const SUPPORTED_REASONING_BY_PROVIDER: Record<AIProviderId, ReasoningEffort[]> =
 };
 
 function required(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required env var: ${name}. Set it in the Vercel project environment.`);
+  const value = runtimeEnv(name);
+  if (!value) throw new Error(`Missing required env var: ${name}. Set it in the Worker or Vercel environment.`);
   return value;
 }
 
@@ -58,7 +59,7 @@ const AI_PROVIDER: AIProviderId = AI_PROVIDER_RAW;
 
 const AI_MODEL = required('AI_MODEL');
 
-const AI_REASONING_EFFORT_RAW = process.env.AI_REASONING_EFFORT ?? 'provider-default';
+const AI_REASONING_EFFORT_RAW = runtimeEnv('AI_REASONING_EFFORT') ?? 'provider-default';
 if (!REASONING_EFFORTS.includes(AI_REASONING_EFFORT_RAW as ReasoningEffort)) {
   throw new Error(
     `Unsupported AI_REASONING_EFFORT "${AI_REASONING_EFFORT_RAW}". Must be one of: ${REASONING_EFFORTS.join(', ')}.`

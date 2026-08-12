@@ -36,6 +36,7 @@ export default function SettingsInjuriesScreen() {
   const insets = useSafeAreaInsets();
 
   const [injuries, setInjuries] = useState<Injury[]>([]);
+  const [draftDates, setDraftDates] = useState<Record<string, { onsetDate: string; resolvedDate?: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removeTarget, setRemoveTarget] = useState<Injury | null>(null);
@@ -63,6 +64,7 @@ export default function SettingsInjuriesScreen() {
       try {
         const stored = await injuryRepository.getAll(user.uid);
         setInjuries(stored.map((record) => record.data).filter((i) => isBodyPart(i?.bodyPart)));
+        setDraftDates({});
       } catch (err) {
         console.error(err);
       } finally {
@@ -88,6 +90,7 @@ export default function SettingsInjuriesScreen() {
       // through src/lib/injuries.ts as well.
       triggerSyncAfterWrite();
       setInjuries(next);
+      setDraftDates({});
       return true;
     } catch (err) {
       console.error(err);
@@ -144,6 +147,7 @@ export default function SettingsInjuriesScreen() {
     setSaving(true);
     try {
       const n = await applyInjuryToHistory(user.uid, injury);
+      triggerSyncAfterWrite();
       setToast({ visible: true, message: `Applied to ${n} workout${n === 1 ? '' : 's'}`, type: 'success' });
     } catch (err) {
       console.error(err);
@@ -171,10 +175,25 @@ export default function SettingsInjuriesScreen() {
   };
 
   const handleEditOnset = (id: string, date: Date) =>
-    persist(injuries.map((i) => (i.id === id ? { ...i, onsetDate: date.toISOString(), updatedAt: new Date().toISOString() } : i)));
+    setDraftDates((current) => ({
+      ...current,
+      [id]: { ...current[id], onsetDate: date.toISOString() },
+    }));
 
   const handleEditResolved = (id: string, date: Date) =>
-    persist(injuries.map((i) => (i.id === id ? { ...i, resolvedDate: date.toISOString(), updatedAt: new Date().toISOString() } : i)));
+    setDraftDates((current) => ({
+      ...current,
+      [id]: { ...current[id], onsetDate: current[id]?.onsetDate ?? String(injuries.find((i) => i.id === id)?.onsetDate), resolvedDate: date.toISOString() },
+    }));
+
+  const saveDateChanges = async (injury: Injury) => {
+    const draft = draftDates[injury.id];
+    if (!draft) return;
+    const ok = await persist(injuries.map((item) => item.id === injury.id
+      ? { ...item, onsetDate: draft.onsetDate, ...(draft.resolvedDate !== undefined ? { resolvedDate: draft.resolvedDate } : {}), updatedAt: new Date().toISOString() }
+      : item));
+    if (ok) setToast({ visible: true, message: 'Injury updated', type: 'success' });
+  };
 
   const ongoing = injuries.filter((i) => i.status === 'ongoing');
   const past = injuries.filter((i) => i.status === 'resolved');
@@ -190,15 +209,20 @@ export default function SettingsInjuriesScreen() {
       {inj.avoid?.length ? <Text style={styles.cardNotes}>Avoid: {inj.avoid.join(', ')}</Text> : null}
 
       <Text style={styles.cardDateLabel}>Onset</Text>
-      <DateField value={toDateObj(inj.onsetDate) ?? new Date()} onChange={(d) => handleEditOnset(inj.id, d)} />
+      <DateField value={toDateObj(draftDates[inj.id]?.onsetDate ?? inj.onsetDate) ?? new Date()} onChange={(d) => handleEditOnset(inj.id, d)} />
       {inj.status === 'resolved' && inj.resolvedDate ? (
         <>
           <Text style={styles.cardDateLabel}>Resolved</Text>
-          <DateField value={toDateObj(inj.resolvedDate) ?? new Date()} onChange={(d) => handleEditResolved(inj.id, d)} />
+          <DateField value={toDateObj(draftDates[inj.id]?.resolvedDate ?? inj.resolvedDate) ?? new Date()} onChange={(d) => handleEditResolved(inj.id, d)} />
         </>
       ) : null}
 
       <View style={styles.cardActions}>
+        {draftDates[inj.id] ? (
+          <TouchableOpacity style={styles.actionButton} onPress={() => saveDateChanges(inj)} disabled={saving}>
+            <Text style={styles.resolveText}>Save</Text>
+          </TouchableOpacity>
+        ) : null}
         <TouchableOpacity style={styles.actionButton} onPress={() => handleApply(inj)} disabled={saving}>
           <Text style={styles.resolveText}>Apply to history</Text>
         </TouchableOpacity>

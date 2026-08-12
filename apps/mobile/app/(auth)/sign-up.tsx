@@ -66,7 +66,7 @@ export default function SignUpScreen() {
         ...(current?.data ?? {}),
         username: dto.username ?? trimmedUsername,
         usernameLower: trimmedUsername.toLowerCase(),
-      });
+      }, { syncState: 'synced', serverVersion: dto.version });
       bumpDataVersion();
       router.replace("/set-split");
     } catch (err: any) {

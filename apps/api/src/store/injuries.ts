@@ -1,17 +1,16 @@
 import type { CreateInjuryInput, InjuryDTO, UpdateInjuryInput } from '@timber/contract/api';
-import { ApiError } from '../http.js';
-import { commit, getDoc, runQuery, ts, type DecodedValue, type FirestoreDoc } from './rest.js';
+import { firestorePaths } from '@timber/contract/firestore';
+import { ApiError } from '../errors.js';
+import { commit, deleteDoc, getDoc, runQuery, ts, type DecodedValue, type FirestoreDoc } from './rest.js';
 
 /**
- * Injuries live as a flat array on `users/{uid}.injuries` (see
- * docs/data-model/users.md), not their own collection — every op here is a
- * read-modify-write of that one array field, versioned by the user doc's
- * `updateTime`, same optimistic-concurrency shape as `store/quota.ts`.
+ * Canonical injuries are independent documents at
+ * `users/{uid}/injuries/{injuryId}`, so each record carries its own
+ * Firestore updateTime. During the bounded copy-before-cleanup migration,
+ * a user with no new injury docs still reads the old array.
  */
 
-const USERS_COLLECTION = 'users';
 const WORKOUTS_COLLECTION = 'workouts';
-const MAX_ATTEMPTS = 3;
 
 function toInjuryDTO(raw: DecodedValue): InjuryDTO {
   const r = raw as Record<string, DecodedValue>;
@@ -31,18 +30,36 @@ function toInjuryDTO(raw: DecodedValue): InjuryDTO {
   };
 }
 
-async function getUserDoc(uid: string): Promise<FirestoreDoc | undefined> {
-  return getDoc(`${USERS_COLLECTION}/${uid}`, ['injuries']);
-}
-
-function injuriesFromDoc(doc: FirestoreDoc | undefined): InjuryDTO[] {
+function injuriesFromLegacyDoc(doc: FirestoreDoc | undefined): InjuryDTO[] {
   const raw = doc?.fields.injuries;
   return Array.isArray(raw) ? raw.map(toInjuryDTO) : [];
 }
 
+function injuryFromDoc(doc: FirestoreDoc): InjuryDTO {
+  return toInjuryDTO(doc.fields);
+}
+
+async function getNewInjuryDocs(uid: string): Promise<FirestoreDoc[]> {
+  return runQuery({ parentPath: firestorePaths.user(uid), collectionId: 'injuries', limit: 5_000 });
+}
+
+async function getLegacyInjuries(uid: string): Promise<InjuryDTO[]> {
+  return injuriesFromLegacyDoc(await getDoc(firestorePaths.user(uid), ['injuries']));
+}
+
+async function getInjuryDoc(uid: string, id: string): Promise<FirestoreDoc | undefined> {
+  return getDoc(firestorePaths.injury(uid, id));
+}
+
+/** New documents win; the old array is only a pre-copy compatibility fallback. */
 export async function listInjuries(uid: string): Promise<{ injuries: InjuryDTO[]; version: string }> {
-  const doc = await getUserDoc(uid);
-  return { injuries: injuriesFromDoc(doc), version: doc?.updateTime ?? '' };
+  const docs = await getNewInjuryDocs(uid);
+  if (docs.length > 0) {
+    const injuries = docs.map(injuryFromDoc);
+    return { injuries, version: docs.map((doc) => doc.updateTime).sort().at(-1) ?? '' };
+  }
+  const legacy = await getDoc(firestorePaths.user(uid), ['injuries']);
+  return { injuries: injuriesFromLegacyDoc(legacy), version: legacy?.updateTime ?? '' };
 }
 
 /** Pure: append, rejecting a duplicate id outright rather than silently overwriting it. */
@@ -72,32 +89,30 @@ export function nextInjuriesAfterDelete(existing: InjuryDTO[], id: string): Inju
 export async function createInjury(uid: string, input: CreateInjuryInput): Promise<{ injury: InjuryDTO; version: string }> {
   const now = new Date().toISOString();
   const injury: InjuryDTO = { ...input, resolvedDate: input.resolvedDate ?? undefined, createdAt: now, updatedAt: now };
+  const path = firestorePaths.injury(uid, input.id);
+  const existing = await getInjuryDoc(uid, input.id);
+  if (existing) return { injury: injuryFromDoc(existing), version: existing.updateTime };
 
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const doc = await getUserDoc(uid);
-    const existing = injuriesFromDoc(doc);
-    // Retried create with the same id: already applied, acknowledge it.
-    const already = existing.find((i) => i.id === input.id);
-    if (already) return { injury: already, version: doc?.updateTime ?? '' };
-
-    const next = nextInjuriesAfterCreate(existing, injury);
-    try {
-      await commit([
-        {
-          path: `${USERS_COLLECTION}/${uid}`,
-          fields: { injuries: next },
-          updateMask: ['injuries'],
-          currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
-        },
-      ]);
-    } catch (e) {
-      if ((e as { status?: number }).status === 409 && attempt < MAX_ATTEMPTS - 1) continue;
-      throw e;
-    }
-    const updated = await getUserDoc(uid);
-    return { injury, version: updated?.updateTime ?? '' };
+  // A retried create during migration may still find its legacy array item.
+  const legacy = (await getLegacyInjuries(uid)).find((item) => item.id === input.id);
+  if (legacy) {
+    await commit([{ path, fields: legacy, updateMask: Object.keys(legacy), currentDocument: { exists: false } }]);
+    const copied = await getInjuryDoc(uid, input.id);
+    if (!copied) throw new Error('Legacy injury copy completed without a readable document');
+    return { injury: injuryFromDoc(copied), version: copied.updateTime };
   }
-  throw new Error('createInjury: exhausted retries');
+
+  try {
+    await commit([{ path, fields: injury, updateMask: Object.keys(injury), currentDocument: { exists: false } }]);
+  } catch (error) {
+    if ((error as { status?: number }).status !== 409) throw error;
+    const raced = await getInjuryDoc(uid, input.id);
+    if (raced) return { injury: injuryFromDoc(raced), version: raced.updateTime };
+    throw error;
+  }
+  const created = await getInjuryDoc(uid, input.id);
+  if (!created) throw new Error('Injury write completed without a readable document');
+  return { injury: injuryFromDoc(created), version: created.updateTime };
 }
 
 export async function updateInjury(
@@ -105,63 +120,41 @@ export async function updateInjury(
   id: string,
   patch: UpdateInjuryInput
 ): Promise<
-  | { conflict: true; remote: InjuryDTO[]; remoteVersion: string }
+  | { conflict: true; remote: InjuryDTO; remoteVersion: string }
   | { conflict: false; injury: InjuryDTO; version: string }
 > {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const doc = await getUserDoc(uid);
-    if (patch.baseVersion && doc?.updateTime !== patch.baseVersion) {
-      return { conflict: true, remote: injuriesFromDoc(doc), remoteVersion: doc?.updateTime ?? '' };
-    }
-
-    const existing = injuriesFromDoc(doc);
-    const next = nextInjuriesAfterUpdate(existing, id, patch, new Date().toISOString());
-
+  const path = firestorePaths.injury(uid, id);
+  const doc = await getInjuryDoc(uid, id);
+  if (doc) {
+    const existing = injuryFromDoc(doc);
+    if (patch.baseVersion && doc.updateTime !== patch.baseVersion) return { conflict: true, remote: existing, remoteVersion: doc.updateTime };
+    const next = nextInjuriesAfterUpdate([existing], id, patch, new Date().toISOString())[0];
     try {
-      await commit([
-        {
-          path: `${USERS_COLLECTION}/${uid}`,
-          fields: { injuries: next },
-          updateMask: ['injuries'],
-          currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
-        },
-      ]);
-    } catch (e) {
-      if ((e as { status?: number }).status === 409 && attempt < MAX_ATTEMPTS - 1) continue;
-      throw e;
+      await commit([{ path, fields: next, updateMask: Object.keys(next), currentDocument: { updateTime: doc.updateTime } }]);
+    } catch (error) {
+      if ((error as { status?: number }).status !== 409) throw error;
+      const remote = await getInjuryDoc(uid, id);
+      if (!remote) throw new ApiError(404, 'Injury not found');
+      return { conflict: true, remote: injuryFromDoc(remote), remoteVersion: remote.updateTime };
     }
-
-    const updated = next.find((i) => i.id === id)!;
-    const updatedDoc = await getUserDoc(uid);
-    return { conflict: false, injury: updated, version: updatedDoc?.updateTime ?? '' };
+    const updated = await getInjuryDoc(uid, id);
+    if (!updated) throw new Error('Injury write completed without a readable document');
+    return { conflict: false, injury: injuryFromDoc(updated), version: updated.updateTime };
   }
-  throw new Error('updateInjury: exhausted retries');
+
+  // A legacy-only row is copied to its new document on its first edit.
+  const legacy = (await getLegacyInjuries(uid)).find((item) => item.id === id);
+  if (!legacy) throw new ApiError(404, 'Injury not found');
+  const next = nextInjuriesAfterUpdate([legacy], id, patch, new Date().toISOString())[0];
+  await commit([{ path, fields: next, updateMask: Object.keys(next), currentDocument: { exists: false } }]);
+  const updated = await getInjuryDoc(uid, id);
+  if (!updated) throw new Error('Injury migration write completed without a readable document');
+  return { conflict: false, injury: injuryFromDoc(updated), version: updated.updateTime };
 }
 
 /** Idempotent: deleting an already-absent injury id is a no-op success. */
 export async function deleteInjury(uid: string, id: string): Promise<void> {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    const doc = await getUserDoc(uid);
-    const existing = injuriesFromDoc(doc);
-    if (!existing.some((i) => i.id === id)) return;
-
-    const next = nextInjuriesAfterDelete(existing, id);
-    try {
-      await commit([
-        {
-          path: `${USERS_COLLECTION}/${uid}`,
-          fields: { injuries: next },
-          updateMask: ['injuries'],
-          currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
-        },
-      ]);
-      return;
-    } catch (e) {
-      if ((e as { status?: number }).status === 409 && attempt < MAX_ATTEMPTS - 1) continue;
-      throw e;
-    }
-  }
-  throw new Error('deleteInjury: exhausted retries');
+  await deleteDoc(firestorePaths.injury(uid, id));
 }
 
 // --------------------------------------------------------- history stamping
@@ -189,7 +182,7 @@ async function getOwnedWorkoutsWithUserId(uid: string): Promise<FirestoreDoc[]> 
 
 /** arrayUnion semantics via read-modify-write + retry (same shape as quota.ts) — idempotent, re-applying never duplicates. */
 async function stampWorkoutInjury(path: string, injuryId: string, add: boolean): Promise<void> {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     const doc = await getDoc(path, ['injuries']);
     if (!doc) return;
     const current = Array.isArray(doc.fields.injuries) ? (doc.fields.injuries as string[]) : [];
@@ -201,7 +194,7 @@ async function stampWorkoutInjury(path: string, injuryId: string, add: boolean):
       await commit([{ path, fields: { injuries: next }, updateMask: ['injuries'], currentDocument: { updateTime: doc.updateTime } }]);
       return;
     } catch (e) {
-      if ((e as { status?: number }).status === 409 && attempt < MAX_ATTEMPTS - 1) continue;
+      if ((e as { status?: number }).status === 409 && attempt < 2) continue;
       throw e;
     }
   }

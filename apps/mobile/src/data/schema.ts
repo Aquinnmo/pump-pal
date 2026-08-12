@@ -191,6 +191,15 @@ export const MIGRATIONS: Migration[] = [
       `DROP TABLE conflicts`,
     ],
   },
+  {
+    // A permission or validation rejection cannot be fixed by retrying on a
+    // timer. Keep the user's local change and its diagnostic, but remove the
+    // intent from normal claims until a later product flow can resolve it.
+    version: 6,
+    up: [
+      `ALTER TABLE outbox ADD COLUMN parked_at TEXT`,
+    ],
+  },
 ];
 
 export const CURRENT_SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

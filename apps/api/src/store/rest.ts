@@ -1,4 +1,20 @@
 import { importPKCS8, SignJWT } from 'jose';
+import {
+  decodeFirestoreDocument,
+  encodeFirestoreFields,
+  encodeFirestoreValue,
+  type DecodedFirestoreValue,
+  type FirestoreRestDocument,
+} from '@timber/contract/firestore';
+import { runtimeEnv } from '../runtime-env.js';
+
+export {
+  decodeFirestoreFields as decodeFields,
+  encodeFirestoreFields as encodeFields,
+  firestoreTimestamp as ts,
+  type DecodedFirestoreValue as DecodedValue,
+  type FirestoreValue,
+} from '@timber/contract/firestore';
 
 /**
  * Firestore over plain HTTPS, replacing the Admin SDK's Firestore client.
@@ -14,8 +30,6 @@ import { importPKCS8, SignJWT } from 'jose';
  * needs no change.
  */
 
-const PROJECT_ID = process.env.FIREBASE_PROJECT_ID;
-const CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
 /**
  * The PEM survives a round trip through JSON and a dashboard textarea, which
  * mangles it three ways: literal "\n" instead of newlines, the JSON string's
@@ -23,12 +37,23 @@ const CLIENT_EMAIL = process.env.FIREBASE_CLIENT_EMAIL;
  * `importPKCS8` requires the header at index 0 exactly, so any one of those
  * fails with a message that names none of them.
  */
-const PRIVATE_KEY = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n')
-  .trim()
-  .replace(/^["']|["']$/g, '')
-  .trim();
-
-const DOCUMENTS_URL = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
+function config() {
+  const projectId = runtimeEnv('FIREBASE_PROJECT_ID');
+  const clientEmail = runtimeEnv('FIREBASE_CLIENT_EMAIL');
+  const privateKey = runtimeEnv('FIREBASE_PRIVATE_KEY')?.replace(/\\n/g, '\n')
+    .trim()
+    .replace(/^["']|["']$/g, '')
+    .trim();
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error('Missing Firebase service-account credentials (FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY)');
+  }
+  return {
+    projectId,
+    clientEmail,
+    privateKey,
+    documentsUrl: `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents`,
+  };
+}
 
 // Cached in module scope for its full 1h life, minus a 60s safety margin.
 let cachedToken: { token: string; expiresAt: number } | null = null;
@@ -36,29 +61,25 @@ let cachedToken: { token: string; expiresAt: number } | null = null;
 async function getAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now()) return cachedToken.token;
 
-  if (!PROJECT_ID || !CLIENT_EMAIL || !PRIVATE_KEY) {
-    throw new Error(
-      'Missing Firebase service-account credentials (FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY)'
-    );
-  }
+  const { clientEmail, privateKey } = config();
 
-  if (!PRIVATE_KEY.startsWith('-----BEGIN PRIVATE KEY-----')) {
+  if (!privateKey.startsWith('-----BEGIN PRIVATE KEY-----')) {
     // Never log the key itself. The first 30 chars are the PEM header at worst,
     // and are the only part that says which of the mangling modes happened.
     throw new Error(
       'FIREBASE_PRIVATE_KEY is not a PKCS#8 PEM. It must begin with ' +
         `"-----BEGIN PRIVATE KEY-----" but begins with ${JSON.stringify(
-          PRIVATE_KEY.slice(0, 30)
+          privateKey.slice(0, 30)
         )}. Paste the private_key value from the service-account JSON without ` +
         'its surrounding quotes; "BEGIN RSA PRIVATE KEY" means PKCS#1, convert ' +
         'with: openssl pkcs8 -topk8 -nocrypt -in old.pem'
     );
   }
 
-  const key = await importPKCS8(PRIVATE_KEY, 'RS256');
+  const key = await importPKCS8(privateKey, 'RS256');
   const assertion = await new SignJWT({ scope: 'https://www.googleapis.com/auth/datastore' })
     .setProtectedHeader({ alg: 'RS256' })
-    .setIssuer(CLIENT_EMAIL)
+    .setIssuer(clientEmail)
     .setAudience('https://oauth2.googleapis.com/token')
     .setIssuedAt()
     .setExpirationTime('1h')
@@ -95,89 +116,35 @@ async function getAccessToken(): Promise<string> {
 // contract already uses, so decode passes it through unchanged as a string —
 // callers that need it typed as a Date-ish value convert at the route).
 
-export type FirestoreValue =
-  | { nullValue: null }
-  | { stringValue: string }
-  | { integerValue: string }
-  | { doubleValue: number }
-  | { booleanValue: boolean }
-  | { timestampValue: string }
-  | { arrayValue: { values?: FirestoreValue[] } }
-  | { mapValue: { fields?: Record<string, FirestoreValue> } };
-
-/** Marks a JS Date/ISO-string as a Firestore `timestampValue` write instead of a plain string. */
-export class FirestoreTimestamp {
-  constructor(public iso: string) {}
-}
-export function ts(iso: string): FirestoreTimestamp {
-  return new FirestoreTimestamp(iso);
-}
-
-function encodeValue(value: unknown): FirestoreValue {
-  if (value === null || value === undefined) return { nullValue: null };
-  if (value instanceof FirestoreTimestamp) return { timestampValue: value.iso };
-  if (typeof value === 'string') return { stringValue: value };
-  if (typeof value === 'boolean') return { booleanValue: value };
-  if (typeof value === 'number') {
-    return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
-  }
-  if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeValue) } };
-  if (typeof value === 'object') return { mapValue: { fields: encodeFields(value as Record<string, unknown>) } };
-  throw new Error(`Unsupported Firestore value: ${JSON.stringify(value)}`);
-}
-
-export type DecodedValue = string | number | boolean | null | DecodedValue[] | { [k: string]: DecodedValue };
-
-function decodeValue(value: FirestoreValue): DecodedValue {
-  if ('nullValue' in value) return null;
-  if ('stringValue' in value) return value.stringValue;
-  if ('timestampValue' in value) return value.timestampValue;
-  if ('integerValue' in value) return Number(value.integerValue);
-  if ('doubleValue' in value) return value.doubleValue;
-  if ('booleanValue' in value) return value.booleanValue;
-  if ('arrayValue' in value) return (value.arrayValue.values ?? []).map(decodeValue);
-  if ('mapValue' in value) return decodeFields(value.mapValue.fields ?? {});
-  throw new Error(`Unsupported Firestore value: ${JSON.stringify(value)}`);
-}
-
-export function encodeFields(obj: Record<string, unknown>): Record<string, FirestoreValue> {
-  return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, encodeValue(v)]));
-}
-
-export function decodeFields(fields: Record<string, FirestoreValue>): Record<string, DecodedValue> {
-  return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, decodeValue(v)]));
-}
+const encodeValue = encodeFirestoreValue;
 
 // -------------------------------------------------------------- get / commit
 
 export interface FirestoreDoc {
   /** Doc path relative to the documents root, e.g. `workouts/abc123`. */
   path: string;
-  fields: Record<string, DecodedValue>;
+  fields: Record<string, DecodedFirestoreValue>;
   updateTime: string;
-}
-
-function docPath(name: string): string {
-  // name is the fully qualified `projects/.../documents/{path}`; keep only {path}.
-  return name.split('/documents/')[1] ?? name;
 }
 
 /** Reads a document by path (e.g. `users/{uid}`). Returns `undefined` for a missing doc rather than throwing. */
 export async function getDoc(path: string, fieldPaths?: string[]): Promise<FirestoreDoc | undefined> {
   const token = await getAccessToken();
+  const { documentsUrl } = config();
   const query = fieldPaths?.length
     ? `?${fieldPaths.map((f) => `mask.fieldPaths=${encodeURIComponent(f)}`).join('&')}`
     : '';
 
-  const res = await fetch(`${DOCUMENTS_URL}/${path}${query}`, {
+  const res = await fetch(`${documentsUrl}/${path}${query}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 
   if (res.status === 404) return undefined;
   if (!res.ok) throw new Error(`Firestore getDoc(${path}) failed: ${res.status} ${await res.text()}`);
 
-  const body = (await res.json()) as { name: string; fields?: Record<string, FirestoreValue>; updateTime: string };
-  return { path: docPath(body.name), fields: decodeFields(body.fields ?? {}), updateTime: body.updateTime };
+  const body = (await res.json()) as FirestoreRestDocument;
+  const document = decodeFirestoreDocument(body);
+  return { path: document.path, fields: document.fields, updateTime: document.version };
 }
 
 export interface FirestoreWrite {
@@ -203,18 +170,19 @@ export interface CommitResult {
 /** Throws a 409-tagged error when any write's `currentDocument` precondition doesn't hold. All writes in one call commit atomically. */
 export async function commit(writes: FirestoreWrite[]): Promise<CommitResult[]> {
   const token = await getAccessToken();
+  const { projectId, documentsUrl } = config();
 
-  const res = await fetch(`${DOCUMENTS_URL}:commit`, {
+  const res = await fetch(`${documentsUrl}:commit`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       writes: writes.map((w) => ({
         ...(w.delete
-          ? { delete: `projects/${PROJECT_ID}/databases/(default)/documents/${w.path}` }
+          ? { delete: `projects/${projectId}/databases/(default)/documents/${w.path}` }
           : {
               update: {
-                name: `projects/${PROJECT_ID}/databases/(default)/documents/${w.path}`,
-                fields: encodeFields(w.fields ?? {}),
+                name: `projects/${projectId}/databases/(default)/documents/${w.path}`,
+                fields: encodeFirestoreFields(w.fields ?? {}),
               },
               updateMask: { fieldPaths: w.updateMask ?? [] },
             }),
@@ -237,7 +205,8 @@ export async function commit(writes: FirestoreWrite[]): Promise<CommitResult[]> 
 /** Convenience wrapper for a single-document delete. 404 (already gone) is treated as success. */
 export async function deleteDoc(path: string): Promise<void> {
   const token = await getAccessToken();
-  const res = await fetch(`${DOCUMENTS_URL}/${path}`, {
+  const { documentsUrl } = config();
+  const res = await fetch(`${documentsUrl}/${path}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -272,6 +241,7 @@ export interface RunQueryOptions {
  */
 export async function runQuery(opts: RunQueryOptions): Promise<FirestoreDoc[]> {
   const token = await getAccessToken();
+  const { documentsUrl } = config();
 
   const structuredQuery: Record<string, unknown> = {
     from: [{ collectionId: opts.collectionId }],
@@ -294,7 +264,7 @@ export async function runQuery(opts: RunQueryOptions): Promise<FirestoreDoc[]> {
     structuredQuery.startAt = { values: opts.startAfter.map(encodeValue), before: false };
   }
 
-  const parent = opts.parentPath ? `${DOCUMENTS_URL}/${opts.parentPath}` : DOCUMENTS_URL;
+  const parent = opts.parentPath ? `${documentsUrl}/${opts.parentPath}` : documentsUrl;
   const res = await fetch(`${parent}:runQuery`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -303,12 +273,11 @@ export async function runQuery(opts: RunQueryOptions): Promise<FirestoreDoc[]> {
 
   if (!res.ok) throw new Error(`Firestore runQuery(${opts.collectionId}) failed: ${res.status} ${await res.text()}`);
 
-  const body = (await res.json()) as { document?: { name: string; fields?: Record<string, FirestoreValue>; updateTime: string } }[];
+  const body = (await res.json()) as { document?: FirestoreRestDocument }[];
   return body
-    .filter((row): row is { document: NonNullable<(typeof body)[number]['document']> } => !!row.document)
-    .map((row) => ({
-      path: docPath(row.document.name),
-      fields: decodeFields(row.document.fields ?? {}),
-      updateTime: row.document.updateTime,
-    }));
+    .filter((row): row is { document: FirestoreRestDocument } => !!row.document)
+    .map((row) => {
+      const document = decodeFirestoreDocument(row.document);
+      return { path: document.path, fields: document.fields, updateTime: document.version };
+    });
 }

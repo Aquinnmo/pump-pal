@@ -1,5 +1,6 @@
 import { Injury } from '@/types/user';
 import * as remote from '@/data/remote/injuries';
+import { listWebEntities } from '@/data/web-direct-firestore';
 import { toDateObj } from '@/lib/workout-conversion';
 
 export async function getOngoingInjuryIds(_uid: string): Promise<string[]> {
@@ -7,8 +8,7 @@ export async function getOngoingInjuryIds(_uid: string): Promise<string[]> {
 }
 
 export async function getOngoingInjuries(_uid: string): Promise<Injury[]> {
-  const { injuries } = await remote.listInjuries();
-  return injuries.filter((injury) => injury.status === 'ongoing') as Injury[];
+  return (await listWebEntities(_uid, 'injury') as Injury[]).filter((injury) => injury.status === 'ongoing');
 }
 
 export function injuryCoversDate(injury: Injury, date: Date): boolean {

@@ -1,5 +1,5 @@
 import type { CatalogExerciseDTO, CatalogResponse } from '@timber/contract/api';
-import { ApiError } from '../http.js';
+import { ApiError } from '../errors.js';
 import { commit, getDoc, runQuery, ts, type DecodedValue, type FirestoreDoc } from './rest.js';
 
 /**

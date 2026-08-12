@@ -22,18 +22,14 @@ import {
   SyncConflictError,
   SyncRateLimitError,
 } from './sync-engine';
-import * as remoteWorkouts from '@/data/remote/workouts';
-import * as remoteInjuries from '@/data/remote/injuries';
-import * as remoteProfile from '@/data/remote/profile';
-import * as remotePushup from '@/data/remote/pushup';
 import * as remoteCatalog from '@/data/remote/catalog';
-import * as remoteSync from '@/data/remote/sync';
 import { ApiAuthError, ApiConflictError, ApiRateLimitError } from '@/lib/api-client';
+import { firestoreRestClient } from '@/lib/firestore-rest-client';
+import { createFirestoreSyncRemote } from './firestore-sync-remote';
 import { Workout } from '@/types/workout';
 import { ChallengeData } from '@/types/pushup-challenge';
 import { Injury, UserDoc } from '@/types/user';
-import { normalizeTimestampsDeep } from './normalize-timestamps';
-import { CreateWorkoutInput, UpdateWorkoutInput, WorkoutDTO, PullRequest, InjuryDTO, ProfileDTO, PushupChallengeDTO } from '@timber/contract/api';
+import { WorkoutDTO, ProfileDTO, PushupChallengeDTO } from '@timber/contract/api';
 
 function translateApiError(err: unknown): never {
   if (err instanceof ApiAuthError) throw new SyncAuthError(err.message);
@@ -42,36 +38,8 @@ function translateApiError(err: unknown): never {
   throw err;
 }
 
-// Mirrors src/data/workout-repository.web.ts's toCreateInput — kept separate
-// rather than shared because that file is the *web repository* (called
-// every read/write) while this is the *sync push path* (called only from
-// queued outbox payloads); a shared helper would need a third file for one
-// six-line function.
-function workoutPayloadToCreateInput(id: string, payload: unknown): CreateWorkoutInput {
-  const w = payload as Workout;
-  return {
-    id,
-    name: w.name,
-    date: typeof w.date === 'string' ? w.date : undefined,
-    status: w.status ?? 'completed',
-    notes: w.notes,
-    performedExercises: (w.performedExercises ?? []) as CreateWorkoutInput['performedExercises'],
-    injuries: w.injuries,
-  };
-}
-
-function workoutPayloadToUpdateInput(payload: unknown, baseVersion: string): UpdateWorkoutInput {
-  const w = payload as Workout;
-  return {
-    name: w.name,
-    date: typeof w.date === 'string' ? w.date : undefined,
-    status: w.status,
-    notes: w.notes,
-    performedExercises: w.performedExercises as UpdateWorkoutInput['performedExercises'],
-    injuries: w.injuries,
-    baseVersion,
-  };
-}
+function createAdapters(uid: string): { adapters: EntityAdapter[]; remote: SyncRemote } {
+  const direct = createFirestoreSyncRemote(firestoreRestClient(), uid);
 
 const workoutAdapter: EntityAdapter = {
   entityType: 'workout',
@@ -87,33 +55,9 @@ const workoutAdapter: EntityAdapter = {
     removeClean: workoutsLocal.removeClean,
   },
   remote: {
-    async create(payload, id, signal) {
-      try {
-        const dto = await remoteWorkouts.createWorkout(workoutPayloadToCreateInput(id, payload), { signal });
-        return { version: dto.version, data: dto };
-      } catch (err) {
-        translateApiError(err);
-      }
-    },
-    async update(id, payload, baseVersion, signal) {
-      try {
-        const dto = await remoteWorkouts.updateWorkout(
-          id,
-          workoutPayloadToUpdateInput(payload, baseVersion ?? ''),
-          { signal }
-        );
-        return { version: dto.version, data: dto };
-      } catch (err) {
-        translateApiError(err);
-      }
-    },
-    async delete(id, baseVersion, signal) {
-      try {
-        await remoteWorkouts.deleteWorkout(id, baseVersion ?? '', { signal });
-      } catch (err) {
-        translateApiError(err);
-      }
-    },
+    create: (payload, id, signal) => direct.workouts.create(payload as Workout, id, signal),
+    update: (id, payload, baseVersion, signal) => direct.workouts.update(id, payload as Workout, baseVersion, signal),
+    delete: (id, baseVersion, signal) => direct.workouts.delete(id, baseVersion, signal),
   },
 };
 
@@ -124,21 +68,15 @@ function profileFromDto(dto: ProfileDTO): UserDoc {
     ...(dto.aiUsage ? { aiUsage: dto.aiUsage } : {}),
   };
 }
-function profilePatch(payload: unknown, baseVersion: string | null) {
+function profilePatch(payload: unknown) {
   const profile = payload as UserDoc;
   return {
     ...(profile.workoutSplit ? { workoutSplit: { type: profile.workoutSplit.type, custom: profile.workoutSplit.custom } } : {}),
-    ...(profile.username !== undefined ? { username: profile.username } : {}),
-    ...(baseVersion ? { baseVersion } : {}),
   };
 }
 function challengeFromDto(dto: PushupChallengeDTO): ChallengeData {
   return { startDate: dto.startDate ?? '', days: dto.days, longestStreak: dto.longestStreak };
 }
-function injuryCreateInput(payload: Injury) {
-  return normalizeTimestampsDeep(payload) as unknown as Parameters<typeof remoteInjuries.createInjury>[0];
-}
-
 const profileAdapter: EntityAdapter = {
   entityType: 'profile', wireKind: 'profile',
   local: {
@@ -147,8 +85,14 @@ const profileAdapter: EntityAdapter = {
     removeClean: (db, uid) => removeCleanSingleton(db, 'profile', uid),
   },
   remote: {
-    async create(payload, _id, signal) { try { const dto = await remoteProfile.patchProfile(profilePatch(payload, null), { signal }); return { version: dto.version, data: dto }; } catch (err) { translateApiError(err); } },
-    async update(_id, payload, baseVersion, signal) { try { const dto = await remoteProfile.patchProfile(profilePatch(payload, baseVersion), { signal }); return { version: dto.version, data: dto }; } catch (err) { translateApiError(err); } },
+    async create(payload, _id, signal) {
+      const patch = profilePatch(payload);
+      return patch.workoutSplit ? direct.profile.write(patch, null, signal) : direct.profile.read(signal);
+    },
+    async update(_id, payload, baseVersion, signal) {
+      const patch = profilePatch(payload);
+      return patch.workoutSplit ? direct.profile.write(patch, baseVersion, signal) : direct.profile.read(signal);
+    },
     async delete() { return; },
   },
 };
@@ -161,9 +105,9 @@ const injuryAdapter: EntityAdapter = {
     removeClean: injuriesLocal.removeClean,
   },
   remote: {
-    async create(payload, _id, signal) { try { const response = await remoteInjuries.createInjury(injuryCreateInput(payload as Injury), { signal }); return { version: response.version, data: response.injury }; } catch (err) { translateApiError(err); } },
-    async update(id, payload, baseVersion, signal) { try { const injury = payload as Injury; const response = await remoteInjuries.updateInjury(id, { side: injury.side, muscles: injury.muscles, severity: injury.severity, status: injury.status, resolvedDate: injury.resolvedDate as string | null | undefined, avoid: injury.avoid, notes: injury.notes, ...(baseVersion ? { baseVersion } : {}) }, { signal }); return { version: response.version, data: response.injury }; } catch (err) { translateApiError(err); } },
-    async delete(id, _baseVersion, signal) { try { await remoteInjuries.deleteInjury(id, { signal }); } catch (err) { translateApiError(err); } },
+    create: (payload, _id, signal) => direct.injuries.create(payload as Injury, signal),
+    update: (id, payload, baseVersion, signal) => direct.injuries.update(id, payload as Injury, baseVersion, signal),
+    delete: (id, baseVersion, signal) => direct.injuries.delete(id, baseVersion, signal),
   },
 };
 
@@ -175,8 +119,8 @@ const pushupAdapter: EntityAdapter = {
     removeClean: (db, uid) => removeCleanSingleton(db, 'pushup_challenge', uid),
   },
   remote: {
-    async create(payload, _id, signal) { const data = payload as ChallengeData; try { const dto = await remotePushup.putPushupChallenge({ ...data, baseVersion: null }, { signal }); return { version: dto.version ?? '', data: dto }; } catch (err) { translateApiError(err); } },
-    async update(_id, payload, baseVersion, signal) { const data = payload as ChallengeData; try { const dto = await remotePushup.putPushupChallenge({ ...data, baseVersion }, { signal }); return { version: dto.version ?? '', data: dto }; } catch (err) { translateApiError(err); } },
+    async create(payload, _id, signal) { return direct.pushup.write(payload as ChallengeData, null, signal); },
+    async update(_id, payload, baseVersion, signal) { return direct.pushup.write(payload as ChallengeData, baseVersion, signal); },
     async delete() { return; },
   },
 };
@@ -195,29 +139,8 @@ const catalogAdapter: EntityAdapter = {
   },
 };
 
-const ADAPTERS: EntityAdapter[] = [workoutAdapter, injuryAdapter, profileAdapter, pushupAdapter, catalogAdapter];
-
-const remote: SyncRemote = {
-  async manifest(_uid, cursor, signal) {
-    const page = await remoteSync.getManifest({ cursor }, { signal });
-    return { items: page.items, nextCursor: page.nextCursor };
-  },
-  async pull(entities, signal) {
-    const response = await remoteSync.pull(
-      { entities: entities as PullRequest['entities'] },
-      { signal }
-    );
-    const found: { kind: string; id: string; version: string; data: unknown }[] = [
-      ...response.workouts.map((dto: WorkoutDTO) => ({ kind: 'workout', id: dto.id, version: dto.version, data: dto })),
-      ...response.injuries.map((dto: InjuryDTO) => ({ kind: 'injury', id: dto.id, version: entities.find((entity) => entity.kind === 'injury' && entity.id === dto.id)?.version ?? '', data: dto })),
-      ...(response.profile ? [{ kind: 'profile', id: entities.find((e) => e.kind === 'profile')?.id ?? '', version: response.profile.version, data: response.profile }] : []),
-      ...(response.pushupChallenge ? [{ kind: 'pushupChallenge', id: entities.find((e) => e.kind === 'pushupChallenge')?.id ?? '', version: response.pushupChallenge.version ?? '', data: response.pushupChallenge }] : []),
-    ];
-    const foundKeys = new Set(found.map((item) => `${item.kind}:${item.id}`));
-    const missing = [...response.missing, ...entities.filter((entity) => !foundKeys.has(`${entity.kind}:${entity.id}`) && !response.missing.some((missing) => missing.kind === entity.kind && missing.id === entity.id))];
-    return { found, missing };
-  },
-};
+return { adapters: [workoutAdapter, injuryAdapter, profileAdapter, pushupAdapter, catalogAdapter], remote: direct.remote };
+}
 
 // One in-flight run per uid — see src/data/keyed-mutex.ts. A call for a
 // *different* uid runs independently (relevant only mid account-switch).
@@ -236,6 +159,7 @@ export async function syncNow(
   }
   return mutex.run(uid, async () => {
     const db = await getDb();
-    return runSyncCore(db, uid, ADAPTERS, remote, opts);
+    const { adapters, remote } = createAdapters(uid);
+    return runSyncCore(db, uid, adapters, remote, opts);
   });
 }

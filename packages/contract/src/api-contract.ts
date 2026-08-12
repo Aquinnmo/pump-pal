@@ -82,7 +82,8 @@ export const profileDTO = z.object({
   version,
 });
 export type ProfileDTO = z.infer<typeof profileDTO>;
-export const profileResponse = z.object({ profile: profileDTO });
+/** A missing users/{uid} document is absence, never a fabricated version. */
+export const profileResponse = z.object({ profile: profileDTO.nullable() });
 export type ProfileResponse = z.infer<typeof profileResponse>;
 
 /**
@@ -93,12 +94,24 @@ export type ProfileResponse = z.infer<typeof profileResponse>;
  * "already taken" with different error codes, which a schema-level `.regex()`
  * can't do.
  */
-export const profilePatchInput = z.object({
+/** Direct Firestore-safe profile mutation. Username and device tokens are privileged. */
+export const directProfilePatchInput = z.object({
   workoutSplit: workoutSplit.optional(),
+  baseVersion: version.optional(),
+});
+export type DirectProfilePatchInput = z.infer<typeof directProfilePatchInput>;
+
+/** Privileged Worker mutation. Username uniqueness is enforced server-side. */
+export const updateUsernameInput = z.object({
+  username: z.string(),
+});
+export type UpdateUsernameInput = z.infer<typeof updateUsernameInput>;
+
+/** @deprecated Legacy API transition input. Use directProfilePatchInput or updateUsernameInput. */
+export const profilePatchInput = directProfilePatchInput.extend({
   username: z.string().optional(),
   /** Expo push token for this device; the only thing that makes a Chop deliverable. */
   expoPushToken: z.string().max(200).optional(),
-  baseVersion: version.optional(),
 });
 export type ProfilePatchInput = z.infer<typeof profilePatchInput>;
 
@@ -487,6 +500,10 @@ export const syncableKind = z.enum(SYNCABLE_KINDS);
 export type SyncableKind = z.infer<typeof syncableKind>;
 
 /**
+ * @deprecated Direct Firestore now provides this internal sync shape. Kept
+ * only for a brief source-compatible client upgrade window; do not add new
+ * callers to `/api/sync/*`.
+ *
  * GET /api/sync/manifest — authoritative `{ id, version }` for every
  * synchronizable entity the caller owns, paged. A v1 full manifest (not an
  * incremental change log) because legacy direct Firestore clients may still

@@ -44,6 +44,7 @@ async function main() {
   for (const outcome of [
     initialSyncOutcomeFromSync(uid, { status: 'auth-required' }),
     initialSyncOutcomeFromSync(uid, { status: 'rate-limited', retryAfterMs: null }),
+    initialSyncOutcomeFromSync(uid, { status: 'permanent-failure', entityType: 'workout', entityId: 'w1', message: 'Denied' }),
     initialSyncOutcomeFromSync(uid, { status: 'partial', pushed: 0, reason: 'cancelled' }),
     initialSyncOutcomeFromError(uid, new Error('fetch failed')),
     initialSyncOutcomeFromError(uid, new Error('unexpected sync failure')),

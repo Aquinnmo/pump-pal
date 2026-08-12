@@ -39,7 +39,7 @@ type CatalogExercise = {
   trackingModes: TrackingMode[];
   variations: ExerciseVariation[];
   schemaVersion: 2;
-  status?: 'approved' | 'pending_review';
+  status: 'approved' | 'pending_review';
   createdBy?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
@@ -55,7 +55,8 @@ Field notes:
   exercise's variations, for coarse filtering. Per-variation equipment lives
   on `ExerciseVariation.equipment` (see below) and is the one that matters for
   display/search.
-- `status: 'pending_review'` marks exercises created in-app by a user via the
+- `status: 'approved'` is explicit on every seeded/catalog-visible document.
+  `status: 'pending_review'` marks exercises created in-app by a user via the
   "can't find my exercise" flow (`apps/mobile/src/lib/create-pending-exercise.ts`) rather
   than seeded from the catalog. These have `primaryMuscles: []`,
   `secondaryMuscles: []`, and `variations: []` — the muscle-required

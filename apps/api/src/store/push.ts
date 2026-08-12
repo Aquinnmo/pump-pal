@@ -1,4 +1,5 @@
 import { getDoc } from './rest.js';
+import { firestorePaths } from '@timber/contract/firestore';
 
 /**
  * Outbound push, via the Expo Push Service.
@@ -8,8 +9,8 @@ import { getDoc } from './rest.js';
  * push SDK would undo that for one notification type. Expo's endpoint is a
  * plain JSON POST, so this is the whole integration.
  *
- * Tokens live on `users/{uid}.expoPushToken`, written by the client through
- * `PATCH /api/profile`. A user with no token (web, or permission denied)
+ * Tokens live at `users/{uid}/private/notifications.expoPushToken`. A user
+ * with no token (web, or permission denied)
  * simply isn't deliverable — callers treat that as a normal outcome, not an
  * error, so the underlying action still commits.
  */
@@ -29,8 +30,9 @@ export interface PushMessage {
  */
 export async function sendPush(toUid: string, message: PushMessage): Promise<boolean> {
   try {
-    const user = await getDoc(`users/${toUid}`, ['expoPushToken']);
-    const token = user?.fields.expoPushToken as string | undefined;
+    const notifications = await getDoc(firestorePaths.privateNotifications(toUid));
+    const legacy = notifications ? undefined : await getDoc(firestorePaths.user(toUid), ['expoPushToken']);
+    const token = (notifications?.fields.expoPushToken ?? legacy?.fields.expoPushToken) as string | undefined;
     if (!token) return false;
 
     const res = await fetch(EXPO_PUSH_URL, {

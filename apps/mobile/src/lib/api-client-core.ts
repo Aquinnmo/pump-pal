@@ -167,6 +167,8 @@ export type ApiRequestDeps = {
   clientVersion: string;
   fetchImpl: FetchLike;
   getIdToken: (forceRefresh?: boolean) => Promise<string | null>;
+  /** App Check is independent of Auth and is intentionally never persisted. */
+  getAppCheckToken?: () => Promise<string | null>;
   /** Injected rather than calling console directly, so this module stays platform-free and the logging stays assertable in tests. */
   log?: (entry: ApiRequestLog) => void;
 };
@@ -240,6 +242,7 @@ async function sendRequest<TOut>(
 ): Promise<TOut> {
   const idToken = await deps.getIdToken(forceRefresh);
   if (!idToken) throw new ApiAuthError();
+  const appCheckToken = await deps.getAppCheckToken?.();
 
   // Pulled off `deps` so the call below is a free call, never `deps.fetchImpl(...)`:
   // on web `expo/fetch` is the *unbound* `globalThis.fetch`, and a method call binds
@@ -265,6 +268,7 @@ async function sendRequest<TOut>(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${idToken}`,
+        ...(appCheckToken ? { 'X-Firebase-AppCheck': appCheckToken } : {}),
         'X-Client-Version': deps.clientVersion,
       },
       body: options.body === undefined ? undefined : JSON.stringify(options.body),

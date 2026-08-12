@@ -1,6 +1,7 @@
 import type { InjuryDTO, ProfileDTO, ProfilePatchInput } from '@timber/contract/api';
+import { firestorePaths } from '@timber/contract/firestore';
 import { USERNAME_REGEX } from '@timber/contract/username';
-import { ApiError } from '../http.js';
+import { ApiError } from '../errors.js';
 import { commit, getDoc, ts, type DecodedValue, type FirestoreDoc, type FirestoreWrite } from './rest.js';
 import { listInjuries } from './injuries.js';
 
@@ -14,22 +15,25 @@ import { listInjuries } from './injuries.js';
 const USERS_COLLECTION = 'users';
 const USERNAMES_COLLECTION = 'usernames';
 
-function toProfileDTO(doc: FirestoreDoc | undefined): ProfileDTO {
+function toProfileDTO(doc: FirestoreDoc, usageDoc?: FirestoreDoc): ProfileDTO {
   const workoutSplit = doc?.fields.workoutSplit as Record<string, DecodedValue> | undefined;
-  const aiUsage = doc?.fields.aiUsage as Record<string, DecodedValue> | undefined;
+  const aiUsage = (usageDoc?.fields ?? doc.fields.aiUsage) as Record<string, DecodedValue> | undefined;
   return {
     workoutSplit: workoutSplit
       ? { type: workoutSplit.type as NonNullable<ProfileDTO['workoutSplit']>['type'], custom: (workoutSplit.custom as string | null) ?? null }
       : null,
-    username: (doc?.fields.username as string | undefined) ?? null,
+    username: (doc.fields.username as string | undefined) ?? null,
     aiUsage: aiUsage ? { date: aiUsage.date as string, count: Number(aiUsage.count) } : null,
-    version: doc?.updateTime ?? '',
+    version: doc.updateTime,
   };
 }
 
-export async function getProfile(uid: string): Promise<ProfileDTO> {
-  const doc = await getDoc(`${USERS_COLLECTION}/${uid}`);
-  return toProfileDTO(doc);
+export async function getProfile(uid: string): Promise<ProfileDTO | undefined> {
+  const [doc, privateUsage] = await Promise.all([
+    getDoc(firestorePaths.user(uid)),
+    getDoc(firestorePaths.privateAiUsage(uid)),
+  ]);
+  return doc ? toProfileDTO(doc, privateUsage) : undefined;
 }
 
 function usernameTakenError(): ApiError {
@@ -40,10 +44,11 @@ export async function updateProfile(
   uid: string,
   patch: ProfilePatchInput
 ): Promise<{ conflict: true; remote: ProfileDTO } | { conflict: false; profile: ProfileDTO }> {
-  const doc = await getDoc(`${USERS_COLLECTION}/${uid}`);
+  const doc = await getDoc(firestorePaths.user(uid));
 
-  if (patch.baseVersion && doc?.updateTime !== patch.baseVersion) {
-    return { conflict: true, remote: toProfileDTO(doc) };
+  if (patch.baseVersion) {
+    if (!doc) throw new ApiError(404, 'Profile no longer exists');
+    if (doc.updateTime !== patch.baseVersion) return { conflict: true, remote: toProfileDTO(doc) };
   }
 
   const fields: Record<string, unknown> = {};
@@ -53,12 +58,16 @@ export async function updateProfile(
     updateMask.push('workoutSplit');
   }
 
-  if (patch.expoPushToken !== undefined) {
-    fields.expoPushToken = patch.expoPushToken;
-    updateMask.push('expoPushToken');
-  }
-
   const extraWrites: FirestoreWrite[] = [];
+  if (patch.expoPushToken !== undefined) {
+    const notifications = await getDoc(firestorePaths.privateNotifications(uid));
+    extraWrites.push({
+      path: firestorePaths.privateNotifications(uid),
+      fields: { expoPushToken: patch.expoPushToken, updatedAt: ts(new Date().toISOString()) },
+      updateMask: ['expoPushToken', 'updatedAt'],
+      currentDocument: notifications ? { updateTime: notifications.updateTime } : { exists: false },
+    });
+  }
   let newLower: string | undefined;
   const currentLower = doc?.fields.usernameLower as string | undefined;
 
@@ -90,16 +99,16 @@ export async function updateProfile(
     }
   }
 
-  if (updateMask.length === 0) return { conflict: false, profile: toProfileDTO(doc) };
+  if (updateMask.length === 0 && extraWrites.length === 0) {
+    if (!doc) throw new ApiError(400, 'Profile patch must include at least one writable field');
+    return { conflict: false, profile: toProfileDTO(doc) };
+  }
 
   try {
     await commit([
-      {
-        path: `${USERS_COLLECTION}/${uid}`,
-        fields,
-        updateMask,
-        currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
-      },
+      ...(updateMask.length > 0
+        ? [{ path: firestorePaths.user(uid), fields, updateMask, currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false } }]
+        : []),
       ...extraWrites,
     ]);
   } catch (e) {
@@ -110,13 +119,15 @@ export async function updateProfile(
         const stillContested = await getDoc(`${USERNAMES_COLLECTION}/${newLower}`);
         if (stillContested && stillContested.fields.uid !== uid) throw usernameTakenError();
       }
-      const remote = await getDoc(`${USERS_COLLECTION}/${uid}`);
+      const remote = await getDoc(firestorePaths.user(uid));
+      if (!remote) throw new ApiError(404, 'Profile no longer exists');
       return { conflict: true, remote: toProfileDTO(remote) };
     }
     throw e;
   }
 
-  const updated = await getDoc(`${USERS_COLLECTION}/${uid}`);
+  const updated = await getDoc(firestorePaths.user(uid));
+  if (!updated) throw new Error('Profile write completed without a readable document');
   return { conflict: false, profile: toProfileDTO(updated) };
 }
 

@@ -1,4 +1,5 @@
 import type { DeleteAccountDataResponse } from '@timber/contract/api';
+import { firestorePaths } from '@timber/contract/firestore';
 import { deleteDoc, getDoc, runQuery } from './rest.js';
 
 /**
@@ -21,6 +22,8 @@ import { deleteDoc, getDoc, runQuery } from './rest.js';
 export interface AccountDeletionPhases {
   deleteWorkouts(uid: string): Promise<number>;
   deleteLegacyWorkouts(uid: string): Promise<number>;
+  deleteInjuries(uid: string): Promise<number>;
+  deletePrivateDocs(uid: string): Promise<void>;
   deletePushupChallenge(uid: string): Promise<void>;
   deleteFriendships(uid: string): Promise<number>;
   deleteUsernameReservation(uid: string): Promise<void>;
@@ -38,14 +41,21 @@ const realPhases: AccountDeletionPhases = {
     await Promise.all(docs.map((d) => deleteDoc(d.path)));
     return docs.length;
   },
+  async deleteInjuries(uid) {
+    const docs = await runQuery({ parentPath: firestorePaths.user(uid), collectionId: 'injuries', limit: 5_000 });
+    await Promise.all(docs.map((doc) => deleteDoc(doc.path)));
+    return docs.length;
+  },
+  async deletePrivateDocs(uid) {
+    await Promise.all([deleteDoc(firestorePaths.privateAiUsage(uid)), deleteDoc(firestorePaths.privateNotifications(uid))]);
+  },
   async deletePushupChallenge(uid) {
     await deleteDoc(`users/${uid}/pushup-challenge/data`);
   },
   async deleteFriendships(uid) {
     // Deletes the shared doc outright, so the buddy on the other side loses
     // the relationship too -- correct, since half a friendship isn't a thing.
-    // Queried inline rather than through store/buddies.ts so this module stays
-    // free of that file's `http.js` (and therefore env-var) dependency.
+    // Queried inline so account deletion remains independently testable.
     const docs = await runQuery({
       collectionId: 'friendships',
       where: [{ field: 'users', op: 'ARRAY_CONTAINS', value: uid }],
@@ -93,6 +103,14 @@ export async function deleteAccountDataWith(uid: string, phases: AccountDeletion
   } catch (e) {
     partial = true;
     console.error(`deleteAccountData(${uid}): failed deleting legacy workouts`, e);
+  }
+
+  try {
+    await phases.deleteInjuries(uid);
+    await phases.deletePrivateDocs(uid);
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting trust-domain documents`, e);
   }
 
   try {

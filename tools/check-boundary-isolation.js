@@ -19,10 +19,8 @@
  * file importing `firebase` -- still resolves at build time even though
  * neither package declares it. Only this check fails on it.
  *
- * Import *direction* between packages needs no check: `apps/api` cannot reach
- * `apps/mobile` with a relative path, and does not depend on it. That is what
- * the old `scripts/check-api-isolation.js` enforced by convention, and why it
- * was deleted rather than repathed.
+ * Import *direction* between packages needs no check: the Worker cannot reach
+ * `apps/mobile` with a relative path, and does not depend on it.
  *
  * Scoped to `apps/api` plus the mobile app's runtime tree (see SCAN_DIRS).
  * `tools/**` and `apps/wear/**` are excluded: the catalog scripts run their own
@@ -39,7 +37,7 @@ const ROOT = resolve(__dirname, '..');
 // one run, because the two rules below are about what crosses between them.
 const MOBILE = 'apps/mobile';
 const API = 'apps/api';
-const API_DIRS = [`${API}/api`, `${API}/src`];
+const API_DIRS = [`${API}/src`];
 const SCAN_DIRS = [
   ...API_DIRS,
   `${MOBILE}/app`,

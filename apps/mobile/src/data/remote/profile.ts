@@ -1,16 +1,18 @@
 import { apiRequest, ApiRequestOptions } from '@/lib/api-client';
 import { profileDTO, profileResponse, ProfilePatchInput } from '@timber/contract/api';
 
-export function getProfile(opts?: ApiRequestOptions<never>) {
-  return apiRequest('/api/profile', { responseSchema: profileResponse, signal: opts?.signal }).then(({ profile }) => profile);
-}
+type PrivilegedProfilePatch = Pick<ProfilePatchInput, 'username' | 'expoPushToken'>;
 
-export function patchProfile(input: ProfilePatchInput, opts?: ApiRequestOptions<never>) {
+/** Username and Expo push-token updates are Worker-only; workout splits are direct Firestore. */
+export function patchProfile(input: PrivilegedProfilePatch, opts?: ApiRequestOptions<never>) {
   return apiRequest('/api/profile', {
     method: 'PATCH',
     body: input,
     responseSchema: profileResponse,
     conflictEntitySchema: profileDTO,
     signal: opts?.signal,
-  }).then(({ profile }) => profile);
+  }).then(({ profile }) => {
+    if (!profile) throw new Error('Profile PATCH succeeded without a profile document');
+    return profile;
+  });
 }

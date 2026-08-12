@@ -67,7 +67,7 @@ export default function SettingsUsernameScreen() {
         ...(current?.data ?? {}),
         username: dto.username ?? trimmed,
         usernameLower: trimmed.toLowerCase(),
-      });
+      }, { syncState: 'synced', serverVersion: dto.version });
       bumpDataVersion();
       setOriginalUsername(trimmed);
       setToast({ visible: true, message: "Username updated", type: "success" });
