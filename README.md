@@ -6,15 +6,15 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 
 > Setting up a Mac from scratch to run this on an iPhone? Use
 > **[IOS_NON_DEVELOPERS.md](IOS_NON_DEVELOPERS.md)** instead — Xcode plus
-> `npx expo run:ios --device --configuration Release`. After that,
-> `npm run install:apple` updates the repo and reinstalls a standalone copy on
+> `bunx expo run:ios --device --configuration Release`. After that,
+> `bun run install:apple` updates the repo and reinstalls a standalone copy on
 > the connected iPhone.
 > Android dev builds are covered in [docs/dev-build.md](docs/dev-build.md).
 
 1. Install dependencies
 
    ```bash
-   npm install
+   bun install
    ```
 
 2. Copy [`apps/mobile/.env.example.eas`](apps/mobile/.env.example.eas) to `apps/mobile/.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL`. The API is a separate deployment, so that URL is required.
@@ -24,7 +24,7 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 3. Start the dev server
 
    ```bash
-   npm start
+   bun start
    ```
 
    Press `a`/`i`/`w` to open Android/iOS/web, or scan the QR code with Expo Go.
@@ -85,14 +85,14 @@ Use `production` only for a store-ready build; Android production builds are nor
 ## Other commands
 
 ```bash
-npm run android      # start + open Android
-npm run ios          # start + open iOS
-npm run install:apple  # update + install standalone Timber on an iPhone
-npm run web          # start + open web
-npm run lint         # expo lint
-npm run build:web    # static web export to dist/ (used by Vercel, see vercel.json)
-npm run catalog:review  # promote user-submitted pending exercises into the catalog
-npm run catalog:seed    # write tools/catalog/catalog-seed.json to Firestore (--apply)
+bun run android      # start + open Android
+bun run ios          # start + open iOS
+bun run install:apple  # update + install standalone Timber on an iPhone
+bun run web          # start + open web
+bun run lint         # expo lint
+bun run build:web    # static web export to dist/ (used by Vercel, see vercel.json)
+bun run catalog:review  # promote user-submitted pending exercises into the catalog
+bun run catalog:seed    # write tools/catalog/catalog-seed.json to Firestore (--apply)
 ```
 
 ## Architecture

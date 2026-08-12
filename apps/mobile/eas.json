@@ -8,6 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "bun": "1.3.14",
       "env": {
         "APP_VARIANT": "development"
       }
@@ -18,11 +19,13 @@
       "android": {
         "buildType": "apk"
       },
-      "channel": "preview"
+      "channel": "preview",
+      "bun": "1.3.14"
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "bun": "1.3.14"
     }
   },
   "submit": {

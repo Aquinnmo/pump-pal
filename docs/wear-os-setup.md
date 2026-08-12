@@ -141,9 +141,9 @@ Includes `apps/mobile/src/lib/wear-state.ts`, `apps/mobile/src/lib/wear-sync.and
 no rebuild, no reinstall:
 
 ```bash
-npm run test:wear-state      # the shared set/dial logic
-npm run test:up-next         # the Up Next priority chain
-npm run lint
+bun run test:wear-state      # the shared set/dial logic
+bun run test:up-next         # the Up Next priority chain
+bun run lint
 
 npx eas update --branch preview --message "what changed"
 ```
@@ -218,8 +218,8 @@ build you are about to hand out.
 ## Publishing a preview build
 
 ```bash
-npm run lint
-npm run test:wear-state && npm run test:up-next
+bun run lint
+bun run test:wear-state && bun run test:up-next
 
 npx eas build --profile preview --platform android
 ```

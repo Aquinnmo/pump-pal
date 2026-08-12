@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const RUNNER = join(dirname(fileURLToPath(import.meta.url)), '_load-model.ts');
 
 function tryLoad(env: Record<string, string | undefined>) {
-  const result = spawnSync('npx', ['tsx', RUNNER], {
+  const result = spawnSync(process.execPath, [RUNNER], {
     encoding: 'utf8',
     env: { ...process.env, ...env },
   });

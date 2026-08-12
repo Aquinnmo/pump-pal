@@ -7,21 +7,21 @@
     "packages/*"
   ],
   "scripts": {
-    "start": "npm -w @timber/mobile run start",
-    "android": "npm -w @timber/mobile run android",
-    "ios": "npm -w @timber/mobile run ios",
-    "web": "npm -w @timber/mobile run web",
-    "lint": "npm -w @timber/mobile run lint",
-    "build:web": "npm -w @timber/mobile run build:web",
-    "install:apple": "npm -w @timber/mobile run install:apple",
-    "dev:android": "npm -w @timber/mobile run dev:android",
-    "install:android": "npm -w @timber/mobile run install:android",
-    "test": "npm run -s test:contract && npm run -s test:api && npm run -s test:mobile && npm run -s test:tools",
-    "typecheck": "npm -w @timber/contract run -s typecheck && npm -w @timber/api run -s typecheck && npm -w @timber/mobile run -s typecheck",
-    "test:contract": "npm -w @timber/contract run -s test",
-    "test:api": "npm -w @timber/api run -s test",
-    "test:mobile": "npm -w @timber/mobile run -s test",
-    "test:tools": "npm run -s test:boundary-isolation && npm run -s test:web-native-deps && npm run -s test:catalog-tools",
+    "start": "cd apps/mobile && bun run start",
+    "android": "cd apps/mobile && bun run android",
+    "ios": "cd apps/mobile && bun run ios",
+    "web": "cd apps/mobile && bun run web",
+    "lint": "cd apps/mobile && bun run lint",
+    "build:web": "cd apps/mobile && bun run build:web",
+    "install:apple": "cd apps/mobile && bun run install:apple",
+    "dev:android": "cd apps/mobile && bun run dev:android",
+    "install:android": "cd apps/mobile && bun run install:android",
+    "test": "bun run --silent test:contract && bun run --silent test:api && bun run --silent test:mobile && bun run --silent test:tools",
+    "typecheck": "cd packages/contract && bun run --silent typecheck && cd ../../apps/api && bun run --silent typecheck && cd ../mobile && bun run --silent typecheck",
+    "test:contract": "cd packages/contract && bun run --silent test",
+    "test:api": "cd apps/api && bun run --silent test",
+    "test:mobile": "cd apps/mobile && bun run --silent test",
+    "test:tools": "bun run --silent test:boundary-isolation && bun run --silent test:web-native-deps && bun run --silent test:catalog-tools",
     "test:boundary-isolation": "node tools/check-boundary-isolation.js",
     "test:web-native-deps": "node tools/check-web-native-deps.js",
     "test:catalog-tools": "node tools/catalog/canonical-muscles.test.js && node tools/catalog/catalog-seed.test.js && node tools/catalog/review-pending-exercises.test.js",
@@ -33,7 +33,6 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "sharp": "^0.35.3",
-    "tsx": "^4.23.4",
     "typescript": "~6.0.3"
   },
   "overrides": {
@@ -42,5 +41,11 @@
     "js-yaml": "^4.3.1",
     "minimatch": "^10.2.3",
     "undici": "^6.28.0"
-  }
+  },
+  "trustedDependencies": [
+    "@firebase/util",
+    "esbuild",
+    "protobufjs",
+    "unrs-resolver"
+  ]
 }

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from './migrate';
-import { SqlExecutor } from './executor';
+import { openTestDb } from './test-executor';
 import * as workouts from './workouts';
 import { claimPending, listAll as listOutbox } from './outbox';
 import {
@@ -13,38 +12,8 @@ import {
   SyncRateLimitError,
 } from './sync-engine';
 
-function toExecutor(db: DatabaseSync): SqlExecutor {
-  return {
-    async execAsync(sql) {
-      db.exec(sql);
-    },
-    async runAsync(sql, params = []) {
-      const result = db.prepare(sql).run(...(params as never[]));
-      return { changes: Number(result.changes) };
-    },
-    async getAllAsync<T>(sql: string, params: unknown[] = []) {
-      return db.prepare(sql).all(...(params as never[])) as T[];
-    },
-    async getFirstAsync<T>(sql: string, params: unknown[] = []) {
-      const row = db.prepare(sql).get(...(params as never[]));
-      return (row ?? null) as T | null;
-    },
-    async withTransactionAsync(task) {
-      db.exec('BEGIN');
-      try {
-        await task();
-        db.exec('COMMIT');
-      } catch (err) {
-        db.exec('ROLLBACK');
-        throw err;
-      }
-    },
-  };
-}
-
 async function freshDb() {
-  const raw = new DatabaseSync(':memory:');
-  const db = toExecutor(raw);
+  const { db } = openTestDb();
   await runMigrations(db);
   return db;
 }

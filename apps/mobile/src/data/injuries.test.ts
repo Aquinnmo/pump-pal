@@ -1,23 +1,11 @@
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { runMigrations } from './migrate';
-import { SqlExecutor } from './executor';
+import { openTestDb } from './test-executor';
 import * as injuries from './injuries';
 import { listAll } from './outbox';
 
-function executor(raw: DatabaseSync): SqlExecutor {
-  return {
-    async execAsync(sql: string) { raw.exec(sql); },
-    async runAsync(sql: string, params: unknown[] = []) { const result = raw.prepare(sql).run(...(params as never[])); return { changes: Number(result.changes) }; },
-    async getAllAsync<T>(sql: string, params: unknown[] = []) { return raw.prepare(sql).all(...(params as never[])) as T[]; },
-    async getFirstAsync<T>(sql: string, params: unknown[] = []) { return (raw.prepare(sql).get(...(params as never[])) ?? null) as T | null; },
-    async withTransactionAsync(task) { raw.exec('BEGIN'); try { await task(); raw.exec('COMMIT'); } catch (error) { raw.exec('ROLLBACK'); throw error; } },
-  };
-}
-
 async function main() {
-  const raw = new DatabaseSync(':memory:');
-  const db = executor(raw);
+  const { raw, db } = openTestDb();
   await runMigrations(db);
   const injury = { id: 'injury-1', bodyPart: 'shoulder' as const, severity: 'moderate' as const, status: 'ongoing' as const, onsetDate: '2026-01-01T00:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' };
   await injuries.create(db, 'uid-a', injury);

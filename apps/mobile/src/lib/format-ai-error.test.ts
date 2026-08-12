@@ -43,6 +43,19 @@ assert.equal(formatAIError(nonEnumerable), 'Object(code=ENOTFOUND)');
 const coded = Object.assign(new Error(''), { code: 'ECONNREFUSED' });
 assert.equal(formatAIError(coded), 'Error(message=, code=ECONNREFUSED)');
 
+// Source-location fields are dropped whoever attached them. JavaScriptCore puts
+// these on every Error as non-enumerable own properties, so without the skip the
+// assertion above renders five extra fields under bun and none under Node.
+const located = Object.assign(new Error(''), {
+  code: 'EHOSTDOWN',
+  line: 43,
+  column: 33,
+  sourceURL: '/tmp/x.ts',
+  originalLine: 32,
+  originalColumn: 34,
+});
+assert.equal(formatAIError(located), 'Error(message=, code=EHOSTDOWN)');
+
 // A bare object has nothing to report but must not claim to be "[object Object]".
 assert.equal(formatAIError({}), 'Object');
 

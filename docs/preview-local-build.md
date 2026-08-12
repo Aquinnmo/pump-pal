@@ -174,7 +174,7 @@ before the build command.
 - Local builds still archive **git HEAD**. Uncommitted work is excluded — commit
   first, or set `EAS_NO_VCS=1` to build straight from the working directory
   (`.gitignore` is still honoured, so `.env`, `android/`, `ios/` stay out).
-- The `android/` and `ios/` folders left over from `npm run development:android`
+- The `android/` and `ios/` folders left over from `bun run dev:android`
   are gitignored and irrelevant here: EAS prebuilds into its own temp directory.
   No need to delete them.
 - If cloning fails with `active core.hooksPath found ... disallowed by default`

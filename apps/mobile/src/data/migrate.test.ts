@@ -1,49 +1,16 @@
-// Exercises the real schema SQL against node's built-in SQLite (node:sqlite,
-// stable on the Node version this repo targets) instead of a mock — the same
-// CREATE TABLE/PRAGMA statements expo-sqlite runs on-device, so this test
-// genuinely covers "fresh install", "restart-safe", "rollback on failure",
-// and "uid isolation", not just call-counting.
+// Exercises the real schema SQL against bun's built-in SQLite (bun:sqlite —
+// bun does not implement node:sqlite) instead of a mock — the same CREATE
+// TABLE/PRAGMA statements expo-sqlite runs on-device, so this test genuinely
+// covers "fresh install", "restart-safe", "rollback on failure", and "uid
+// isolation", not just call-counting.
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
 import { Migration, MIGRATIONS, CURRENT_SCHEMA_VERSION, UID_SCOPED_TABLES } from './schema';
 import { runMigrations } from './migrate';
 import { purgeUid } from './purge';
-import { SqlExecutor } from './executor';
-
-// Adapts node:sqlite's synchronous DatabaseSync to the async SqlExecutor
-// interface src/data/migrate.ts and src/data/purge.ts are written against.
-function toExecutor(db: DatabaseSync): SqlExecutor {
-  return {
-    async execAsync(sql) {
-      db.exec(sql);
-    },
-    async runAsync(sql, params = []) {
-      const result = db.prepare(sql).run(...(params as never[]));
-      return { changes: Number(result.changes) };
-    },
-    async getAllAsync<T>(sql: string, params: unknown[] = []) {
-      return db.prepare(sql).all(...(params as never[])) as T[];
-    },
-    async getFirstAsync<T>(sql: string, params: unknown[] = []) {
-      const row = db.prepare(sql).get(...(params as never[]));
-      return (row ?? null) as T | null;
-    },
-    async withTransactionAsync(task) {
-      db.exec('BEGIN');
-      try {
-        await task();
-        db.exec('COMMIT');
-      } catch (err) {
-        db.exec('ROLLBACK');
-        throw err;
-      }
-    },
-  };
-}
+import { openTestDb } from './test-executor';
 
 function freshDb() {
-  const raw = new DatabaseSync(':memory:');
-  return { raw, db: toExecutor(raw) };
+  return openTestDb();
 }
 
 async function main() {

@@ -15,7 +15,8 @@ Use homebrew to install what you need to make it easy.
 ### Dependencies:
 
 1. [XCode](https://developer.apple.com/xcode/) (download from the app store)
-2. Node (install via `brew install node` if homebrew is installed or visit [here](https://nodejs.org/en/download))
+2. Node (install via `brew install node` if homebrew is installed or visit [here](https://nodejs.org/en/download)) — Xcode's React Native build phase still shells out to `node` directly, independent of the package manager
+3. Bun (install via `brew install bun` if homebrew is installed or visit [here](https://bun.sh))
 
 ## Installation:
 
@@ -24,8 +25,8 @@ Use homebrew to install what you need to make it easy.
 3. run the following commands:
 
 ```bash
-npm install
-npx expo run:ios --device --configuration Release
+bun install
+bunx expo run:ios --device --configuration Release
 ```
 
 You will have approx 7 days until Apple invalidates the app credentials and you have to reinstall.
@@ -33,6 +34,6 @@ You will have approx 7 days until Apple invalidates the app credentials and you 
 To renistall the latest version after the initial setup, just run
 
 ```bash
-npm run install:apple
+bun run install:apple
 
 ```

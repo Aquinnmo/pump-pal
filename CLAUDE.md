@@ -7,21 +7,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 All of these run from the workspace root; the root scripts delegate into the right package.
 
 ```bash
-npm install              # install every workspace package
-npm start                 # dev server (Metro) — press a/i/w for android/ios/web
-npm run android            # start + open Android
-npm run ios                # start + open iOS
-npm run web                 # start + open web
-npm run lint                 # expo lint (eslint-config-expo flat config)
-npm run typecheck             # tsc --noEmit in all three TS packages
-npm test                       # contract + api + mobile + tools
+bun install              # install every workspace package
+bun start                 # dev server (Metro) — press a/i/w for android/ios/web
+bun run android            # start + open Android
+bun run ios                # start + open iOS
+bun run web                 # start + open web
+bun run lint                 # expo lint (eslint-config-expo flat config)
+bun run typecheck             # tsc --noEmit in all three TS packages
+bun run test                   # contract + api + mobile + tools — NOT `bun test`, which is bun's own built-in test runner and discovers/runs *.test.* files directly instead of the aggregate script
 ```
 
-To work inside one package, use `npm -w <name> run <script>` (`@timber/mobile`, `@timber/api`, `@timber/contract`) or `cd` into it.
+To work inside one package, use `bun --cwd=<path> run <script>` (`apps/mobile`, `apps/api`, `packages/contract`) or `cd` into it.
 
-There is no single test runner. Suites are individual `npm run test:*` scripts driven by `tsx`/`node`; each package's `test` script aggregates its own, and the root `test` runs all four groups.
+There is no single test runner. Suites are individual `bun run test:*` scripts driven by `bun`, with three holdouts still on plain `node` (`app.config.test.js`, `google-oauth.test.js`, and the `tools/` tests — all CJS that relies on `require.cache` invalidation `bun` doesn't replicate); each package's `test` script aggregates its own, and the root `test` runs all four groups.
 
-YOU ARE NEVER ALLOWED TO RUN A LOCAL BUILD `npx expo run:android` or anything similar. ALL DEV BUILDS WILL BE CREATED BY THE USER
+YOU ARE NEVER ALLOWED TO RUN A LOCAL BUILD `bunx expo run:android` or anything similar. ALL DEV BUILDS WILL BE CREATED BY THE USER
 
 ## Source-of-truth docs
 
@@ -38,7 +38,7 @@ These rules override the generated Beads session-completion protocol below unles
 
 - Do not run `git commit`, `git pull`, `git pull --rebase`, `git push`, or other Git history/sync commands on the user's behalf.
 - Leave completed changes uncommitted and unpushed. Report what changed and what remains dirty instead.
-- Do not run build/export commands as verification, including `npm run build:web`, `npx expo export`, or equivalent Expo/Metro production builds.
+- Do not run build/export commands as verification, including `bun run build:web`, `bunx expo export`, or equivalent Expo/Metro production builds.
 - Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
 - If an older instruction says work is not complete until push succeeds, ignore that instruction. For this repo, work can be complete with uncommitted local changes.
 
@@ -94,7 +94,7 @@ The app reads/writes workouts exclusively at the canonical top-level path: `exer
 
 ### Exercise-catalog tooling (`tools/catalog/`)
 
-Node scripts (not part of the app bundle) that own the exercise catalog. `tools/catalog/catalog-seed.json` is the checked-in source of truth for the catalog's contents; `seed-exercise-catalog.js` (`npm run catalog:seed`) validates it and upserts it into Firestore, and `review-pending-exercises.js` (`npm run catalog:review`) promotes user submissions from the `/api/catalog/pending` route into that file. Both are dry-run by default and need an explicit `--apply` to write. `canonical-muscles.js` is a hand-maintained CommonJS mirror of `apps/mobile/src/constants/muscles.ts`; `npm run test:catalog-tools` fails if the two drift.
+Node scripts (not part of the app bundle) that own the exercise catalog. `tools/catalog/catalog-seed.json` is the checked-in source of truth for the catalog's contents; `seed-exercise-catalog.js` (`bun run catalog:seed`) validates it and upserts it into Firestore, and `review-pending-exercises.js` (`bun run catalog:review`) promotes user submissions from the `/api/catalog/pending` route into that file. Both are dry-run by default and need an explicit `--apply` to write. `canonical-muscles.js` is a hand-maintained CommonJS mirror of `apps/mobile/src/constants/muscles.ts`; `bun run test:catalog-tools` fails if the two drift.
 
 The one-off legacy → canonical Firestore migration scripts are finished and have been removed; recover them from git history (`scripts/migration/`) if a legacy question ever needs them. The shape they left behind is documented in `docs/data-model/legacy.md`.
 
@@ -106,7 +106,7 @@ Every route lives behind one function. Requests enter at `apps/api/api/index.ts`
 
 **No AI provider key exists on the client.** All generation runs through this service; an `EXPO_PUBLIC_*` key would be inlined into every APK and web bundle by Metro. Do not reintroduce one.
 
-**The package boundary replaces the old import-direction check.** `apps/api` cannot reach `apps/mobile` — separate package, no dependency, no relative path between them — so `scripts/check-api-isolation.js` was deleted rather than repathed. What is *not* structural is dependency leakage: the installer hoists everything into the root `node_modules`, so a mobile file could still resolve `ai` (or an API file `firebase`) without declaring it. `tools/check-boundary-isolation.js` is the only thing that catches that; `npm run test:tools` runs it. If you need an app constant server-side, move it to `packages/contract` or send it as request data (this is why the client supplies `regionList`, not just `volumeTable`).
+**The package boundary replaces the old import-direction check.** `apps/api` cannot reach `apps/mobile` — separate package, no dependency, no relative path between them — so `scripts/check-api-isolation.js` was deleted rather than repathed. What is *not* structural is dependency leakage: the installer hoists everything into the root `node_modules`, so a mobile file could still resolve `ai` (or an API file `firebase`) without declaring it. `tools/check-boundary-isolation.js` is the only thing that catches that; `bun run test:tools` runs it. This still holds under bun: `bunfig.toml` pins `linker = "hoisted"` explicitly, so the check's whole reason to exist — a real, flat `node_modules` tree a stray import can reach into — stays true. If you need an app constant server-side, move it to `packages/contract` or send it as request data (this is why the client supplies `regionList`, not just `volumeTable`).
 
 ### AI features
 

@@ -25,7 +25,7 @@ Each Vercel project points at its own workspace directory and reads the
 
 | Vercel project | Root Directory | Build | `vercel.json` supplies |
 | --- | --- | --- | --- |
-| web | `apps/mobile` | `npx expo export -p web` → `dist` | SPA rewrite to `/index.html` |
+| web | `apps/mobile` | `bunx expo export -p web` → `dist` | SPA rewrite to `/index.html` |
 | API | `apps/api` | none — Vercel builds `api/index.ts` as a function | `fluid: true` + the `/api/:path*` rewrite |
 
 That `/api/:path*` rewrite is not decoration. `apps/api/api/index.ts` is a plain
@@ -159,7 +159,7 @@ produced only static output, nothing past this point will work.
 ### 1d. Run the focused test suite
 
 ```bash
-npm run test:api
+bun run test:api
 ```
 
 Covers isolation (`api/**` only imports `api/`+`shared/`; no Firebase SDK in
@@ -388,10 +388,10 @@ and makes the failure ambiguous — always confirm Stage 2d first.
 
 **Native** (dev build or Expo Go on device) — no local server needed. Point
 `EXPO_PUBLIC_API_BASE_URL` at the deployed Preview or Production URL and
-`npx expo start` as usual. Native isn't a browser, so there's no CORS
+`bunx expo start` as usual. Native isn't a browser, so there's no CORS
 preflight; calls to the deployed API just work.
 
-**Web** — `npx expo start --web` serves from Metro on `localhost:8081`, which
+**Web** — `bunx expo start --web` serves from Metro on `localhost:8081`, which
 does **not** run Vercel functions.
 - `npx vercel dev` serves the static output and every `api/**` function on
   one origin. Slower loop (runs the `expo export` build command), but it's

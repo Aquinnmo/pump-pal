@@ -7,6 +7,22 @@
  */
 
 /**
+ * Where the error happened, not what it was — noise in a one-line rendering.
+ * `stack` is V8/Hermes; the other five are JavaScriptCore's source-location
+ * fields, which it attaches as non-enumerable own properties to *every* Error.
+ * Since the scan below deliberately reads non-enumerable properties, an engine
+ * change alone would otherwise add five junk fields to every message.
+ */
+const STACK_FIELDS = new Set([
+  'stack',
+  'line',
+  'column',
+  'sourceURL',
+  'originalLine',
+  'originalColumn',
+]);
+
+/**
  * Best-effort one-line rendering of an unknown thrown value.
  *
  * `String(value)` on a plain object yields "[object Object]" and
@@ -41,7 +57,7 @@ export function describeError(value: unknown): string {
 
   const fields: string[] = [];
   for (const key of Object.getOwnPropertyNames(obj)) {
-    if (key === 'stack') continue;
+    if (STACK_FIELDS.has(key)) continue;
     let rendered: string;
     try {
       const field = obj[key];

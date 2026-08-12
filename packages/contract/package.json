@@ -10,7 +10,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "tsx src/api-contract.test.ts"
+    "test": "bun src/api-contract.test.ts"
   },
   "dependencies": {
     "zod": "^4.4.3"
