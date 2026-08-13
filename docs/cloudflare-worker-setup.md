@@ -78,29 +78,46 @@ The repository defines two deployment targets in
 | `preview` | `timber-api-preview` | `timber-api-preview.adam-montgomery.ca` |
 | `production` | `timber-api` | `timber-api.adam-montgomery.ca` |
 
-For each environment, add the following as Worker variables in the Cloudflare
-dashboard. Keep preview and production Firebase projects and credentials
-separate where possible.
+Non-secret variables live in `[env.<name>.vars]` in
+[`apps/api/wrangler.toml`](../apps/api/wrangler.toml), not in the dashboard:
 
 ```text
 API_ALLOWED_ORIGINS
 AI_PROVIDER
 AI_MODEL
+FIREBASE_PROJECT_ID
 FIREBASE_PROJECT_NUMBER
 APP_CHECK_ALLOWED_APP_IDS
 APP_CHECK_MODE
 ```
 
+**Do not set these in the dashboard.** `wrangler deploy` treats `wrangler.toml`
+as the source of truth for plaintext vars and deletes any the dashboard has
+that the file does not, so a dashboard-only var vanishes on the next deploy —
+and the Worker then 500s on the first request that needs it. Edit the file and
+redeploy instead. None of these are secrets; they already ship in the client
+bundle.
+
+Always deploy with an explicit `--env`. A bare `wrangler deploy` targets the
+top-level `name`, which is also the production Worker, with no vars at all.
+
+Keep preview and production Firebase projects and credentials separate where
+possible.
+
 Set secrets with Wrangler. Run these commands once per environment, using the
 appropriate value when prompted:
 
 ```bash
-bunx wrangler --config apps/api/wrangler.toml secret put FIREBASE_PROJECT_ID --env preview
 bunx wrangler --config apps/api/wrangler.toml secret put FIREBASE_CLIENT_EMAIL --env preview
 bunx wrangler --config apps/api/wrangler.toml secret put FIREBASE_PRIVATE_KEY --env preview
 bunx wrangler --config apps/api/wrangler.toml secret put GEMINI_API_KEY --env preview
 # Or use OPENAI_API_KEY instead of GEMINI_API_KEY.
 ```
+
+`FIREBASE_PROJECT_ID` is intentionally not here — it is a plaintext var above.
+Secrets survive `wrangler deploy`; plaintext vars only survive if they are in
+`wrangler.toml`. Verify with `wrangler secret list --env preview`, which lists
+secret names only (plaintext vars never appear there).
 
 Repeat with `--env production` for the production Worker. Secret names that
 are not used by the selected provider do not need to be created.

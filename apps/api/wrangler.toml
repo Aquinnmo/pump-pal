@@ -3,12 +3,44 @@ main = "src/worker.ts"
 compatibility_date = "2026-08-11"
 workers_dev = true
 
-# Human-gated deployment targets. Set secrets with `wrangler secret put`;
-# never place service-account or AI credentials in this file or git.
 [env.preview]
 name = "timber-api-preview"
 routes = [{ pattern = "timber-api-preview.adam-montgomery.ca", custom_domain = true }]
 
+[env.preview.vars]
+API_ALLOWED_ORIGINS = "https://timber-preview.adam-montgomery.ca,https://timber.adam-montgomery.ca,http://localhost:8081"
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-5.6-luna"
+FIREBASE_PROJECT_ID = "pumppal-c9199"
+FIREBASE_PROJECT_NUMBER = "631531267876"
+APP_CHECK_ALLOWED_APP_IDS = "1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1"
+APP_CHECK_MODE = "monitor"
+
 [env.production]
 name = "timber-api"
 routes = [{ pattern = "timber-api.adam-montgomery.ca", custom_domain = true }]
+
+[env.production.vars]
+API_ALLOWED_ORIGINS = "https://timber.adam-montgomery.ca"
+AI_PROVIDER = "openai"
+AI_MODEL = "gpt-5.6-luna"
+FIREBASE_PROJECT_ID = "pumppal-c9199"
+FIREBASE_PROJECT_NUMBER = "631531267876"
+APP_CHECK_ALLOWED_APP_IDS = "1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1"
+APP_CHECK_MODE = "monitor"
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
+
