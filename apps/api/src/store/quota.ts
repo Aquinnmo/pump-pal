@@ -84,7 +84,7 @@ export async function consumeQuota(uid: string): Promise<number> {
 
 /**
  * Gives back a claimed call after the generation itself failed — the user
- * shouldn't lose one of three daily uses to a provider outage.
+ * shouldn't lose one daily use to a provider outage.
  *
  * Only refunds within the same UTC day: if the date rolled over between the
  * claim and the failure, the counter has already reset and decrementing it

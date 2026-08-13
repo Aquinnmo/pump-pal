@@ -145,8 +145,8 @@ Two corollaries worth applying by reflex:
 Stated openly rather than pretending the product is coherent. These are real and
 current.
 
-- **AI rationing fights the thesis.** `TEMPORARY_AI_DAILY_LIMIT = 3`
-  (`apps/mobile/src/constants/ai-config.ts:11`) is a cost lever that directly rations the insight
+- **AI rationing fights the thesis.** `TEMPORARY_AI_DAILY_LIMIT = 7`
+  (`packages/contract/src/ai-contract.ts:14`) is a cost lever that directly rations the insight
   half of the product. It is named "temporary" for a reason. The UI at least
   exposes the meter honestly rather than failing silently
   (`Balance Workout with AI (2 left)`).

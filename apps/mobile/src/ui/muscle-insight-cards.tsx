@@ -1,16 +1,16 @@
 import { useAuth } from "@/context/auth-context";
-import { Workout } from "@/types/workout";
 import { AIQuotaError, formatAIError } from "@/lib/ai-client";
-import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
-import { useAIQuota } from "@/lib/use-ai-quota";
 import {
   analyzeMuscles,
   MuscleInsights,
   normalizeMuscleInsights,
 } from "@/lib/muscle-analysis";
+import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
+import { useAIQuota } from "@/lib/use-ai-quota";
+import { Workout } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -24,12 +24,7 @@ interface Props {
 }
 
 interface InsightsCache {
-  date: string;
   insights: MuscleInsights;
-}
-
-function todayKey(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 export function MuscleInsightCards({ workouts }: Props) {
@@ -43,37 +38,44 @@ export function MuscleInsightCards({ workouts }: Props) {
   // source for the meter — a per-card local tally drifts the moment the user
   // spends a use in the workout builder.
   const { usesLeft, setUsesLeft } = useAIQuota();
-  const hasLoadedRef = useRef(false);
-
   const cacheKey = user ? `muscle_insights_${user.uid}` : null;
 
-  const runAnalysis = async (force = false) => {
+  useEffect(() => {
+    if (workouts.length === 0 || !cacheKey) return;
+
+    let cancelled = false;
+    AsyncStorage.getItem(cacheKey)
+      .then((raw) => {
+        if (cancelled || !raw) return;
+        const cached: InsightsCache = JSON.parse(raw);
+        setInsights(
+          (current) => current ?? normalizeMuscleInsights(cached.insights),
+        );
+      })
+      .catch((caughtError) => {
+        console.error("Could not load cached AI muscle insights:", caughtError);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cacheKey, workouts.length]);
+
+  const runAnalysis = async () => {
     if (workouts.length === 0 || !cacheKey) return;
     setLoading(true);
     setError(null);
     setQuotaExhausted(false);
     try {
-      if (!force) {
-        const raw = await AsyncStorage.getItem(cacheKey);
-        if (raw) {
-          const cached: InsightsCache = JSON.parse(raw);
-          if (cached.date === todayKey() || !aiAvailable) {
-            setInsights(normalizeMuscleInsights(cached.insights));
-            return;
-          }
-        }
-      }
-
       if (!aiAvailable) {
-        setError('AI needs a connection. Cached insights remain available.');
+        setError("AI needs a connection. Cached insights remain available.");
         return;
       }
 
       const { insights: result, remaining } = await analyzeMuscles(workouts);
-      // The auto-run spends a use too, so reflect the server's count either way.
       if (remaining != null) setUsesLeft(remaining);
       setInsights(result);
-      const payload: InsightsCache = { date: todayKey(), insights: result };
+      const payload: InsightsCache = { insights: result };
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (caughtError) {
       if (caughtError instanceof AIQuotaError) {
@@ -95,25 +97,15 @@ export function MuscleInsightCards({ workouts }: Props) {
 
   const handleManualRefresh = () => {
     if (!aiAvailable || usesLeft <= 0 || loading) return;
-    runAnalysis(true);
+    runAnalysis();
   };
-
-  useEffect(() => {
-    if (workouts.length > 0 && cacheKey && !hasLoadedRef.current) {
-      hasLoadedRef.current = true;
-      runAnalysis();
-    }
-    // The initial analysis is intentionally keyed to the user and workout availability.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workouts.length, cacheKey]);
 
   if (workouts.length === 0) return null;
 
   const refreshDisabled = usesLeft <= 0 || !aiAvailable;
-  const refreshLabel =
-    !aiAvailable
-      ? 'AI needs a connection'
-      : usesLeft > 0
+  const refreshLabel = !aiAvailable
+    ? "AI needs a connection"
+    : usesLeft > 0
       ? `Refresh · ${usesLeft} left`
       : "Daily limit reached";
 
@@ -132,10 +124,10 @@ export function MuscleInsightCards({ workouts }: Props) {
             accessibilityRole="button"
             accessibilityLabel={
               !aiAvailable
-                ? 'AI needs a connection. Cached insights remain available.'
+                ? "AI needs a connection. Cached insights remain available."
                 : usesLeft > 0
-                ? `Refresh AI muscle insights. ${usesLeft} AI uses left today.`
-                : "No AI uses left today."
+                  ? `Refresh AI muscle insights. ${usesLeft} AI uses left today.`
+                  : "No AI uses left today."
             }
             accessibilityState={{ disabled: refreshDisabled }}
             style={({ pressed }) => [
@@ -201,7 +193,7 @@ export function MuscleInsightCards({ workouts }: Props) {
             styles.errorPanel,
             pressed && styles.buttonPressed,
           ]}
-          onPress={() => runAnalysis(true)}
+          onPress={handleManualRefresh}
         >
           <Ionicons name="alert-circle-outline" size={24} color="#e54242" />
           <View style={styles.statusCopy}>
@@ -251,7 +243,47 @@ export function MuscleInsightCards({ workouts }: Props) {
             />
           </View>
         )
-      ) : null}
+      ) : (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            !aiAvailable
+              ? "AI needs a connection to analyze muscle fatigue."
+              : usesLeft > 0
+                ? `Analyze muscle fatigue. ${usesLeft} AI credits left today.`
+                : "No AI uses left today."
+          }
+          accessibilityState={{ disabled: refreshDisabled }}
+          style={({ pressed }) => [
+            styles.analyzePrompt,
+            refreshDisabled && styles.analyzePromptDisabled,
+            pressed && !refreshDisabled && styles.buttonPressed,
+          ]}
+          onPress={handleManualRefresh}
+          disabled={refreshDisabled}
+        >
+          <Ionicons
+            name="analytics-outline"
+            size={24}
+            color={refreshDisabled ? "#666" : "#e54242"}
+          />
+          <View style={styles.statusCopy}>
+            <Text style={styles.statusTitle}>Analyze your muscle fatigue</Text>
+            <Text style={styles.statusText} selectable>
+              {!aiAvailable
+                ? "AI needs a connection."
+                : usesLeft > 0
+                  ? `Review the past 30 days · 1 credit (${usesLeft} left)`
+                  : "No AI uses left today."}
+            </Text>
+          </View>
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color={refreshDisabled ? "#666" : "#888"}
+          />
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -369,6 +401,21 @@ const styles = StyleSheet.create({
   },
   refreshButtonTextDisabled: {
     color: "#777",
+  },
+  analyzePrompt: {
+    minHeight: 96,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 14,
+    borderCurve: "continuous",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    backgroundColor: "#1c1c1c",
+    padding: 16,
+    gap: 12,
+  },
+  analyzePromptDisabled: {
+    backgroundColor: "#151515",
   },
   buttonPressed: {
     opacity: 0.72,

@@ -11,7 +11,7 @@ import { z } from 'zod';
  */
 
 export const AI_MAX_RETRIES = 2;
-export const TEMPORARY_AI_DAILY_LIMIT = 3;
+export const TEMPORARY_AI_DAILY_LIMIT = 7;
 
 /**
  * Input validation at the trust boundary. Every field is a bounded string —
