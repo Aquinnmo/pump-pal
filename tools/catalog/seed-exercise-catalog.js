@@ -162,6 +162,12 @@ function buildExerciseDocument(exercise, now) {
   return {
     ...exercise,
     schemaVersion: 2,
+    // Required, not cosmetic: firestore.rules gates catalog reads on
+    // `resource.data.status == 'approved'`, and a Firestore equality check never
+    // matches a document that is missing the field. A seeded exercise without an
+    // explicit status is invisible to every client. Entries promoted by
+    // review-pending-exercises.js already carry their own value.
+    status: exercise.status ?? 'approved',
     updatedAt: now,
   };
 }
@@ -242,6 +248,7 @@ if (require.main === module) {
 module.exports = {
   seedExerciseCatalog,
   validateCatalog,
+  buildExerciseDocument,
   firestoreTimestamp,
   jsToFirestoreValue,
   jsObjectToFirestoreFields,

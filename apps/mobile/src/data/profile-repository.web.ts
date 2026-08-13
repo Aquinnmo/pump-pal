@@ -7,7 +7,7 @@
 // repository instead.
 import { LocalSingletonRepository, StoredRecord } from '@/data/remote-types';
 import { createVersionCache } from '@/data/version-cache';
-import { webFirestore } from './web-direct-firestore';
+import { invalidateWebReads, readWebProfile, webFirestore } from './web-direct-firestore';
 import { UserDoc } from '@/types/user';
 import { ProfileDTO } from '@timber/contract/api';
 
@@ -35,7 +35,7 @@ function toStoredRecord(dto: ProfileDTO): StoredRecord<UserDoc> {
 
 export const profileRepository: LocalSingletonRepository<UserDoc> = {
   async get(uid: string): Promise<StoredRecord<UserDoc> | null> {
-    const profile = await webFirestore(uid).profile.get();
+    const profile = await readWebProfile(uid);
     return profile ? toStoredRecord(profile.data) : null;
   },
 
@@ -45,5 +45,6 @@ export const profileRepository: LocalSingletonRepository<UserDoc> = {
       { workoutSplit: { type: entity.workoutSplit.type, custom: entity.workoutSplit.custom } }, versions.get(SINGLETON_ID) ?? null
     )).data;
     toStoredRecord(dto);
+    invalidateWebReads();
   },
 };

@@ -4,7 +4,7 @@
 // SQLite here: every call is a live direct Firestore REST request.
 import { StoredRecord } from '@/data/remote-types';
 import { createVersionCache } from '@/data/version-cache';
-import { listWebEntities, webFirestore } from './web-direct-firestore';
+import { invalidateWebReads, listWebEntities, webFirestore } from './web-direct-firestore';
 import { Workout, WorkoutStatus } from '@/types/workout';
 import { WorkoutDTO } from '@timber/contract/api';
 import { toDateObj } from '@/lib/workout-conversion';
@@ -82,17 +82,20 @@ export const workoutRepository = {
     const id = randomId(); // same client-supplied-id pattern as native, and the contract's idempotent-retry mechanism
     const dto = (await webFirestore(uid).workouts.create({ ...workout, id, userId: uid, schemaVersion: 2 }, id)).data;
     toStoredRecord(uid, dto);
+    invalidateWebReads();
     return id;
   },
 
   async update(uid: string, id: string, workout: Workout): Promise<void> {
     const dto = (await webFirestore(uid).workouts.update(id, workout, versions.require(id, ENTITY_TYPE))).data;
     toStoredRecord(uid, dto);
+    invalidateWebReads();
   },
 
   async softDelete(uid: string, id: string): Promise<void> {
     await webFirestore(uid).workouts.delete(id, versions.require(id, ENTITY_TYPE));
     versions.delete(id);
+    invalidateWebReads();
   },
 
   async reorderQueue(_uid: string, orderedIds: string[]): Promise<void> {
