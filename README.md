@@ -5,7 +5,7 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 ## Setup
 
 > Setting up a Mac from scratch to run this on an iPhone? Use
-> **[IOS_NON_DEVELOPERS.md](IOS_NON_DEVELOPERS.md)** instead — Xcode plus
+> **[IOS_LOCAL_PREVIEW.md](IOS_LOCAL_PREVIEW.md)** instead — Xcode plus
 > `bunx expo run:ios --device --configuration Release`. After that,
 > `bun run install:apple` updates the repo and reinstalls a standalone copy on
 > the connected iPhone.
