@@ -27,6 +27,13 @@ async function main() {
   }, env);
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), 'https://timber-preview.adam-montgomery.ca');
+  // Every header the client sends must be listed, or the browser blocks the real
+  // request after this preflight succeeds — which is how X-Client-Version
+  // (apps/mobile/src/lib/api-client-core.ts) took the whole web app's API down.
+  assert.deepEqual(
+    (preflight.headers.get('Access-Control-Allow-Headers') ?? '').split(',').map((header) => header.trim()),
+    ['Content-Type', 'Authorization', 'X-Firebase-AppCheck', 'X-Client-Version']
+  );
 
   const deniedOrigin = await app.request('https://worker.example/api/buddies', {
     method: 'OPTIONS', headers: { Origin: 'https://not-allowed.example' },
@@ -35,6 +42,29 @@ async function main() {
 
   const unauthenticated = await app.request('https://worker.example/api/buddies?today=2026-08-12', undefined, env);
   assert.equal(unauthenticated.status, 401, 'all privileged routes derive uid from a verified token');
+
+  // An error must keep its CORS headers. Without them the browser refuses to
+  // read the response and reports a CORS failure, hiding the actual status and
+  // message — every thrown ApiError becomes undiagnosable from the client.
+  const unauthenticatedFromBrowser = await app.request('https://worker.example/api/buddies?today=2026-08-12', {
+    headers: { Origin: 'https://timber-preview.adam-montgomery.ca' },
+  }, env);
+  assert.equal(unauthenticatedFromBrowser.status, 401);
+  assert.equal(
+    unauthenticatedFromBrowser.headers.get('Access-Control-Allow-Origin'),
+    'https://timber-preview.adam-montgomery.ca',
+    'error responses must carry CORS headers'
+  );
+  assert.deepEqual(await unauthenticatedFromBrowser.json(), { error: 'Invalid or expired session' });
+
+  const badRequestFromBrowser = await app.request('https://worker.example/api/buddies?today=nonsense', {
+    headers: { Authorization: 'Bearer test', Origin: 'https://timber-preview.adam-montgomery.ca' },
+  }, env);
+  assert.equal(badRequestFromBrowser.status, 400);
+  assert.equal(
+    badRequestFromBrowser.headers.get('Access-Control-Allow-Origin'),
+    'https://timber-preview.adam-montgomery.ca'
+  );
 
   const invalidAi = await app.request('https://worker.example/api/ai', {
     method: 'POST', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'not-an-operation' }),

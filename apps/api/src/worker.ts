@@ -1,4 +1,5 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { buddyActionInput, chopInput, createPendingExerciseInput, localDate, profilePatchInput, sendBuddyRequestInput } from '@timber/contract/api';
 import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '@timber/contract/ai';
 import { requireUid } from './auth.js';
@@ -29,6 +30,7 @@ export type WorkerBindings = {
 };
 
 type Variables = { uid: string; requestId: string };
+type ErrorContext = Context<{ Bindings: WorkerBindings; Variables: Variables }>;
 type VerifyUid = (authorization: string | undefined) => Promise<string>;
 
 function origins(env: WorkerBindings): string[] {
@@ -39,7 +41,13 @@ function requestId(): string {
   return crypto.randomUUID();
 }
 
-function routeError(error: unknown, request?: { requestId?: string; route?: string; method?: string }): Response {
+/**
+ * Answers through the Hono context rather than a bare `Response`, because the
+ * CORS headers live on the context (staged by the middleware below). A fresh
+ * `Response.json()` drops them, and a browser then reports every 4xx as an
+ * opaque CORS failure instead of the real status and message.
+ */
+function routeError(error: unknown, context: ErrorContext): Response {
   const status = error instanceof ApiError ? error.status : (error as { status?: number }).status ?? 500;
   const code = error instanceof ApiError ? error.code : undefined;
   // Hono catches everything, so workerd never surfaces the exception itself —
@@ -47,9 +55,15 @@ function routeError(error: unknown, request?: { requestId?: string; route?: stri
   // response body below stays generic; only the server-side log gets the cause.
   if (status >= 500) {
     const { name, message, stack } = (error ?? {}) as Partial<Error>;
-    console.error('[worker] request failed', { ...request, status, name, message, stack });
+    console.error('[worker] request failed', {
+      requestId: context.get('requestId'), route: context.req.path, method: context.req.method,
+      status, name, message, stack,
+    });
   }
-  return Response.json({ error: status >= 500 ? 'Internal error' : (error as Error).message, ...(code ? { code } : {}) }, { status });
+  return context.json(
+    { error: status >= 500 ? 'Internal error' : (error as Error).message, ...(code ? { code } : {}) },
+    status as ContentfulStatusCode
+  );
 }
 
 function clientUpgradeRequired(): never {
@@ -73,7 +87,11 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
     if (allowed && origin) {
       context.header('Access-Control-Allow-Origin', origin);
       context.header('Vary', 'Origin');
-      context.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck');
+      // Must list every header the client actually sends, or the browser blocks
+      // the real request after an otherwise-successful preflight. X-Client-Version
+      // rides on every call from apps/mobile/src/lib/api-client-core.ts; nothing
+      // but this comment keeps the two lists in step.
+      context.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Firebase-AppCheck, X-Client-Version');
       context.header('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
     }
     if (context.req.method === 'OPTIONS') return context.body(null, allowed || !origin ? 204 : 403);
@@ -89,9 +107,7 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
     }
   });
 
-  app.onError((error, context) => routeError(error, {
-    requestId: context.get('requestId'), route: context.req.path, method: context.req.method,
-  }));
+  app.onError((error, context) => routeError(error, context));
 
   app.get('/health', (context) => context.json({ ok: true }));
 
