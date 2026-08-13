@@ -15,7 +15,7 @@
     "dev:android": "APP_VARIANT=development bunx expo prebuild --clean --platform android && APP_VARIANT=development bunx expo run:android;",
     "freshDevelopment:android": "adb uninstall com.aquinnmo.timber_dev; bun run dev:android",
     "install:android": "eas build --platform android --profile preview --local --output ./build-preview.apk",
-    "test": "bun run --silent test:personal-ios-config && bun run --silent test:oauth-config && bun run --silent test:db && bun run --silent test:initial-sync && bun run --silent test:api-client && bun run --silent test:firestore-rest-client && bun run --silent test:firestore-sync-remote && bun run --silent test:ai-error && bun run --silent test:google-account-link && bun run --silent test:firebase-errors && bun run --silent test:workout-conversion && bun run --silent test:up-next && bun run --silent test:wear-state && bun run --silent test:workout-notification && bun run --silent test:workout-action && bun run --silent test:active-workout-session && bun run --silent test:set-consistency && bun run --silent test:muscle-load && bun run --silent test:plate-math && bun run --silent test:catalog-loader && bun run --silent test:widget-size",
+    "test": "bun run --silent test:personal-ios-config && bun run --silent test:oauth-config && bun run --silent test:db && bun run --silent test:initial-sync && bun run --silent test:api-client && bun run --silent test:firestore-rest-client && bun run --silent test:firestore-sync-remote && bun run --silent test:ai-error && bun run --silent test:google-account-link && bun run --silent test:firebase-errors && bun run --silent test:workout-conversion && bun run --silent test:up-next && bun run --silent test:wear-state && bun run --silent test:workout-notification && bun run --silent test:workout-action && bun run --silent test:active-workout-session && bun run --silent test:set-consistency && bun run --silent test:muscle-load && bun run --silent test:plate-math && bun run --silent test:catalog-loader && bun run --silent test:widget-size && bun run --silent test:tab-link-press",
     "test:personal-ios-config": "node app.config.test.js",
     "test:oauth-config": "node src/config/google-oauth.test.js",
     "test:db": "bun src/data/migrate.test.ts && bun src/data/outbox.test.ts && bun src/data/sync-cursors.test.ts && bun src/data/normalize-timestamps.test.ts && bun src/data/singleton-repository.test.ts && bun src/data/catalog.test.ts && bun src/data/workouts.test.ts && bun src/data/data-version.test.ts && bun src/data/sync-engine.test.ts && bun src/data/keyed-mutex.test.ts && bun src/data/web-read-cache.test.ts",
@@ -36,6 +36,7 @@
     "test:plate-math": "bun src/lib/plate-math.test.ts",
     "test:catalog-loader": "bun src/lib/catalog-loader.test.ts",
     "test:widget-size": "bun widgets/up-next-widget-size.test.ts",
+    "test:tab-link-press": "bun src/ui/tab-link-press.test.ts",
     "test:muscle-load": "bun src/lib/muscle-load.test.ts && bun src/lib/muscle-development.test.ts && node ../../tools/generate-muscle-pebble-map.test.js && bun src/constants/muscle-map-paths.test.ts"
   },
   "dependencies": {
