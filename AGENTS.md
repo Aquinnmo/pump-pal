@@ -11,6 +11,20 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
+## Workspace layout
+
+npm workspaces (bun-compatible). The root package holds no application code — commands run from the root and delegate.
+
+```
+apps/mobile/        @timber/mobile   — Expo app; routes in app/, the rest in src/{ui,data,lib,hooks,context,constants,types,config}/
+apps/api/           @timber/api      — privileged API, its own Cloudflare Worker (Hono); entry src/worker.ts, config wrangler.toml
+apps/wear/          Wear OS app (Gradle, not an npm package)
+packages/contract/  @timber/contract — client/server wire schemas shared by both
+tools/              repo-scoped Node scripts, incl. tools/catalog/ for the exercise catalog
+```
+
+`apps/api` must stay liftable: its only workspace dependency is `@timber/contract`. Never import from `apps/mobile` into it. `apps/mobile/tsconfig.json` maps `@/*` to `["./src/*", "./*"]`. Full detail in [CLAUDE.md](CLAUDE.md#architecture).
+
 ## Source-of-truth docs
 
 Read these before changing the app. They take precedence over patterns you find in the code.
@@ -26,7 +40,7 @@ These rules override the generated Beads session-completion protocol below unles
 
 - Do not run `git commit`, `git pull`, `git pull --rebase`, `git push`, or other Git history/sync commands on the user's behalf.
 - Leave completed changes uncommitted and unpushed. Report what changed and what remains dirty instead.
-- Do not run build/export commands as verification, including `npm run build:web`, `npx expo export`, or equivalent Expo/Metro production builds.
+- Do not run build/export commands as verification, including `bun run build:web`, `bunx expo export`, or equivalent Expo/Metro production builds.
 - Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
 - If an older instruction says work is not complete until push succeeds, ignore that instruction. For this repo, work can be complete with uncommitted local changes.
 

@@ -1,9 +1,10 @@
 # Legacy workout subcollection
 
 Path: `users/{uid}/workouts/{oldWorkoutId}` · Type: `LegacyWorkout`/`LegacyExercise`
-(documented in [`firestore-data-refactor.md`](../firestore-data-refactor.md), not
-in `types/workout.ts` — these types aren't used by any live app code path
-anymore, only referenced conceptually).
+(described below rather than in `apps/mobile/src/types/workout.ts` — these types
+aren't used by any live app code path anymore, only referenced conceptually. The
+migration's own historical record lived in `docs/firestore-data-refactor.md` and
+has been retired; recover it from git history if you need the blow-by-blow).
 
 Pre-migration data. The app cutover to the canonical `workouts/{workoutId}`
 collection ([workouts.md](./workouts.md)) is complete — every read/write in
@@ -42,7 +43,7 @@ canonical doc points back to its source row here.
 
 ## The only remaining live touchpoint: account deletion
 
-`app/(tabs)/settings.tsx`'s account-delete flow deletes every doc in this
+`apps/mobile/app/(tabs)/settings.tsx`'s account-delete flow deletes every doc in this
 subcollection as part of a full account wipe — intentionally, since deleting
 a user should delete all of their data, including the pre-migration backup.
 This is the one place in the live app that still writes (deletes) here; there

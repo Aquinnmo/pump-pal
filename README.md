@@ -5,25 +5,26 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 ## Setup
 
 > Setting up a Mac from scratch to run this on an iPhone? Use
-> **[docs/ios-setup.md](docs/ios-setup.md)** instead — `bash scripts/ios/setup.sh`
-> handles the one-time Mac setup. After that, `npm run install:apple` updates
-> the repo and installs a standalone copy on the connected iPhone.
+> **[IOS_LOCAL_PREVIEW.md](IOS_LOCAL_PREVIEW.md)** instead — Xcode plus
+> `bunx expo run:ios --device --configuration Release`. After that,
+> `bun run install:apple` updates the repo and reinstalls a standalone copy on
+> the connected iPhone.
 > Android dev builds are covered in [docs/dev-build.md](docs/dev-build.md).
 
 1. Install dependencies
 
    ```bash
-   npm install
+   bun install
    ```
 
-2. Copy [`.env.example.eas`](.env.example.eas) to `.env` for local/native development and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL`. Native builds require the API URL; web falls back to same-origin `/api` only when it is unset. The Vercel web/API settings are documented in [`.env.example.vercel`](.env.example.vercel).
+2. Copy [`apps/mobile/.env.example.eas`](apps/mobile/.env.example.eas) to `apps/mobile/.env` and fill in your Firebase project config (`EXPO_PUBLIC_FIREBASE_*`) and `EXPO_PUBLIC_API_BASE_URL`. The API is a separate deployment, so that URL is required.
 
-   AI provider keys are **not** part of the client `.env`. They live only in the Vercel project environment — see the server section of `.env.example.vercel`.
+   AI provider keys and the Firebase service account are **not** part of the client `.env` — they belong only in Cloudflare Worker secrets. See [`apps/api/.env.example`](apps/api/.env.example).
 
 3. Start the dev server
 
    ```bash
-   npx expo start
+   bun start
    ```
 
    Press `a`/`i`/`w` to open Android/iOS/web, or scan the QR code with Expo Go.
@@ -84,18 +85,35 @@ Use `production` only for a store-ready build; Android production builds are nor
 ## Other commands
 
 ```bash
-npm run android      # start + open Android
-npm run ios          # start + open iOS
-npm run install:apple  # update + install standalone Timber on an iPhone
-npm run web          # start + open web
-npm run lint         # expo lint
-npm run build:web    # static web export to dist/ (used by Vercel, see vercel.json)
-npm run migration:test  # runs the legacy-migration script tests
+bun run android      # start + open Android
+bun run ios          # start + open iOS
+bun run install:apple  # update + install standalone Timber on an iPhone
+bun run web          # start + open web
+bun run lint         # expo lint
+bun run build:web    # static web export to dist/ (used by Vercel, see vercel.json)
+bun run catalog:review  # promote user-submitted pending exercises into the catalog
+bun run catalog:seed    # write tools/catalog/catalog-seed.json to Firestore (--apply)
 ```
 
 ## Architecture
 
-File-based routing via Expo Router, with auth/onboarding gating documented in [CLAUDE.md](CLAUDE.md). The Firestore workout/exercise schema (canonical collections, set-by-set data model, exercise catalog) is documented in [docs/data-model/](docs/data-model/README.md) — [docs/firestore-data-refactor.md](docs/firestore-data-refactor.md) is the historical record of the migration, not the current schema.
+npm workspaces (bun-compatible). The root package holds no application code:
+
+| Path | Package | What it is |
+| --- | --- | --- |
+| `apps/mobile/` | `@timber/mobile` | The Expo app. Routes in `app/`, everything else under `src/{ui,data,lib,hooks,context,constants,types,config}/`. |
+| `apps/api/` | `@timber/api` | Hono Cloudflare Worker for privileged operations; its only workspace dependency is `@timber/contract`. |
+| `apps/wear/` | — | The Wear OS app (Gradle, not an npm package). |
+| `packages/contract/` | `@timber/contract` | Zod schemas + types for the client/server wire format, shared by both sides. |
+| `tools/` | — | Repo-scoped Node scripts: icon/muscle-map generators, boundary checks, and the exercise-catalog tooling in `tools/catalog/`. |
+
+The web bundle may deploy as a Vercel project (`apps/mobile`); the privileged
+API deploys independently as a Cloudflare Worker (`apps/api`). Safe owner data
+uses direct Firestore REST, while `EXPO_PUBLIC_API_BASE_URL` and
+`API_ALLOWED_ORIGINS` connect web clients to the Worker for privileged calls.
+See [docs/deployment.md](docs/deployment.md).
+
+File-based routing via Expo Router, with auth/onboarding gating documented in [CLAUDE.md](CLAUDE.md). The Firestore workout/exercise schema (canonical collections, set-by-set data model, exercise catalog) is documented in [docs/data-model/](docs/data-model/README.md).
 
 ## Source of truth
 

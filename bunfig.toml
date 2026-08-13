@@ -1,0 +1,5 @@
+[install]
+# React Native / Expo autolinking and Metro both walk a real node_modules tree.
+# Pinned explicitly so a future bun default of "isolated" cannot silently break
+# prebuild, notifee's Gradle repo path, or Metro resolution.
+linker = "hoisted"

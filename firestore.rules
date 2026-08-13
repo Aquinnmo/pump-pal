@@ -1,78 +1,128 @@
 rules_version = '2';
 
-// Security rules for Firebase project pumppal-c9199.
-//
-// Deploy with: npx firebase-tools@latest deploy --only firestore:rules
-//
-// Note: the /api/ai serverless function reaches Firestore over the REST API
-// with a service-account credential, which bypasses these rules by design.
-// That is what lets the server write `users/{uid}.aiUsage` and `random/{date}`
-// while clients cannot.
+// Direct clients use only the owner-safe paths below. Service-account calls
+// from the privileged Worker bypass these rules and own cross-user, secret,
+// quota, username, and account-deletion operations.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner(uid) { return signedIn() && request.auth.uid == uid; }
+    function bounded() { return request.query.limit != null && request.query.limit > 0 && request.query.limit <= 200; }
 
-    function signedIn() {
-      return request.auth != null;
+    function validSplit(split) {
+      return split is map
+        && split.keys().hasOnly(['type', 'custom', 'updatedAt'])
+        && split.type in ['Push / Pull / Legs', 'Upper / Lower', 'Bro Split', 'Full Body', 'Other']
+        && (split.custom == null || (split.custom is string && split.custom.size() <= 200))
+        && split.updatedAt is timestamp;
     }
 
-    function isOwner(uid) {
-      return signedIn() && request.auth.uid == uid;
+    function validInjury(injury, injuryId) {
+      return injury.keys().hasAll(['id', 'bodyPart', 'severity', 'status', 'onsetDate', 'createdAt', 'updatedAt'])
+        && injury.keys().hasOnly(['id', 'bodyPart', 'side', 'muscles', 'severity', 'status', 'onsetDate', 'resolvedDate', 'avoid', 'notes', 'createdAt', 'updatedAt'])
+        && injury.id == injuryId
+        && injury.id is string
+        && injury.bodyPart in ['neck', 'shoulder', 'elbow', 'wrist', 'hand', 'upper back', 'lower back', 'chest', 'abdomen', 'hip', 'groin', 'knee', 'ankle', 'foot']
+        && injury.severity in ['mild', 'moderate', 'severe']
+        && injury.status in ['ongoing', 'resolved']
+        && injury.onsetDate is timestamp
+        && injury.createdAt is timestamp
+        && injury.updatedAt is timestamp
+        && (!('side' in injury) || injury.side in ['left', 'right', 'both'])
+        && (!('muscles' in injury) || (injury.muscles is list && injury.muscles.size() <= 40))
+        && (!('avoid' in injury) || (injury.avoid is list && injury.avoid.size() <= 40))
+        && (!('notes' in injury) || (injury.notes is string && injury.notes.size() <= 2000));
     }
 
-    // Per-user profile: split, injuries, aiUsage.
-    //
-    // `aiUsage` is the server-enforced AI quota counter. Clients must not be
-    // able to reset or inflate it, so writes that touch that field are denied
-    // even for the document's owner.
+    function validWorkout(workout, uid) {
+      return workout.keys().hasAll(['userId', 'name', 'performedExercises', 'schemaVersion', 'createdAt', 'updatedAt'])
+        && workout.keys().hasOnly(['userId', 'name', 'date', 'status', 'startedAt', 'queueOrder', 'notes', 'performedExercises', 'injuries', 'schemaVersion', 'createdAt', 'updatedAt'])
+        && workout.userId == uid
+        && workout.name is string && workout.name.size() <= 200
+        && workout.performedExercises is list && workout.performedExercises.size() <= 100
+        && workout.schemaVersion == 2
+        && workout.createdAt is timestamp && workout.updatedAt is timestamp
+        && (!('status' in workout) || workout.status in ['planned', 'in_progress', 'completed'])
+        && (!('notes' in workout) || (workout.notes is string && workout.notes.size() <= 2000))
+        && (!('injuries' in workout) || (workout.injuries is list && workout.injuries.size() <= 100));
+    }
+
+    function validChallenge(challenge) {
+      return challenge.keys().hasOnly(['startDate', 'days', 'longestStreak'])
+        && challenge.startDate is string
+        && challenge.days is list && challenge.days.size() <= 400
+        && challenge.longestStreak is int && challenge.longestStreak >= 0;
+    }
+
+    function validNotification(notification) {
+      return notification.keys().hasOnly(['expoPushToken', 'updatedAt'])
+        && notification.expoPushToken is string && notification.expoPushToken.size() <= 200
+        && notification.updatedAt is timestamp;
+    }
+
+    // Direct clients can own only their workout split. Username, legacy
+    // injuries, quota, and push token fields are intentionally not writable.
     match /users/{uid} {
-      allow read: if isOwner(uid);
-      allow create: if isOwner(uid) && !('aiUsage' in request.resource.data);
-      allow update: if isOwner(uid)
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['aiUsage']);
-      allow delete: if isOwner(uid);
-
-      // Pushup-challenge progress and the legacy pre-migration workouts
-      // subcollection. Both are private to the owner.
-      match /{document=**} {
-        allow read, write: if isOwner(uid);
-      }
+      allow get: if owner(uid);
+      allow list: if false;
+      allow create: if owner(uid)
+        && request.resource.data.keys().hasOnly(['workoutSplit'])
+        && validSplit(request.resource.data.workoutSplit);
+      allow update: if owner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workoutSplit'])
+        && validSplit(request.resource.data.workoutSplit);
+      allow delete: if false;
     }
 
-    // Canonical workout history. Ownership is carried by the `userId` field.
+    match /users/{uid}/injuries/{injuryId} {
+      allow get: if owner(uid);
+      allow list: if owner(uid) && bounded();
+      allow create: if owner(uid) && validInjury(request.resource.data, injuryId);
+      allow update: if owner(uid)
+        && validInjury(request.resource.data, injuryId)
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if owner(uid);
+    }
+
+    match /users/{uid}/pushup-challenge/data {
+      allow get: if owner(uid);
+      allow create, update: if owner(uid) && validChallenge(request.resource.data);
+      allow delete: if owner(uid);
+    }
+
+    match /users/{uid}/private/aiUsage {
+      allow get: if owner(uid);
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{uid}/private/notifications {
+      allow create, update: if owner(uid) && validNotification(request.resource.data);
+      allow delete: if owner(uid);
+      allow get, list: if false;
+    }
+
     match /workouts/{workoutId} {
-      allow read, update, delete: if signedIn() && resource.data.userId == request.auth.uid;
-      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow get: if signedIn() && resource.data.userId == request.auth.uid;
+      // Rules are not filters: this condition makes Firestore require a query
+      // constrained to userId == request.auth.uid, and the limit caps scans.
+      allow list: if signedIn() && bounded() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && validWorkout(request.resource.data, request.auth.uid);
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && validWorkout(request.resource.data, request.auth.uid);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // Global exercise catalog and its cache-invalidation marker. Read-only to
-    // the app; only the migration/seed scripts write these, and those run with
-    // owner credentials that bypass rules.
     match /exercises/{exerciseId} {
-      allow read: if signedIn();
-      allow write: if false;
+      allow get, list: if signedIn() && resource.data.status == 'approved';
+      allow create, update, delete: if false;
     }
+    match /exerciseCatalogMeta/current { allow get: if signedIn(); }
+    match /random/{dateKey} { allow get: if signedIn(); }
 
-    match /exerciseCatalogMeta/{docId} {
-      allow read: if signedIn();
-      allow write: if false;
-    }
-
-    // Shared daily name for the pushup challenge. Generated and cached by
-    // /api/ai, so no client ever needs to write it.
-    match /random/{dateKey} {
-      allow read: if signedIn();
-      allow write: if false;
-    }
-
-    // Anything not matched above is denied. This is load-bearing for the
-    // social graph: `friendships/{pairId}` (docs/data-model/buddies.md) is
-    // deliberately absent from this file. A buddy list has to read other
-    // users' names and streaks, which no client-side rule can safely allow,
-    // so all of it goes through /api/buddies on the service-account
-    // credential. Adding a client rule for `friendships` would open
-    // cross-user reads, not enable a feature.
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    // Explicitly deny Worker-only collections and every unknown/legacy path.
+    match /{document=**} { allow read, write: if false; }
   }
 }

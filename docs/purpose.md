@@ -41,7 +41,7 @@ failure modes, and they pull in opposite directions:
 Every ingestion decision trades these two. The pattern Timber uses to escape the
 tradeoff is: **pre-fill aggressively, but require an explicit confirmation that
 costs one tap.** The autofill removes the typing; the per-set checkbox
-(`app/active-workout.tsx:455`, which strips uncompleted sets before write)
+(`apps/mobile/app/active-workout.tsx:455`, which strips uncompleted sets before write)
 guarantees nothing enters the dataset the user didn't affirm. Cheap to log,
 still true.
 
@@ -52,16 +52,16 @@ less insight; it is never acceptable to show a wrong one.
 
 | Feature | Serves |
 | --- | --- |
-| Autofill from the last time you did this exercise *on this same split day*, falling back to any day (`hooks/use-draft-exercises.ts:44`) | ingestion |
-| Cascade an edit forward through following sets, stopping at the first deliberately different one so pyramids and drop sets survive (`hooks/use-draft-exercises.ts:21`) | ingestion |
-| Exercise picker offers recents-for-this-day before it offers search (`components/ui/exercise-picker.tsx:319`) | ingestion |
-| Per-set completion checkbox; unchecked sets are dropped at finish (`app/active-workout.tsx`, `finishWorkout`) | fidelity |
-| An active workout lives in memory only (`utils/active-workout-session.ts`) and the DB is written exactly once, on Finish — a process death loses the in-flight session by design rather than risking a half-written row (`app/active-workout.tsx`) | fidelity over never-lose-data, deliberately |
-| Live Android notification + Pixel Live Update showing current exercise and running totals (`utils/workout-notification.android.ts`, `modules/live-update-notification/`) | log without opening the app |
-| Plate calculator solves minimum plates per side (`utils/plate-math.ts`) | removes gym math |
-| Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`utils/muscle-analysis.ts:51`) | fidelity |
-| Ongoing injuries auto-stamped onto every finished workout (`app/active-workout.tsx`, `finishWorkout`, `utils/injuries.ts:21`) | insight with zero extra data entry |
-| TPC: one swipe, zero fields (`app/(tabs)/pushup-challenge.tsx`) | habit, at zero ingestion cost |
+| Autofill from the last time you did this exercise *on this same split day*, falling back to any day (`apps/mobile/src/hooks/use-draft-exercises.ts:44`) | ingestion |
+| Cascade an edit forward through following sets, stopping at the first deliberately different one so pyramids and drop sets survive (`apps/mobile/src/hooks/use-draft-exercises.ts:21`) | ingestion |
+| Exercise picker offers recents-for-this-day before it offers search (`apps/mobile/src/ui/primitives/exercise-picker.tsx:319`) | ingestion |
+| Per-set completion checkbox; unchecked sets are dropped at finish (`apps/mobile/app/active-workout.tsx`, `finishWorkout`) | fidelity |
+| An active workout lives in memory only (`apps/mobile/src/lib/active-workout-session.ts`) and the DB is written exactly once, on Finish — a process death loses the in-flight session by design rather than risking a half-written row (`apps/mobile/app/active-workout.tsx`) | fidelity over never-lose-data, deliberately |
+| Live Android notification + Pixel Live Update showing current exercise and running totals (`apps/mobile/src/lib/workout-notification.android.ts`, `apps/mobile/modules/live-update-notification/`) | log without opening the app |
+| Plate calculator solves minimum plates per side (`apps/mobile/src/lib/plate-math.ts`) | removes gym math |
+| Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`apps/mobile/src/lib/muscle-analysis.ts:51`) | fidelity |
+| Ongoing injuries auto-stamped onto every finished workout (`apps/mobile/app/active-workout.tsx`, `finishWorkout`, `apps/mobile/src/lib/injuries.ts:21`) | insight with zero extra data entry |
+| TPC: one swipe, zero fields (`apps/mobile/app/(tabs)/pushup-challenge.tsx`) | habit, at zero ingestion cost |
 
 Read that table as a specification, not a changelog. New features should be able
 to add a row.
@@ -73,7 +73,7 @@ Two jobs, both named in the thesis:
 **Injury prevention.** Over- and under-trained muscle groups over a 30-day
 window, and workout suggestions that know about your active injuries — their
 affected muscles, severity, avoid-list, and notes
-(`utils/workout-suggestions.ts:102-119`).
+(`apps/mobile/src/lib/workout-suggestions.ts:102-119`).
 
 **Strengths and weaknesses.** Estimated 1RM trend per exercise (Epley), personal
 records, best sets, and volume distribution across muscle groups.
@@ -81,7 +81,7 @@ records, best sets, and volume distribution across muscle groups.
 ### The deterministic-first rule
 
 This is the standard for every AI feature, present and future.
-`utils/muscle-analysis.ts` computes the volume math **in code** — effective sets
+`apps/mobile/src/lib/muscle-analysis.ts` computes the volume math **in code** — effective sets
 weighted 1.0 primary / 0.5 secondary, normalized per week, with 0.0 rows emitted
 for untrained muscles specifically to surface neglect — and hands the model a
 finished table to interpret. The model does not count, does not join, and does
@@ -93,9 +93,9 @@ adding an AI feature, compute everything computable first, then let the model do
 only the part that genuinely requires judgment.
 
 Domain knowledge that shapes interpretation belongs in the prompt as an explicit
-constraint, not as vibes — see `utils/muscle-analysis.ts:194` ("roughly 10–20
+constraint, not as vibes — see `apps/mobile/src/lib/muscle-analysis.ts:194` ("roughly 10–20
 effective sets per muscle per week") and the split-boundary rules at
-`utils/workout-suggestions.ts:232-241`.
+`apps/mobile/src/lib/workout-suggestions.ts:232-241`.
 
 ## Non-goals
 
@@ -103,13 +103,13 @@ effective sets per muscle per week") and the split-boundary rules at
   only comparison that matters is you against your own history.
 - **Not a nag.** The copy is deliberately low-pressure: "Planning is optional —
   queue up a workout whenever it's useful"
-  (`app/planned-workouts.tsx:194`), "when you are ready"
-  (`app/(auth)/welcome.tsx:47`). Guilt is a retention tactic that costs
+  (`apps/mobile/app/planned-workouts.tsx:194`), "when you are ready"
+  (`apps/mobile/app/(auth)/welcome.tsx:47`). Guilt is a retention tactic that costs
   fidelity — a user who feels judged logs less honestly. TPC's streak pressure
   is the single deliberate exception, and it is quarantined to a feature with no
   data entry.
 - **Not a medical advisor.** Hard constraint, already in the prompt at
-  `utils/workout-suggestions.ts:240`:
+  `apps/mobile/src/lib/workout-suggestions.ts:240`:
   > Do not diagnose, prescribe treatment, or claim that any exercise is medically
   > cleared. If no reasonable safe additions remain, return an empty array.
 
@@ -145,14 +145,14 @@ Two corollaries worth applying by reflex:
 Stated openly rather than pretending the product is coherent. These are real and
 current.
 
-- **AI rationing fights the thesis.** `TEMPORARY_AI_DAILY_LIMIT = 3`
-  (`constants/ai-config.ts:11`) is a cost lever that directly rations the insight
+- **AI rationing fights the thesis.** `TEMPORARY_AI_DAILY_LIMIT = 7`
+  (`packages/contract/src/ai-contract.ts:14`) is a cost lever that directly rations the insight
   half of the product. It is named "temporary" for a reason. The UI at least
   exposes the meter honestly rather than failing silently
   (`Balance Workout with AI (2 left)`).
-- **The biggest ingestion gap is RPE.** `types/workout.ts:6-18` declares `rpe`,
+- **The biggest ingestion gap is RPE.** `apps/mobile/src/types/workout.ts:6-18` declares `rpe`,
   and `computeMuscleVolume` already *consumes* it and feeds it to the model as a
-  recovery signal (`utils/muscle-analysis.ts:104-105`, prompt at `:194`). **No
+  recovery signal (`apps/mobile/src/lib/muscle-analysis.ts:104-105`, prompt at `:194`). **No
   UI writes it.** The fatigue model runs permanently blind on a signal it was
   designed around. Same story, lower stakes, for `distance`, `calories`, and
   per-set `notes`. Closing this is the single highest-leverage ingestion work

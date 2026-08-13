@@ -2,13 +2,13 @@
 
 Path: `users/{uid}/pushup-challenge/data` (single fixed doc, not a growing
 subcollection — `data` is a literal doc ID). No shared type in
-`types/workout.ts`; `ChallengeDay`/`ChallengeData` are defined locally in
-`app/(tabs)/pushup-challenge.tsx`.
+`apps/mobile/src/types/workout.ts`; `ChallengeDay`/`ChallengeData` are defined locally in
+`apps/mobile/app/(tabs)/pushup-challenge.tsx`.
 
 This feature is unrelated to the workout/exercise schema — it's a
 self-contained daily-streak tracker for a separate "TPC" pushup challenge
-tab. It predates, and was intentionally left out of, the workout-schema
-migration described in [`firestore-data-refactor.md`](../firestore-data-refactor.md).
+tab. It predates, and was intentionally left out of, the legacy-to-canonical
+workout-schema migration (see [legacy.md](./legacy.md)).
 
 ## Shape
 
@@ -39,5 +39,5 @@ Notes:
 - Read via a plain `getDoc`; if the doc doesn't exist, the screen treats it
   as "no active challenge" (`data === null`), same non-existence handling
   pattern as `users/{uid}` in [users.md](./users.md).
-- Deleted as part of account deletion (`app/(tabs)/settings.tsx`) — see
+- Deleted as part of account deletion (`apps/mobile/app/(tabs)/settings.tsx`) — see
   [users.md](./users.md#account-deletion).

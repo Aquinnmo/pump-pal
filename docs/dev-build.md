@@ -46,12 +46,12 @@ Then, from the repo root (**set `APP_VARIANT` so it installs as "Timber Dev"**):
 
 ```powershell
 # Windows PowerShell
-$env:APP_VARIANT="development"; npx expo run:android
+$env:APP_VARIANT="development"; bun run android
 ```
 
 ```bash
 # macOS / Linux / Git Bash
-APP_VARIANT=development npx expo run:android
+APP_VARIANT=development bun run android
 ```
 
 First run generates the native `android/` project (CNG prebuild), compiles the
@@ -67,7 +67,7 @@ No local Android toolchain needed; builds on Expo's servers. Uses the
 `development` profile already in `eas.json`.
 
 ```bash
-npm i -g eas-cli          # once
+bun add -g eas-cli         # once
 eas login                 # once
 eas build --profile development --platform android
 ```
@@ -103,7 +103,7 @@ GIT_CLONE_PROTECTION_ACTIVE=false eas build --profile development --platform and
 The dev build is installed once; day-to-day you just run Metro and edit JS:
 
 ```bash
-npx expo start --dev-client
+bun start -- --dev-client
 ```
 
 - Open the installed **dev-build app** (not Expo Go) and it connects to Metro.
@@ -121,7 +121,7 @@ when you:
 
 ## Testing the workout notification
 
-1. Start Metro: `npx expo start --dev-client`; open the dev-build app.
+1. Start Metro: `bun start -- --dev-client`; open the dev-build app.
 2. Grant the notification permission when prompted (Android 13+).
 3. **Start a workout** → a silent ongoing notification appears with a
    **live-ticking elapsed timer**.
@@ -184,7 +184,7 @@ when you:
     chronometer, but has **no action controls**. Confirm no crash and no
     duplicate notification. This is the subtlest part of the feature: two
     surfaces (the native `LiveUpdateNotification` module and Notifee) post this
-    notification, and `utils/workout-notification.android.ts` keeps them
+    notification, and `apps/mobile/src/lib/workout-notification.android.ts` keeps them
     mutually exclusive — a regression shows up as two notifications instead
     of one, not as a crash.
 
@@ -209,7 +209,7 @@ when you:
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | "This project uses a native module not in Expo Go" | You opened Expo Go. Open the **dev-build** app instead.                                                                                                 |
 | No notification appears                            | Permission denied → enable in system Settings → app → Notifications.                                                                                    |
-| Small icon looks oversized or letterboxed          | Add padding around the glyph in `scripts/generate-ic-stat-timber.js` and regenerate (`node scripts/generate-ic-stat-timber.js`) — don't hand-edit the PNGs. |
+| Small icon looks oversized or letterboxed          | Add padding around the glyph in `tools/generate-ic-stat-timber.js` and regenerate (`node tools/generate-ic-stat-timber.js`) — don't hand-edit the PNGs. |
 | Timer not ticking                                  | Confirm you're on a real dev build, not Expo Go; the chronometer needs the native Notifee module.                                                       |
 | Changes not showing                                | JS change → save should hot-reload. Native/`app.json` change → rebuild (one-time setup again).                                                          |
 | Metro connects but app is old                      | Rebuild — you likely changed a native dep without recompiling.                                                                                          |
@@ -220,9 +220,9 @@ when you:
 
 | Situation                                        | Command                                                |
 | ------------------------------------------------ | ------------------------------------------------------ |
-| First build / after native change (local)        | `$env:APP_VARIANT="development"; npx expo run:android` |
+| First build / after native change (local)        | `$env:APP_VARIANT="development"; bun run android` |
 | First build / after native change (cloud)        | `eas build --profile development --platform android`   |
-| Everyday JS work                                 | `npx expo start --dev-client`                          |
-| Preview (release) build onto the plugged-in phone | `npm run install:android`                             |
+| Everyday JS work                                 | `bun start -- --dev-client`                            |
+| Preview (release) build onto the plugged-in phone | `bun run install:android`                             |
 | Preview APK built locally via EAS (Google sign-in works) | see [preview-local-build.md](preview-local-build.md) |
-| Web / non-native work (Notifee is a no-op there) | `npx expo start` (Expo Go still fine for web)          |
+| Web / non-native work (Notifee is a no-op there) | `bun run web` (Expo Go still fine for web)              |

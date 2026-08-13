@@ -1,11 +1,11 @@
 # API Operations
 
-Every route the Vercel API boundary exposes, matching what's actually
-implemented under `api/`. Wire types are defined once in
-[`shared/api-contract.ts`](../shared/api-contract.ts) (domain routes) and
-[`shared/ai-contract.ts`](../shared/ai-contract.ts) (`/api/ai`) — read those
-for the exact Zod schemas; this doc is the route map and the semantics that
-don't fit in a type signature.
+The Cloudflare Worker exposes only privileged operations. Owner-safe workout,
+injury, workout-split, pushup, and approved-catalog operations use direct
+Firestore REST with Firebase Auth, App Check, and `firestore.rules` as their
+boundary. Wire types are defined in
+[`packages/contract/src/api-contract.ts`](../packages/contract/src/api-contract.ts)
+and [`packages/contract/src/ai-contract.ts`](../packages/contract/src/ai-contract.ts).
 
 For the deploy/env checklist, see [deployment.md](deployment.md). For the
 Firestore shapes these routes read/write, see
@@ -13,20 +13,19 @@ Firestore shapes these routes read/write, see
 
 ## Conventions across every route
 
-- **Auth:** `Authorization: Bearer <Firebase ID token>` on every request
+- **Auth:** `Authorization: Bearer <Firebase ID token>` and
+  `X-Firebase-AppCheck` on every privileged request
   except `OPTIONS` preflight. The uid is taken exclusively from the verified
-  token (`api/_lib/auth.ts`) — no route accepts a uid in the body, query, or
+  token (`apps/api/src/auth.ts`) — no route accepts a uid in the body, query, or
   path as anything other than a resource id to look up, and every lookup is
   scoped to the caller's own uid.
-- **CORS:** origins are an allowlist (`API_ALLOWED_ORIGINS` env var, see
-  `api/_lib/http.ts`). Requests with no `Origin` header (native app) skip CORS
-  entirely. `api/ai.ts` is the one exception — same-origin only, no CORS
-  handling, predates the domain routes.
+- **CORS:** browser origins are an allowlist (`API_ALLOWED_ORIGINS`); native
+  requests have no `Origin` header and skip CORS checks.
 - **Timestamps:** ISO-8601 UTC strings on the wire, always. Server routes
   convert Firestore `Timestamp`/REST `timestampValue` at the edge; a client
   never sees a Firestore sentinel type.
 - **Versions:** every mutable entity carries an opaque string `version`
-  (`shared/api-contract.ts` — derived from the backing Firestore doc's
+  (`packages/contract/src/api-contract.ts` — derived from the backing Firestore doc's
   `updateTime`). Mutations that need optimistic concurrency accept
   `baseVersion` in the body; a mismatch returns **409** with
   `{ error, code: 'conflict', remote: <current entity>, remoteVersion }` — the
@@ -42,32 +41,21 @@ Firestore shapes these routes read/write, see
 
 | Method | Path | Auth | Notes |
 | --- | --- | --- | --- |
-| GET | `/api/profile` | yes | `workoutSplit`, `aiUsage`, `version` |
-| PATCH | `/api/profile` | yes | allowlisted (`workoutSplit` only); `baseVersion` optional |
-| GET | `/api/injuries` | yes | full injury history for the caller |
-| POST | `/api/injuries` | yes | create; idempotent by client `id` |
-| PATCH | `/api/injuries/:id` | yes | partial edit (e.g. resolve); `baseVersion` optional (versions the whole profile doc) |
-| DELETE | `/api/injuries/:id` | yes | idempotent; does NOT unstamp workout history — see below |
 | POST | `/api/injuries/:id/apply-to-history` | yes | stamp this injury onto every workout in its onset/resolved window; idempotent |
 | POST | `/api/injuries/:id/remove-from-history` | yes | unstamp from every workout that carries it; idempotent, works even after the injury record is deleted |
-| GET | `/api/workouts?status=&cursor=&limit=` | yes | cursor-paginated, newest `createdAt` first |
-| POST | `/api/workouts` | yes | create; idempotent by client `id` |
-| GET | `/api/workouts/:id` | yes | 404 if not found or not owned |
-| PATCH | `/api/workouts/:id` | yes | versioned (`baseVersion` required); completing (`status: 'completed'`) without an explicit `injuries[]` auto-stamps the caller's ongoing injuries |
-| DELETE | `/api/workouts/:id` | yes | idempotent |
-| PATCH | `/api/workouts/reorder` | yes | bulk `queueOrder` update, up to 200 at once |
-| GET | `/api/catalog` | yes | full approved exercise catalog + cache-invalidation `version`; `Cache-Control: public, max-age=60, stale-while-revalidate=300` (identical response for every caller, no private data) |
 | POST | `/api/catalog/pending` | yes | "can't find my exercise" submission; `createdBy`/`status` are server-stamped, never accepted from the body |
-| GET | `/api/pushup-challenge` | yes | `version: null` when there's no active challenge |
-| PUT | `/api/pushup-challenge` | yes | full desired-state replace; `baseVersion` omitted = last-write-wins (matches today's client behavior), `null` = "I expect no doc yet", a string = real optimistic concurrency |
 | DELETE | `/api/account/data` | yes | purges every per-user Firestore collection/doc (see below); does **not** delete the Firebase Auth account |
-| GET | `/api/sync/manifest?cursor=&limit=` | yes | `{kind,id,version}` for every entity the caller owns, paginated |
-| POST | `/api/sync/pull` | yes | bounded (≤200) batch fetch of full entities by `{kind,id}` |
-| POST | `/api/ai` | yes | AI proxy — see `shared/ai-contract.ts`; unchanged by this epic except its provider/model/effort are now fully env-driven, see below |
+| POST | `/api/ai` | yes | AI proxy — see `packages/contract/src/ai-contract.ts`; unchanged by this epic except its provider/model/effort are now fully env-driven, see below |
+
+The retired safe paths (`GET /api/profile`, safe `PATCH /api/profile`,
+`/api/workouts*`, safe `/api/injuries*`, `GET /api/catalog`,
+`/api/pushup-challenge`, and `/api/sync/*`) return **410** with
+`{ code: "client_upgrade_required" }` during cutover. The two injury-history
+operations above remain privileged.
 
 ## Account deletion (`DELETE /api/account/data`)
 
-Ports `app/settings-account.tsx confirmDeleteAccount`'s Firestore cleanup
+Ports `apps/mobile/app/settings-account.tsx confirmDeleteAccount`'s Firestore cleanup
 server-side, same order: canonical `workouts` (by `userId`) → legacy
 `users/{uid}/workouts/*` → `users/{uid}/pushup-challenge/data` →
 `users/{uid}`. Every phase runs even if an earlier one fails (best-effort),
@@ -75,16 +63,20 @@ and every phase is independently idempotent, so a `partial: true` response
 just means "call it again." The client still calls Firebase Auth's
 `deleteUser` itself, only after this returns `partial: false`.
 
-## Sync (`GET /api/sync/manifest`, `POST /api/sync/pull`)
+## Direct sync
 
-v1 is a **full authoritative manifest**, not an incremental change log —
-deliberately, because legacy direct-Firestore clients can still write during
-the migration grace period and would bypass a log. `workout` entries paginate
-(a user can have hundreds); `profile`/`injury`/`pushupChallenge` are cheap
-bounded per-user singletons and only appear on the manifest's first page (no
-`cursor`). A local record whose id is absent from the manifest and is clean
-(no pending local edits) may be deleted locally; if it's dirty, surface it as
-a conflict instead of dropping it silently.
+Native SQLite remains the UI source of truth. It reconciles against bounded
+direct Firestore owner queries and uses opaque `updateTime` versions with one
+local-wins retry. Web is online-only and reads the same safe paths directly.
+
+User-authored drafts never reach this boundary. Native screens keep drafts in
+memory until Finish, Save, Resolve, Remove, or another explicit finalized
+action; SQLite and its outbox are written before sync is requested. The direct
+workout transport rejects `status: 'in_progress'` as a validation error, and
+web mutable repositories retain each document's `updateTime` through updates
+and deletes. Username reservation remains Worker-authoritative and updates the
+native profile cache as already-synced state after success, without queuing a
+profile outbox write.
 
 ## AI routing (`POST /api/ai`)
 
@@ -93,14 +85,12 @@ unsupported values fail at cold start. `AI_REASONING_EFFORT` is optional
 (`provider-default` if unset) and validated per-provider: OpenAI accepts the
 full portable set including `max`; Google tops out at `high` (`xhigh`/`max`
 are rejected at cold start, not silently clamped). See
-`api/_lib/ai/model.ts`.
+`apps/api/src/ai/model.ts`.
 
 ## What's NOT implemented yet
 
 - **Cold-start timing evidence** (`docs/deployment.md` § Cold-start check)
   requires an actual Preview deployment and hasn't been measured.
-- **Firestore deny-all rules** are prepared (`firestore.deny-all.rules`) but
-  not deployed — see the rollout checklist in `deployment.md`. Until that
-  human-approved step, direct client Firestore access under the current
-  `firestore.rules` continues to work alongside the API (additive grace
-  period), and both write to the same collections.
+- **Remote enforcement** (Firestore Rules, App Check enforcement, and Worker
+  secrets/routes) is human-gated; follow the rollout checklist in
+  `deployment.md`.
