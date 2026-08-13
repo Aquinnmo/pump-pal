@@ -10,8 +10,9 @@ import { normalizeApiBaseUrl } from './api-client-core';
  * Client for the `/api/ai` proxy.
  *
  * No provider API key exists on the device — generation happens server-side.
- * A configured Preview/API origin is honored on every platform. Web uses a
- * relative path only when that public configuration is intentionally absent.
+ * A configured API origin is required on every platform, web included: the API
+ * is its own Cloudflare Worker now, so there is no same-origin `/api/*` for a
+ * web build to fall back to.
  */
 const BASE_URL = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 
@@ -58,9 +59,9 @@ export async function callAI<Op extends AIOp>(
 
   await assertAIConnectivity();
 
-  // A relative URL can only resolve in a browser. Off the web an unset base URL
-  // surfaces as an opaque network failure, so name the actual cause instead.
-  if (!BASE_URL && Platform.OS !== 'web') {
+  // An unset base URL surfaces as an opaque network failure (native) or a 404
+  // against the web host itself (web), so name the actual cause instead.
+  if (!BASE_URL) {
     throw new Error(
       'EXPO_PUBLIC_API_BASE_URL is not set, so there is no /api/ai endpoint to call. ' +
         'Set it in .env (local) and in the EAS environment for this build profile.'

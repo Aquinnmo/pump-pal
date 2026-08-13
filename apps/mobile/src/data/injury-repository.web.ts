@@ -3,6 +3,7 @@ import { webFirestore } from './web-direct-firestore';
 import { Injury } from '@/types/user';
 import { StoredRecord } from '@/data/remote-types';
 import { normalizeTimestampsDeep } from './normalize-timestamps';
+import { toDateObj } from '@/lib/workout-conversion';
 
 const versions = createVersionCache();
 
@@ -13,7 +14,12 @@ function toRecord(data: Injury, version: string): StoredRecord<Injury> {
 
 export const injuryRepository = {
   async getAll(uid: string) {
-    return (await webFirestore(uid).injuries.list()).map(({ data, version }) => toRecord(data as Injury, version));
+    // The remote list comes back updatedAt-ascending; native is ORDER BY
+    // updated_at DESC (src/data/injuries.ts:18). Sort to match, or web shows
+    // injuries oldest-first while the app on a phone shows newest-first.
+    return (await webFirestore(uid).injuries.list())
+      .map(({ data, version }) => toRecord(data as Injury, version))
+      .sort((a, b) => (toDateObj(b.data.updatedAt)?.getTime() ?? 0) - (toDateObj(a.data.updatedAt)?.getTime() ?? 0));
   },
   async getById(uid: string, id: string) {
     return (await this.getAll(uid)).find((injury) => injury.id === id) ?? null;

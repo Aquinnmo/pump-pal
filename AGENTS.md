@@ -17,7 +17,7 @@ npm workspaces (bun-compatible). The root package holds no application code — 
 
 ```
 apps/mobile/        @timber/mobile   — Expo app; routes in app/, the rest in src/{ui,data,lib,hooks,context,constants,types,config}/
-apps/api/           @timber/api      — serverless API, its own Vercel project; one function in api/index.ts, logic in src/
+apps/api/           @timber/api      — privileged API, its own Cloudflare Worker (Hono); entry src/worker.ts, config wrangler.toml
 apps/wear/          Wear OS app (Gradle, not an npm package)
 packages/contract/  @timber/contract — client/server wire schemas shared by both
 tools/              repo-scoped Node scripts, incl. tools/catalog/ for the exercise catalog

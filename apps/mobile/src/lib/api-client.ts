@@ -1,6 +1,5 @@
 import Constants from 'expo-constants';
 import { fetch as expoFetch } from 'expo/fetch';
-import { Platform } from 'react-native';
 import {
   ApiRequestDeps,
   ApiRequestOptions,
@@ -29,9 +28,9 @@ export type { ApiRequestOptions } from './api-client-core';
  * `apiRequest`, never `fetch`/Firestore directly, so auth/error handling
  * stays in one place. Core request/error logic lives in api-client-core.ts.
  */
-// A configured origin is required for native and deliberately honored on web
-// too: Preview's static web host can be separate from the Vercel API origin.
-// Only an absent value falls back to web's relative, same-origin `/api/*`.
+// A configured origin is required on every platform, web included. The API is
+// its own Cloudflare Worker, so a web build has no same-origin `/api/*` to fall
+// back to — an unset value used to 404 silently against the web host instead.
 const BASE_URL = normalizeApiBaseUrl(process.env.EXPO_PUBLIC_API_BASE_URL);
 const CLIENT_VERSION = Constants.expoConfig?.version ?? 'unknown';
 
@@ -73,10 +72,11 @@ export async function apiRequest<TOut = void>(
   path: string,
   options: ApiRequestOptions<TOut> = {}
 ): Promise<TOut> {
-  if (!BASE_URL && Platform.OS !== 'web') {
+  if (!BASE_URL) {
     throw new Error(
       'EXPO_PUBLIC_API_BASE_URL is not set, so there is no API to call. ' +
-        'Set it in .env (local) and in the EAS environment for this build profile.'
+        'Set it in .env (local), in the EAS environment for this build profile, ' +
+        'and in the Vercel environment for the web build.'
     );
   }
   const deps: ApiRequestDeps = {

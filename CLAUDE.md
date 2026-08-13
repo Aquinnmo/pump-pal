@@ -50,16 +50,16 @@ npm workspaces (`workspaces: ["apps/*", "packages/*"]` in the root `package.json
 
 ```
 apps/mobile/        @timber/mobile   — the Expo app
-apps/api/           @timber/api      — the Vercel serverless service
+apps/api/           @timber/api      — the Cloudflare Worker (Hono) privileged API
 apps/wear/          (Gradle, no npm package) — the Wear OS app
 packages/contract/  @timber/contract — the client/server wire contract
 tools/              repo-scoped Node scripts (no package of their own)
 docs/
 ```
 
-`apps/api` is deliberately liftable: it has its own `package.json`, `tsconfig.json`, and `vercel.json`, deploys as its own Vercel project, and its only workspace dependency is `@timber/contract`. Removing that one dependency (vendoring whatever schemas it still needs into `apps/api/src/`) makes the directory standalone. **Do not add an `apps/mobile` dependency to it, and do not import across from `apps/mobile` into it.**
+`apps/api` is deliberately liftable: it has its own `package.json`, `tsconfig.json`, and `wrangler.toml`, deploys as its own Cloudflare Worker, and its only workspace dependency is `@timber/contract`. Removing that one dependency (vendoring whatever schemas it still needs into `apps/api/src/`) makes the directory standalone. **Do not add an `apps/mobile` dependency to it, and do not import across from `apps/mobile` into it.**
 
-Inside `apps/api`, `api/index.ts` is the only file Vercel treats as a serverless function — it counts every file under a project's `api/` directory as one, against a Hobby-plan cap of 12. All logic therefore lives in `apps/api/src/`, and `api/index.ts` stays a thin adapter. That split is also what makes a future move to another host or framework a rewrite of one file.
+`apps/api/src/worker.ts` is the whole entry point: one Hono app, `export default { fetch: app.fetch }`. Runtime is workerd, not Node — no `node:` builtins, no filesystem, and config arrives as a `WorkerBindings` env object rather than `process.env` (`src/runtime-env.ts` bridges it for the modules that still read env lazily). Relative imports carry the `.js` extension because the package is `"type": "module"`.
 
 ### Mobile app
 
@@ -77,6 +77,8 @@ apps/mobile/{assets,modules,plugins,targets,widgets}/   must stay at the package
 ```
 
 `apps/mobile/metro.config.js` is required, not optional: Metro must watch the workspace root and resolve from both `node_modules` trees, because the installer hoists dependencies upward. Without it `@timber/contract` does not resolve and edits to it never trigger a rebuild.
+
+The web bundle deploys from the Vercel project `timber` with **Root Directory `apps/mobile`** and "include files outside the root directory" on (the build needs `packages/contract` and the workspace-root `bun.lock`). `apps/mobile/vercel.json` owns the build command, output directory, and SPA rewrites — it overrides the dashboard settings, so keep deploy config there rather than in Vercel's UI. `EXPO_PUBLIC_API_BASE_URL` must point at the Worker origin; there is no same-origin `/api/*` anymore.
 
 ### Navigation / auth gating
 
@@ -100,9 +102,11 @@ The one-off legacy → canonical Firestore migration scripts are finished and ha
 
 ### The API service (`apps/api`)
 
-Every route lives behind one function. Requests enter at `apps/api/api/index.ts`, which calls `dispatch` in `apps/api/src/router.ts` — a path→handler table with lazy `import()` per entry, so a plain workout GET never pays to evaluate the AI provider SDK at cold start. Two properties of that table are load-bearing: static patterns must precede dynamic ones (`/api/workouts/reorder` before `/api/workouts/:id`), and the `/api/:path*` rewrite in `apps/api/vercel.json` is what routes multi-segment paths at all.
+`apps/api/src/worker.ts` builds the whole Hono app in one file: two middlewares then the route table. The first (`app.use('*')`) does runtime-env wiring, CORS origin check, and request logging; the second (`app.use('/api/*')`) does Firebase ID-token verification plus App Check, setting `uid` for every handler below it. `app.onError` funnels throws through `ApiError` (`src/errors.ts`), which is the only place a status/code pair is chosen.
 
-`apps/api/src/http.ts` wraps every route: CORS → origin check → method check → auth → handler, and owns the 405 + `Allow` header. Its `API_ALLOWED_ORIGINS` allowlist is now required rather than optional — the web bundle deploys as a separate Vercel project, so browser calls are cross-origin and are rejected before reaching a handler if its origin is not listed. Native calls send no `Origin` and skip CORS entirely.
+The `API_ALLOWED_ORIGINS` allowlist is required for any browser caller: the web bundle deploys to a different origin than the Worker, so a missing entry means a `403 origin_denied` before auth even runs. Native calls send no `Origin` and skip CORS entirely. Values live in `wrangler.toml` under `[env.preview.vars]` / `[env.production.vars]`; secrets (`FIREBASE_PRIVATE_KEY`, provider keys) are Worker secrets, never in the file. `.dev.vars` covers local `wrangler dev`.
+
+**Only privileged operations live here.** Owner-safe reads and writes go direct to Firestore from the client under `firestore.rules`. Routes that moved are kept as tombstones at the bottom of `worker.ts` (`/api/workouts/*`, `/api/sync/*`, `GET /api/profile`, …) returning `410 client_upgrade_required` — they stay behind auth so a stale client gets an actionable error without the Worker becoming a public route oracle. Exact routes registered above win over them; do not add a tombstone above a real route.
 
 **No AI provider key exists on the client.** All generation runs through this service; an `EXPO_PUBLIC_*` key would be inlined into every APK and web bundle by Metro. Do not reintroduce one.
 
@@ -110,14 +114,14 @@ Every route lives behind one function. Requests enter at `apps/api/api/index.ts`
 
 ### AI features
 
-- `packages/contract/src/api-contract.ts` is the source of truth for the whole domain REST API's wire format — the DTOs, inputs, and response envelopes every route and every client repository share. `packages/contract/src/ai-contract.ts` covers only the four AI operations. The package exports source `.ts` through its `exports` map (`@timber/contract/api`, `/ai`, `/username`) with no build step: Metro transpiles TS directly and Vercel's Node builder handles it, so a `dist/` would only add a watch-mode rebuild.
+- `packages/contract/src/api-contract.ts` is the source of truth for the whole domain REST API's wire format — the DTOs, inputs, and response envelopes every route and every client repository share. `packages/contract/src/ai-contract.ts` covers only the four AI operations. The package exports source `.ts` through its `exports` map (`@timber/contract/api`, `/ai`, `/username`) with no build step: Metro transpiles TS directly and Wrangler bundles it for the Worker, so a `dist/` would only add a watch-mode rebuild.
 - `packages/contract/src/ai-contract.ts` holds one `AI_OPS` table with an input and output zod schema per operation (`muscle-analysis`, `workout-completion`, `split-names`, `daily-name`), with the TS types derived via `z.infer`. The same `output` schema constrains generation server-side and types the client's return value, so the two cannot drift. Clients send structured input, never a raw prompt. Must stay free of Expo/React Native imports — both sides import it.
 - `apps/api/src/auth.ts` verifies the caller's Firebase ID token with `jose` against Google's cached JWKS. `algorithms: ['RS256']` is pinned deliberately; without the pin a JWT library can be tricked into accepting `alg: none`. **Known ceiling:** no revocation check, so a signed-out or disabled account keeps working until its token expires (≤1h).
 - `apps/api/src/ai/` (`model.ts`, `prompts.ts`) owns provider registration and the four prompt templates. No Firestore, no auth.
 - `apps/api/src/store/` (`rest.ts`, `quota.ts`, `daily-name.ts`) talks to Firestore over the REST API, authenticating with a service-account OAuth2 token minted by `jose` from the same `FIREBASE_*` env vars. No AI. This replaced `firebase-admin`, whose gRPC dependency tree was ~16MB and dominated cold start. The service-account credential **still bypasses `firestore.rules`**, same as the Admin SDK did — that is a property of the credential, not the SDK.
   - Every write must carry `updateMask`. Without it a Firestore `:commit` **replaces the whole document** instead of merging.
   - `quota.ts` enforces `TEMPORARY_AI_DAILY_LIMIT` against `users/{uid}.aiUsage` using an `updateTime` precondition with retry, not a transaction.
-- `apps/api/src/routes/ai.ts` is the only place auth, `ai/`, and `store/` meet.
+- The `POST /api/ai` handler in `apps/api/src/worker.ts` is the only place auth, `ai/`, and `store/` meet. It `await import()`s `./ai/prompts.js` inside the handler so the provider SDK never loads on a non-AI request.
 - `apps/mobile/src/lib/ai-client.ts` (`callAI`) is the only client-side entry point; it attaches a Firebase ID token.
 - The AI features still live in `apps/mobile/src/lib/muscle-analysis.ts`, `apps/mobile/src/lib/workout-suggestions.ts`, and `apps/mobile/src/lib/daily-name.ts`, which compute summaries locally and call `callAI`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
 

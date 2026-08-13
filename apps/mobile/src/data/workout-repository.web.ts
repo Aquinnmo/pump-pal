@@ -7,10 +7,22 @@ import { createVersionCache } from '@/data/version-cache';
 import { listWebEntities, webFirestore } from './web-direct-firestore';
 import { Workout, WorkoutStatus } from '@/types/workout';
 import { WorkoutDTO } from '@timber/contract/api';
+import { toDateObj } from '@/lib/workout-conversion';
 import { randomId } from './id';
 
 const versions = createVersionCache();
 const ENTITY_TYPE = 'workout';
+
+// The remote list arrives ordered by updatedAt (src/data/firestore-sync-remote.ts) —
+// right for sync cursors, wrong for display. Native gets its order from SQL
+// (src/data/workouts.ts:53/69 date DESC, :81 date ASC) and callers rely on it:
+// app/(tabs)/index.tsx slices "the 30 most recent" straight off getHistory.
+// date is a FlexibleTimestamp, so compare through toDateObj rather than as text.
+function byDate(direction: 'asc' | 'desc') {
+  const sign = direction === 'asc' ? 1 : -1;
+  return (a: WorkoutDTO, b: WorkoutDTO) =>
+    sign * ((toDateObj(a.date)?.getTime() ?? 0) - (toDateObj(b.date)?.getTime() ?? 0));
+}
 
 function dtoToWorkout(uid: string, dto: WorkoutDTO): Workout {
   return {
@@ -44,17 +56,21 @@ function toStoredRecord(uid: string, dto: WorkoutDTO): StoredRecord<Workout> {
 
 export const workoutRepository = {
   async getAll(uid: string): Promise<StoredRecord<Workout>[]> {
-    return (await listWebEntities(uid, 'workout') as WorkoutDTO[]).map((dto) => toStoredRecord(uid, dto));
+    const items = await listWebEntities(uid, 'workout') as WorkoutDTO[];
+    return items.sort(byDate('desc')).map((dto) => toStoredRecord(uid, dto));
   },
 
   async getHistory(uid: string): Promise<StoredRecord<Workout>[]> {
     const items = await listWebEntities(uid, 'workout') as WorkoutDTO[];
-    return items.filter((dto) => dto.date !== undefined).map((dto) => toStoredRecord(uid, dto));
+    return items
+      .filter((dto) => dto.date !== undefined)
+      .sort(byDate('desc'))
+      .map((dto) => toStoredRecord(uid, dto));
   },
 
   async getByStatus(uid: string, status: WorkoutStatus): Promise<StoredRecord<Workout>[]> {
     const items = (await listWebEntities(uid, 'workout') as WorkoutDTO[]).filter((item) => item.status === status);
-    return items.map((dto) => toStoredRecord(uid, dto));
+    return items.sort(byDate('asc')).map((dto) => toStoredRecord(uid, dto));
   },
 
   async getById(uid: string, id: string): Promise<StoredRecord<Workout> | null> {
