@@ -23,11 +23,14 @@ export function isValidUsername(value: string): boolean {
  * fall back to "athlete" if nothing usable survives.
  */
 export function slugifyUsername(input: string): string {
-  const slug = input
+  const collapsed = input
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^[^a-z]+/, '')
-    .replace(/_+$/, '')
-    .slice(0, 20);
+    .replace(/^[^a-z]+/, '');
+
+  let end = collapsed.length;
+  while (end > 0 && collapsed[end - 1] === '_') end -= 1;
+
+  const slug = collapsed.slice(0, end).slice(0, 20);
   return slug.length >= 3 ? slug : 'athlete';
 }
