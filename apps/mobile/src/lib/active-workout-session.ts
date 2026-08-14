@@ -1,3 +1,4 @@
+import { randomId } from '@/data/id';
 import type { DraftExerciseRow } from '@/types/workout';
 
 // The live workout's only home while it is being edited. A module-level singleton
@@ -41,7 +42,7 @@ export function startSession(init: {
   cameFromPlan: boolean;
 }): ActiveSession {
   session = {
-    id: `session_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    id: randomId('session'),
     startedAt: new Date().toISOString(),
     ...init,
   };
