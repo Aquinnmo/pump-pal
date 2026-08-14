@@ -4,6 +4,7 @@ import { fetch as expoFetch } from 'expo/fetch';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import { describeError } from './format-ai-error';
+import { recordRemaining } from './ai-quota-cache';
 import { normalizeApiBaseUrl } from './api-client-core';
 
 /**
@@ -97,13 +98,23 @@ export async function callAI<Op extends AIOp>(
 
   if (!response.ok || !body) {
     const detail = body?.error == null ? null : describeError(body.error);
-    if (response.status === 429) throw new AIQuotaError(detail ?? undefined);
+    if (response.status === 429) {
+      // 429 *is* the balance: the server refused because there is nothing left.
+      recordRemaining(user.uid, 0);
+      throw new AIQuotaError(detail ?? undefined);
+    }
     throw new Error(
       detail
         ? `AI request failed (${response.status}): ${detail}`
         : `AI request failed (${response.status})`
     );
   }
+
+  // Every /api/ai response carries `remaining`, including ops exempt from the
+  // cap. Recording it here rather than at each call site means an op whose
+  // caller ignores the count still refreshes the cached balance. (A Worker
+  // deployed before that change sends null for exempt ops — not zero.)
+  if (body.remaining != null) recordRemaining(user.uid, body.remaining);
 
   return body;
 }

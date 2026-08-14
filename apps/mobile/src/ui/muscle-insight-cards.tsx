@@ -37,7 +37,7 @@ export function MuscleInsightCards({ workouts }: Props) {
   // The server counts AI uses across every feature, so this is the only honest
   // source for the meter — a per-card local tally drifts the moment the user
   // spends a use in the workout builder.
-  const { usesLeft, setUsesLeft } = useAIQuota();
+  const { usesLeft } = useAIQuota();
   const cacheKey = user ? `muscle_insights_${user.uid}` : null;
 
   useEffect(() => {
@@ -72,15 +72,14 @@ export function MuscleInsightCards({ workouts }: Props) {
         return;
       }
 
-      const { insights: result, remaining } = await analyzeMuscles(workouts);
-      if (remaining != null) setUsesLeft(remaining);
+      // `remaining` is recorded by callAI itself, so nothing to write back here.
+      const { insights: result } = await analyzeMuscles(workouts);
       setInsights(result);
       const payload: InsightsCache = { insights: result };
       await AsyncStorage.setItem(cacheKey, JSON.stringify(payload));
     } catch (caughtError) {
       if (caughtError instanceof AIQuotaError) {
         setQuotaExhausted(true);
-        setUsesLeft(0);
         return;
       }
       const details = formatAIError(caughtError);

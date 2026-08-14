@@ -65,7 +65,14 @@ export type AIOpOutput<Op extends AIOp> = z.infer<(typeof AI_OPS)[Op]['output']>
 
 export interface AIResponse<Op extends AIOp> {
   data: AIOpOutput<Op>;
-  /** AI calls left today for this user, or null for ops exempt from the cap. */
+  /**
+   * AI calls left today for this user, after this one. Every `/api/ai` response
+   * carries it — including ops exempt from the cap, which report the balance
+   * without spending — so a client's cached count refreshes on any AI call.
+   *
+   * Still nullable on the wire: a Worker deployed before this change answers
+   * `null` for exempt ops, and a client must not treat that as zero.
+   */
   remaining: number | null;
 }
 

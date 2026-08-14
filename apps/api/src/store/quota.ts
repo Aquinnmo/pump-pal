@@ -78,7 +78,9 @@ export async function consumeQuota(uid: string): Promise<number> {
           currentDocument: doc ? { updateTime: doc.updateTime } : { exists: false },
         },
       ]);
-      return TEMPORARY_AI_DAILY_LIMIT - next.count;
+      // Same formula GET /api/ai/quota answers with, so a response's `remaining`
+      // and a later peek can never disagree.
+      return quotaStatus(next, today).remaining;
     } catch (e) {
       const isConflict = (e as { status?: number }).status === 409;
       if (isConflict && attempt < MAX_ATTEMPTS - 1) continue;

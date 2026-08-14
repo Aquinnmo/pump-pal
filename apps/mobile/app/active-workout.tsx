@@ -161,7 +161,7 @@ export default function ActiveWorkoutScreen() {
   const [showLogConfirm, setShowLogConfirm] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-  const { usesLeft: aiUsesLeft, setUsesLeft: setAiUsesLeft } = useAIQuota();
+  const { usesLeft: aiUsesLeft } = useAIQuota();
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -360,14 +360,13 @@ export default function ActiveWorkoutScreen() {
     setAiLoading(true);
     try {
       // The quota is counted and enforced by /api/ai; the client just reflects it.
-      const { suggestions: suggested, remaining } = await suggestWorkoutCompletion(
+      const { suggestions: suggested } = await suggestWorkoutCompletion(
         effectiveWorkoutName,
         splitType,
         exercises,
         workoutHistory,
         await getOngoingInjuries(user.uid),
       );
-      if (remaining != null) setAiUsesLeft(remaining);
 
       if (suggested.length === 0) {
         setToast({

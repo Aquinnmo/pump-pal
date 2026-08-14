@@ -191,13 +191,17 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
     // Model loading is deferred until an AI request so ordinary privileged
     // routes never pay for a provider SDK at Worker cold start.
     const { generateDailyName, runPrompt } = await import('./ai/prompts.js');
+    const uid = context.get('uid');
+
     if (body.op === 'daily-name') {
       const cached = await getCachedDailyName();
       const name = cached ?? await setCachedDailyName(await generateDailyName());
-      return context.json({ data: { name }, remaining: null });
+      // Exempt from the cap, so nothing is claimed — but every /api/ai response
+      // carries `remaining` so the client's cached balance refreshes on any AI
+      // call, not just the ones that spend.
+      return context.json({ data: { name }, remaining: (await peekQuota(uid)).remaining });
     }
 
-    const uid = context.get('uid');
     let claimed = false;
     try {
       const remaining = await consumeQuota(uid);

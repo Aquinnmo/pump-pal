@@ -1,5 +1,6 @@
 import { auth } from '@/config/firebase';
 import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/data/sync-trigger';
+import { clearAIQuotaCache } from '@/lib/ai-quota-cache';
 import { connectGoogleAccount as linkGoogleAccount, signInWithGoogle as googleSignIn, signOutGoogle } from '@/lib/google-sign-in';
 import { hasGoogleProvider } from '@/lib/google-account-link';
 import { loadCatalog } from '@/lib/exercise-catalog';
@@ -100,6 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // the picker instead of silently reusing the last one.
     await signOutGoogle();
     await signOut(auth);
+    // The cached AI balance is per-user; the next account must not inherit it.
+    clearAIQuotaCache();
   };
 
   return (
