@@ -73,6 +73,11 @@ assert.deepEqual(
   directProfilePatchInput.parse({ workoutSplit: { type: 'Full Body', custom: null }, username: 'not-accepted-here' }),
   { workoutSplit: { type: 'Full Body', custom: null } }
 );
+// aiEnabled is owner-writable (opt-in toggle) but must stay a real boolean —
+// a truthy string would sail past a `!!` check on the server and silently
+// switch AI on for an account that never consented.
+assert.deepEqual(directProfilePatchInput.parse({ aiEnabled: true }), { aiEnabled: true });
+assert.equal(directProfilePatchInput.safeParse({ aiEnabled: 'yes' }).success, false);
 assert.equal(updateUsernameInput.safeParse({ username: 'timber' }).success, true);
 assert.equal(updateUsernameInput.safeParse({}).success, false);
 // uid/aiUsage are not part of the input schema at all — extra keys are ignored by
@@ -84,7 +89,7 @@ assert.equal(Object.keys(profilePatchInput.shape).includes('uid'), false);
   const parsed = profilePatchInput.parse({ uid: 'someone-elses-uid', workoutSplit: { type: 'Full Body', custom: null } });
   assert.equal('uid' in parsed, false);
 }
-assert.equal(profileResponse.safeParse({ profile: { workoutSplit: null, username: null, aiUsage: null, version: 'v1' } }).success, true);
+assert.equal(profileResponse.safeParse({ profile: { workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, version: 'v1' } }).success, true);
 assert.equal(profileResponse.safeParse({ profile: null }).success, true);
 
 // ---- injuries ----

@@ -1,16 +1,20 @@
-import { FadingScrollView } from '@/ui/primitives/fading-scroll-view';
 import {
   acceptBuddyRequest,
   chopBuddy,
   getBuddies,
   searchUsers,
   sendBuddyRequest,
-} from '@/data/remote/buddies';
-import type { BuddyDTO, BuddyRequestDTO, BuddySearchResult } from '@timber/contract/api';
-import { toDateKey } from '@/lib/date-key';
-import { Ionicons } from '@expo/vector-icons';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+} from "@/data/remote/buddies";
+import { toDateKey } from "@/lib/date-key";
+import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
+import { Ionicons } from "@expo/vector-icons";
+import type {
+  BuddyDTO,
+  BuddyRequestDTO,
+  BuddySearchResult,
+} from "@timber/contract/api";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -18,8 +22,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 /**
  * Social: find people, buddy up, and chop the ones who haven't trained today.
@@ -39,13 +43,13 @@ function cooldownRemaining(lastChoppedAt: string | null, now: number): number {
 
 function formatCountdown(ms: number): string {
   const total = Math.ceil(ms / 1000);
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 }
 
 export default function SocialScreen() {
   const insets = useSafeAreaInsets();
 
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<BuddySearchResult[]>([]);
   const [searching, setSearching] = useState(false);
 
@@ -67,7 +71,7 @@ export default function SocialScreen() {
       setRequests(data.requests);
       setError(null);
     } catch {
-      setError('Could not load your buddies. Tap to retry.');
+      setError("Could not load your buddies. Tap to retry.");
     } finally {
       setLoading(false);
     }
@@ -76,11 +80,13 @@ export default function SocialScreen() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+    }, [load]),
   );
 
   // Only tick while something is actually counting down.
-  const anyCooldown = buddies.some((b) => cooldownRemaining(b.lastChoppedAt, now) > 0);
+  const anyCooldown = buddies.some(
+    (b) => cooldownRemaining(b.lastChoppedAt, now) > 0,
+  );
   useEffect(() => {
     if (!anyCooldown) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -114,9 +120,11 @@ export default function SocialScreen() {
     setBusyUid(uid);
     try {
       await sendBuddyRequest(uid);
-      setResults((rs) => rs.map((r) => (r.uid === uid ? { ...r, state: 'outgoing' } : r)));
+      setResults((rs) =>
+        rs.map((r) => (r.uid === uid ? { ...r, state: "outgoing" } : r)),
+      );
     } catch {
-      setError('Could not send that request. Tap to retry.');
+      setError("Could not send that request. Tap to retry.");
     } finally {
       setBusyUid(null);
     }
@@ -126,10 +134,12 @@ export default function SocialScreen() {
     setBusyUid(uid);
     try {
       await acceptBuddyRequest(uid);
-      setResults((rs) => rs.map((r) => (r.uid === uid ? { ...r, state: 'buddies' } : r)));
+      setResults((rs) =>
+        rs.map((r) => (r.uid === uid ? { ...r, state: "buddies" } : r)),
+      );
       await load();
     } catch {
-      setError('Could not accept that request. Tap to retry.');
+      setError("Could not accept that request. Tap to retry.");
     } finally {
       setBusyUid(null);
     }
@@ -140,7 +150,9 @@ export default function SocialScreen() {
     // Optimistic: the button flips to cooling-down immediately, and the
     // reconcile below corrects it if the server disagreed.
     const stamp = new Date().toISOString();
-    setBuddies((bs) => bs.map((b) => (b.uid === uid ? { ...b, lastChoppedAt: stamp } : b)));
+    setBuddies((bs) =>
+      bs.map((b) => (b.uid === uid ? { ...b, lastChoppedAt: stamp } : b)),
+    );
     setNow(Date.now());
     try {
       await chopBuddy(uid, today);
@@ -148,8 +160,8 @@ export default function SocialScreen() {
       const code = (e as { code?: string }).code;
       // 'already_worked_out' means they trained since this list loaded — the
       // happy path, not a failure. Reload so the row says so.
-      if (code !== 'already_worked_out' && code !== 'chop_cooldown') {
-        setError('Could not land that chop. Tap to retry.');
+      if (code !== "already_worked_out" && code !== "chop_cooldown") {
+        setError("Could not land that chop. Tap to retry.");
       }
       await load();
     } finally {
@@ -159,7 +171,12 @@ export default function SocialScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.fixedHeader, { paddingTop: Math.max(insets.top + 18, 36) }]}>
+      <View
+        style={[
+          styles.fixedHeader,
+          { paddingTop: Math.max(insets.top + 18, 36) },
+        ]}
+      >
         <View style={styles.headerContent}>
           <Text style={styles.pageTitle}>Social</Text>
           <TextInput
@@ -178,7 +195,11 @@ export default function SocialScreen() {
 
       <FadingScrollView contentContainerStyle={styles.content}>
         {error && (
-          <TouchableOpacity style={styles.errorRow} activeOpacity={0.7} onPress={load}>
+          <TouchableOpacity
+            style={styles.errorRow}
+            activeOpacity={0.7}
+            onPress={load}
+          >
             <Text style={styles.errorText}>{error}</Text>
           </TouchableOpacity>
         )}
@@ -194,13 +215,15 @@ export default function SocialScreen() {
         ) : (
           <>
             {requests
-              .filter((r) => r.direction === 'incoming')
+              .filter((r) => r.direction === "incoming")
               .map((r) => (
                 <View key={r.uid} style={styles.card}>
                   <Ionicons name="person-add" size={20} color="#e54242" />
                   <View style={styles.cardText}>
                     <Text style={styles.cardTitle}>{r.username}</Text>
-                    <Text style={styles.cardSubtitle}>Wants to be your buddy.</Text>
+                    <Text style={styles.cardSubtitle}>
+                      Wants to be your buddy.
+                    </Text>
                   </View>
                   <ActionButton
                     label="Accept"
@@ -217,8 +240,9 @@ export default function SocialScreen() {
                 <View style={styles.cardText}>
                   <Text style={styles.cardTitle}>No buddies yet</Text>
                   <Text style={styles.cardSubtitle}>
-                    Search a username above to buddy up. You will see their streaks here, and you
-                    can chop them on a day they have not trained.
+                    Search a username above to buddy up. You will see their
+                    streaks here, and you can chop them on a day they have not
+                    trained.
                   </Text>
                 </View>
               </View>
@@ -237,14 +261,11 @@ export default function SocialScreen() {
             <TouchableOpacity
               style={styles.card}
               activeOpacity={0.7}
-              onPress={() => router.push('/(tabs)/pushup-challenge')}
+              onPress={() => router.push("/(tabs)/pushup-challenge")}
             >
               <Ionicons name="flame" size={20} color="#e54242" />
               <View style={styles.cardText}>
                 <Text style={styles.cardTitle}>The Pushup Challenge</Text>
-                <Text style={styles.cardSubtitle}>
-                  One more pushup every day. Miss a day, start over.
-                </Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#666" />
             </TouchableOpacity>
@@ -276,7 +297,9 @@ function SearchResults({
       <View style={styles.card}>
         <View style={styles.cardText}>
           <Text style={styles.cardTitle}>No one by that name</Text>
-          <Text style={styles.cardSubtitle}>Usernames are exact — check the spelling.</Text>
+          <Text style={styles.cardSubtitle}>
+            Usernames are exact — check the spelling.
+          </Text>
         </View>
       </View>
     );
@@ -290,18 +313,26 @@ function SearchResults({
           <View style={styles.cardText}>
             <Text style={styles.cardTitle}>{r.username}</Text>
           </View>
-          {r.state === 'none' && (
+          {r.state === "none" && (
             <ActionButton
               label="Buddy up"
               busy={busyUid === r.uid}
               onPress={() => onBuddyUp(r.uid)}
             />
           )}
-          {r.state === 'incoming' && (
-            <ActionButton label="Accept" busy={busyUid === r.uid} onPress={() => onAccept(r.uid)} />
+          {r.state === "incoming" && (
+            <ActionButton
+              label="Accept"
+              busy={busyUid === r.uid}
+              onPress={() => onAccept(r.uid)}
+            />
           )}
-          {r.state === 'outgoing' && <Text style={styles.stateLabel}>Requested</Text>}
-          {r.state === 'buddies' && <Text style={styles.stateLabel}>Buddies</Text>}
+          {r.state === "outgoing" && (
+            <Text style={styles.stateLabel}>Requested</Text>
+          )}
+          {r.state === "buddies" && (
+            <Text style={styles.stateLabel}>Buddies</Text>
+          )}
         </View>
       ))}
     </>
@@ -327,8 +358,8 @@ function BuddyRow({
         <Text style={styles.cardTitle}>{buddy.username}</Text>
         <Text style={styles.cardSubtitle}>
           {buddy.currentStreak > 0
-            ? `${buddy.currentStreak} day streak · best ${buddy.longestStreak}`
-            : `No streak running · best ${buddy.longestStreak}`}
+            ? `${buddy.currentStreak} Day Current Streak · Record ${buddy.longestStreak}`
+            : `No Current Streak · Record ${buddy.longestStreak}`}
         </Text>
       </View>
 
@@ -377,36 +408,36 @@ function ActionButton({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f0f0f',
+    backgroundColor: "#0f0f0f",
   },
   fixedHeader: {
-    width: '100%',
-    backgroundColor: '#0f0f0f',
+    width: "100%",
+    backgroundColor: "#0f0f0f",
     paddingBottom: 8,
   },
   headerContent: {
-    width: '100%',
+    width: "100%",
     maxWidth: 760,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: 20,
     gap: 14,
   },
   pageTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: -0.5,
   },
   search: {
-    backgroundColor: '#151515',
+    backgroundColor: "#151515",
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "#2a2a2a",
     borderRadius: 10,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
   },
   content: {
@@ -414,14 +445,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
-    backgroundColor: '#1c1c1c',
+    backgroundColor: "#1c1c1c",
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "#2a2a2a",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     padding: 16,
   },
   cardText: {
@@ -429,65 +460,65 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cardTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cardSubtitle: {
-    color: '#888',
+    color: "#888",
     fontSize: 14,
   },
   action: {
-    backgroundColor: '#e54242',
+    backgroundColor: "#e54242",
     borderRadius: 10,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     paddingVertical: 10,
     paddingHorizontal: 16,
     minWidth: 84,
     minHeight: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   actionText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
-    fontWeight: '800',
+    fontWeight: "800",
   },
   stateLabel: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
-    fontVariant: ['tabular-nums'],
+    fontVariant: ["tabular-nums"],
   },
   doneBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
-    backgroundColor: 'rgba(74, 222, 128, 0.08)',
+    backgroundColor: "rgba(74, 222, 128, 0.08)",
     borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.24)',
+    borderColor: "rgba(74, 222, 128, 0.24)",
     borderRadius: 10,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   doneText: {
-    color: '#4ade80',
+    color: "#4ade80",
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   loader: {
     marginTop: 24,
   },
   errorRow: {
-    backgroundColor: '#1c1c1c',
+    backgroundColor: "#1c1c1c",
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "#2a2a2a",
     borderRadius: 14,
-    borderCurve: 'continuous',
+    borderCurve: "continuous",
     padding: 16,
   },
   errorText: {
-    color: '#f87171',
+    color: "#f87171",
     fontSize: 14,
   },
 });

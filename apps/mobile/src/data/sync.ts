@@ -66,12 +66,16 @@ function profileFromDto(dto: ProfileDTO): UserDoc {
     ...(dto.workoutSplit ? { workoutSplit: { ...dto.workoutSplit, updatedAt: new Date().toISOString() } } : {}),
     ...(dto.username ? { username: dto.username, usernameLower: dto.username.toLowerCase() } : {}),
     ...(dto.aiUsage ? { aiUsage: dto.aiUsage } : {}),
+    // Carried, not defaulted: this write replaces the whole local row, so
+    // dropping the flag here would silently switch AI back off on every pull.
+    ...(dto.aiEnabled === null ? {} : { aiEnabled: dto.aiEnabled }),
   };
 }
 function profilePatch(payload: unknown) {
   const profile = payload as UserDoc;
   return {
     ...(profile.workoutSplit ? { workoutSplit: { type: profile.workoutSplit.type, custom: profile.workoutSplit.custom } } : {}),
+    ...(profile.aiEnabled === undefined ? {} : { aiEnabled: profile.aiEnabled }),
   };
 }
 function challengeFromDto(dto: PushupChallengeDTO): ChallengeData {
@@ -87,11 +91,11 @@ const profileAdapter: EntityAdapter = {
   remote: {
     async create(payload, _id, signal) {
       const patch = profilePatch(payload);
-      return patch.workoutSplit ? direct.profile.write(patch, null, signal) : direct.profile.read(signal);
+      return Object.keys(patch).length > 0 ? direct.profile.write(patch, null, signal) : direct.profile.read(signal);
     },
     async update(_id, payload, baseVersion, signal) {
       const patch = profilePatch(payload);
-      return patch.workoutSplit ? direct.profile.write(patch, baseVersion, signal) : direct.profile.read(signal);
+      return Object.keys(patch).length > 0 ? direct.profile.write(patch, baseVersion, signal) : direct.profile.read(signal);
     },
     async delete() { return; },
   },

@@ -1,17 +1,18 @@
-import { DevelopmentProgressSummary } from "@/ui/development-progress-summary";
-import { MuscleInsightCards } from "@/ui/muscle-insight-cards";
-import { MuscleLoadSummary } from "@/ui/muscle-load-summary";
-import { SetConsistencySummary } from "@/ui/set-consistency-summary";
-import { Dropdown } from "@/ui/primitives/dropdown";
 import { useAuth } from "@/context/auth-context";
 import { workoutRepository } from "@/data/workout-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
-import { Workout } from "@/types/workout";
+import { useAIEnabled } from "@/lib/use-ai-enabled";
 import {
   exerciseLabel,
   isDurationExercise,
   toDateObj,
 } from "@/lib/workout-conversion";
+import { Workout } from "@/types/workout";
+import { DevelopmentProgressSummary } from "@/ui/development-progress-summary";
+import { MuscleInsightCards } from "@/ui/muscle-insight-cards";
+import { MuscleLoadSummary } from "@/ui/muscle-load-summary";
+import { Dropdown } from "@/ui/primitives/dropdown";
+import { SetConsistencySummary } from "@/ui/set-consistency-summary";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
@@ -33,6 +34,17 @@ const MAX_CHART_LABELS = 4;
 const CHART_Y_AXIS_GUTTER = 46;
 const FADE_HEIGHT = 24;
 const SCROLL_EDGE_THRESHOLD = 4;
+
+/**
+ * Picks the exercise with the highest recorded value, so a personal-best row
+ * opens on the user's best lift rather than whatever sorts first alphabetically.
+ * Ties keep the earlier name, which is alphabetical since the lists are sorted.
+ */
+function highestOf(names: string[], values: Record<string, number>): string {
+  return names.reduce((best, name) =>
+    (values[name] ?? -Infinity) > (values[best] ?? -Infinity) ? name : best,
+  );
+}
 
 type StrengthHistoryPoint = {
   dateLabel: string;
@@ -72,6 +84,7 @@ const chartConfig = {
 export default function AnalyticsScreen() {
   const { user } = useAuth();
   const dataVersion = useDataVersion();
+  const aiEnabled = useAIEnabled();
   const { width } = useWindowDimensions();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -346,12 +359,14 @@ export default function AnalyticsScreen() {
     if (selectedExercise !== activeStrengthExercise)
       setSelectedExercise(activeStrengthExercise);
     if (!selectedMaxExercise && weightedExercises.length > 0)
-      setSelectedMaxExercise(weightedExercises[0]);
+      setSelectedMaxExercise(highestOf(weightedExercises, maxWeights));
     if (!selectedMaxRepsExercise && bodyweightExerciseList.length > 0) {
-      setSelectedMaxRepsExercise(bodyweightExerciseList[0]);
+      setSelectedMaxRepsExercise(highestOf(bodyweightExerciseList, maxReps));
     }
     if (!selectedLongestDurationExercise && durationExerciseList.length > 0) {
-      setSelectedLongestDurationExercise(durationExerciseList[0]);
+      setSelectedLongestDurationExercise(
+        highestOf(durationExerciseList, maxDuration),
+      );
     }
   }, [
     selectedExercise,
@@ -362,6 +377,9 @@ export default function AnalyticsScreen() {
     weightedExercises,
     bodyweightExerciseList,
     durationExerciseList,
+    maxWeights,
+    maxReps,
+    maxDuration,
   ]);
 
   const chartWidth = Math.max(240, Math.min(width - 40, 720) - 36);
@@ -441,7 +459,7 @@ export default function AnalyticsScreen() {
           </Text>
           <Text style={styles.stateMessage} selectable>
             Log a session and Timber will turn it into records, trends, and
-            muscle insights.
+            muscle load.
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -459,55 +477,15 @@ export default function AnalyticsScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.section}>
-            <MuscleInsightCards workouts={workouts} />
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeading}>
-              <Text style={styles.sectionTitle}>Your Body</Text>
+          {aiEnabled && (
+            <View style={styles.section}>
+              <MuscleInsightCards workouts={workouts} />
             </View>
-            <View style={styles.bodyNavigationPanel}>
-              <MuscleLoadSummary workouts={workouts} />
-              <View style={styles.bodyNavigationDivider} />
-              <DevelopmentProgressSummary workouts={workouts} />
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeading}>
-              <Text style={styles.sectionTitle}>The All Timers</Text>
-            </View>
-            <View style={styles.groupedPanel}>
-              <HighlightRow
-                label="Favorite Workout Type"
-                value={favoriteWorkoutType || "Not available"}
-              />
-              <View style={styles.divider} />
-              <HighlightRow
-                label="Favorite Exercise"
-                value={favoriteExercise || "Not available"}
-              />
-              {heaviestLift && (
-                <>
-                  <View style={styles.divider} />
-                  <HighlightRow
-                    label="Heaviest Lift"
-                    detail={heaviestLift.exercise}
-                    value={`${heaviestLift.weight} lbs`}
-                    numeric
-                  />
-                </>
-              )}
-            </View>
-          </View>
+          )}
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
               <Text style={styles.sectionTitle}>Estimated 1RM</Text>
-              <Text style={styles.sectionSubtitle} selectable>
-                Best weighted set from each training day
-              </Text>
             </View>
             <View style={styles.featurePanel}>
               {strengthSummary && strengthChartData ? (
@@ -642,6 +620,45 @@ export default function AnalyticsScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>Your Body</Text>
+            </View>
+            <View style={styles.bodyNavigationPanel}>
+              <MuscleLoadSummary workouts={workouts} />
+              <View style={styles.bodyNavigationDivider} />
+              <DevelopmentProgressSummary workouts={workouts} />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeading}>
+              <Text style={styles.sectionTitle}>The All Timers</Text>
+            </View>
+            <View style={styles.groupedPanel}>
+              <HighlightRow
+                label="Favorite Workout Type"
+                value={favoriteWorkoutType || "Not available"}
+              />
+              <View style={styles.divider} />
+              <HighlightRow
+                label="Favorite Exercise"
+                value={favoriteExercise || "Not available"}
+              />
+              {heaviestLift && (
+                <>
+                  <View style={styles.divider} />
+                  <HighlightRow
+                    label="Heaviest Lift"
+                    detail={heaviestLift.exercise}
+                    value={`${heaviestLift.weight} lbs`}
+                    numeric
+                  />
+                </>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <View style={styles.sectionHeading}>
               <Text style={styles.sectionTitle}>Consistency</Text>
             </View>
             <SetConsistencySummary workouts={workouts} />
@@ -649,15 +666,11 @@ export default function AnalyticsScreen() {
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>
-              <Text style={styles.sectionTitle}>Your best sets</Text>
-              <Text style={styles.sectionSubtitle}>
-                Choose an exercise to see your best set.
-              </Text>
+              <Text style={styles.sectionTitle}>Simply the Best</Text>
             </View>
             <View style={styles.groupedPanel}>
               <PersonalBestRow
                 label="Max Weight"
-                description="Highest weight lifted"
                 options={weightedExercises}
                 selected={selectedMaxExercise}
                 onSelect={setSelectedMaxExercise}
@@ -675,7 +688,6 @@ export default function AnalyticsScreen() {
                   <View style={styles.divider} />
                   <PersonalBestRow
                     label="Max Reps"
-                    description="Highest reps in a single set"
                     options={bodyweightExerciseList}
                     selected={selectedMaxRepsExercise}
                     onSelect={setSelectedMaxRepsExercise}
@@ -695,7 +707,6 @@ export default function AnalyticsScreen() {
                   <View style={styles.divider} />
                   <PersonalBestRow
                     label="Longest Duration"
-                    description="Longest single set ever recorded"
                     options={durationExerciseList}
                     selected={selectedLongestDurationExercise}
                     onSelect={setSelectedLongestDurationExercise}
@@ -861,7 +872,6 @@ function HighlightRow({
 
 function PersonalBestRow({
   label,
-  description,
   options,
   selected,
   onSelect,
@@ -869,7 +879,6 @@ function PersonalBestRow({
   emptyMessage,
 }: {
   label: string;
-  description: string;
   options: string[];
   selected: string | null;
   onSelect: (value: string) => void;
@@ -881,7 +890,6 @@ function PersonalBestRow({
       <View style={styles.personalBestHeader}>
         <View style={styles.personalBestCopy}>
           <Text style={styles.metricLabel}>{label}</Text>
-          <Text style={styles.metricDetail}>{description}</Text>
         </View>
         {value && (
           <Text style={[styles.personalBestValue, styles.numeric]} selectable>

@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "631531267876",
+    "project_id": "pumppal-c9199",
+    "storage_bucket": "pumppal-c9199.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:631531267876:android:408ab2aa328df72f2cb5b1",
+        "android_client_info": {
+          "package_name": "com.aquinnmo.timber"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "631531267876-h7isllb274j9c95vbsui56jnl4sg0rj6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aquinnmo.timber",
+            "certificate_hash": "226fb495dcbe04dd4864ff370c2063381d8c315f"
+          }
+        },
+        {
+          "client_id": "631531267876-torra1hkclmmfn1amdua7m3q3485c0d8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSBkvtaLeoRwZPc2kSnIP_AqcVLZTTdyg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "631531267876-e5rp7jdqisuk44np0alugkdehq8jmag8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "631531267876-f7f171irb9rcndsi0er5kjgfms8cbbeo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aquinnmo.timber"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:631531267876:android:fabd8253b44f27302cb5b1",
+        "android_client_info": {
+          "package_name": "com.aquinnmo.timber_dev"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "631531267876-22pnb6sc2dqrk4gm9fj725ievtbga354.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aquinnmo.timber_dev",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "631531267876-torra1hkclmmfn1amdua7m3q3485c0d8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSBkvtaLeoRwZPc2kSnIP_AqcVLZTTdyg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "631531267876-e5rp7jdqisuk44np0alugkdehq8jmag8.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "631531267876-f7f171irb9rcndsi0er5kjgfms8cbbeo.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.aquinnmo.timber"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

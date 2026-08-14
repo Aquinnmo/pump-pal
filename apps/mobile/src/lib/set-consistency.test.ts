@@ -4,7 +4,10 @@ import type {
   PerformedSet,
   Workout,
 } from "@/types/workout";
-import { analyzeSetConsistency } from "@/lib/set-consistency";
+import {
+  analyzeSetConsistency,
+  type SetChangeBucket,
+} from "@/lib/set-consistency";
 
 function exercise(id: string, sets: PerformedSet[]): PerformedExercise {
   return {
@@ -41,6 +44,14 @@ function weighted(values: [number, number][]): PerformedSet[] {
   }));
 }
 
+function bodyweight(values: number[]): PerformedSet[] {
+  return values.map((reps, index) => ({
+    setNumber: index + 1,
+    bodyweight: true,
+    reps,
+  }));
+}
+
 function entryWorkout(
   id: string,
   day: number,
@@ -50,6 +61,90 @@ function entryWorkout(
     id,
     `2026-07-${String(day).padStart(2, "0")}T12:00:00.000Z`,
     [exercise(id, weighted(values))],
+  );
+}
+
+/** Classify a single exercise by reading back which bucket it landed in. */
+function bucketOf(sets: PerformedSet[]): SetChangeBucket | null {
+  const result = analyzeSetConsistency([
+    workout("probe", "2026-07-01T12:00:00.000Z", [exercise("probe", sets)]),
+  ]);
+  const hit = Object.entries(result.distribution).find(([, count]) => count > 0);
+  return (hit?.[0] as SetChangeBucket) ?? null;
+}
+
+// Weight and reps are negatively coupled — a heavier set buys fewer reps — so a
+// textbook pyramid must NOT read as erratic just because reps fell while the
+// weight climbed. This is the regression that made the verdict disagree with
+// the graph.
+function testSetSchemes(): void {
+  const cases: [string, PerformedSet[], SetChangeBucket][] = [
+    ["straight sets", weighted([[100, 10], [100, 10], [100, 10]]), "held"],
+    ["straight + rep fade", weighted([[100, 10], [100, 9], [100, 8]]), "held"],
+    ["straight + rep crash", weighted([[100, 10], [100, 9], [100, 4]]), "bigDrop"],
+    [
+      "ascending pyramid",
+      weighted([[60, 12], [80, 10], [100, 8], [110, 6]]),
+      "bigSpike",
+    ],
+    ["reverse pyramid", weighted([[110, 6], [100, 8], [80, 10]]), "bigDrop"],
+    ["drop set", weighted([[100, 10], [80, 8], [60, 6]]), "bigDrop"],
+    [
+      "top set + backoff",
+      weighted([[120, 5], [100, 8], [100, 8]]),
+      "minorDrop",
+    ],
+    // No single step clears 10%, but the net climb is 20%.
+    [
+      "gradual ramp",
+      weighted([[100, 10], [105, 10], [115, 10], [120, 10]]),
+      "minorSpike",
+    ],
+    [
+      "pyramid up then down",
+      weighted([[60, 10], [80, 10], [100, 10], [80, 10], [60, 10]]),
+      "erratic",
+    ],
+    ["wandering", weighted([[100, 10], [60, 10], [100, 10]]), "erratic"],
+    ["bodyweight rep fade", bodyweight([12, 11, 10, 10]), "held"],
+    ["bodyweight collapse", bodyweight([20, 14, 9, 6]), "bigDrop"],
+  ];
+
+  cases.forEach(([name, sets, expected]) => {
+    assert.equal(bucketOf(sets), expected, `${name} should be ${expected}`);
+  });
+}
+
+function testIneligibleExercises(): void {
+  assert.equal(bucketOf(weighted([[100, 10]])), null, "single set");
+  assert.equal(bucketOf([]), null, "no sets");
+  assert.equal(
+    bucketOf([
+      { setNumber: 1, durationSeconds: 60 },
+      { setNumber: 2, durationSeconds: 90 },
+    ]),
+    null,
+    "neither weight nor reps logged",
+  );
+  // Weight logged and perfectly flat, no reps to fall back on.
+  assert.equal(
+    bucketOf([
+      { setNumber: 1, weight: 100 },
+      { setNumber: 2, weight: 100 },
+    ]),
+    "held",
+  );
+}
+
+function testSetsAreOrderedBySetNumber(): void {
+  assert.equal(
+    bucketOf([
+      { setNumber: 3, weight: 60, reps: 10 },
+      { setNumber: 1, weight: 100, reps: 10 },
+      { setNumber: 2, weight: 80, reps: 10 },
+    ]),
+    "bigDrop",
+    "out-of-order sets should sort before classifying",
   );
 }
 
@@ -63,131 +158,78 @@ function testMinimumEvidence(): void {
 }
 
 function testFourCategories(): void {
-  const stable = (id: string, day: number) =>
-    entryWorkout(id, day, [[100, 10], [109, 11]]);
+  const steady = (id: string, day: number) =>
+    entryWorkout(id, day, [[100, 10], [100, 10]]);
+
   assert.equal(
-    analyzeSetConsistency([
-      stable("s1", 1),
-      stable("s2", 2),
-      stable("s3", 3),
-    ]).category,
+    analyzeSetConsistency([steady("s1", 1), steady("s2", 2), steady("s3", 3)])
+      .category,
     "consistent",
   );
 
   assert.equal(
     analyzeSetConsistency([
-      entryWorkout("o1", 1, [[100, 10], [90, 10]]),
-      entryWorkout("o2", 2, [[100, 10], [100, 8]]),
-      stable("o3", 3),
+      entryWorkout("o1", 1, [[100, 10], [80, 10]]),
+      entryWorkout("o2", 2, [[100, 10], [85, 10]]),
+      steady("o3", 3),
     ]).category,
     "overconfident",
   );
 
   assert.equal(
     analyzeSetConsistency([
-      entryWorkout("u1", 1, [[100, 10], [110, 10]]),
-      entryWorkout("u2", 2, [[100, 10], [100, 12]]),
-      stable("u3", 3),
+      entryWorkout("u1", 1, [[100, 10], [120, 10]]),
+      entryWorkout("u2", 2, [[100, 10], [115, 10]]),
+      steady("u3", 3),
     ]).category,
     "underconfident",
   );
 
   assert.equal(
     analyzeSetConsistency([
-      entryWorkout("up", 1, [[100, 10], [110, 10]]),
-      entryWorkout("down", 2, [[100, 10], [90, 10]]),
-      stable("steady", 3),
+      entryWorkout("up", 1, [[100, 10], [120, 10]]),
+      entryWorkout("down", 2, [[100, 10], [80, 10]]),
+      steady("steady", 3),
     ]).category,
     "erratic",
   );
 }
 
-function testBoundariesAndMixedMovement(): void {
-  const exactThresholds = analyzeSetConsistency([
-    entryWorkout("weight", 1, [[100, 10], [110, 10]]),
-    entryWorkout("reps", 2, [[100, 10], [100, 12]]),
-    entryWorkout("below", 3, [[100, 10], [109, 11]]),
+// An exercise that went both ways is evidence on both sides, so a roster of
+// pure pyramids-up-then-down reads erratic rather than picking a direction.
+function testErraticCountsBothWays(): void {
+  const swing = (id: string, day: number) =>
+    entryWorkout(id, day, [[60, 10], [100, 10], [60, 10]]);
+  const result = analyzeSetConsistency([
+    swing("e1", 1),
+    swing("e2", 2),
+    swing("e3", 3),
   ]);
-  assert.equal(exactThresholds.category, "underconfident");
-  assert.deepEqual(exactThresholds.entries, {
-    stable: 1,
-    upward: 2,
-    downward: 0,
-    mixed: 0,
-  });
-
-  const reverseThresholds = analyzeSetConsistency([
-    entryWorkout("weight", 1, [[110, 10], [100, 10]]),
-    entryWorkout("reps", 2, [[100, 12], [100, 10]]),
-    entryWorkout("below", 3, [[109, 11], [100, 10]]),
-  ]);
-  assert.equal(reverseThresholds.category, "overconfident");
-  assert.deepEqual(reverseThresholds.entries, {
-    stable: 1,
-    upward: 0,
-    downward: 2,
-    mixed: 0,
-  });
-
-  const eightyPercentStable = analyzeSetConsistency([
-    entryWorkout("s1", 1, [[100, 10], [100, 10]]),
-    entryWorkout("s2", 2, [[100, 10], [100, 10]]),
-    entryWorkout("s3", 3, [[100, 10], [100, 10]]),
-    entryWorkout("s4", 4, [[100, 10], [100, 10]]),
-    entryWorkout("up", 5, [[100, 10], [110, 10]]),
-  ]);
-  assert.equal(eightyPercentStable.category, "consistent");
-
-  const mixed = analyzeSetConsistency([
-    entryWorkout("mixed", 1, [[100, 10], [120, 10], [90, 10]]),
-    entryWorkout("s1", 2, [[100, 10], [100, 10]]),
-    entryWorkout("s2", 3, [[100, 10], [100, 10]]),
-  ]);
-  assert.equal(mixed.category, "erratic");
-  assert.equal(mixed.entries.mixed, 1);
-
-  const opposingMetrics = analyzeSetConsistency([
-    entryWorkout("drop-set", 1, [[100, 10], [80, 12]]),
-    entryWorkout("s1", 2, [[100, 10], [100, 10]]),
-    entryWorkout("s2", 3, [[100, 10], [100, 10]]),
-  ]);
-  assert.equal(opposingMetrics.category, "erratic");
-  assert.equal(
-    opposingMetrics.entries.mixed,
-    1,
-    "opposing weight and rep changes contribute both directions",
-  );
+  assert.equal(result.distribution.erratic, 3);
+  assert.equal(result.category, "erratic");
 }
 
-function testTrackingModesAndConsecutiveSets(): void {
+function testDistributionTally(): void {
   const result = analyzeSetConsistency([
-    workout("bodyweight", "2026-07-01T12:00:00.000Z", [
-      exercise("push-up", [
-        { setNumber: 1, reps: 10, bodyweight: true },
-        { setNumber: 2, reps: 12, bodyweight: true },
-      ]),
+    workout("dist", "2026-07-01T12:00:00.000Z", [
+      exercise("flat", weighted([[100, 10], [100, 10]])),
+      exercise("backoff", weighted([[120, 5], [100, 8], [100, 8]])),
+      exercise("dropset", weighted([[100, 10], [80, 8], [60, 6]])),
+      exercise("ramp", weighted([[100, 10], [105, 10], [115, 10], [120, 10]])),
+      exercise("pyramid", weighted([[60, 12], [80, 10], [100, 8], [110, 6]])),
+      exercise("swing", weighted([[60, 10], [100, 10], [60, 10]])),
     ]),
-    workout("duration", "2026-07-02T12:00:00.000Z", [
-      exercise("plank", [
-        { setNumber: 1, durationSeconds: 30 },
-        { setNumber: 2, durationSeconds: 60 },
-      ]),
-    ]),
-    workout("missing", "2026-07-03T12:00:00.000Z", [
-      exercise("press", [
-        { setNumber: 1, weight: 100, reps: 10 },
-        { setNumber: 2 },
-        { setNumber: 3, weight: 50, reps: 5 },
-      ]),
-    ]),
-    entryWorkout("steady-a", 4, [[100, 10], [100, 10]]),
-    entryWorkout("steady-b", 5, [[100, 10], [100, 10]]),
   ]);
 
-  assert.equal(result.eligibleEntries, 3);
-  assert.equal(result.entries.upward, 1);
-  assert.equal(result.entries.stable, 2);
-  assert.equal(result.category, "underconfident");
+  assert.deepEqual(result.distribution, {
+    bigDrop: 1,
+    minorDrop: 1,
+    held: 1,
+    minorSpike: 1,
+    bigSpike: 1,
+    erratic: 1,
+  });
+  assert.equal(result.eligibleEntries, 6);
 }
 
 function testLatestThirtyByWorkoutDate(): void {
@@ -208,14 +250,17 @@ function testLatestThirtyByWorkoutDate(): void {
   const result = analyzeSetConsistency(workouts);
   assert.equal(result.analyzedWorkouts, 30);
   assert.equal(result.eligibleEntries, 30);
-  assert.equal(result.entries.downward, 0);
+  assert.equal(result.distribution.bigDrop, 0);
   assert.equal(result.category, "consistent");
 }
 
+testSetSchemes();
+testIneligibleExercises();
+testSetsAreOrderedBySetNumber();
 testMinimumEvidence();
 testFourCategories();
-testBoundariesAndMixedMovement();
-testTrackingModesAndConsecutiveSets();
+testErraticCountsBothWays();
+testDistributionTally();
 testLatestThirtyByWorkoutDate();
 
 console.log("src/lib/set-consistency.test.ts: all assertions passed");

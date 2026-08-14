@@ -11,7 +11,7 @@ import { z } from 'zod';
  */
 
 export const AI_MAX_RETRIES = 2;
-export const TEMPORARY_AI_DAILY_LIMIT = 7;
+export const TEMPORARY_AI_DAILY_LIMIT = 10;
 
 /**
  * Input validation at the trust boundary. Every field is a bounded string —
@@ -65,9 +65,30 @@ export type AIOpOutput<Op extends AIOp> = z.infer<(typeof AI_OPS)[Op]['output']>
 
 export interface AIResponse<Op extends AIOp> {
   data: AIOpOutput<Op>;
-  /** AI calls left today for this user, or null for ops exempt from the cap. */
+  /**
+   * AI calls left today for this user, after this one. Every `/api/ai` response
+   * carries it — including ops exempt from the cap, which report the balance
+   * without spending — so a client's cached count refreshes on any AI call.
+   *
+   * Still nullable on the wire: a Worker deployed before this change answers
+   * `null` for exempt ops, and a client must not treat that as zero.
+   */
   remaining: number | null;
 }
+
+/**
+ * `GET /api/ai/quota`. The client renders `remaining` rather than deriving it
+ * from `TEMPORARY_AI_DAILY_LIMIT` — that constant is bundled into a shipped app
+ * and goes stale the moment the server-side cap changes, so the server is the
+ * only place the limit is known.
+ */
+export const aiQuotaStatus = z.object({
+  remaining: z.number().int().min(0),
+  limit: z.number().int().positive(),
+  /** The UTC day `remaining` is counted against. */
+  date: z.string(),
+});
+export type AIQuotaStatus = z.infer<typeof aiQuotaStatus>;
 
 export const isAIOp = (value: unknown): value is AIOp =>
   typeof value === 'string' && value in AI_OPS;

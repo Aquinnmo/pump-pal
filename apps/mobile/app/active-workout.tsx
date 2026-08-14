@@ -11,7 +11,8 @@ import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
-import { TEMPORARY_AI_DAILY_LIMIT } from "@timber/contract/ai";
+import { useAIQuota } from "@/lib/use-ai-quota";
+import { useAIEnabled } from "@/lib/use-ai-enabled";
 import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
@@ -161,7 +162,8 @@ export default function ActiveWorkoutScreen() {
   const [showLogConfirm, setShowLogConfirm] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiUsesLeft, setAiUsesLeft] = useState(TEMPORARY_AI_DAILY_LIMIT);
+  const { usesLeft: aiUsesLeft } = useAIQuota();
+  const aiEnabled = useAIEnabled();
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -269,15 +271,6 @@ export default function ActiveWorkoutScreen() {
       try {
         const profile = await profileRepository.get(user.uid);
         const data = profile?.data;
-        const todayUTC = new Date().toISOString().slice(0, 10);
-        const aiUsage = data?.aiUsage as
-          | { date: string; count: number }
-          | undefined;
-        setAiUsesLeft(
-          aiUsage && aiUsage.date === todayUTC
-            ? TEMPORARY_AI_DAILY_LIMIT - (aiUsage.count ?? 0)
-            : TEMPORARY_AI_DAILY_LIMIT,
-        );
         const splitType = data?.workoutSplit?.type;
         setSplitType(splitType ?? "");
         const customSplitDesc: string = data?.workoutSplit?.custom ?? "";
@@ -365,18 +358,17 @@ export default function ActiveWorkoutScreen() {
   };
 
   const handleAISuggest = async () => {
-    if (!user || aiUsesLeft <= 0 || !aiAvailable) return;
+    if (!user || aiUsesLeft === 0 || !aiAvailable) return;
     setAiLoading(true);
     try {
       // The quota is counted and enforced by /api/ai; the client just reflects it.
-      const { suggestions: suggested, remaining } = await suggestWorkoutCompletion(
+      const { suggestions: suggested } = await suggestWorkoutCompletion(
         effectiveWorkoutName,
         splitType,
         exercises,
         workoutHistory,
         await getOngoingInjuries(user.uid),
       );
-      if (remaining != null) setAiUsesLeft(remaining);
 
       if (suggested.length === 0) {
         setToast({
@@ -774,14 +766,15 @@ export default function ActiveWorkoutScreen() {
               <Text style={styles.addExText}>Add Exercise</Text>
             </TouchableOpacity>
 
+            {aiEnabled && (
             <TouchableOpacity
               style={[
                 styles.aiSuggestButton,
-                (aiLoading || initializing || aiUsesLeft <= 0 || !aiAvailable) &&
+                (aiLoading || initializing || aiUsesLeft === 0 || !aiAvailable) &&
                   styles.aiSuggestButtonDisabled,
               ]}
               onPress={handleAISuggest}
-              disabled={aiLoading || initializing || aiUsesLeft <= 0 || !aiAvailable}
+              disabled={aiLoading || initializing || aiUsesLeft === 0 || !aiAvailable}
               activeOpacity={0.8}
             >
               {aiLoading ? (
@@ -791,23 +784,26 @@ export default function ActiveWorkoutScreen() {
                   <Ionicons
                     name="sparkles"
                     size={16}
-                    color={aiUsesLeft <= 0 ? "#444" : "#4ea8de"}
+                    color={aiUsesLeft === 0 ? "#444" : "#4ea8de"}
                   />
                   <Text
                     style={[
                       styles.aiSuggestButtonText,
-                      aiUsesLeft <= 0 && styles.aiSuggestButtonTextDisabled,
+                      aiUsesLeft === 0 && styles.aiSuggestButtonTextDisabled,
                     ]}
                   >
                     {!aiAvailable
                       ? "AI needs a connection"
-                      : aiUsesLeft > 0
-                      ? `Balance Workout with AI (${aiUsesLeft} left)`
-                      : "No AI uses left today"}
+                      : aiUsesLeft === 0
+                      ? "No AI uses left today"
+                      : aiUsesLeft == null
+                      ? "Balance Workout with AI"
+                      : `Balance Workout with AI (${aiUsesLeft} left)`}
                   </Text>
                 </>
               )}
             </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[

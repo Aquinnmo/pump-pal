@@ -1,6 +1,7 @@
 import { useAuth } from '@/context/auth-context';
 import { profileRepository } from '@/data/profile-repository';
 import { useDataVersion } from '@/hooks/use-data-version';
+import { useAIEnabled } from '@/lib/use-ai-enabled';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -10,6 +11,7 @@ import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'r
 export default function SettingsScreen() {
   const { user } = useAuth();
   const dataVersion = useDataVersion();
+  const aiEnabled = useAIEnabled();
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,11 +93,13 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={20} color="#888" />
       </TouchableOpacity>
 
-      <View style={styles.attributionCard}>
-        <Text style={styles.attributionText}>
-          Your workout history may be sent to 3rd parties to power AI features.
-        </Text>
-      </View>
+      {aiEnabled && (
+        <View style={styles.attributionCard}>
+          <Text style={styles.attributionText}>
+            Your workout history may be sent to 3rd parties to power AI features.
+          </Text>
+        </View>
+      )}
 
       <View style={styles.attributionCard}>
         <Text style={styles.attributionText}>

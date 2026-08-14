@@ -1,6 +1,7 @@
 import { DateField } from '@/ui/primitives/date-field';
 import { Dropdown } from '@/ui/primitives/dropdown';
 import { Toast } from '@/ui/primitives/toast';
+import { randomId } from '@/data/id';
 import { injuryRepository } from '@/data/injury-repository';
 import { triggerSyncAfterWrite } from '@/data/sync-trigger';
 import { BODY_PARTS, BodyPart, bodyPartLabel, isBodyPart } from '@/constants/body-parts';
@@ -18,7 +19,7 @@ const SEVERITIES: InjurySeverity[] = ['mild', 'moderate', 'severe'];
 const SIDE_OPTIONS = ['N/A', 'Left', 'Right', 'Both'] as const;
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const newId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const newId = () => randomId();
 
 function labelToSide(label: string): InjurySide | undefined {
   if (label === 'Left') return 'left';

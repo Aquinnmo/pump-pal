@@ -4,6 +4,8 @@ import { fetch as expoFetch } from 'expo/fetch';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import { describeError } from './format-ai-error';
+import { isAIEnabled } from './ai-enabled';
+import { recordRemaining } from './ai-quota-cache';
 import { normalizeApiBaseUrl } from './api-client-core';
 
 /**
@@ -42,6 +44,20 @@ export class AIQuotaError extends Error {
   }
 }
 
+/**
+ * The account has not opted in to AI (`users/{uid}.aiEnabled`). Thrown before
+ * any request leaves the device, at the one seam every AI feature passes
+ * through — including the ones with no UI to hide (`loadSplitNames`,
+ * `getDailyName`), which would otherwise keep calling out for a user who said
+ * no. Retrying can never succeed: the fix is the toggle in Settings > App.
+ */
+export class AIDisabledError extends Error {
+  constructor() {
+    super('AI features are off for this account. Turn them on in Settings > App.');
+    this.name = 'AIDisabledError';
+  }
+}
+
 async function assertAIConnectivity(): Promise<void> {
   if (Platform.OS === 'web') return;
   const state = await NetInfo.fetch();
@@ -56,6 +72,10 @@ export async function callAI<Op extends AIOp>(
 ): Promise<AIResponse<Op>> {
   const user = auth.currentUser;
   if (!user) throw new Error('You must be signed in to use AI features.');
+
+  // Checked before connectivity: being offline is not why this call is refused,
+  // and the offline copy would send the user looking for a network fix.
+  if (!(await isAIEnabled(user.uid))) throw new AIDisabledError();
 
   await assertAIConnectivity();
 
@@ -97,13 +117,23 @@ export async function callAI<Op extends AIOp>(
 
   if (!response.ok || !body) {
     const detail = body?.error == null ? null : describeError(body.error);
-    if (response.status === 429) throw new AIQuotaError(detail ?? undefined);
+    if (response.status === 429) {
+      // 429 *is* the balance: the server refused because there is nothing left.
+      recordRemaining(user.uid, 0);
+      throw new AIQuotaError(detail ?? undefined);
+    }
     throw new Error(
       detail
         ? `AI request failed (${response.status}): ${detail}`
         : `AI request failed (${response.status})`
     );
   }
+
+  // Every /api/ai response carries `remaining`, including ops exempt from the
+  // cap. Recording it here rather than at each call site means an op whose
+  // caller ignores the count still refreshes the cached balance. (A Worker
+  // deployed before that change sends null for exempt ops — not zero.)
+  if (body.remaining != null) recordRemaining(user.uid, body.remaining);
 
   return body;
 }

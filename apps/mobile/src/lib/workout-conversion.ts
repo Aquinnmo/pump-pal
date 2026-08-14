@@ -1,9 +1,10 @@
+import { randomId } from '@/data/id';
 import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, RecentExercise, Workout } from '@/types/workout';
 
 // Client-only unique id for a draft row (React key + drag identity). Only needs
 // to be unique within one screen's editing session.
 export function makeUid(): string {
-  return `ex_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  return randomId('ex');
 }
 
 // An edit to a set cascades forward: the new value overwrites each following set that

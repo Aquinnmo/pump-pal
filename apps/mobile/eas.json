@@ -20,12 +20,18 @@
         "buildType": "apk"
       },
       "channel": "preview",
-      "bun": "1.3.14"
+      "bun": "1.3.14",
+      "env": {
+        "APP_VARIANT": "preview"
+      }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
-      "bun": "1.3.14"
+      "bun": "1.3.14",
+      "env": {
+        "APP_VARIANT": "production"
+      }
     }
   },
   "submit": {

@@ -1,46 +1,62 @@
-import { profileRepository } from '@/data/profile-repository';
+import { getAIQuota } from '@/data/remote/ai-quota';
+import { getCachedRemaining, hydrateAIQuota, recordRemaining, subscribeAIQuota } from '@/lib/ai-quota-cache';
+import { isAIEnabled } from '@/lib/ai-enabled';
 import { useAuth } from '@/context/auth-context';
-import { TEMPORARY_AI_DAILY_LIMIT } from '@timber/contract/ai';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
 /**
- * How many AI uses the signed-in user has left today.
+ * How many AI credits the signed-in user has left today.
  *
- * The count is owned and enforced server-side (`apps/api/src/store/quota.ts`); this
- * only reflects it. A record from a previous UTC day reads as a full quota,
- * matching the server's own rollover in `nextUsage` — there is no reset job.
+ * `null` means "not known yet" — nothing cached and the server has not answered.
+ * It is deliberately not a number: the count is owned and enforced server-side
+ * (`apps/api/src/store/quota.ts`), and any client-side `LIMIT - count` needs a
+ * bundled copy of the limit that goes stale the moment the cap changes. A
+ * shipped app would then show the wrong number and gate its own button early.
  *
- * `setUsesLeft` exists so a caller can write back the `remaining` that
- * `/api/ai` returns with each successful response, rather than counting locally
- * and drifting away from the server.
+ * Callers must treat `null` as "allow the attempt": the server answers 429 and
+ * `AIQuotaError` is what actually turns the UI off.
+ *
+ * There is no setter. `callAI` records `remaining` from every AI response into
+ * `ai-quota-cache`, and this subscribes — so a call made on one screen updates
+ * the count on every other, and a call site that ignores the number still
+ * refreshes it. Reading through useSyncExternalStore also means this hook never
+ * schedules a state update of its own, mounted or not.
  */
 export function useAIQuota() {
   const { user } = useAuth();
-  const [usesLeft, setUsesLeft] = useState(TEMPORARY_AI_DAILY_LIMIT);
+  const uid = user?.uid;
+
+  const usesLeft = useSyncExternalStore(
+    subscribeAIQuota,
+    useCallback(() => getCachedRemaining(uid), [uid])
+  );
 
   useEffect(() => {
-    if (!user) return;
+    if (!uid) return;
     let cancelled = false;
-    profileRepository
-      .get(user.uid)
-      .then((profile) => {
-        if (cancelled) return;
-        const aiUsage = profile?.data?.aiUsage;
-        const todayUTC = new Date().toISOString().slice(0, 10);
-        setUsesLeft(
-          aiUsage && aiUsage.date === todayUTC
-            ? TEMPORARY_AI_DAILY_LIMIT - (aiUsage.count ?? 0)
-            : TEMPORARY_AI_DAILY_LIMIT
-        );
-      })
-      .catch(() => {
-        // An unreadable profile must not lock the feature out — the server is
-        // the one that actually enforces the limit, and it answers 429.
-      });
+    (async () => {
+      // Awaited, not raced: the disk read settles before the network call, so a
+      // slow read can never land on top of the fresher server answer.
+      await hydrateAIQuota(uid);
+      if (cancelled) return;
+      // An opted-out account has no balance to fetch — the route answers
+      // 403 ai_disabled. Skipping keeps a hidden AI surface from making a
+      // request on every screen mount just to have it thrown away.
+      if (!(await isAIEnabled(uid)) || cancelled) return;
+      try {
+        const { remaining } = await getAIQuota();
+        if (!cancelled) recordRemaining(uid, remaining);
+      } catch {
+        // Offline, or the API is down. Keep whatever was cached — a number from
+        // an earlier call is still the best answer, and a cold start stays
+        // `null` rather than inventing one. The server enforces the cap
+        // regardless, so nothing is lost by letting the user try.
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [uid]);
 
-  return { usesLeft, setUsesLeft };
+  return { usesLeft };
 }
