@@ -11,7 +11,7 @@ import { acceptBuddyRequest, chopBuddy, listBuddies, searchUsers, sendBuddyReque
 import { createPendingExercise } from './store/catalog.js';
 import { applyInjuryToHistory, listInjuries, removeInjuryFromHistory } from './store/injuries.js';
 import { updateProfile } from './store/profile.js';
-import { consumeQuota, peekQuota, refundQuota } from './store/quota.js';
+import { consumeQuota, peekQuota, readAIEnabled, refundQuota } from './store/quota.js';
 import { getCachedDailyName, setCachedDailyName } from './store/daily-name.js';
 
 export type WorkerBindings = {
@@ -68,6 +68,16 @@ function routeError(error: unknown, context: ErrorContext): Response {
 
 function clientUpgradeRequired(): never {
   throw new ApiError(410, 'This operation moved to direct Firestore. Update the client.', 'client_upgrade_required');
+}
+
+/**
+ * Gate for the AI routes only — deliberately not in the `/api/*` middleware,
+ * which would charge every privileged route a Firestore read to protect two.
+ */
+async function assertAIEnabled(uid: string): Promise<void> {
+  if (!(await readAIEnabled(uid))) {
+    throw new ApiError(403, 'AI features are off for this account.', 'ai_disabled');
+  }
 }
 
 /**
@@ -180,13 +190,23 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
 
   // Read-only counterpart to POST /api/ai's `remaining`. The client has no
   // other way to learn its credit balance without spending one.
-  app.get('/api/ai/quota', async (context) => context.json(await peekQuota(context.get('uid'))));
+  app.get('/api/ai/quota', async (context) => {
+    await assertAIEnabled(context.get('uid'));
+    return context.json(await peekQuota(context.get('uid')));
+  });
 
   app.post('/api/ai', async (context) => {
     const body = await context.req.json<{ op?: unknown; input?: unknown }>();
     if (!isAIOp(body.op)) throw new ApiError(400, 'Unknown operation');
     const parsed = AI_OPS[body.op].input.safeParse(body.input ?? {});
     if (!parsed.success) throw new ApiError(400, `Invalid input for op "${body.op}"`);
+
+    // After schema validation (a malformed body should not cost a Firestore
+    // read) but before the provider import and every op branch below,
+    // `daily-name` included: an account that has not opted in must not reach a
+    // provider by any route. The client hides its AI surfaces; the client is
+    // not what enforces this.
+    await assertAIEnabled(context.get('uid'));
 
     // Model loading is deferred until an AI request so ordinary privileged
     // routes never pay for a provider SDK at Worker cold start.

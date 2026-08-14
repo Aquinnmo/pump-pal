@@ -1,5 +1,6 @@
 import { getAIQuota } from '@/data/remote/ai-quota';
 import { getCachedRemaining, hydrateAIQuota, recordRemaining, subscribeAIQuota } from '@/lib/ai-quota-cache';
+import { isAIEnabled } from '@/lib/ai-enabled';
 import { useAuth } from '@/context/auth-context';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
@@ -38,6 +39,10 @@ export function useAIQuota() {
       // slow read can never land on top of the fresher server answer.
       await hydrateAIQuota(uid);
       if (cancelled) return;
+      // An opted-out account has no balance to fetch — the route answers
+      // 403 ai_disabled. Skipping keeps a hidden AI surface from making a
+      // request on every screen mount just to have it thrown away.
+      if (!(await isAIEnabled(uid)) || cancelled) return;
       try {
         const { remaining } = await getAIQuota();
         if (!cancelled) recordRemaining(uid, remaining);

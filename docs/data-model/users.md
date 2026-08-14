@@ -17,6 +17,7 @@ type UserDoc = {
   };
   username?: string; // canonical display casing — see "Usernames" below
   usernameLower?: string; // lowercase, matches the usernames/{id} reservation doc key
+  aiEnabled?: boolean; // AI opt-in — see "AI opt-in" below
 };
 ```
 
@@ -58,6 +59,27 @@ snapshot as already-synced state with the returned version and creates no
 profile outbox intent; web remains Worker-authoritative. This differs from
 `workoutSplit`, which tolerates eventual consistency and uses the normal
 offline-first repository path.
+
+## AI opt-in
+
+`aiEnabled` is the account's consent to the AI features. **Absent means off**, so
+every account — including every account that predates the field — starts with AI
+disabled and no backfill was run. Only a literal `true` enables it; the server's
+`readAIEnabled` (`apps/api/src/store/quota.ts`) rejects every other value,
+because turning this on is what sends a user's workout history to a third-party
+provider.
+
+It is one of the two owner-writable fields on this document (with
+`workoutSplit`) and follows the same offline-first repository path. The toggle is
+Settings → App (`apps/mobile/app/settings-app.tsx`); reads go through
+`apps/mobile/src/lib/use-ai-enabled.ts`, which resolves `false` while loading so
+no AI surface flashes in before the opt-in is known.
+
+Enforcement is server-side: `POST /api/ai` and `GET /api/ai/quota` answer
+`403 ai_disabled` when the flag isn't set. `callAI`
+(`apps/mobile/src/lib/ai-client.ts`) also short-circuits locally with
+`AIDisabledError`, which is what stops the AI paths that have no UI to hide
+(`loadSplitNames`, `getDailyName`).
 
 ## Private documents
 

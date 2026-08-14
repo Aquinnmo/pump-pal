@@ -11,6 +11,7 @@ import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { useAIQuota } from "@/lib/use-ai-quota";
+import { useAIEnabled } from "@/lib/use-ai-enabled";
 import {
   DraftExerciseRow,
   PerformedExercise,
@@ -100,6 +101,7 @@ export default function AddWorkoutModal() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const { usesLeft: aiUsesLeft } = useAIQuota();
+  const aiEnabled = useAIEnabled();
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -680,7 +682,7 @@ export default function AddWorkoutModal() {
                 onChangeText={setNotes}
               />
 
-              {isPlanMode && (
+              {isPlanMode && aiEnabled && (
                 <TouchableOpacity
                   style={[
                     styles.aiSuggestButton,

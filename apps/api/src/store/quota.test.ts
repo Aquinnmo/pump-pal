@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { TEMPORARY_AI_DAILY_LIMIT } from '@timber/contract/ai';
 import { decodeFields, encodeFields } from './rest.js';
-import { nextUsage, quotaStatus, todayUTC } from './quota.js';
+import { isAIEnabledField, nextUsage, quotaStatus, todayUTC } from './quota.js';
 
 // Fixed dates so the test never depends on the wall clock.
 const TODAY = '2026-08-03';
@@ -68,5 +68,13 @@ assert.deepEqual(decodeFields(encodedUsage), { aiUsage: { date: TODAY, count: 2 
 const encodedName = encodeFields({ name: 'Aldric' });
 assert.deepEqual(encodedName, { name: { stringValue: 'Aldric' } });
 assert.deepEqual(decodeFields(encodedName), { name: 'Aldric' });
+
+// AI opt-in fails closed: only a literal `true` enables it. A missing doc, a
+// missing field, and every truthy near-miss all mean "this user did not agree
+// to have their workout history sent to a provider".
+assert.equal(isAIEnabledField(true), true);
+for (const value of [undefined, null, false, 'true', 1, {}, []]) {
+  assert.equal(isAIEnabledField(value), false, `aiEnabled=${JSON.stringify(value) ?? 'undefined'} must not enable AI`);
+}
 
 console.log('quota: all assertions passed');

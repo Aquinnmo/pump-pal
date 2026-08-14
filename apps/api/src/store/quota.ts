@@ -19,6 +19,27 @@ async function readUsage(uid: string) {
   return { doc, usage: (doc?.fields ?? legacy?.fields.aiUsage) as unknown as AIUsage | undefined };
 }
 
+/**
+ * The account's AI opt-in (`users/{uid}.aiEnabled`).
+ *
+ * Only a literal `true` counts: an absent field, a null, or anything a rules
+ * change ever lets through means off. AI is not a feature a user gets by
+ * default — it ships their workout history to a third-party provider — so the
+ * unknown case has to fail closed.
+ *
+ * ponytail: one extra Firestore read per AI request. Fold it into `readUsage`'s
+ * round trip only if AI latency ever shows up as a problem.
+ */
+export async function readAIEnabled(uid: string): Promise<boolean> {
+  const doc = await getDoc(firestorePaths.user(uid), ['aiEnabled']);
+  return isAIEnabledField(doc?.fields.aiEnabled);
+}
+
+/** Pure half of `readAIEnabled`, split out so the fail-closed rule is testable. */
+export function isAIEnabledField(value: unknown): boolean {
+  return value === true;
+}
+
 /** Today's date as YYYY-MM-DD in UTC. Matches the key the client used to write. */
 export function todayUTC(now: Date = new Date()): string {
   return now.toISOString().slice(0, 10);

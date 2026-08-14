@@ -51,7 +51,7 @@ const SLIDES: Slide[] = [
     id: '4',
     icon: 'analytics-outline',
     title: 'See what you’ve grown',
-    subtitle: 'Review workout analytics and AI Muscle Insights from your real history.',
+    subtitle: 'Review workout analytics and muscle load from your real history.',
     detail: 'Take on TPC when you want a daily challenge with a little extra burn.',
   },
 ];

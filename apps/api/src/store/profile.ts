@@ -24,6 +24,7 @@ function toProfileDTO(doc: FirestoreDoc, usageDoc?: FirestoreDoc): ProfileDTO {
       : null,
     username: (doc.fields.username as string | undefined) ?? null,
     aiUsage: aiUsage ? { date: aiUsage.date as string, count: Number(aiUsage.count) } : null,
+    aiEnabled: (doc.fields.aiEnabled as boolean | undefined) ?? null,
     version: doc.updateTime,
   };
 }

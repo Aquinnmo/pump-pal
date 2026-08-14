@@ -6,6 +6,7 @@ import { Dropdown } from "@/ui/primitives/dropdown";
 import { useAuth } from "@/context/auth-context";
 import { workoutRepository } from "@/data/workout-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
+import { useAIEnabled } from "@/lib/use-ai-enabled";
 import { Workout } from "@/types/workout";
 import {
   exerciseLabel,
@@ -72,6 +73,7 @@ const chartConfig = {
 export default function AnalyticsScreen() {
   const { user } = useAuth();
   const dataVersion = useDataVersion();
+  const aiEnabled = useAIEnabled();
   const { width } = useWindowDimensions();
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
@@ -441,7 +443,7 @@ export default function AnalyticsScreen() {
           </Text>
           <Text style={styles.stateMessage} selectable>
             Log a session and Timber will turn it into records, trends, and
-            muscle insights.
+            muscle load.
           </Text>
           <Pressable
             accessibilityRole="button"
@@ -459,9 +461,11 @@ export default function AnalyticsScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.section}>
-            <MuscleInsightCards workouts={workouts} />
-          </View>
+          {aiEnabled && (
+            <View style={styles.section}>
+              <MuscleInsightCards workouts={workouts} />
+            </View>
+          )}
 
           <View style={styles.section}>
             <View style={styles.sectionHeading}>

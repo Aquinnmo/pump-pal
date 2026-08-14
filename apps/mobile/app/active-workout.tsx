@@ -12,6 +12,7 @@ import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { useAIQuota } from "@/lib/use-ai-quota";
+import { useAIEnabled } from "@/lib/use-ai-enabled";
 import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
@@ -162,6 +163,7 @@ export default function ActiveWorkoutScreen() {
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const { usesLeft: aiUsesLeft } = useAIQuota();
+  const aiEnabled = useAIEnabled();
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -764,6 +766,7 @@ export default function ActiveWorkoutScreen() {
               <Text style={styles.addExText}>Add Exercise</Text>
             </TouchableOpacity>
 
+            {aiEnabled && (
             <TouchableOpacity
               style={[
                 styles.aiSuggestButton,
@@ -800,6 +803,7 @@ export default function ActiveWorkoutScreen() {
                 </>
               )}
             </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[

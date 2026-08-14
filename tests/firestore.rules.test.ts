@@ -36,6 +36,12 @@ async function main() {
   await assertFails(getDoc(doc(other, 'users/owner')));
   await assertFails(setDoc(doc(owner, 'users/owner'), { ...split, username: 'nope' }));
   await assertSucceeds(setDoc(doc(owner, 'users/owner'), { workoutSplit: split }, { merge: true }));
+  // aiEnabled is the AI opt-in. Owner-writable on its own — a merge that touches
+  // no workoutSplit must still pass — but only as a real boolean.
+  await assertSucceeds(setDoc(doc(owner, 'users/owner'), { aiEnabled: true }, { merge: true }));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner'), { aiEnabled: false }, { merge: true }));
+  await assertFails(setDoc(doc(owner, 'users/owner'), { aiEnabled: 'yes' }, { merge: true }));
+  await assertFails(setDoc(doc(other, 'users/owner'), { aiEnabled: true }, { merge: true }));
   await assertFails(deleteDoc(doc(owner, 'users/owner')));
 
   await assertSucceeds(getDocs(query(collection(owner, 'users/owner/injuries'), limit(20))));

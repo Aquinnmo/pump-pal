@@ -79,6 +79,8 @@ export const profileDTO = z.object({
   workoutSplit: workoutSplit.nullable(),
   username: z.string().nullable(),
   aiUsage: aiUsage.nullable(),
+  /** Opt-in to AI features. Null (absent) means off — AI is never on by default. */
+  aiEnabled: z.boolean().nullable(),
   version,
 });
 export type ProfileDTO = z.infer<typeof profileDTO>;
@@ -97,6 +99,7 @@ export type ProfileResponse = z.infer<typeof profileResponse>;
 /** Direct Firestore-safe profile mutation. Username and device tokens are privileged. */
 export const directProfilePatchInput = z.object({
   workoutSplit: workoutSplit.optional(),
+  aiEnabled: z.boolean().optional(),
   baseVersion: version.optional(),
 });
 export type DirectProfilePatchInput = z.infer<typeof directProfilePatchInput>;

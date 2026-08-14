@@ -50,5 +50,10 @@ export type UserDoc = {
   usernameLower?: string; // matches the usernames/{id} reservation doc key
   injuries?: Injury[]; // full history; ongoing = status === 'ongoing'
   aiUsage?: { date: string; count: number };
+  /**
+   * AI opt-in. Absent or false means every AI feature is hidden client-side and
+   * refused by the Worker — AI is never on for an account that did not ask.
+   */
+  aiEnabled?: boolean;
   expoPushToken?: string; // most recent device; what makes a Chop deliverable
 };

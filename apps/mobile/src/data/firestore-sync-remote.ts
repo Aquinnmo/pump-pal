@@ -176,6 +176,7 @@ function decodeProfile(document: DecodedFirestoreDocument, aiUsage: DecodedFires
     workoutSplit: document.fields.workoutSplit ?? null,
     username: document.fields.username ?? null,
     aiUsage: aiUsage?.fields ?? null,
+    aiEnabled: document.fields.aiEnabled ?? null,
     version: document.version,
   });
 }
@@ -362,14 +363,23 @@ export function createFirestoreSyncRemote(client: DirectFirestoreClient, uid: st
       if (!profile) throw new SyncPermanentError('The profile does not exist yet.');
       return profile;
     },
-    async write(payload: { workoutSplit?: { type: string; custom: string | null } }, baseVersion: string | null, signal?: AbortSignal) {
+    async write(payload: { workoutSplit?: { type: string; custom: string | null }; aiEnabled?: boolean }, baseVersion: string | null, signal?: AbortSignal) {
       const patch = directProfilePatchInput.parse(payload);
-      if (!patch.workoutSplit) throw new SyncPermanentError('Only a workout split can be synced directly.');
+      // The two owner-writable fields, sent independently: a split change must
+      // not carry an aiEnabled the caller never touched, and vice versa. The
+      // updateMask has to name exactly the keys in `fields` — a commit without
+      // one replaces the whole document, taking the server-owned username and
+      // push token with it.
+      const fields = {
+        ...(patch.workoutSplit ? { workoutSplit: { ...patch.workoutSplit, updatedAt: firestoreTimestamp(new Date().toISOString()) } } : {}),
+        ...(patch.aiEnabled === undefined ? {} : { aiEnabled: patch.aiEnabled }),
+      };
+      const updateMask = Object.keys(fields);
+      if (updateMask.length === 0) throw new SyncPermanentError('Only a workout split or the AI opt-in can be synced directly.');
       const path = firestorePaths.user(uid);
-      const fields = { workoutSplit: { ...patch.workoutSplit, updatedAt: firestoreTimestamp(new Date().toISOString()) } };
       return translateError(async () => {
         const [result] = await client.commit([{
-          path, fields, updateMask: ['workoutSplit'],
+          path, fields, updateMask,
           ...(baseVersion ? { currentDocument: { updateTime: baseVersion } } : { currentDocument: { exists: false } }),
         }], signal);
         const document = await client.getDocument(path, undefined, signal);

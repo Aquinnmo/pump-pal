@@ -49,7 +49,7 @@ assert.throws(() => decodeFirestoreFields({ bad: { integerValue: 'not-a-number' 
 const workout = {
   id: 'w1', name: 'Push Day', status: 'completed' as const, performedExercises: [], createdAt: timestamp, updatedAt: timestamp, version: timestamp,
 };
-const profile = { workoutSplit: null, username: null, aiUsage: null, version: timestamp };
+const profile = { workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, version: timestamp };
 const injury = { id: 'inj1', bodyPart: 'shoulder' as const, severity: 'mild' as const, status: 'ongoing' as const, onsetDate: timestamp, createdAt: timestamp, updatedAt: timestamp };
 const challenge = { startDate: '2026-08-12', days: [], longestStreak: 0, version: timestamp };
 const catalog: CatalogExerciseDTO = {
@@ -63,9 +63,9 @@ function roundTrip<T>(schema: { parse(value: unknown): T }, value: T): T {
 
 assert.deepEqual(roundTrip(workoutDTO, workout), workout);
 assert.deepEqual(roundTrip(profileDTO, profile), {
-  workoutSplit: null, username: null, aiUsage: null, version: timestamp,
+  workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, version: timestamp,
 });
-assert.equal(profileDTO.safeParse({ workoutSplit: null, username: null, aiUsage: null, version: '' }).success, false);
+assert.equal(profileDTO.safeParse({ workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, version: '' }).success, false);
 assert.deepEqual(roundTrip(injuryDTO, injury), injury);
 assert.deepEqual(roundTrip(pushupChallengeDTO, challenge), challenge);
 assert.deepEqual(roundTrip(catalogExerciseDTO, catalog), catalog);
