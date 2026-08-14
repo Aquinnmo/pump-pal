@@ -96,18 +96,20 @@ export function MuscleInsightCards({ workouts }: Props) {
   };
 
   const handleManualRefresh = () => {
-    if (!aiAvailable || usesLeft <= 0 || loading) return;
+    if (!aiAvailable || usesLeft === 0 || loading) return;
     runAnalysis();
   };
 
   if (workouts.length === 0) return null;
 
-  const refreshDisabled = usesLeft <= 0 || !aiAvailable;
+  const refreshDisabled = usesLeft === 0 || !aiAvailable;
   const refreshLabel = !aiAvailable
     ? "AI needs a connection"
-    : usesLeft > 0
-      ? `Refresh · ${usesLeft} left`
-      : "Daily limit reached";
+    : usesLeft === 0
+      ? "Daily limit reached"
+      : usesLeft == null
+        ? "Refresh"
+        : `Refresh · ${usesLeft} left`;
 
   return (
     <View style={styles.container}>
@@ -125,9 +127,11 @@ export function MuscleInsightCards({ workouts }: Props) {
             accessibilityLabel={
               !aiAvailable
                 ? "AI needs a connection. Cached insights remain available."
-                : usesLeft > 0
-                  ? `Refresh AI muscle insights. ${usesLeft} AI uses left today.`
-                  : "No AI uses left today."
+                : usesLeft === 0
+                  ? "No AI uses left today."
+                  : usesLeft == null
+                    ? "Refresh AI muscle insights."
+                    : `Refresh AI muscle insights. ${usesLeft} AI uses left today.`
             }
             accessibilityState={{ disabled: refreshDisabled }}
             style={({ pressed }) => [
@@ -146,7 +150,7 @@ export function MuscleInsightCards({ workouts }: Props) {
             <Text
               style={[
                 styles.refreshButtonText,
-                usesLeft <= 0 && styles.refreshButtonTextDisabled,
+                usesLeft === 0 && styles.refreshButtonTextDisabled,
               ]}
             >
               {refreshLabel}
@@ -249,9 +253,11 @@ export function MuscleInsightCards({ workouts }: Props) {
           accessibilityLabel={
             !aiAvailable
               ? "AI needs a connection to analyze muscle fatigue."
-              : usesLeft > 0
-                ? `Analyze muscle fatigue. ${usesLeft} AI credits left today.`
-                : "No AI uses left today."
+              : usesLeft === 0
+                ? "No AI uses left today."
+                : usesLeft == null
+                  ? "Analyze muscle fatigue."
+                  : `Analyze muscle fatigue. ${usesLeft} AI credits left today.`
           }
           accessibilityState={{ disabled: refreshDisabled }}
           style={({ pressed }) => [
@@ -272,9 +278,11 @@ export function MuscleInsightCards({ workouts }: Props) {
             <Text style={styles.statusText} selectable>
               {!aiAvailable
                 ? "AI needs a connection."
-                : usesLeft > 0
-                  ? `Review the past 30 days · 1 credit (${usesLeft} left)`
-                  : "No AI uses left today."}
+                : usesLeft === 0
+                  ? "No AI uses left today."
+                  : usesLeft == null
+                    ? "Review the past 30 days · 1 credit"
+                    : `Review the past 30 days · 1 credit (${usesLeft} left)`}
             </Text>
           </View>
           <Ionicons

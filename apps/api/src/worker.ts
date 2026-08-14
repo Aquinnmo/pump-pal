@@ -11,7 +11,7 @@ import { acceptBuddyRequest, chopBuddy, listBuddies, searchUsers, sendBuddyReque
 import { createPendingExercise } from './store/catalog.js';
 import { applyInjuryToHistory, listInjuries, removeInjuryFromHistory } from './store/injuries.js';
 import { updateProfile } from './store/profile.js';
-import { consumeQuota, refundQuota } from './store/quota.js';
+import { consumeQuota, peekQuota, refundQuota } from './store/quota.js';
 import { getCachedDailyName, setCachedDailyName } from './store/daily-name.js';
 
 export type WorkerBindings = {
@@ -177,6 +177,10 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
     return context.json({ exercise: await createPendingExercise(context.get('uid'), parsed.data.name) }, 201);
   });
   app.delete('/api/account/data', async (context) => context.json(await deleteAccountData(context.get('uid'))));
+
+  // Read-only counterpart to POST /api/ai's `remaining`. The client has no
+  // other way to learn its credit balance without spending one.
+  app.get('/api/ai/quota', async (context) => context.json(await peekQuota(context.get('uid'))));
 
   app.post('/api/ai', async (context) => {
     const body = await context.req.json<{ op?: unknown; input?: unknown }>();
