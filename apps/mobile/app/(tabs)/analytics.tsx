@@ -35,6 +35,17 @@ const CHART_Y_AXIS_GUTTER = 46;
 const FADE_HEIGHT = 24;
 const SCROLL_EDGE_THRESHOLD = 4;
 
+/**
+ * Picks the exercise with the highest recorded value, so a personal-best row
+ * opens on the user's best lift rather than whatever sorts first alphabetically.
+ * Ties keep the earlier name, which is alphabetical since the lists are sorted.
+ */
+function highestOf(names: string[], values: Record<string, number>): string {
+  return names.reduce((best, name) =>
+    (values[name] ?? -Infinity) > (values[best] ?? -Infinity) ? name : best,
+  );
+}
+
 type StrengthHistoryPoint = {
   dateLabel: string;
   timestamp: number;
@@ -348,12 +359,14 @@ export default function AnalyticsScreen() {
     if (selectedExercise !== activeStrengthExercise)
       setSelectedExercise(activeStrengthExercise);
     if (!selectedMaxExercise && weightedExercises.length > 0)
-      setSelectedMaxExercise(weightedExercises[0]);
+      setSelectedMaxExercise(highestOf(weightedExercises, maxWeights));
     if (!selectedMaxRepsExercise && bodyweightExerciseList.length > 0) {
-      setSelectedMaxRepsExercise(bodyweightExerciseList[0]);
+      setSelectedMaxRepsExercise(highestOf(bodyweightExerciseList, maxReps));
     }
     if (!selectedLongestDurationExercise && durationExerciseList.length > 0) {
-      setSelectedLongestDurationExercise(durationExerciseList[0]);
+      setSelectedLongestDurationExercise(
+        highestOf(durationExerciseList, maxDuration),
+      );
     }
   }, [
     selectedExercise,
@@ -364,6 +377,9 @@ export default function AnalyticsScreen() {
     weightedExercises,
     bodyweightExerciseList,
     durationExerciseList,
+    maxWeights,
+    maxReps,
+    maxDuration,
   ]);
 
   const chartWidth = Math.max(240, Math.min(width - 40, 720) - 36);
