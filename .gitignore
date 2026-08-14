@@ -72,7 +72,5 @@ graphify-out/**
 
 *.apk
 
-google-services.json
-
 **/.dev.vars**
 !**/.dev.vars.example

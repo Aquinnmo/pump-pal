@@ -1,7 +1,8 @@
 // Dynamic config layered on top of app.json. Development builds get a distinct
 // identity, while the friend-facing Apple installer supplies a stable, locally
 // generated bundle identifier so a different Apple team can sign the app.
-const IS_DEV = process.env.APP_VARIANT === 'development';
+const APP_VARIANT = process.env.APP_VARIANT;
+const IS_DEV = APP_VARIANT === 'development';
 const LOCAL_IOS_BUNDLE_ID = process.env.TIMBER_IOS_BUNDLE_IDENTIFIER;
 const { getGoogleOAuthConfig } = require('./src/config/google-oauth');
 
@@ -24,19 +25,20 @@ const googleSignInPlugin = IOS_CLIENT_ID && !LOCAL_IOS_BUNDLE_ID
 
 module.exports = ({ config }) => {
   const plugins = googleSignInPlugin ? [...(config.plugins ?? []), googleSignInPlugin] : config.plugins;
+  const android = {
+    ...config.android,
+    googleServicesFile:
+      APP_VARIANT === 'preview' || IS_DEV ? './google-services-preview.json' : './google-services.json',
+    ...(IS_DEV ? { package: 'com.aquinnmo.timber_dev' } : {}),
+  };
 
-  if (!IS_DEV && !LOCAL_IOS_BUNDLE_ID) return { ...config, plugins };
+  if (!IS_DEV && !LOCAL_IOS_BUNDLE_ID) return { ...config, plugins, android };
 
   return {
     ...config,
     plugins,
     name: IS_DEV ? 'Timber Dev' : config.name,
-    android: IS_DEV
-      ? {
-          ...config.android,
-          package: 'com.aquinnmo.timber_dev',
-        }
-      : config.android,
+    android,
     ios: {
       ...config.ios,
       bundleIdentifier:
