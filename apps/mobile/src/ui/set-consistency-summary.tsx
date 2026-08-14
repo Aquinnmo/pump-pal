@@ -1,9 +1,11 @@
-import type { Workout } from "@/types/workout";
 import {
   analyzeSetConsistency,
+  SET_CHANGE_BUCKET_ORDER,
   SET_CONSISTENCY_MIN_ENTRIES,
+  type SetChangeBucket,
   type SetConsistencyCategory,
 } from "@/lib/set-consistency";
+import type { Workout } from "@/types/workout";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -31,6 +33,19 @@ const CATEGORY_COPY: Record<
     title: "Erratic",
     pattern: "you can't decide on weight and reps",
   },
+};
+
+const BUCKET_COPY: Record<
+  SetChangeBucket,
+  { caption: string; spoken: string }
+> = {
+  bigDrop: { caption: "Big Drop", spoken: "big drops" },
+  minorDrop: { caption: "Eased Off", spoken: "eased off" },
+  held: { caption: "Held", spoken: "held steady" },
+  minorSpike: { caption: "Crept Up", spoken: "crept up" },
+  bigSpike: { caption: "Big Jump", spoken: "big jumps" },
+  // Off the signed axis: shown as a note under the bars, not as a sixth bar.
+  erratic: { caption: "Both Ways", spoken: "went both ways" },
 };
 
 export function SetConsistencySummary({
@@ -69,11 +84,23 @@ export function SetConsistencySummary({
 
   const detail = `Across ${result.eligibleEntries} multi-set ${result.eligibleEntries === 1 ? "exercise" : "exercises"} in your last ${result.analyzedWorkouts} ${result.analyzedWorkouts === 1 ? "workout" : "workouts"}, ${copy.pattern}.`;
 
+  const peak = Math.max(
+    ...SET_CHANGE_BUCKET_ORDER.map((bucket) => result.distribution[bucket]),
+  );
+  const spokenDistribution = SET_CHANGE_BUCKET_ORDER.map(
+    (bucket) => `${result.distribution[bucket]} ${BUCKET_COPY[bucket].spoken}`,
+  ).join(", ");
+
+  const erratic = result.distribution.erratic;
+  const erraticNote = erratic
+    ? `${erratic} ${erratic === 1 ? "exercise" : "exercises"} went both ways.`
+    : null;
+
   return (
     <View
       style={styles.panel}
       accessible
-      accessibilityLabel={`Set consistency. ${copy.title}. ${detail}`}
+      accessibilityLabel={`Set consistency. ${copy.title}. ${detail} By exercise: ${spokenDistribution}${erratic ? `, ${erratic} ${BUCKET_COPY.erratic.spoken}` : ""}.`}
     >
       <View style={styles.header}>
         <Text style={styles.label} selectable>
@@ -84,9 +111,32 @@ export function SetConsistencySummary({
         </Text>
       </View>
       <View style={styles.divider} />
-      <Text style={styles.detail} selectable>
-        {detail}
-      </Text>
+      <View style={styles.chart}>
+        {SET_CHANGE_BUCKET_ORDER.map((bucket) => {
+          const count = result.distribution[bucket];
+          return (
+            <View key={bucket} style={styles.column}>
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.bar,
+                    count === 0 && styles.barEmpty,
+                    { height: `${peak > 0 ? (count / peak) * 100 : 0}%` },
+                  ]}
+                />
+              </View>
+              <Text style={styles.barCaption} numberOfLines={1}>
+                {BUCKET_COPY[bucket].caption}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+      {erraticNote && (
+        <Text style={styles.detail} selectable>
+          {erraticNote}
+        </Text>
+      )}
     </View>
   );
 }
@@ -124,6 +174,36 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: "#2a2a2a",
+  },
+  chart: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 6,
+  },
+  column: {
+    flex: 1,
+    alignItems: "center",
+    gap: 4,
+  },
+  barTrack: {
+    width: "100%",
+    height: 76,
+    justifyContent: "flex-end",
+  },
+  bar: {
+    width: "100%",
+    minHeight: 2,
+    borderRadius: 3,
+    backgroundColor: "#e54242",
+  },
+  barEmpty: {
+    backgroundColor: "#2a2a2a",
+  },
+  barCaption: {
+    color: "#888",
+    fontSize: 11,
+    lineHeight: 11 * 1.3,
+    fontWeight: "600",
   },
   value: {
     maxWidth: "42%",
