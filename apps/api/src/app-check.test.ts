@@ -26,6 +26,8 @@ async function main() {
   assert.equal((await verify(await expired, env)).reason, 'invalid');
   const other = await generateKeyPair('RS256');
   assert.equal((await verify(await token(other.privateKey), env)).reason, 'invalid');
+  // Missing env must not masquerade as a forged token in the logs.
+  assert.equal((await verify(await token(privateKey), {})).reason, 'misconfigured');
   console.log('app-check: verification assertions passed');
 }
 void main();

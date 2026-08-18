@@ -7,6 +7,7 @@ import {
 } from "@/data/remote/buddies";
 import { toDateKey } from "@/lib/date-key";
 import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
+import { Toast } from "@/ui/primitives/toast";
 import { Ionicons } from "@expo/vector-icons";
 import type {
   BuddyDTO,
@@ -58,6 +59,11 @@ export default function SocialScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyUid, setBusyUid] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    visible: boolean;
+    message: string;
+    type: "success" | "error" | "info";
+  }>({ visible: false, message: "", type: "success" });
   const [now, setNow] = useState(() => Date.now());
 
   const today = toDateKey(new Date());
@@ -155,7 +161,19 @@ export default function SocialScreen() {
     );
     setNow(Date.now());
     try {
-      await chopBuddy(uid, today);
+      // `delivered` is false when the push never left Expo (no token, or the
+      // Android app has no FCM credential) — the chop still counted, so say so
+      // rather than reporting a success the buddy never sees.
+      const { delivered } = await chopBuddy(uid, today);
+      setToast(
+        delivered
+          ? { visible: true, message: "Chop landed 🪓", type: "success" }
+          : {
+              visible: true,
+              message: "Chop logged — they won't get a notification.",
+              type: "info",
+            },
+      );
     } catch (e) {
       const code = (e as { code?: string }).code;
       // 'already_worked_out' means they trained since this list loaded — the
@@ -171,6 +189,12 @@ export default function SocialScreen() {
 
   return (
     <View style={styles.container}>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
+      />
       <View
         style={[
           styles.fixedHeader,

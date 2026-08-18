@@ -74,3 +74,5 @@ graphify-out/**
 
 **/.dev.vars**
 !**/.dev.vars.example
+
+**/*firebase-adminsdk-*.json
