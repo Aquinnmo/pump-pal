@@ -273,7 +273,7 @@ export function FocusView({
             <Text style={styles.completeButtonText}>
               {done
                 ? "Finish Workout"
-                : `Complete Set ${current!.setIndex + 1}`}
+                : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
             </Text>
             <Ionicons
               name={done ? "checkmark-sharp" : "arrow-forward"}

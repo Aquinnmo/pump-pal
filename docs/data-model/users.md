@@ -18,6 +18,7 @@ type UserDoc = {
   username?: string; // canonical display casing — see "Usernames" below
   usernameLower?: string; // lowercase, matches the usernames/{id} reservation doc key
   aiEnabled?: boolean; // AI opt-in — see "AI opt-in" below
+  socialEnabled?: boolean; // social participation — absent means enabled
 };
 ```
 
@@ -69,8 +70,8 @@ disabled and no backfill was run. Only a literal `true` enables it; the server's
 because turning this on is what sends a user's workout history to a third-party
 provider.
 
-It is one of the two owner-writable fields on this document (with
-`workoutSplit`) and follows the same offline-first repository path. The toggle is
+It is an owner-writable field on this document and follows the same
+offline-first repository path as `workoutSplit`. The toggle is
 Settings → App (`apps/mobile/app/settings-app.tsx`); reads go through
 `apps/mobile/src/lib/use-ai-enabled.ts`, which resolves `false` while loading so
 no AI surface flashes in before the opt-in is known.
@@ -80,6 +81,19 @@ Enforcement is server-side: `POST /api/ai` and `GET /api/ai/quota` answer
 (`apps/mobile/src/lib/ai-client.ts`) also short-circuits locally with
 `AIDisabledError`, which is what stops the AI paths that have no UI to hide
 (`loadSplitNames`, `getDailyName`).
+
+## Social participation
+
+`socialEnabled` controls whether the account participates in Timber Buddies.
+Absent means enabled so existing accounts keep their current behavior. When it
+is `false`, buddy search, lists, requests, acceptance, and Chops exclude the
+account. Existing `friendships` documents are retained, so turning the setting
+back on restores them; the separate `usernames/{usernameLower}` reservation and
+Push-up Challenge data are unchanged.
+
+It is owner-writable through the same offline-first profile path as
+`workoutSplit` and `aiEnabled`. The toggle is Settings → App, directly below AI
+Features. The Worker enforces the preference at every buddy boundary.
 
 ## Private documents
 

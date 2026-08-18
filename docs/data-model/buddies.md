@@ -3,6 +3,11 @@
 The social graph behind the Social tab: buddy requests, the buddy list with
 pushup streaks, and Chop.
 
+`users/{uid}.socialEnabled === false` removes that account from search and
+buddy responses and refuses new buddy actions. Missing means enabled for
+backward compatibility. Friendship documents stay in place, username
+reservations stay claimed, and Push-up Challenge data remains independent.
+
 ## Why it is server-only
 
 Every read this feature needs crosses a user boundary — another person's

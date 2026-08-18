@@ -55,5 +55,7 @@ export type UserDoc = {
    * refused by the Worker — AI is never on for an account that did not ask.
    */
   aiEnabled?: boolean;
+  /** Social participation. Absent means enabled for existing accounts. */
+  socialEnabled?: boolean;
   expoPushToken?: string; // most recent device; what makes a Chop deliverable
 };

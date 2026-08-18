@@ -60,6 +60,22 @@ async function loadFriendship(a: string, b: string): Promise<Friendship | undefi
   return doc ? toFriendship(doc) : undefined;
 }
 
+/** Missing preserves the pre-toggle behavior for existing accounts. */
+export function isSocialEnabledField(value: unknown): boolean {
+  return value !== false;
+}
+
+async function socialEnabled(uid: string): Promise<boolean> {
+  const user = await getDoc(`${USERS}/${uid}`, ['socialEnabled']);
+  return isSocialEnabledField(user?.fields.socialEnabled);
+}
+
+async function requireSocialEnabled(uid: string): Promise<void> {
+  if (!(await socialEnabled(uid))) {
+    throw new ApiError(403, 'Social features are off for this account.', 'social_disabled');
+  }
+}
+
 // --------------------------------------------------------------------- search
 
 /** High code point that sorts after any realistic username suffix — the standard Firestore prefix-range trick. */
@@ -72,6 +88,7 @@ const PREFIX_END = '';
 export async function searchUsers(uid: string, query: string): Promise<BuddySearchResult[]> {
   const prefix = query.trim().toLowerCase();
   if (!prefix) return [];
+  if (!(await socialEnabled(uid))) return [];
 
   const docs = await runQuery({
     collectionId: USERS,
@@ -80,12 +97,17 @@ export async function searchUsers(uid: string, query: string): Promise<BuddySear
       { field: 'usernameLower', op: 'LESS_THAN_OR_EQUAL', value: prefix + PREFIX_END },
     ],
     orderBy: [{ field: 'usernameLower' }],
-    limit: 10,
+    // ponytail: filter legacy missing-as-enabled rows in memory; raise this or
+    // backfill before adding a composite index if prefixes routinely exceed 50.
+    limit: 50,
   });
 
   const hits = docs
-    .map((doc) => ({ uid: doc.path.split('/')[1], username: doc.fields.username as string | undefined }))
-    .filter((h): h is { uid: string; username: string } => !!h.username && h.uid !== uid);
+    .flatMap((doc) => {
+      const hit = { uid: doc.path.split('/')[1], username: doc.fields.username as string | undefined };
+      return hit.username && hit.uid !== uid && isSocialEnabledField(doc.fields.socialEnabled) ? [{ ...hit, username: hit.username }] : [];
+    })
+    .slice(0, 10);
 
   return Promise.all(
     hits.map(async (hit) => ({
@@ -152,7 +174,7 @@ async function workedOutOn(uid: string, today: string): Promise<boolean> {
 
 async function buddyDetail(uid: string, buddyUid: string, today: string, lastChoppedAt: string | null): Promise<BuddyDTO | null> {
   const [user, challenge, workedOutToday] = await Promise.all([
-    getDoc(`${USERS}/${buddyUid}`, ['username']),
+    getDoc(`${USERS}/${buddyUid}`, ['username', 'socialEnabled']),
     getDoc(`${USERS}/${buddyUid}/pushup-challenge/data`),
     workedOutOn(buddyUid, today),
   ]);
@@ -160,7 +182,7 @@ async function buddyDetail(uid: string, buddyUid: string, today: string, lastCho
   const username = user?.fields.username as string | undefined;
   // A buddy with no username can't be rendered or searched for; skip rather
   // than invent a placeholder.
-  if (!username) return null;
+  if (!username || !isSocialEnabledField(user?.fields.socialEnabled)) return null;
 
   const startDate = (challenge?.fields.startDate as string | undefined) ?? null;
   const days = ((challenge?.fields.days as DecodedValue[] | undefined) ?? []) as { date: string }[];
@@ -180,6 +202,7 @@ async function buddyDetail(uid: string, buddyUid: string, today: string, lastCho
  * and chop availability, plus pending requests in both directions.
  */
 export async function listBuddies(uid: string, today: string): Promise<BuddiesResponse> {
+  if (!(await socialEnabled(uid))) return { buddies: [], requests: [] };
   const docs = await runQuery({
     collectionId: FRIENDSHIPS,
     where: [{ field: 'users', op: 'ARRAY_CONTAINS', value: uid }],
@@ -207,8 +230,8 @@ export async function listBuddies(uid: string, today: string): Promise<BuddiesRe
     Promise.all(accepted.map((a) => buddyDetail(uid, a.uid, today, a.lastChoppedAt))),
     Promise.all(
       requests.map(async (r) => {
-        const doc = await getDoc(`${USERS}/${r.uid}`, ['username']);
-        return { ...r, username: (doc?.fields.username as string | undefined) ?? '' };
+        const doc = await getDoc(`${USERS}/${r.uid}`, ['username', 'socialEnabled']);
+        return { ...r, username: isSocialEnabledField(doc?.fields.socialEnabled) ? (doc?.fields.username as string | undefined) ?? '' : '' };
       })
     ),
   ]);
@@ -228,10 +251,11 @@ export async function listBuddies(uid: string, today: string): Promise<BuddiesRe
  * means a simultaneous mutual request settles as one pending doc, not two.
  */
 export async function sendBuddyRequest(uid: string, targetUid: string): Promise<{ state: BuddyState }> {
+  await requireSocialEnabled(uid);
   if (uid === targetUid) throw new ApiError(400, 'You are already your own best buddy.', 'self_buddy');
 
-  const target = await getDoc(`${USERS}/${targetUid}`, ['username']);
-  if (!target?.fields.username) throw new ApiError(404, 'No such user.', 'user_not_found');
+  const target = await getDoc(`${USERS}/${targetUid}`, ['username', 'socialEnabled']);
+  if (!target?.fields.username || !isSocialEnabledField(target.fields.socialEnabled)) throw new ApiError(404, 'No such user.', 'user_not_found');
 
   try {
     await commit([
@@ -257,10 +281,12 @@ export async function sendBuddyRequest(uid: string, targetUid: string): Promise<
 
 /** Accepts a pending request. Only the recipient can accept — the requester accepting their own request would be a self-approval. */
 export async function acceptBuddyRequest(uid: string, targetUid: string): Promise<{ state: BuddyState }> {
+  await requireSocialEnabled(uid);
   const friendship = await loadFriendship(uid, targetUid);
   if (!friendship) throw new ApiError(404, 'No pending request from that user.', 'request_not_found');
   if (friendship.status === 'accepted') return { state: 'buddies' };
   if (friendship.requestedBy === uid) throw new ApiError(403, 'You can\'t accept your own request.', 'not_recipient');
+  if (!(await socialEnabled(targetUid))) throw new ApiError(404, 'No pending request from that user.', 'request_not_found');
 
   await commit([
     {
@@ -291,10 +317,12 @@ export function chopCooldownRemainingMs(lastChoppedAt: string | undefined, now: 
  * out, so it stops being available the moment it would be nagging.
  */
 export async function chopBuddy(uid: string, targetUid: string, today: string): Promise<ChopResponse> {
+  await requireSocialEnabled(uid);
   const friendship = await loadFriendship(uid, targetUid);
   if (!friendship || friendship.status !== 'accepted') {
     throw new ApiError(404, 'You can only chop your buddies.', 'not_buddies');
   }
+  if (!(await socialEnabled(targetUid))) throw new ApiError(404, 'You can only chop your buddies.', 'not_buddies');
 
   const remaining = chopCooldownRemainingMs(friendship.lastChop[uid], Date.now());
   if (remaining > 0) {

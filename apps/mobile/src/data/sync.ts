@@ -69,6 +69,7 @@ function profileFromDto(dto: ProfileDTO): UserDoc {
     // Carried, not defaulted: this write replaces the whole local row, so
     // dropping the flag here would silently switch AI back off on every pull.
     ...(dto.aiEnabled === null ? {} : { aiEnabled: dto.aiEnabled }),
+    ...(dto.socialEnabled === null ? {} : { socialEnabled: dto.socialEnabled }),
   };
 }
 function profilePatch(payload: unknown) {
@@ -76,6 +77,7 @@ function profilePatch(payload: unknown) {
   return {
     ...(profile.workoutSplit ? { workoutSplit: { type: profile.workoutSplit.type, custom: profile.workoutSplit.custom } } : {}),
     ...(profile.aiEnabled === undefined ? {} : { aiEnabled: profile.aiEnabled }),
+    ...(profile.socialEnabled === undefined ? {} : { socialEnabled: profile.socialEnabled }),
   };
 }
 function challengeFromDto(dto: PushupChallengeDTO): ChallengeData {

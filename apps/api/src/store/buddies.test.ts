@@ -6,7 +6,12 @@ process.env.FIREBASE_PROJECT_ID = 'test-project';
 process.env.FIREBASE_CLIENT_EMAIL = 'test@example.com';
 process.env.FIREBASE_PRIVATE_KEY = 'test-key';
 
-const { CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, pairId } = await import('./buddies.js');
+const { CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, isSocialEnabledField, pairId } = await import('./buddies.js');
+
+// Existing accounts remain social until they explicitly opt out.
+assert.equal(isSocialEnabledField(undefined), true);
+assert.equal(isSocialEnabledField(true), true);
+assert.equal(isSocialEnabledField(false), false);
 
 // --- pairId: the collision that makes friendships unique -------------------
 

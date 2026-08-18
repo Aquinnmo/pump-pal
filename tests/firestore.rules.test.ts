@@ -42,6 +42,10 @@ async function main() {
   await assertSucceeds(setDoc(doc(owner, 'users/owner'), { aiEnabled: false }, { merge: true }));
   await assertFails(setDoc(doc(owner, 'users/owner'), { aiEnabled: 'yes' }, { merge: true }));
   await assertFails(setDoc(doc(other, 'users/owner'), { aiEnabled: true }, { merge: true }));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner'), { socialEnabled: false }, { merge: true }));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner'), { socialEnabled: true }, { merge: true }));
+  await assertFails(setDoc(doc(owner, 'users/owner'), { socialEnabled: 'no' }, { merge: true }));
+  await assertFails(setDoc(doc(other, 'users/owner'), { socialEnabled: false }, { merge: true }));
   await assertFails(deleteDoc(doc(owner, 'users/owner')));
 
   await assertSucceeds(getDocs(query(collection(owner, 'users/owner/injuries'), limit(20))));

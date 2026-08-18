@@ -3,6 +3,7 @@ import { bumpDataVersion } from "@/data/data-version";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
+import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { toDateObj } from "@/lib/workout-conversion";
 import { Toast } from "@/ui/primitives/toast";
 import { Ionicons } from "@expo/vector-icons";
@@ -63,7 +64,7 @@ function PulseRing({ progress, phase }: { progress: SharedValue<number>; phase: 
  *
  * Sized to the switch's footprint so the row does not reflow on the swap.
  */
-function AITogglePulse() {
+function TogglePulse() {
   const progress = useSharedValue(0);
   const reducedMotion = useReducedMotion();
 
@@ -101,7 +102,8 @@ export default function SettingsAppScreen() {
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const aiEnabled = useAIEnabled();
-  const [savingAI, setSavingAI] = useState(false);
+  const socialEnabled = useSocialEnabled();
+  const [savingPreference, setSavingPreference] = useState<"aiEnabled" | "socialEnabled" | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<{
@@ -114,17 +116,17 @@ export default function SettingsAppScreen() {
     type: "success",
   });
 
-  const handleToggleAI = async (next: boolean) => {
-    if (!user || savingAI) return;
+  const handleTogglePreference = async (field: "aiEnabled" | "socialEnabled", next: boolean) => {
+    if (!user || savingPreference) return;
     const startedAt = Date.now();
-    setSavingAI(true);
+    setSavingPreference(field);
     try {
       // The whole row is replaced by an upsert (see singleton-repository.ts), so
       // the rest of the profile has to be carried across or it is dropped.
       const existing = (await profileRepository.get(user.uid))?.data ?? {};
       await profileRepository.upsert(user.uid, {
         ...existing,
-        aiEnabled: next,
+        [field]: next,
       });
       // Local writes don't bump on their own (see src/data/data-version.ts) —
       // this is what makes every mounted screen show or hide its AI surface now
@@ -143,7 +145,7 @@ export default function SettingsAppScreen() {
       // explain why.
       const remaining = MIN_PULSE_MS - (Date.now() - startedAt);
       if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
-      setSavingAI(false);
+      setSavingPreference(null);
     }
   };
 
@@ -331,7 +333,7 @@ export default function SettingsAppScreen() {
       <View style={styles.content}>
         <View style={styles.toggleRow}>
           <Ionicons
-            name="sparkles"
+            name="hardware-chip-outline"
             size={20}
             color="#fff"
             style={styles.rowIcon}
@@ -344,16 +346,38 @@ export default function SettingsAppScreen() {
               Your data may be sent to 3rd parties.
             </Text>
           </View>
-          {savingAI ? (
-            <AITogglePulse />
+          {savingPreference === "aiEnabled" ? (
+            <TogglePulse />
           ) : (
             <Switch
               value={aiEnabled}
-              onValueChange={handleToggleAI}
-              disabled={!user}
+              onValueChange={(next) => handleTogglePreference("aiEnabled", next)}
+              disabled={!user || savingPreference !== null}
               trackColor={{ false: "#2a2a2a", true: "#e54242" }}
               thumbColor="#fff"
               accessibilityLabel="AI features"
+            />
+          )}
+        </View>
+
+        <View style={styles.toggleRow}>
+          <Ionicons name="people-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <View style={styles.toggleLabels}>
+            <Text style={styles.updateButtonText}>Social Features</Text>
+            <Text style={styles.toggleSubtitle}>
+              Let people find you and include you in buddy lists.
+            </Text>
+          </View>
+          {savingPreference === "socialEnabled" ? (
+            <TogglePulse />
+          ) : (
+            <Switch
+              value={socialEnabled}
+              onValueChange={(next) => handleTogglePreference("socialEnabled", next)}
+              disabled={!user || savingPreference !== null}
+              trackColor={{ false: "#2a2a2a", true: "#e54242" }}
+              thumbColor="#fff"
+              accessibilityLabel="Social features"
             />
           )}
         </View>

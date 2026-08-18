@@ -6,6 +6,7 @@ import {
   sendBuddyRequest,
 } from "@/data/remote/buddies";
 import { toDateKey } from "@/lib/date-key";
+import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
 import { Toast } from "@/ui/primitives/toast";
 import { Ionicons } from "@expo/vector-icons";
@@ -49,6 +50,7 @@ function formatCountdown(ms: number): string {
 
 export default function SocialScreen() {
   const insets = useSafeAreaInsets();
+  const socialEnabled = useSocialEnabled();
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<BuddySearchResult[]>([]);
@@ -71,6 +73,12 @@ export default function SocialScreen() {
   const isSearching = trimmed.length > 0;
 
   const load = useCallback(async () => {
+    if (!socialEnabled) {
+      setBuddies([]);
+      setRequests([]);
+      setLoading(false);
+      return;
+    }
     try {
       const data = await getBuddies(toDateKey(new Date()));
       setBuddies(data.buddies);
@@ -81,7 +89,7 @@ export default function SocialScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [socialEnabled]);
 
   useFocusEffect(
     useCallback(() => {
@@ -101,7 +109,7 @@ export default function SocialScreen() {
 
   const searchSeq = useRef(0);
   useEffect(() => {
-    if (!trimmed) {
+    if (!socialEnabled || !trimmed) {
       setResults([]);
       setSearching(false);
       return;
@@ -120,7 +128,7 @@ export default function SocialScreen() {
       }
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [trimmed]);
+  }, [socialEnabled, trimmed]);
 
   async function onBuddyUp(uid: string) {
     setBusyUid(uid);
@@ -203,22 +211,34 @@ export default function SocialScreen() {
       >
         <View style={styles.headerContent}>
           <Text style={styles.pageTitle}>Social</Text>
-          <TextInput
-            style={styles.search}
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search by username"
-            placeholderTextColor="#666"
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            accessibilityLabel="Search for people by username"
-          />
+          {socialEnabled && (
+            <TextInput
+              style={styles.search}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search by username"
+              placeholderTextColor="#666"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              accessibilityLabel="Search for people by username"
+            />
+          )}
         </View>
       </View>
 
       <FadingScrollView contentContainerStyle={styles.content}>
-        {error && (
+        {!socialEnabled ? (
+          <View style={styles.card}>
+            <View style={styles.cardText}>
+              <Text style={styles.cardTitle}>Social features are off</Text>
+              <Text style={styles.cardSubtitle}>
+                Your username stays reserved, but people cannot find you or see you in their buddy list.
+              </Text>
+            </View>
+            <ActionButton label="Settings" busy={false} onPress={() => router.push("/settings-app")} />
+          </View>
+        ) : error && (
           <TouchableOpacity
             style={styles.errorRow}
             activeOpacity={0.7}
@@ -228,7 +248,7 @@ export default function SocialScreen() {
           </TouchableOpacity>
         )}
 
-        {isSearching ? (
+        {socialEnabled && (isSearching ? (
           <SearchResults
             results={results}
             searching={searching}
@@ -281,21 +301,23 @@ export default function SocialScreen() {
                 />
               ))
             )}
-
-            <TouchableOpacity
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => router.push("/(tabs)/pushup-challenge")}
-            >
-              <Ionicons name="flame" size={20} color="#e54242" />
-              <View style={styles.cardText}>
-                <Text style={styles.cardTitle}>The Pushup Challenge</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
-            </TouchableOpacity>
           </>
-        )}
+        ))}
       </FadingScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.7}
+          onPress={() => router.push("/(tabs)/pushup-challenge")}
+        >
+          <Ionicons name="flame" size={20} color="#e54242" />
+          <View style={styles.cardText}>
+            <Text style={styles.cardTitle}>The Pushup Challenge</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#666" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -467,6 +489,11 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     gap: 12,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
   },
   card: {
     flexDirection: "row",

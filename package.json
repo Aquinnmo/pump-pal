@@ -34,7 +34,9 @@
     "generate:icons": "node tools/generate-icons.js",
     "generate:muscle-map": "node tools/generate-muscle-pebble-map.js",
     "catalog:seed": "node tools/catalog/seed-exercise-catalog.js",
-    "catalog:review": "node tools/catalog/review-pending-exercises.js"
+    "catalog:review": "node tools/catalog/review-pending-exercises.js",
+    "expo:start": "cd apps/mobile && bunx expo start",
+    "expo:clear": "cd apps/mobile && bunx expo start --clear"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",

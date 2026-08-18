@@ -81,6 +81,8 @@ export const profileDTO = z.object({
   aiUsage: aiUsage.nullable(),
   /** Opt-in to AI features. Null (absent) means off — AI is never on by default. */
   aiEnabled: z.boolean().nullable(),
+  /** Social participation. Null (absent) preserves the existing enabled behavior. */
+  socialEnabled: z.boolean().nullable(),
   version,
 });
 export type ProfileDTO = z.infer<typeof profileDTO>;
@@ -100,6 +102,7 @@ export type ProfileResponse = z.infer<typeof profileResponse>;
 export const directProfilePatchInput = z.object({
   workoutSplit: workoutSplit.optional(),
   aiEnabled: z.boolean().optional(),
+  socialEnabled: z.boolean().optional(),
   baseVersion: version.optional(),
 });
 export type DirectProfilePatchInput = z.infer<typeof directProfilePatchInput>;

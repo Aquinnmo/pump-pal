@@ -1,6 +1,6 @@
 // Web build of src/data/profile-repository.ts. Same LocalSingletonRepository<UserDoc>
 // shape as native, but `upsert` only ever forwards `workoutSplit` and
-// `aiEnabled` — the direct Firestore rules allowlist those two fields on purpose
+// `aiEnabled`/`socialEnabled` — Firestore rules allowlist these fields on purpose
 // (injuries have their own repository, and aiUsage is server-owned).
 // A caller passing `injuries`/`aiUsage` here is a bug in the call site, not
 // something this repo can fix by guessing — those go through the injuries
@@ -26,6 +26,7 @@ function toStoredRecord(dto: ProfileDTO): StoredRecord<UserDoc> {
       usernameLower: dto.username ? dto.username.toLowerCase() : undefined,
       aiUsage: dto.aiUsage ?? undefined,
       aiEnabled: dto.aiEnabled ?? undefined,
+      socialEnabled: dto.socialEnabled ?? undefined,
     },
     syncState: 'synced',
     serverVersion: dto.version,
@@ -42,10 +43,11 @@ export const profileRepository: LocalSingletonRepository<UserDoc> = {
 
   async upsert(_uid: string, entity: UserDoc): Promise<void> {
     // Each field is forwarded only when the caller actually set it, so a
-    // split-only upsert never rewrites the AI opt-in (and vice versa).
+    // A split-only upsert never rewrites either preference (and vice versa).
     const patch = {
       ...(entity.workoutSplit ? { workoutSplit: { type: entity.workoutSplit.type, custom: entity.workoutSplit.custom } } : {}),
       ...(entity.aiEnabled === undefined ? {} : { aiEnabled: entity.aiEnabled }),
+      ...(entity.socialEnabled === undefined ? {} : { socialEnabled: entity.socialEnabled }),
     };
     if (Object.keys(patch).length === 0) return;
     const dto = (await webFirestore(_uid).profile.write(patch, versions.get(SINGLETON_ID) ?? null)).data;

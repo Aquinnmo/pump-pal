@@ -60,24 +60,25 @@ service cloud.firestore {
         && notification.updatedAt is timestamp;
     }
 
-    // Both owner-writable fields are optional on any given write, so each is
+    // Owner-writable fields are optional on any given write, so each is
     // validated only when the document actually carries it — a doc that sets
     // aiEnabled alone has no workoutSplit for validSplit to inspect.
     function validUserFields(data) {
       return (!('workoutSplit' in data) || validSplit(data.workoutSplit))
-        && (!('aiEnabled' in data) || data.aiEnabled is bool);
+        && (!('aiEnabled' in data) || data.aiEnabled is bool)
+        && (!('socialEnabled' in data) || data.socialEnabled is bool);
     }
 
-    // Direct clients can own their workout split and their AI opt-in. Username,
+    // Direct clients can own their workout split, AI opt-in, and social preference. Username,
     // legacy injuries, quota, and push token fields are intentionally not writable.
     match /users/{uid} {
       allow get: if owner(uid);
       allow list: if false;
       allow create: if owner(uid)
-        && request.resource.data.keys().hasOnly(['workoutSplit', 'aiEnabled'])
+        && request.resource.data.keys().hasOnly(['workoutSplit', 'aiEnabled', 'socialEnabled'])
         && validUserFields(request.resource.data);
       allow update: if owner(uid)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workoutSplit', 'aiEnabled'])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['workoutSplit', 'aiEnabled', 'socialEnabled'])
         && validUserFields(request.resource.data);
       allow delete: if false;
     }
