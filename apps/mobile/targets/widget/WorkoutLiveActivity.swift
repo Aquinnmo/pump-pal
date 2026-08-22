@@ -165,14 +165,15 @@ struct WorkoutLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
       // Lock Screen / banner presentation.
-      VStack(alignment: .leading, spacing: 12) {
+      VStack(alignment: .leading, spacing: 8) {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
           Text(context.attributes.title)
-            .font(.headline)
+            .font(.headline.weight(.semibold))
             .lineLimit(1)
             .truncationMode(.tail)
             .minimumScaleFactor(0.8)
             .layoutPriority(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
           Spacer(minLength: 8)
           Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
             .font(.headline.monospacedDigit())
@@ -213,8 +214,10 @@ struct WorkoutLiveActivity: Widget {
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
           Text("\(context.state.completedSets)/\(context.state.totalSets)")
-            .font(.caption2.monospacedDigit())
+            .font(.caption.monospacedDigit())
             .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityLabel("Completed sets")
             .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
         }
@@ -223,12 +226,14 @@ struct WorkoutLiveActivity: Widget {
           Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
             .font(.caption.monospacedDigit())
             .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
         .contentMargins(.horizontal, 4)
         // Copy belongs in bottom rather than leading/center: it gets the full
         // width below the sensor, while the bar and actions stay together.
         DynamicIslandExpandedRegion(.bottom, priority: 1) {
-          VStack(alignment: .leading, spacing: 10) {
+          VStack(alignment: .leading, spacing: 8) {
             Text(context.attributes.title)
               .font(.subheadline.weight(.semibold))
               .lineLimit(1)
@@ -264,13 +269,22 @@ struct WorkoutLiveActivity: Widget {
         // Compact/minimal presentations don't support interactive buttons
         // (Apple platform constraint) — numeric display only.
         Text("\(context.state.completedSets)/\(context.state.totalSets)")
-          .font(.caption2.monospacedDigit())
-          .minimumScaleFactor(0.7)
+          // Keep both compact metrics on the same tabular baseline and leave a
+          // small, symmetric inset from the Dynamic Island's safe edges.
+          .font(.caption.monospacedDigit())
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+          .frame(maxWidth: .infinity, alignment: .leading)
+          .padding(.leading, 4)
           .accessibilityLabel("Completed sets")
           .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
       } compactTrailing: {
         Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
-          .font(.caption2.monospacedDigit())
+          .font(.caption.monospacedDigit())
+          .lineLimit(1)
+          .minimumScaleFactor(0.8)
+          .frame(maxWidth: .infinity, alignment: .trailing)
+          .padding(.trailing, 4)
       } minimal: {
         ProgressRing(completedSets: context.state.completedSets, totalSets: context.state.totalSets)
           .accessibilityLabel("Completed sets")

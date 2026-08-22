@@ -161,8 +161,8 @@ function RootLayoutNav() {
         <Stack.Screen name="set-username" options={{ headerShown: false }} />
         <Stack.Screen name="set-split" options={{ headerShown: false }} />
         <Stack.Screen name="settings-username" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', headerShown: false }} />
-        <Stack.Screen name="planned-workouts" options={{ presentation: 'modal', headerShown: false }} />
+        <Stack.Screen name="modal" options={{ headerShown: false }} />
+        <Stack.Screen name="planned-workouts" options={{ headerShown: false }} />
         <Stack.Screen name="active-workout" options={{ headerShown: false, gestureEnabled: false }} />
         <Stack.Screen name="up-next" options={{ headerShown: false }} />
         <Stack.Screen name="settings-split" options={{ headerShown: false }} />
