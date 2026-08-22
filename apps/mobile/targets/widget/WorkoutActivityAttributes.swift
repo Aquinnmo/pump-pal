@@ -1,4 +1,5 @@
 import ActivityKit
+import Foundation
 
 // Swift mirror of utils/workout-notification-model.ts's WorkoutNotificationPresentation.
 // This is the only place JS -> native domain shape translation happens; nothing else

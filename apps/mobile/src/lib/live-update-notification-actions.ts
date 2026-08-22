@@ -3,6 +3,7 @@ import type { LiveUpdateNotificationAction } from '@/lib/workout-action';
 
 export function subscribeLiveUpdateNotificationActions(
   _onAction: (action: LiveUpdateNotificationAction) => void,
+  _owner?: 'root' | 'active-workout',
 ): () => void {
   return () => {};
 }

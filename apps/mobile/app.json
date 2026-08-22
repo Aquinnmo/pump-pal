@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.aquinnmo.timber",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSSupportsLiveActivities": true
@@ -44,7 +45,22 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-firebase/app",
+      [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "disableSPM": true
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -64,6 +80,7 @@
       "expo-background-task",
       "./plugins/with-notifee-maven",
       "@bacons/apple-targets",
+      "./plugins/with-live-activity-intents",
       [
         "react-native-android-widget",
         {

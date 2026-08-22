@@ -1,6 +1,6 @@
 // @bacons/apple-targets config for the Live Activity widget extension.
-// Set expo.ios.appleTeamId in app.json before running prebuild (found in Xcode's
-// Signing & Capabilities tab) — this plugin doesn't take it as a config option.
+// The plugin reads ios.appleTeamId from the evaluated Expo config. app.config.js
+// accepts TIMBER_IOS_TEAM_ID as an optional, validated override; never invent one.
 /** @type {import('@bacons/apple-targets/app.plugin').ConfigFunction} */
 module.exports = (config) => ({
   type: 'widget',

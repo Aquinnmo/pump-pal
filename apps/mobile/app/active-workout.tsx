@@ -598,7 +598,7 @@ export default function ActiveWorkoutScreen() {
       finishRef.current();
     };
     const unsubscribeWear = subscribeWearActions(handleRemoteFinish);
-    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleRemoteFinish);
+    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleRemoteFinish, 'active-workout');
     return () => {
       unsubscribeWear();
       unsubscribeNotification();

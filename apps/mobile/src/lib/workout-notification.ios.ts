@@ -9,6 +9,27 @@ import type { WorkoutNotificationPresentation } from '@/lib/workout-notification
 export type WorkoutSegment = WorkoutNotificationPresentation['segments'][number];
 export type WorkoutNotificationData = WorkoutNotificationPresentation;
 
+let warnedAboutMissingModule = false;
+let warnedAboutDisabledActivities = false;
+let warnedAboutShowFailure = false;
+
+function warnOnce(kind: 'missing-module' | 'disabled' | 'show-failed', message: string): void {
+  if (!__DEV__) return;
+
+  if (kind === 'missing-module') {
+    if (warnedAboutMissingModule) return;
+    warnedAboutMissingModule = true;
+  } else if (kind === 'disabled') {
+    if (warnedAboutDisabledActivities) return;
+    warnedAboutDisabledActivities = true;
+  } else {
+    if (warnedAboutShowFailure) return;
+    warnedAboutShowFailure = true;
+  }
+
+  console.warn(`[workout-notification] ${message}`);
+}
+
 export async function ensureWorkoutChannel(): Promise<string> {
   // No-op on iOS; kept for call-site symmetry with workout-notification.android.ts.
   return 'active-workout';
@@ -19,7 +40,23 @@ export async function requestNotificationPermission(): Promise<void> {
 }
 
 export async function showWorkoutNotification(data: WorkoutNotificationData): Promise<void> {
-  LiveUpdateNotification.show({
+  if (!LiveUpdateNotification.isNativeModuleAvailable()) {
+    warnOnce(
+      'missing-module',
+      'The LiveUpdateNotification native module is unavailable. Rebuild the iOS development client with the local module before testing Live Activities.',
+    );
+    return;
+  }
+
+  if (!LiveUpdateNotification.isSupported()) {
+    warnOnce(
+      'disabled',
+      'Live Activities are unavailable. Use iOS 17+ and enable Live Activities for Timber in Settings; no iOS notification fallback is provided.',
+    );
+    return;
+  }
+
+  const didShow = LiveUpdateNotification.show({
     workoutId: data.workoutId,
     expectedCompletedSets: data.completedSets,
     title: data.title,
@@ -30,6 +67,13 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     segments: data.segments,
     actions: data.actions,
   });
+
+  if (!didShow) {
+    warnOnce(
+      'show-failed',
+      'The Live Activity could not be started. Check that Live Activities are enabled for Timber and that the app has an iOS 17+ ActivityKit-capable host.',
+    );
+  }
 }
 
 export async function dismissWorkoutNotification(): Promise<void> {

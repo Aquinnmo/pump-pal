@@ -66,6 +66,10 @@ public enum LiveUpdateSharedStore {
     defaults?.removeObject(forKey: stateKey)
   }
 
+  public static func clearPendingAction() {
+    defaults?.removeObject(forKey: pendingActionKey)
+  }
+
   public static func writePendingAction(_ action: PendingAction) {
     guard let data = try? JSONEncoder().encode(action) else { return }
     defaults?.set(data, forKey: pendingActionKey)

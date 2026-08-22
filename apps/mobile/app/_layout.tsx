@@ -120,7 +120,7 @@ function RootLayoutNav() {
       handleWorkoutAction(action).catch((err) => console.warn('Workout action failed', err));
     };
     const unsubscribeWear = subscribeWearActions(handleAction);
-    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleAction);
+    const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleAction, 'root');
     return () => {
       unsubscribeWear();
       unsubscribeNotification();

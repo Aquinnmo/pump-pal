@@ -6,6 +6,7 @@ import {
 
 export function subscribeLiveUpdateNotificationActions(
   onAction: (action: LiveUpdateNotificationAction) => void,
+  _owner?: 'root' | 'active-workout',
 ): () => void {
   return subscribeActions((json) => {
     const action = parseLiveUpdateNotificationAction(json);

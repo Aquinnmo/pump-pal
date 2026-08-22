@@ -4,6 +4,10 @@
 const APP_VARIANT = process.env.APP_VARIANT;
 const IS_DEV = APP_VARIANT === 'development';
 const LOCAL_IOS_BUNDLE_ID = process.env.TIMBER_IOS_BUNDLE_IDENTIFIER;
+const LOCAL_IOS_TEAM_ID = process.env.TIMBER_IOS_TEAM_ID?.trim();
+if (LOCAL_IOS_TEAM_ID && !/^[A-Z0-9]{10}$/.test(LOCAL_IOS_TEAM_ID)) {
+  throw new Error('TIMBER_IOS_TEAM_ID must be the 10-character Apple Team ID shown by Xcode.');
+}
 const { getGoogleOAuthConfig } = require('./src/config/google-oauth');
 
 // Google sign-in lives here rather than in app.json's static plugin array
@@ -31,8 +35,11 @@ module.exports = ({ config }) => {
       APP_VARIANT === 'preview' || IS_DEV ? './google-services-preview.json' : './google-services.json',
     ...(IS_DEV ? { package: 'com.aquinnmo.timber_dev' } : {}),
   };
+  const ios = LOCAL_IOS_TEAM_ID
+    ? { ...config.ios, appleTeamId: LOCAL_IOS_TEAM_ID }
+    : config.ios;
 
-  if (!IS_DEV && !LOCAL_IOS_BUNDLE_ID) return { ...config, plugins, android };
+  if (!IS_DEV && !LOCAL_IOS_BUNDLE_ID) return { ...config, plugins, android, ios };
 
   return {
     ...config,
@@ -40,7 +47,7 @@ module.exports = ({ config }) => {
     name: IS_DEV ? 'Timber Dev' : config.name,
     android,
     ios: {
-      ...config.ios,
+      ...ios,
       bundleIdentifier:
         LOCAL_IOS_BUNDLE_ID ||
         (IS_DEV ? 'com.aquinnmo.timber-dev' : config.ios.bundleIdentifier),

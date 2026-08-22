@@ -73,6 +73,10 @@ public enum LiveUpdateSharedStore {
     defaults?.removeObject(forKey: stateKey)
   }
 
+  public static func clearPendingAction() {
+    defaults?.removeObject(forKey: pendingActionKey)
+  }
+
   // Single pending-action slot: only the latest tap matters for reconciliation, and
   // action taps are inherently serialized by the user tapping one button at a time.
   public static func writePendingAction(_ action: PendingAction) {

@@ -121,7 +121,7 @@ export default function MuscleLoadScreen() {
     <>
       <Stack.Screen
         options={{
-          title: "Muscular Load",
+          title: "Muscle Fatigue",
           headerStyle: { backgroundColor: "#0f0f0f" },
           headerTintColor: "#fff",
           headerShadowVisible: false,
