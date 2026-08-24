@@ -217,7 +217,11 @@ struct WorkoutLiveActivity: Widget {
             .font(.caption.monospacedDigit())
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            // Centered, not edge-pinned: this band runs to the display's rounded
+            // corner, and `alignment: .leading` parks the glyphs under the mask
+            // (0/19 rendered as a clipped "9"). Center keeps clear of both the
+            // corner and the sensor cutout.
+            .frame(maxWidth: .infinity)
             .accessibilityLabel("Completed sets")
             .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
         }
@@ -227,7 +231,7 @@ struct WorkoutLiveActivity: Widget {
             .font(.caption.monospacedDigit())
             .lineLimit(1)
             .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, alignment: .trailing)
+            .frame(maxWidth: .infinity)
         }
         .contentMargins(.horizontal, 4)
         // Copy belongs in bottom rather than leading/center: it gets the full
@@ -266,25 +270,19 @@ struct WorkoutLiveActivity: Widget {
         }
         .contentMargins(.horizontal, 4)
       } compactLeading: {
-        // Compact/minimal presentations don't support interactive buttons
-        // (Apple platform constraint) — numeric display only.
+        // Compact/minimal presentations can't host interactive buttons (Apple
+        // constraint) and can't afford a wide pill: no maxWidth here, or the
+        // Dynamic Island stretches to its full width with a dead centre gap.
+        // Content mirrors Android's setShortCriticalText chip — set count only.
+        ProgressRing(completedSets: context.state.completedSets, totalSets: context.state.totalSets)
+          .accessibilityHidden(true)
+      } compactTrailing: {
         Text("\(context.state.completedSets)/\(context.state.totalSets)")
-          // Keep both compact metrics on the same tabular baseline and leave a
-          // small, symmetric inset from the Dynamic Island's safe edges.
           .font(.caption.monospacedDigit())
           .lineLimit(1)
           .minimumScaleFactor(0.8)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .padding(.leading, 4)
           .accessibilityLabel("Completed sets")
           .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
-      } compactTrailing: {
-        Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
-          .font(.caption.monospacedDigit())
-          .lineLimit(1)
-          .minimumScaleFactor(0.8)
-          .frame(maxWidth: .infinity, alignment: .trailing)
-          .padding(.trailing, 4)
       } minimal: {
         ProgressRing(completedSets: context.state.completedSets, totalSets: context.state.totalSets)
           .accessibilityLabel("Completed sets")
@@ -335,13 +333,13 @@ private extension WorkoutActivityAttributes {
   )
 
   static let longCopyPreviewState = ContentState(
-    completedSets: 3,
-    totalSets: 9,
+    completedSets: 6,
+    totalSets: 19,
     detail: "Incline Dumbbell Press · 8 reps · 55 lbs · controlled eccentric tempo",
     segments: [
-      .init(sets: 2, started: true, completed: true),
-      .init(sets: 4, started: true, completed: false),
-      .init(sets: 3, started: false, completed: false),
+      .init(sets: 6, started: true, completed: true),
+      .init(sets: 8, started: true, completed: false),
+      .init(sets: 5, started: false, completed: false),
     ],
     actions: ["completeSet", "uncompleteSet"]
   )

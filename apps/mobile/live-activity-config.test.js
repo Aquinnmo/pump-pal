@@ -93,6 +93,41 @@ assert.ok(
 );
 
 const widgetSwift = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivity.swift'), 'utf8');
+const compactLeading = widgetSwift.match(
+  /compactLeading: \{([\s\S]*?)\n\s*\} compactTrailing:/,
+)?.[1];
+const compactTrailing = widgetSwift.match(
+  /compactTrailing: \{([\s\S]*?)\n\s*\} minimal:/,
+)?.[1];
+assert.ok(compactLeading, 'compactLeading region must be present');
+assert.ok(compactTrailing, 'compactTrailing region must be present');
+assert.match(compactLeading, /ProgressRing\(completedSets:/);
+// The pill must size to its content; maxWidth stretches it to full width.
+assert.doesNotMatch(compactLeading, /maxWidth: \.infinity/);
+assert.doesNotMatch(compactLeading, /\.padding\(/);
+assert.match(compactTrailing, /Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)/);
+assert.doesNotMatch(compactTrailing, /maxWidth: \.infinity/);
+assert.doesNotMatch(compactTrailing, /timerInterval/);
+assert.doesNotMatch(compactTrailing, /\.padding\(/);
+
+const expandedLeading = widgetSwift.match(
+  /DynamicIslandExpandedRegion\(\.leading\) \{([\s\S]*?)\n\s*\}\n\s*\.contentMargins/,
+)?.[1];
+const expandedTrailing = widgetSwift.match(
+  /DynamicIslandExpandedRegion\(\.trailing\) \{([\s\S]*?)\n\s*\}\n\s*\.contentMargins/,
+)?.[1];
+assert.ok(expandedLeading, 'expanded .leading region must be present');
+assert.ok(expandedTrailing, 'expanded .trailing region must be present');
+// These bands run to the display's rounded corner; edge-pinned text lands under
+// the mask. Centered (no alignment: argument on .frame) is the only safe
+// placement. Matched against an actual .frame(...) call rather than a bare
+// "alignment: ." substring, since the explanatory comment on the .leading
+// region legitimately contains the string "alignment: .leading" in prose.
+assert.doesNotMatch(expandedLeading, /\.frame\([^)]*alignment: \./);
+assert.doesNotMatch(expandedTrailing, /\.frame\([^)]*alignment: \./);
+assert.match(expandedLeading, /\.frame\(maxWidth: \.infinity\)/);
+assert.match(expandedTrailing, /\.frame\(maxWidth: \.infinity\)/);
+
 assert.match(widgetSwift, /GeometryReader/);
 assert.match(widgetSwift, /availableWidth \* CGFloat\(max\(segment\.sets, 0\)\)/);
 assert.match(widgetSwift, /\.accessibilityLabel\("Workout exercise progress"\)/);
