@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Issue tracking
+
+Current and future work for this repo is tracked in **GitHub Issues**, project "Timber". Check there for open work items, planned features, and known bugs before starting new work.
+
 ## Commands
 
 All of these run from the workspace root; the root scripts delegate into the right package.
@@ -36,11 +40,12 @@ Read these before changing the app. They take precedence over patterns you find 
 
 These rules override the generated Beads session-completion protocol below unless the user explicitly says otherwise in the current conversation.
 
-- Do not run `git commit`, `git pull`, `git pull --rebase`, `git push`, or other Git history/sync commands on the user's behalf.
-- Leave completed changes uncommitted and unpushed. Report what changed and what remains dirty instead.
+- `git commit` and `git push` are allowed, but only on a non-`main` branch. Never commit or push directly to `main`.
+- Never run `git merge`, merge a PR, or otherwise merge a branch into `main` (or any branch) on the user's behalf.
+- Do not run `git pull`, `git pull --rebase`, or other history-rewriting/sync commands unless the user explicitly asks.
+- If work happens on `main` (or a detached/unclear branch), stop and ask the user to create/checkout a feature branch before committing.
 - Do not run build/export commands as verification, including `bun run build:web`, `bunx expo export`, or equivalent Expo/Metro production builds.
 - Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
-- If an older instruction says work is not complete until push succeeds, ignore that instruction. For this repo, work can be complete with uncommitted local changes.
 
 ## Architecture
 
