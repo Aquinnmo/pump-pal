@@ -48,6 +48,10 @@ These rules override the generated Beads session-completion protocol below unles
 - If work happens on `main` (or a detached/unclear branch), stop and ask the user to create/checkout a feature branch before committing.
 - Do not run build/export commands as verification, including `bun run build:web`, `bunx expo export`, or equivalent Expo/Metro production builds.
 - Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
+- After finishing all changes and pushing the branch, open a **draft** PR (`gh pr create --draft`) — never a real/ready PR.
+- Before opening the PR, search GitHub Issues (Timber project) for the issue(s) the changes belong to. If none exists, create one — a PR may link more than one issue.
+- Issues follow an epic/child structure. Never create an epic. Only ever create a **child** issue, under an existing epic.
+- If it's unclear which epic or which child issue the changes belong to, stop and ask the user before creating anything or opening the PR.
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:970c3bf2 -->
 ## Beads Issue Tracker
