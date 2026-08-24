@@ -1,3 +1,14 @@
+// The app target gets this file via plugins/with-live-activity-intents.js, where these
+// types come from the LiveUpdateNotification pod (useFrameworks: static makes it a real
+// Swift module). In the widget extension the pod is absent and the same types come from
+// this folder's own copies, so canImport is false and the import is skipped.
+//
+// `internal` is required, not stylistic: Pods-Timber/ExpoModulesProvider.swift already
+// imports this module as `internal import`, and Swift rejects a bare `import` elsewhere
+// in the same module as an ambiguous implicit access level.
+#if canImport(LiveUpdateNotification)
+internal import LiveUpdateNotification
+#endif
 import AppIntents
 import Foundation
 

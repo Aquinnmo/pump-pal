@@ -16,6 +16,10 @@ import { pushWearState } from '@/lib/wear-sync';
 // that write only ever happens through the active-workout screen's own Finish flow.
 // A finishWorkout action with the screen unmounted has nothing to act on — same for
 // every action once the process is cold, since a cold process has no session at all.
+//
+// A rejected or no-op action returns without redrawing: nothing but this function ever
+// posts the notification, so the surface already shows authoritative state and a
+// corrective redraw would only spend ActivityKit's metered update budget.
 export async function handleWorkoutAction(
   action: WearAction | LiveUpdateNotificationAction,
 ): Promise<void> {

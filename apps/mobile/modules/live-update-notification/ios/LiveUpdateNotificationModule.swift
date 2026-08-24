@@ -25,11 +25,19 @@ struct LiveUpdateNotificationPayloadRecord: Record {
 public class LiveUpdateNotificationModule: Module {
   private let activityGenerationLock = NSLock()
   private var activityGeneration: UInt64 = 0
+  // Tracks whether JS currently has a subscriber on "onNotificationAction". Guards
+  // onActionPosted's drain below: draining destroys the single-slot App Group outbox
+  // record, so doing that with no one listening loses the tap for good instead of
+  // leaving it for the cold-start drainPendingAction() path.
+  private var hasListeners = false
 
   public func definition() -> ModuleDefinition {
     Name("LiveUpdateNotification")
 
     Events("onNotificationAction")
+
+    OnStartObserving("onNotificationAction") { self.hasListeners = true }
+    OnStopObserving("onNotificationAction") { self.hasListeners = false }
 
     Function("isSupported") {
       isSupported()
@@ -78,7 +86,6 @@ public class LiveUpdateNotificationModule: Module {
 
   private func show(_ payload: LiveUpdateNotificationPayloadRecord) -> Bool {
     guard #available(iOS 17.0, *), isSupported() else { return false }
-    let generation = beginActivityOperation()
 
     let segments = payload.segments.map {
       WorkoutActivityAttributes.SegmentState(sets: $0.sets, started: $0.started, completed: $0.completed)
@@ -90,6 +97,14 @@ public class LiveUpdateNotificationModule: Module {
       segments: segments,
       actions: payload.actions
     )
+
+    if let stored = LiveUpdateSharedStore.loadState(),
+       stored.workoutId == payload.workoutId,
+       stored.asContentState == contentState {
+      return true
+    }
+
+    let generation = beginActivityOperation()
 
     LiveUpdateSharedStore.saveState(
       LiveUpdateSharedStore.StoredState(
@@ -215,8 +230,9 @@ public class LiveUpdateNotificationModule: Module {
     // must happen on the main actor, and draining there also keeps delivery ordered
     // with the host's foreground lifecycle.
     Task { @MainActor [weak self] in
-      guard let self,
-            let pending = LiveUpdateSharedStore.drainPendingAction(),
+      guard let self else { return }
+      guard hasListeners else { return }
+      guard let pending = LiveUpdateSharedStore.drainPendingAction(),
             let json = Self.jsonString(from: pending) else { return }
       self.sendEvent("onNotificationAction", ["json": json])
     }

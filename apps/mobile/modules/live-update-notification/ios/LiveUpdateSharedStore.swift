@@ -45,6 +45,16 @@ public enum LiveUpdateSharedStore {
       self.segments = segments
       self.actions = actions
     }
+
+    public var asContentState: WorkoutActivityAttributes.ContentState {
+      WorkoutActivityAttributes.ContentState(
+        completedSets: completedSets,
+        totalSets: totalSets,
+        detail: detail,
+        segments: segments,
+        actions: actions
+      )
+    }
   }
 
   public struct PendingAction: Codable {

@@ -61,6 +61,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  AppState,
   BackHandler,
   KeyboardAvoidingView,
   Platform,
@@ -156,6 +157,9 @@ export default function ActiveWorkoutScreen() {
     workoutName: effectiveWorkoutName,
   });
   exercisesRef.current = exercises;
+  const notificationWorkoutNameRef = useRef(effectiveWorkoutName);
+  notificationWorkoutNameRef.current = effectiveWorkoutName;
+  const notificationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -423,25 +427,55 @@ export default function ActiveWorkoutScreen() {
     });
   }, [sessionId, setExercises]);
 
-  // The notification is a live control surface, not a save artifact, so it redraws on
-  // its own short timer — a set tapped here or on the notification itself lands visibly
-  // at once, and the action PendingIntents (which carry expectedCompletedSets) re-arm
-  // immediately so a fast second tap isn't rejected.
-  // The 100ms only coalesces keystroke bursts: weight/duration feed the detail line.
+  // The notification is a live control surface, not a save artifact. While the app is
+  // foregrounded iOS hides the Live Activity, so draft keystrokes must not spend its
+  // metered update budget. The longer debounce only matters while backgrounded, where
+  // it coalesces edits before the island is visible.
   useEffect(() => {
     if (!sessionId || !startedAt || initializing) return;
     const t = setTimeout(() => {
+      notificationDebounceRef.current = null;
+      if (AppState.currentState !== "active") {
+        showWorkoutNotification(
+          buildWorkoutNotificationPresentation({
+            workoutId: sessionId,
+            workoutName: effectiveWorkoutName,
+            startedAt,
+            rows: exercises,
+          }),
+        ).catch((e) => console.warn("[workout-notification] show failed", e));
+      }
+    }, 1000);
+    notificationDebounceRef.current = t;
+    return () => {
+      clearTimeout(t);
+      if (notificationDebounceRef.current === t) notificationDebounceRef.current = null;
+    };
+  }, [exercises, effectiveWorkoutName, sessionId, initializing, startedAt]);
+
+  useEffect(() => {
+    if (!sessionId || !startedAt || initializing) return;
+    let previousState = AppState.currentState;
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      const movedToBackground = previousState === "active" && nextState !== "active";
+      previousState = nextState;
+      if (!movedToBackground) return;
+
+      if (notificationDebounceRef.current) {
+        clearTimeout(notificationDebounceRef.current);
+        notificationDebounceRef.current = null;
+      }
       showWorkoutNotification(
         buildWorkoutNotificationPresentation({
           workoutId: sessionId,
-          workoutName: effectiveWorkoutName,
+          workoutName: notificationWorkoutNameRef.current,
           startedAt,
-          rows: exercises,
+          rows: exercisesRef.current,
         }),
       ).catch((e) => console.warn("[workout-notification] show failed", e));
-    }, 100);
-    return () => clearTimeout(t);
-  }, [exercises, effectiveWorkoutName, sessionId, initializing, startedAt]);
+    });
+    return () => subscription.remove();
+  }, [sessionId, startedAt, initializing]);
 
   const incompleteSetCount = () =>
     exercises

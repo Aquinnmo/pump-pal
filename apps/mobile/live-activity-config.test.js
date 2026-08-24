@@ -11,6 +11,7 @@ const widgetRoot = path.join(mobileRoot, 'targets', 'widget');
 const widgetConfig = require(path.join(widgetRoot, 'expo-target.config.js'))({ ios });
 
 assert.equal(ios.infoPlist.NSSupportsLiveActivities, true);
+assert.equal(ios.infoPlist.NSSupportsLiveActivitiesFrequentUpdates, true);
 assert.deepEqual(appGroups, ['group.com.aquinnmo.timber.liveactivity']);
 assert.match(mobilePackage.scripts['dev:ios'] ?? mobilePackage.scripts['dev:apple'], /APP_VARIANT=development/);
 assert.match(mobilePackage.scripts['install:ios'] ?? mobilePackage.scripts['install:apple'], /expo run:ios --device/);
@@ -44,12 +45,27 @@ const moduleSwift = fs.readFileSync(
   path.join(mobileRoot, 'modules', 'live-update-notification', 'ios', 'LiveUpdateNotificationModule.swift'),
   'utf8',
 );
+const moduleStore = fs.readFileSync(
+  path.join(mobileRoot, 'modules', 'live-update-notification', 'ios', 'LiveUpdateSharedStore.swift'),
+  'utf8',
+);
+const widgetStore = fs.readFileSync(path.join(widgetRoot, 'LiveUpdateSharedStore.swift'), 'utf8');
+assert.match(moduleSwift, /stored\.workoutId == payload\.workoutId[\s\S]*stored\.asContentState == contentState/);
+assert.match(moduleStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
+assert.match(widgetStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
+const stripStoreHeader = (source) => source.replace(/^[\s\S]*?(?=public enum LiveUpdateSharedStore)/, '');
+assert.equal(
+  stripStoreHeader(widgetStore),
+  stripStoreHeader(moduleStore),
+  'host and widget LiveUpdateSharedStore bodies must stay synchronized',
+);
 assert.match(moduleSwift, /#available\(iOS 17\.0, \*\)/);
 assert.doesNotMatch(moduleSwift, /#available\(iOS 16\.1, \*\)/);
 assert.match(moduleSwift, /Task \{ @MainActor/);
 assert.match(moduleSwift, /clearPendingAction\(\)/);
 assert.match(moduleSwift, /activityGeneration/);
 assert.match(moduleSwift, /isCurrentActivityOperation\(generation\)/);
+assert.match(moduleSwift, /guard hasListeners else \{ return \}/);
 
 const iosNotification = fs.readFileSync(
   path.join(mobileRoot, 'src', 'lib', 'workout-notification.ios.ts'),
@@ -60,6 +76,7 @@ assert.match(iosNotification, /console\.warn/);
 assert.match(iosNotification, /Rebuild the iOS development client/);
 assert.match(iosNotification, /Live Activities are unavailable/);
 assert.match(iosNotification, /no iOS notification fallback is provided/);
+assert.doesNotMatch(iosNotification, /lastPayloadKey|force/);
 
 // The intents run in the app's process (LiveActivityIntent, iOS 17+) — that wrong
 // "own process" claim is what the missing app-target membership followed from, and
@@ -68,11 +85,24 @@ assert.match(iosNotification, /no iOS notification fallback is provided/);
 const intentsSwift = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivityIntents.swift'), 'utf8');
 assert.match(intentsSwift, /stored\.workoutId == workoutId/);
 assert.match(intentsSwift, /stored\.completedSets == expectedCompletedSets/);
-assert.doesNotMatch(intentsSwift, /activity\.update/);
 assert.doesNotMatch(intentsSwift, /activity\.end/);
 assert.match(intentsSwift, /runs in the host APP's process/);
 assert.doesNotMatch(intentsSwift, /Live Activity's own process/);
 assert.equal((intentsSwift.match(/NSLog\(/g) ?? []).length >= 6, true);
+
+// Single-writer contract (pump-pal-byyv.8): JS is the only writer of StoredState and
+// the only caller of activity.update — the intents file must not race it. These
+// replace the old per-function-body extraction that asserted the opposite (an
+// optimistic push inside performSetAction), which pump-pal-byyv.8 deleted.
+assert.doesNotMatch(intentsSwift, /activity\.update/);
+assert.doesNotMatch(intentsSwift, /saveState\(/); // JS is the only StoredState writer
+// `internal`, not a bare `import`: ExpoModulesProvider.swift imports the same module
+// as `internal import`, and a bare one elsewhere in the app module is an
+// 'ambiguous implicit access level' build error.
+assert.match(
+  intentsSwift,
+  /#if canImport\(LiveUpdateNotification\)\ninternal import LiveUpdateNotification\n#endif/,
+);
 
 // The config plugin gives the app target its own membership of the intents file —
 // without it LiveActivityIntent taps resolve to nothing (pump-pal-ks2l).

@@ -56,7 +56,7 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     return;
   }
 
-  const didShow = LiveUpdateNotification.show({
+  const payload = {
     workoutId: data.workoutId,
     expectedCompletedSets: data.completedSets,
     title: data.title,
@@ -66,14 +66,18 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     progress: data.completedSets,
     segments: data.segments,
     actions: data.actions,
-  });
+  };
+
+  const didShow = LiveUpdateNotification.show(payload);
 
   if (!didShow) {
     warnOnce(
       'show-failed',
       'The Live Activity could not be started. Check that Live Activities are enabled for Timber and that the app has an iOS 17+ ActivityKit-capable host.',
     );
+    return;
   }
+
 }
 
 export async function dismissWorkoutNotification(): Promise<void> {
