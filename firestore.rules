@@ -47,9 +47,13 @@ service cloud.firestore {
         && (!('injuries' in workout) || (workout.injuries is list && workout.injuries.size() <= 100));
     }
 
+    // Firestore rules have no loops, so per-element `days` validation (each
+    // element must be a map with a valid `date`) isn't expressible here — it
+    // is enforced server-side by `buddyChallenge` in apps/api/src/store/buddies.ts.
     function validChallenge(challenge) {
       return challenge.keys().hasOnly(['startDate', 'days', 'longestStreak'])
         && challenge.startDate is string
+        && challenge.startDate.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && challenge.days is list && challenge.days.size() <= 400
         && challenge.longestStreak is int && challenge.longestStreak >= 0;
     }

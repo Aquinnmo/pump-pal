@@ -1,7 +1,8 @@
-import type { BuddiesResponse, BuddyDTO, BuddyRequestDTO, BuddySearchResult, BuddyState, ChopResponse } from '@timber/contract/api';
+import { z } from 'zod';
+import { localDate, type BuddiesResponse, type BuddyDTO, type BuddyRequestDTO, type BuddySearchResult, type BuddyState, type ChopResponse } from '@timber/contract/api';
 import { ApiError } from '../errors.js';
 import { sendPush } from './push.js';
-import { commit, getDoc, runQuery, ts, type DecodedValue, type FirestoreDoc } from './rest.js';
+import { commit, getDoc, runQuery, ts, type FirestoreDoc } from './rest.js';
 
 /**
  * The social graph, in one top-level `friendships` collection (see
@@ -21,12 +22,30 @@ const USERS = 'users';
 export const CHOP_COOLDOWN_MS = 5 * 60 * 1000;
 
 /**
+ * A buddy's challenge doc is owner-written and `firestore.rules` only checks
+ * its top-level types, so every field here is untrusted input from another
+ * user. Degrade per field rather than throw: one poisoned document must not
+ * fail the whole buddy list.
+ */
+export const buddyChallenge = z.object({
+  startDate: localDate.nullable().catch(null),
+  days: z.array(z.object({ date: localDate })).catch([]),
+  longestStreak: z.number().int().min(0).catch(0),
+});
+
+/**
  * Deterministic doc id for a pair, so the same two users always collide on
  * one document no matter who asks first. That collision IS the uniqueness
  * guarantee — a request create uses `{ exists: false }` against this id.
+ *
+ * Each uid is escaped (`_` -> `__`) before joining on a single `_`, so the
+ * join is injective: every underscore run inside an escaped token is
+ * even-length, so the lone odd-length run is unambiguously the separator.
+ * Without the escaping, `pairId('a_b', 'c')` and `pairId('a', 'b_c')` would
+ * both produce `a_b_c`.
  */
 export function pairId(a: string, b: string): string {
-  return [a, b].sort().join('_');
+  return [a, b].sort().map((u) => u.replaceAll('_', '__')).join('_');
 }
 
 interface Friendship {
@@ -57,7 +76,11 @@ function stateFor(uid: string, friendship: Friendship | undefined): BuddyState {
 
 async function loadFriendship(a: string, b: string): Promise<Friendship | undefined> {
   const doc = await getDoc(`${FRIENDSHIPS}/${pairId(a, b)}`);
-  return doc ? toFriendship(doc) : undefined;
+  if (!doc) return undefined;
+  const friendship = toFriendship(doc);
+  // The doc id is derived, not authenticated. Never authorize off a document
+  // that doesn't actually name both parties.
+  return friendship.users.includes(a) && friendship.users.includes(b) ? friendship : undefined;
 }
 
 /** Missing preserves the pre-toggle behavior for existing accounts. */
@@ -138,6 +161,7 @@ export function currentStreak(startDate: string | null, days: { date: string }[]
   const completed = new Set(days.map((d) => d.date));
   let streak = 0;
   const cursor = new Date(`${startDate}T00:00:00Z`);
+  if (Number.isNaN(cursor.getTime())) return 0;
 
   // Count forward from day 1 until a day is missing.
   while (completed.has(toDateKey(cursor))) {
@@ -184,14 +208,13 @@ async function buddyDetail(uid: string, buddyUid: string, today: string, lastCho
   // than invent a placeholder.
   if (!username || !isSocialEnabledField(user?.fields.socialEnabled)) return null;
 
-  const startDate = (challenge?.fields.startDate as string | undefined) ?? null;
-  const days = ((challenge?.fields.days as DecodedValue[] | undefined) ?? []) as { date: string }[];
+  const { startDate, days, longestStreak } = buddyChallenge.parse(challenge?.fields ?? {});
 
   return {
     uid: buddyUid,
     username,
     currentStreak: currentStreak(startDate, days, today),
-    longestStreak: Number(challenge?.fields.longestStreak ?? 0),
+    longestStreak,
     workedOutToday,
     lastChoppedAt,
   };

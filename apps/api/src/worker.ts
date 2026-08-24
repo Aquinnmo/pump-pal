@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { buddyActionInput, chopInput, createPendingExerciseInput, localDate, profilePatchInput, sendBuddyRequestInput } from '@timber/contract/api';
+import { buddyActionInput, buddyUid, chopInput, createPendingExerciseInput, localDate, profilePatchInput, sendBuddyRequestInput } from '@timber/contract/api';
 import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '@timber/contract/ai';
 import { requireUid } from './auth.js';
 import { verifyAppCheckToken } from './app-check.js';
@@ -161,14 +161,18 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
     return context.json(await sendBuddyRequest(context.get('uid'), parsed.data.uid));
   });
   app.post('/api/buddies/:uid', async (context) => {
+    const targetUid = buddyUid.safeParse(context.req.param('uid'));
+    if (!targetUid.success) throw new ApiError(400, 'Invalid buddy action');
     const parsed = buddyActionInput.safeParse(await context.req.json());
     if (!parsed.success) throw new ApiError(400, 'Invalid buddy action');
-    return context.json(await acceptBuddyRequest(context.get('uid'), context.req.param('uid')));
+    return context.json(await acceptBuddyRequest(context.get('uid'), targetUid.data));
   });
   app.post('/api/buddies/:uid/chop', async (context) => {
+    const targetUid = buddyUid.safeParse(context.req.param('uid'));
+    if (!targetUid.success) throw new ApiError(400, 'Invalid chop');
     const parsed = chopInput.safeParse(await context.req.json());
     if (!parsed.success) throw new ApiError(400, 'Invalid chop');
-    return context.json(await chopBuddy(context.get('uid'), context.req.param('uid'), parsed.data.today));
+    return context.json(await chopBuddy(context.get('uid'), targetUid.data, parsed.data.today));
   });
 
   app.post('/api/injuries/:id/apply-to-history', async (context) => {

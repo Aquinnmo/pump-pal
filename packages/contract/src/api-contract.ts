@@ -449,8 +449,21 @@ export const buddiesResponse = z.object({
 });
 export type BuddiesResponse = z.infer<typeof buddiesResponse>;
 
+/**
+ * A Firebase uid: half of a friendship doc id (`pairId` in
+ * apps/api/src/store/buddies.ts) and a Firestore path segment interpolated
+ * unencoded into REST URLs (apps/api/src/store/rest.ts) — a `/` in it would
+ * change which document gets read or written.
+ *
+ * This app uses Firebase email/password and phone auth only, whose
+ * auto-generated uids are 28 alphanumeric characters, hence the tight regex.
+ * If custom tokens are ever added, widen this to at least `/^[^/]+$/`,
+ * matching the `segment` guard in packages/contract/src/firestore-rest.ts:98.
+ */
+export const buddyUid = z.string().min(1).max(128).regex(/^[A-Za-z0-9]+$/);
+
 /** POST /api/buddies — send a buddy request to `uid`. */
-export const sendBuddyRequestInput = z.object({ uid: z.string().min(1) });
+export const sendBuddyRequestInput = z.object({ uid: buddyUid });
 export type SendBuddyRequestInput = z.infer<typeof sendBuddyRequestInput>;
 
 /** A calendar day in the caller's local timezone. The server has no idea what that is. */

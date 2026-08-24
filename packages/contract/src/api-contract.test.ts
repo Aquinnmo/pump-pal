@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  buddyUid,
   catalogExerciseDTO,
   catalogResponse,
   conflictResponse,
@@ -189,6 +190,11 @@ assert.equal(
   }).success,
   true
 );
+
+// ---- buddyUid: a Firestore path segment, not just any string ----
+assert.equal(buddyUid.safeParse('a'.repeat(28)).success, true);
+assert.equal(buddyUid.safeParse('ab/cd').success, false); // contains '/'
+assert.equal(buddyUid.safeParse('ab_cd').success, false); // contains '_'
 
 // ---- listResponse helper ----
 const listedWorkouts = listResponse(workoutDTO);

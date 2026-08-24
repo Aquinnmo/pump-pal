@@ -61,6 +61,11 @@ async function main() {
   await assertSucceeds(setDoc(doc(owner, 'users/owner/private/notifications'), { expoPushToken: 'ExponentPushToken[next]', updatedAt: now }));
   await assertSucceeds(deleteDoc(doc(owner, 'users/owner/private/notifications')));
 
+  await assertSucceeds(getDoc(doc(owner, 'users/owner/pushup-challenge/data')));
+  await assertFails(getDoc(doc(other, 'users/owner/pushup-challenge/data')));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner/pushup-challenge/data'), { startDate: '2026-08-01', days: [], longestStreak: 0 }));
+  await assertFails(setDoc(doc(owner, 'users/owner/pushup-challenge/data'), { startDate: 'nope', days: [], longestStreak: 0 }));
+
   await assertSucceeds(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(20))));
   await assertFails(getDocs(query(collection(owner, 'workouts'), limit(20))));
   await assertFails(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(201))));
