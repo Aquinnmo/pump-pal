@@ -21,7 +21,10 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const auth = getAuth(app);
 
 const siteKey = process.env.EXPO_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY;
-if (siteKey) {
+// expo export's static-render pass loads this module in Node (no DOM) to
+// prerender _layout.tsx; ReCaptchaEnterpriseProvider needs `document` to
+// inject its script, so App Check must only initialize in an actual browser.
+if (siteKey && typeof document !== 'undefined') {
   const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider(siteKey),
     isTokenAutoRefreshEnabled: true,
