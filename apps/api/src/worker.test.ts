@@ -76,6 +76,45 @@ async function main() {
   }, { ...env, APP_CHECK_MODE: 'enforce', FIREBASE_PROJECT_NUMBER: '123', APP_CHECK_ALLOWED_APP_IDS: '1:123:web:allowed' });
   assert.equal(enforced.status, 401, 'enforcement rejects a missing App Check token');
 
+  // verifyAppCheckToken is a hard module import, so the only way to drive the
+  // enforce SUCCESS path — the actual risk of turning enforce on, since it can
+  // reject legitimate traffic — is through the verifyAppCheck seam.
+  {
+    const verifyUidStub = async (authorization: string | undefined) => {
+      if (authorization === 'Bearer test') return 'verified-uid';
+      throw Object.assign(new Error('Invalid or expired session'), { status: 401 });
+    };
+    const passingAppCheck = async () => ({ verified: true, appId: '1:123:web:allowed' });
+    const appWithVerifiedAppCheck = createWorkerApp(verifyUidStub, passingAppCheck);
+    const verified = await appWithVerifiedAppCheck.request('https://worker.example/api/ai', {
+      method: 'POST', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'not-an-operation' }),
+    }, { ...env, APP_CHECK_MODE: 'enforce' });
+    assert.equal(verified.status, 400, 'a verified App Check token reaches the route under enforce (schema validation, not a 401)');
+  }
+
+  {
+    const verifyUidStub = async (authorization: string | undefined) => {
+      if (authorization === 'Bearer test') return 'verified-uid';
+      throw Object.assign(new Error('Invalid or expired session'), { status: 401 });
+    };
+    const failingAppCheck = async () => ({ verified: false, reason: 'invalid' });
+    const warnings: unknown[][] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]) => { warnings.push(args); };
+    const appWithFailingAppCheck = createWorkerApp(verifyUidStub, failingAppCheck);
+    const unverified = await appWithFailingAppCheck.request('https://worker.example/api/ai', {
+      method: 'POST', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' }, body: JSON.stringify({ op: 'not-an-operation' }),
+    }, { ...env, APP_CHECK_MODE: 'enforce' });
+    console.warn = originalWarn;
+    assert.equal(unverified.status, 401, 'an unverified App Check token still 401s under enforce');
+    const unverifiedBody = await unverified.json() as { error: string; code: string };
+    assert.equal(unverifiedBody.code, 'app_check_failed');
+    assert.equal(unverifiedBody.error, 'Invalid or missing App Check token');
+    assert.equal('reason' in unverifiedBody, false, 'the failure reason must never leak into the response body');
+    const warnLog = warnings.find(([event]) => event === '[worker] app-check-unverified')?.[1] as Record<string, unknown>;
+    assert.equal(warnLog?.reason, 'invalid', 'the reason is logged server-side, which is the only place it belongs');
+  }
+
   const safeProfileField = await app.request('https://worker.example/api/profile', {
     method: 'PATCH', headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' },
     body: JSON.stringify({ workoutSplit: { type: 'Upper / Lower', custom: null } }),

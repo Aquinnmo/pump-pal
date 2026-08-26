@@ -45,7 +45,7 @@ Fill in `apps/api/.dev.vars` with non-production credentials:
 | `GEMINI_API_KEY` / `OPENAI_API_KEY` | Key for the selected AI provider. |
 | `FIREBASE_PROJECT_NUMBER` | Firebase numeric project number for App Check. |
 | `APP_CHECK_ALLOWED_APP_IDS` | Comma-separated Firebase app IDs. |
-| `APP_CHECK_MODE` | Use `monitor` while validating setup; use `enforce` only after verification. |
+| `APP_CHECK_MODE` | Ships as `enforce` locally (see "Testing App Check enforcement locally" below); for preview/production, use `monitor` while validating setup and `enforce` only after verification. |
 
 Never commit `.dev.vars`, service-account JSON, private keys, or AI keys.
 
@@ -67,6 +67,49 @@ Expected response:
 ```json
 {"ok":true}
 ```
+
+## Testing App Check enforcement locally
+
+`apps/api/.dev.vars.example` ships with `APP_CHECK_MODE=enforce` and real
+`FIREBASE_PROJECT_NUMBER` / `APP_CHECK_ALLOWED_APP_IDS` values (they are not
+secrets — the same four values already live in `wrangler.toml`), so a fresh
+`cp apps/api/.dev.vars.example apps/api/.dev.vars` plus the three Firebase
+service-account values gives you a local Worker that enforces App Check. This
+is deliberately local-only: preview and production stay on `monitor` in
+`wrangler.toml` until preview telemetry is fully verified (see "Deploy
+preview" above), and nothing in this section touches that file.
+
+To actually pass enforcement, each client needs a real App Check credential:
+
+- **Android / iOS dev client.** `@react-native-firebase/app-check` uses the
+  `debug` provider in `__DEV__` (see `apps/mobile/src/config/firebase.ts`),
+  which prints a debug token to the native log (Logcat / Xcode console) on
+  first launch. Register that token in the Firebase Console under
+  **App Check → Apps → (app) → Manage debug tokens**, one token per install.
+  **Expo Go will not work for this** — `@react-native-firebase/app-check`
+  isn't part of Expo Go, and `firebase.ts`'s `initAppCheck()` swallows the
+  failed `require()` and silently sends no token at all. Use a dev build.
+- **Web.** `apps/mobile/src/config/firebase.web.ts` only initializes App
+  Check when `EXPO_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY` is set. Create (or
+  reuse) a reCAPTCHA Enterprise site key in the Firebase Console under
+  **App Check → Apps → (web app)**, add `localhost` to that key's allowed
+  domains, and set the env var in `apps/mobile/.env`.
+- **Point the client at the local Worker.** `apps/mobile/.env` normally has
+  `EXPO_PUBLIC_API_BASE_URL=https://timber-api-preview.adam-montgomery.ca`;
+  change it to `http://localhost:8787` to hit `wrangler dev` instead. Both
+  `apps/mobile/src/lib/api-client-core.ts` and `apps/mobile/src/lib/ai-client.ts`
+  read that var at module scope, so restart Metro after changing it — a Fast
+  Refresh will not pick it up. A physical device cannot resolve `localhost` as
+  the Worker's host; use the machine's LAN IP instead (e.g.
+  `http://192.168.1.23:8787`) and add that same origin to `.dev.vars`'
+  `API_ALLOWED_ORIGINS` if you're testing the web client from another device.
+
+**JWKS caveat:** `apps/api/src/app-check.ts` fetches
+`https://firebaseappcheck.googleapis.com/v1/jwks` on first verification. If
+`wrangler dev` has no outbound internet access, every request reports
+`reason: 'invalid'` — indistinguishable in the logs from an actually forged
+token. If every client is failing the same way, check connectivity from the
+machine running `wrangler dev` before suspecting the tokens themselves.
 
 ## Configure Cloudflare environments
 

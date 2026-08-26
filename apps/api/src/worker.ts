@@ -84,7 +84,7 @@ async function assertAIEnabled(uid: string): Promise<void> {
  * Privileged Cloudflare Worker boundary. There is intentionally no catch-all
  * Firestore route: owner-safe reads/writes stay on direct Firestore REST.
  */
-export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
+export function createWorkerApp(verifyUid: VerifyUid = requireUid, verifyAppCheck = verifyAppCheckToken) {
   const app = new Hono<{ Bindings: WorkerBindings; Variables: Variables }>();
 
   app.use('*', async (context, next) => {
@@ -123,12 +123,13 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
 
   app.use('/api/*', async (context, next) => {
     const uid = await verifyUid(context.req.header('Authorization'));
-    const appCheck = await verifyAppCheckToken(context.req.header('X-Firebase-AppCheck'), context.env);
+    const appCheck = await verifyAppCheck(context.req.header('X-Firebase-AppCheck'), context.env);
+    // Logged before the throw: under enforce this is the only signal that says
+    // *why* a 401 happened. Still never logs the token, the body, or the uid.
+    if (!appCheck.verified) console.warn('[worker] app-check-unverified', { reason: appCheck.reason, route: context.req.path });
     if (context.env.APP_CHECK_MODE === 'enforce' && !appCheck.verified) {
       throw new ApiError(401, 'Invalid or missing App Check token', 'app_check_failed');
     }
-    // Monitor mode intentionally never logs tokens or request bodies.
-    if (!appCheck.verified) console.warn('[worker] app-check-unverified', { reason: appCheck.reason, route: context.req.path });
     context.set('uid', uid);
     await next();
   });

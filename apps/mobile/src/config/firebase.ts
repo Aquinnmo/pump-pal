@@ -57,23 +57,26 @@ export const auth = initAuth();
  * production build. Against Expo Go or a stale binary the require throws, and
  * App Check must degrade to "send no token" rather than break app startup —
  * the Worker is on APP_CHECK_MODE=monitor, so an absent token still works.
+ *
+ * iOS additionally needs `@react-native-firebase/app-check` in app.json's
+ * plugin list: its config plugin injects `[RNFBAppCheckModule sharedInstance]`
+ * into the AppDelegate ahead of `FirebaseApp.configure()`, which is what
+ * installs the provider factory. Autolinking the pod is not enough — without
+ * the plugin the code below runs, mints nothing, and prints no debug token.
  */
 function initAppCheck(): void {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { firebase } = require('@react-native-firebase/app-check');
-    const provider = firebase.appCheck().newReactNativeFirebaseAppCheckProvider();
+    const { initializeAppCheck, getToken, ReactNativeFirebaseAppCheckProvider } = require('@react-native-firebase/app-check');
+    const provider = new ReactNativeFirebaseAppCheckProvider();
     provider.configure({
       android: { provider: __DEV__ ? 'debug' : 'playIntegrity' },
       apple: { provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback' },
     });
-    // initializeAppCheck is async; getToken before it settles throws, so the
-    // provider awaits this promise rather than racing it on a cold start.
-    const ready = firebase.appCheck().initializeAppCheck({ provider, isTokenAutoRefreshEnabled: true });
-    setAppCheckTokenProvider(async () => {
-      await ready;
-      return (await firebase.appCheck().getToken()).token;
-    });
+    // initializeAppCheck returns synchronously (native setup continues in the
+    // background); no readiness promise to await before the first getToken.
+    const appCheckInstance = initializeAppCheck(undefined, { provider, isTokenAutoRefreshEnabled: true });
+    setAppCheckTokenProvider(async () => (await getToken(appCheckInstance)).token);
   } catch (error) {
     if (__DEV__) console.warn('[app-check] native module unavailable; requests send no token', error);
   }
