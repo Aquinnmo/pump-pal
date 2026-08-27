@@ -1,18 +1,13 @@
 import Constants from 'expo-constants';
 import { fetch as expoFetch } from 'expo/fetch';
 import { createFirestoreRestClient, type FirestoreClientDeps } from './firestore-rest-client-core';
-import { getAppCheckToken, setAppCheckTokenProvider } from './app-check-token';
+import { getAppCheckToken } from './app-check-token';
 
 export * from './firestore-rest-client-core';
 
 async function getIdToken(forceRefresh = false): Promise<string | null> {
   const { auth } = await import('@/config/firebase');
   return auth.currentUser ? auth.currentUser.getIdToken(forceRefresh) : null;
-}
-
-/** Called by the App Check setup once its platform provider is initialized. */
-export function setFirestoreAppCheckTokenProvider(provider: () => Promise<string | null>): void {
-  setAppCheckTokenProvider(provider);
 }
 
 const projectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;

@@ -62,7 +62,7 @@ temp/
 .beads/proxieddb/
 
 # graphify
-graphify-out/**
+**/graphify-out/**
 
 # Gradle output for local Expo modules
 /apps/mobile/modules/*/android/.gradle/
@@ -74,3 +74,5 @@ graphify-out/**
 
 **/.dev.vars**
 !**/.dev.vars.example
+
+**/*firebase-adminsdk-*.json

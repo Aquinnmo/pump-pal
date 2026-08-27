@@ -11,9 +11,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.aquinnmo.timber",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSSupportsLiveActivities": true
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true
       },
       "entitlements": {
         "com.apple.security.application-groups": [
@@ -45,6 +47,23 @@
     "plugins": [
       "expo-router",
       [
+        "@react-native-firebase/app",
+        {
+          "ios": {
+            "disableSPM": true
+          }
+        }
+      ],
+      "@react-native-firebase/app-check",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
@@ -63,6 +82,7 @@
       "expo-background-task",
       "./plugins/with-notifee-maven",
       "@bacons/apple-targets",
+      "./plugins/with-live-activity-intents",
       [
         "react-native-android-widget",
         {
@@ -97,6 +117,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/eb24e641-6528-4ad9-89ea-6cb006c170af"
-    }
+    },
+    "owner": "aquinnmo"
   }
 }

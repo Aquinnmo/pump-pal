@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { buddyActionInput, chopInput, createPendingExerciseInput, localDate, profilePatchInput, sendBuddyRequestInput } from '@timber/contract/api';
+import { buddyActionInput, buddyUid, chopInput, createPendingExerciseInput, localDate, profilePatchInput, sendBuddyRequestInput } from '@timber/contract/api';
 import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '@timber/contract/ai';
 import { requireUid } from './auth.js';
 import { verifyAppCheckToken } from './app-check.js';
@@ -84,7 +84,7 @@ async function assertAIEnabled(uid: string): Promise<void> {
  * Privileged Cloudflare Worker boundary. There is intentionally no catch-all
  * Firestore route: owner-safe reads/writes stay on direct Firestore REST.
  */
-export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
+export function createWorkerApp(verifyUid: VerifyUid = requireUid, verifyAppCheck = verifyAppCheckToken) {
   const app = new Hono<{ Bindings: WorkerBindings; Variables: Variables }>();
 
   app.use('*', async (context, next) => {
@@ -123,12 +123,13 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
 
   app.use('/api/*', async (context, next) => {
     const uid = await verifyUid(context.req.header('Authorization'));
-    const appCheck = await verifyAppCheckToken(context.req.header('X-Firebase-AppCheck'), context.env);
+    const appCheck = await verifyAppCheck(context.req.header('X-Firebase-AppCheck'), context.env);
+    // Logged before the throw: under enforce this is the only signal that says
+    // *why* a 401 happened. Still never logs the token, the body, or the uid.
+    if (!appCheck.verified) console.warn('[worker] app-check-unverified', { reason: appCheck.reason, route: context.req.path });
     if (context.env.APP_CHECK_MODE === 'enforce' && !appCheck.verified) {
       throw new ApiError(401, 'Invalid or missing App Check token', 'app_check_failed');
     }
-    // Monitor mode intentionally never logs tokens or request bodies.
-    if (!appCheck.verified) console.warn('[worker] app-check-unverified', { reason: appCheck.reason, route: context.req.path });
     context.set('uid', uid);
     await next();
   });
@@ -161,14 +162,18 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid) {
     return context.json(await sendBuddyRequest(context.get('uid'), parsed.data.uid));
   });
   app.post('/api/buddies/:uid', async (context) => {
+    const targetUid = buddyUid.safeParse(context.req.param('uid'));
+    if (!targetUid.success) throw new ApiError(400, 'Invalid buddy action');
     const parsed = buddyActionInput.safeParse(await context.req.json());
     if (!parsed.success) throw new ApiError(400, 'Invalid buddy action');
-    return context.json(await acceptBuddyRequest(context.get('uid'), context.req.param('uid')));
+    return context.json(await acceptBuddyRequest(context.get('uid'), targetUid.data));
   });
   app.post('/api/buddies/:uid/chop', async (context) => {
+    const targetUid = buddyUid.safeParse(context.req.param('uid'));
+    if (!targetUid.success) throw new ApiError(400, 'Invalid chop');
     const parsed = chopInput.safeParse(await context.req.json());
     if (!parsed.success) throw new ApiError(400, 'Invalid chop');
-    return context.json(await chopBuddy(context.get('uid'), context.req.param('uid'), parsed.data.today));
+    return context.json(await chopBuddy(context.get('uid'), targetUid.data, parsed.data.today));
   });
 
   app.post('/api/injuries/:id/apply-to-history', async (context) => {

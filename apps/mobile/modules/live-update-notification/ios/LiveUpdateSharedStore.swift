@@ -45,6 +45,16 @@ public enum LiveUpdateSharedStore {
       self.segments = segments
       self.actions = actions
     }
+
+    public var asContentState: WorkoutActivityAttributes.ContentState {
+      WorkoutActivityAttributes.ContentState(
+        completedSets: completedSets,
+        totalSets: totalSets,
+        detail: detail,
+        segments: segments,
+        actions: actions
+      )
+    }
   }
 
   public struct PendingAction: Codable {
@@ -71,6 +81,10 @@ public enum LiveUpdateSharedStore {
 
   public static func clearState() {
     defaults?.removeObject(forKey: stateKey)
+  }
+
+  public static func clearPendingAction() {
+    defaults?.removeObject(forKey: pendingActionKey)
   }
 
   // Single pending-action slot: only the latest tap matters for reconciliation, and

@@ -57,6 +57,7 @@ less insight; it is never acceptable to show a wrong one.
 | Exercise picker offers recents-for-this-day before it offers search (`apps/mobile/src/ui/primitives/exercise-picker.tsx:319`) | ingestion |
 | Per-set completion checkbox; unchecked sets are dropped at finish (`apps/mobile/app/active-workout.tsx`, `finishWorkout`) | fidelity |
 | An active workout lives in memory only (`apps/mobile/src/lib/active-workout-session.ts`) and the DB is written exactly once, on Finish — a process death loses the in-flight session by design rather than risking a half-written row (`apps/mobile/app/active-workout.tsx`) | fidelity over never-lose-data, deliberately |
+| iOS 17+ Live Activity with Dynamic Island, Lock Screen, and host-confirmed actions (`apps/mobile/targets/widget/`, `apps/mobile/modules/live-update-notification/ios/`) | log without opening the app; a force-quit action never claims an unconfirmed write |
 | Live Android notification + Pixel Live Update showing current exercise and running totals (`apps/mobile/src/lib/workout-notification.android.ts`, `apps/mobile/modules/live-update-notification/`) | log without opening the app |
 | Plate calculator solves minimum plates per side (`apps/mobile/src/lib/plate-math.ts`) | removes gym math |
 | Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`apps/mobile/src/lib/muscle-analysis.ts:51`) | fidelity |

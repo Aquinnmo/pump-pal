@@ -1,65 +1,41 @@
-import ActivityKit
+// The app target gets this file via plugins/with-live-activity-intents.js, where these
+// types come from the LiveUpdateNotification pod (useFrameworks: static makes it a real
+// Swift module). In the widget extension the pod is absent and the same types come from
+// this folder's own copies, so canImport is false and the import is skipped.
+//
+// `internal` is required, not stylistic: Pods-Timber/ExpoModulesProvider.swift already
+// imports this module as `internal import`, and Swift rejects a bare `import` elsewhere
+// in the same module as an ambiguous implicit access level.
+#if canImport(LiveUpdateNotification)
+internal import LiveUpdateNotification
+#endif
 import AppIntents
+import Foundation
 
-// Each intent runs insulated in the Live Activity's own process (LiveActivityIntent,
-// iOS 17+) so a tap updates the Island/Lock Screen instantly even if the host app is
-// fully terminated — no foregrounding required. See plan doc section 3 for the full
-// design: this only updates the Activity locally and leaves a durable record (the App
-// Group outbox) for the RN app to reconcile against its real domain state next time
-// it's alive; it deliberately does not recompute the app's full next-set cursor logic
-// (utils/wear-state.ts's nextSetIndex) — `detail` may be briefly stale until JS
-// reconciles, an accepted staleness window (see plan's Risks section).
-
-private func applySetDelta(_ state: LiveUpdateSharedStore.StoredState, delta: Int) -> LiveUpdateSharedStore.StoredState {
-  var next = state
-  next.completedSets = max(0, min(state.totalSets, state.completedSets + delta))
-
-  // Bounded mirror of the counting semantics in utils/wear-state.ts's applyWearAction:
-  // walk segments in order, marking/unmarking sets from the front, without touching
-  // `detail` (left stale on purpose — see header comment).
-  var remaining = next.completedSets
-  next.segments = state.segments.map { segment in
-    var s = segment
-    if remaining >= segment.sets {
-      s.started = segment.sets > 0
-      s.completed = segment.sets > 0
-      remaining -= segment.sets
-    } else if remaining > 0 {
-      s.started = true
-      s.completed = false
-      remaining = 0
-    } else {
-      s.started = false
-      s.completed = false
-    }
-    return s
-  }
-  return next
-}
+// Each intent runs in the host APP's process (LiveActivityIntent, iOS 17+) — that is
+// the entire reason the protocol exists instead of plain AppIntent, which would run in
+// the widget extension. It leaves a durable App Group record for the host app to
+// reconcile when it is alive. The host remains authoritative: intents do not
+// recompute the app's next-set cursor or update/dismiss the Activity before JS
+// validates the mutation.
 
 @available(iOS 17.0, *)
 private func performSetAction(
   action: String,
   workoutId: String,
-  expectedCompletedSets: Int,
-  delta: Int
+  expectedCompletedSets: Int
 ) async {
-  guard let stored = LiveUpdateSharedStore.loadState(),
-        stored.workoutId == workoutId,
-        stored.completedSets == expectedCompletedSets else { return }
-
-  let next = applySetDelta(stored, delta: delta)
-  LiveUpdateSharedStore.saveState(next)
-
-  let contentState = WorkoutActivityAttributes.ContentState(
-    completedSets: next.completedSets,
-    totalSets: next.totalSets,
-    detail: next.detail,
-    segments: next.segments,
-    actions: next.actions
-  )
-  if let activity = Activity<WorkoutActivityAttributes>.activities.first(where: { $0.attributes.workoutId == workoutId }) {
-    await activity.update(ActivityContent(state: contentState, staleDate: nil))
+  guard let stored = LiveUpdateSharedStore.loadState() else {
+    NSLog("WorkoutLiveActivityIntents: rejected \(action) — no stored state")
+    return
+  }
+  guard stored.workoutId == workoutId else {
+    NSLog("WorkoutLiveActivityIntents: rejected \(action) — workoutId mismatch (stored \(stored.workoutId), tapped \(workoutId))")
+    return
+  }
+  guard expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets else {
+    NSLog("WorkoutLiveActivityIntents: rejected \(action) — expected-count mismatch (stored \(stored.completedSets), expected \(expectedCompletedSets))")
+    return
   }
 
   LiveUpdateSharedStore.writePendingAction(
@@ -92,8 +68,7 @@ public struct CompleteSetIntent: LiveActivityIntent {
     await performSetAction(
       action: "completeSet",
       workoutId: workoutId,
-      expectedCompletedSets: expectedCompletedSets,
-      delta: 1
+      expectedCompletedSets: expectedCompletedSets
     )
     return .result()
   }
@@ -120,18 +95,17 @@ public struct UncompleteSetIntent: LiveActivityIntent {
     await performSetAction(
       action: "uncompleteSet",
       workoutId: workoutId,
-      expectedCompletedSets: expectedCompletedSets,
-      delta: -1
+      expectedCompletedSets: expectedCompletedSets
     )
     return .result()
   }
 }
 
 // Cannot write to the database from the extension process, and the RN app's in-memory
-// active-workout-session.ts doesn't persist across process death — so this only ends
-// the Activity locally and leaves the outbox entry for JS to act on if the app is
-// still alive. Matches Android: utils/wear-action-task.ts's handleWorkoutAction
-// explicitly refuses 'finishWorkout' for the same reason. Not a regression.
+// active-workout-session.ts doesn't persist across process death. The host app remains
+// authoritative: this only queues the action, and the host redraws or dismisses after
+// validating and applying it. In particular, a force-quit tap must not claim that data
+// persisted by advancing or ending the Live Activity locally.
 @available(iOS 17.0, *)
 public struct FinishWorkoutIntent: LiveActivityIntent {
   public static var title: LocalizedStringResource = "Finish Workout"
@@ -150,14 +124,22 @@ public struct FinishWorkoutIntent: LiveActivityIntent {
   }
 
   public func perform() async throws -> some IntentResult {
+    guard let stored = LiveUpdateSharedStore.loadState() else {
+      NSLog("WorkoutLiveActivityIntents: rejected finishWorkout — no stored state")
+      return .result()
+    }
+    guard stored.workoutId == workoutId else {
+      NSLog("WorkoutLiveActivityIntents: rejected finishWorkout — workoutId mismatch (stored \(stored.workoutId), tapped \(workoutId))")
+      return .result()
+    }
+    guard expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets else {
+      NSLog("WorkoutLiveActivityIntents: rejected finishWorkout — expected-count mismatch (stored \(stored.completedSets), expected \(expectedCompletedSets))")
+      return .result()
+    }
     LiveUpdateSharedStore.writePendingAction(
       .init(action: "finishWorkout", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
     )
     LiveUpdateSharedStore.postActionDarwinNotification()
-    if let activity = Activity<WorkoutActivityAttributes>.activities.first(where: { $0.attributes.workoutId == workoutId }) {
-      await activity.end(nil, dismissalPolicy: .immediate)
-    }
-    LiveUpdateSharedStore.clearState()
     return .result()
   }
 }

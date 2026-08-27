@@ -5,6 +5,8 @@ import Foundation
 // separate build units — see the note in WorkoutActivityAttributes.swift for why this
 // isn't a single shared file. Keep both copies in sync by hand.
 public enum LiveUpdateSharedStore {
+  // Must match the App Group entitlement declared on both the host app target and the
+  // widget-extension target in app.json / the apple-targets config.
   public static let appGroupId = "group.com.aquinnmo.timber.liveactivity"
 
   private static let stateKey = "com.aquinnmo.timber.liveupdate.state"
@@ -15,6 +17,8 @@ public enum LiveUpdateSharedStore {
     UserDefaults(suiteName: appGroupId)
   }
 
+  // Last-known content state, kept alongside the fixed attributes so an App Intent can
+  // compute a next state without needing to look the Activity up first.
   public struct StoredState: Codable {
     public var workoutId: String
     public var completedSets: Int
@@ -38,10 +42,20 @@ public enum LiveUpdateSharedStore {
       self.segments = segments
       self.actions = actions
     }
+
+    public var asContentState: WorkoutActivityAttributes.ContentState {
+      WorkoutActivityAttributes.ContentState(
+        completedSets: completedSets,
+        totalSets: totalSets,
+        detail: detail,
+        segments: segments,
+        actions: actions
+      )
+    }
   }
 
   public struct PendingAction: Codable {
-    public var action: String
+    public var action: String // 'completeSet' | 'uncompleteSet' | 'finishWorkout'
     public var workoutId: String
     public var expectedCompletedSets: Int
 
@@ -66,6 +80,12 @@ public enum LiveUpdateSharedStore {
     defaults?.removeObject(forKey: stateKey)
   }
 
+  public static func clearPendingAction() {
+    defaults?.removeObject(forKey: pendingActionKey)
+  }
+
+  // Single pending-action slot: only the latest tap matters for reconciliation, and
+  // action taps are inherently serialized by the user tapping one button at a time.
   public static func writePendingAction(_ action: PendingAction) {
     guard let data = try? JSONEncoder().encode(action) else { return }
     defaults?.set(data, forKey: pendingActionKey)

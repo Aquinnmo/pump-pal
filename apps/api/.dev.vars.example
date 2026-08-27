@@ -1,13 +1,11 @@
 FIREBASE_PROJECT_ID=
 FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
-API_ALLOWED_ORIGINS=https://timber-preview.adam-montgomery.ca,https://timber.adam-montgomery.ca
+API_ALLOWED_ORIGINS=http://localhost:8081,https://timber-preview.adam-montgomery.ca,https://timber.adam-montgomery.ca
 AI_PROVIDER=google
 AI_MODEL=
 GEMINI_API_KEY=
-# Or: AI_PROVIDER=openai plus OPENAI_API_KEY
 OPENAI_API_KEY=
-FIREBASE_PROJECT_NUMBER=
-APP_CHECK_ALLOWED_APP_IDS=
-# Keep monitor until preview telemetry is 100% verified for 24 hours.
-APP_CHECK_MODE=monitor
+FIREBASE_PROJECT_NUMBER=631531267876
+APP_CHECK_ALLOWED_APP_IDS=1:631531267876:android:408ab2aa328df72f2cb5b1,1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1
+APP_CHECK_MODE=enforce

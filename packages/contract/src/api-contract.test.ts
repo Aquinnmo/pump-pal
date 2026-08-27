@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  buddyUid,
   catalogExerciseDTO,
   catalogResponse,
   conflictResponse,
@@ -78,6 +79,8 @@ assert.deepEqual(
 // switch AI on for an account that never consented.
 assert.deepEqual(directProfilePatchInput.parse({ aiEnabled: true }), { aiEnabled: true });
 assert.equal(directProfilePatchInput.safeParse({ aiEnabled: 'yes' }).success, false);
+assert.deepEqual(directProfilePatchInput.parse({ socialEnabled: false }), { socialEnabled: false });
+assert.equal(directProfilePatchInput.safeParse({ socialEnabled: 'no' }).success, false);
 assert.equal(updateUsernameInput.safeParse({ username: 'timber' }).success, true);
 assert.equal(updateUsernameInput.safeParse({}).success, false);
 // uid/aiUsage are not part of the input schema at all — extra keys are ignored by
@@ -89,7 +92,7 @@ assert.equal(Object.keys(profilePatchInput.shape).includes('uid'), false);
   const parsed = profilePatchInput.parse({ uid: 'someone-elses-uid', workoutSplit: { type: 'Full Body', custom: null } });
   assert.equal('uid' in parsed, false);
 }
-assert.equal(profileResponse.safeParse({ profile: { workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, version: 'v1' } }).success, true);
+assert.equal(profileResponse.safeParse({ profile: { workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, socialEnabled: null, version: 'v1' } }).success, true);
 assert.equal(profileResponse.safeParse({ profile: null }).success, true);
 
 // ---- injuries ----
@@ -187,6 +190,11 @@ assert.equal(
   }).success,
   true
 );
+
+// ---- buddyUid: a Firestore path segment, not just any string ----
+assert.equal(buddyUid.safeParse('a'.repeat(28)).success, true);
+assert.equal(buddyUid.safeParse('ab/cd').success, false); // contains '/'
+assert.equal(buddyUid.safeParse('ab_cd').success, false); // contains '_'
 
 // ---- listResponse helper ----
 const listedWorkouts = listResponse(workoutDTO);

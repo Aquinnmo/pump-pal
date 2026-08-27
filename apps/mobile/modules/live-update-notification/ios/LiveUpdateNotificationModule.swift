@@ -1,5 +1,6 @@
 import ActivityKit
 import ExpoModulesCore
+import Foundation
 
 private let TAG = "LiveUpdateNotification"
 
@@ -22,10 +23,21 @@ struct LiveUpdateNotificationPayloadRecord: Record {
 }
 
 public class LiveUpdateNotificationModule: Module {
+  private let activityGenerationLock = NSLock()
+  private var activityGeneration: UInt64 = 0
+  // Tracks whether JS currently has a subscriber on "onNotificationAction". Guards
+  // onActionPosted's drain below: draining destroys the single-slot App Group outbox
+  // record, so doing that with no one listening loses the tap for good instead of
+  // leaving it for the cold-start drainPendingAction() path.
+  private var hasListeners = false
+
   public func definition() -> ModuleDefinition {
     Name("LiveUpdateNotification")
 
     Events("onNotificationAction")
+
+    OnStartObserving("onNotificationAction") { self.hasListeners = true }
+    OnStopObserving("onNotificationAction") { self.hasListeners = false }
 
     Function("isSupported") {
       isSupported()
@@ -53,19 +65,27 @@ public class LiveUpdateNotificationModule: Module {
   }
 
   private func isSupported() -> Bool {
-    if #available(iOS 16.1, *) {
+    if #available(iOS 17.0, *) {
       return ActivityAuthorizationInfo().areActivitiesEnabled
     }
     return false
   }
 
-  @available(iOS 16.1, *)
-  private var currentActivity: Activity<WorkoutActivityAttributes>? {
-    Activity<WorkoutActivityAttributes>.activities.first
+  private func beginActivityOperation() -> UInt64 {
+    activityGenerationLock.lock()
+    defer { activityGenerationLock.unlock() }
+    activityGeneration &+= 1
+    return activityGeneration
+  }
+
+  private func isCurrentActivityOperation(_ generation: UInt64) -> Bool {
+    activityGenerationLock.lock()
+    defer { activityGenerationLock.unlock() }
+    return activityGeneration == generation
   }
 
   private func show(_ payload: LiveUpdateNotificationPayloadRecord) -> Bool {
-    guard #available(iOS 16.1, *), isSupported() else { return false }
+    guard #available(iOS 17.0, *), isSupported() else { return false }
 
     let segments = payload.segments.map {
       WorkoutActivityAttributes.SegmentState(sets: $0.sets, started: $0.started, completed: $0.completed)
@@ -78,6 +98,14 @@ public class LiveUpdateNotificationModule: Module {
       actions: payload.actions
     )
 
+    if let stored = LiveUpdateSharedStore.loadState(),
+       stored.workoutId == payload.workoutId,
+       stored.asContentState == contentState {
+      return true
+    }
+
+    let generation = beginActivityOperation()
+
     LiveUpdateSharedStore.saveState(
       LiveUpdateSharedStore.StoredState(
         workoutId: payload.workoutId,
@@ -89,34 +117,82 @@ public class LiveUpdateNotificationModule: Module {
       )
     )
 
-    do {
-      if let activity = currentActivity {
-        Task { await activity.update(ActivityContent(state: contentState, staleDate: nil)) }
-      } else {
-        let attributes = WorkoutActivityAttributes(
-          workoutId: payload.workoutId,
-          title: payload.title,
-          startedAt: Date(timeIntervalSince1970: payload.startedAtMillis / 1000)
-        )
-        _ = try Activity<WorkoutActivityAttributes>.request(
-          attributes: attributes,
-          content: ActivityContent(state: contentState, staleDate: nil)
-        )
-      }
-      return true
-    } catch {
-      NSLog("[\(TAG)] show() failed: \(error)")
-      return false
+    let attributes = WorkoutActivityAttributes(
+      workoutId: payload.workoutId,
+      title: payload.title,
+      startedAt: Date(timeIntervalSince1970: payload.startedAtMillis / 1000)
+    )
+
+    // ActivityKit updates and endings are isolated to the main actor. Re-check after
+    // every suspension so an older redraw cannot resume and overwrite a newer one.
+    Task { @MainActor [weak self] in
+      await self?.synchronizeActivity(
+        attributes: attributes,
+        contentState: contentState,
+        generation: generation
+      )
     }
+    return true
   }
 
   private func dismiss() {
-    guard #available(iOS 16.1, *) else { return }
+    guard #available(iOS 17.0, *) else { return }
+    let generation = beginActivityOperation()
     LiveUpdateSharedStore.clearState()
-    Task {
-      for activity in Activity<WorkoutActivityAttributes>.activities {
-        await activity.end(nil, dismissalPolicy: .immediate)
+    LiveUpdateSharedStore.clearPendingAction()
+    Task { @MainActor in
+      await endActivities(generation: generation)
+    }
+  }
+
+  @available(iOS 17.0, *)
+  @MainActor
+  private func synchronizeActivity(
+    attributes: WorkoutActivityAttributes,
+    contentState: WorkoutActivityAttributes.ContentState,
+    generation: UInt64
+  ) async {
+    guard isCurrentActivityOperation(generation) else { return }
+    let allActivities = Activity<WorkoutActivityAttributes>.activities
+    for activity in allActivities where activity.attributes.workoutId != attributes.workoutId {
+      guard isCurrentActivityOperation(generation) else { return }
+      await activity.end(nil, dismissalPolicy: .immediate)
+      guard isCurrentActivityOperation(generation) else { return }
+    }
+
+    guard isCurrentActivityOperation(generation) else { return }
+    let matching = Activity<WorkoutActivityAttributes>.activities.filter {
+      $0.attributes.workoutId == attributes.workoutId
+    }
+    if let activity = matching.first {
+      for duplicate in matching.dropFirst() {
+        guard isCurrentActivityOperation(generation) else { return }
+        await duplicate.end(nil, dismissalPolicy: .immediate)
+        guard isCurrentActivityOperation(generation) else { return }
       }
+      guard isCurrentActivityOperation(generation) else { return }
+      await activity.update(ActivityContent(state: contentState, staleDate: nil))
+      return
+    }
+
+    guard isCurrentActivityOperation(generation) else { return }
+    do {
+      _ = try Activity<WorkoutActivityAttributes>.request(
+        attributes: attributes,
+        content: ActivityContent(state: contentState, staleDate: nil)
+      )
+    } catch {
+      NSLog("[\(TAG)] show() failed: \(error)")
+    }
+  }
+
+  @available(iOS 17.0, *)
+  @MainActor
+  private func endActivities(generation: UInt64) async {
+    for activity in Activity<WorkoutActivityAttributes>.activities {
+      guard isCurrentActivityOperation(generation) else { return }
+      await activity.end(nil, dismissalPolicy: .immediate)
+      guard isCurrentActivityOperation(generation) else { return }
     }
   }
 
@@ -150,9 +226,16 @@ public class LiveUpdateNotificationModule: Module {
   }
 
   private func onActionPosted() {
-    guard let pending = LiveUpdateSharedStore.drainPendingAction(),
-          let json = Self.jsonString(from: pending) else { return }
-    sendEvent("onNotificationAction", ["json": json])
+    // Darwin notifications can arrive on a non-main thread. Expo event delivery
+    // must happen on the main actor, and draining there also keeps delivery ordered
+    // with the host's foreground lifecycle.
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      guard hasListeners else { return }
+      guard let pending = LiveUpdateSharedStore.drainPendingAction(),
+            let json = Self.jsonString(from: pending) else { return }
+      self.sendEvent("onNotificationAction", ["json": json])
+    }
   }
 
   private static func jsonString(from action: LiveUpdateSharedStore.PendingAction) -> String? {

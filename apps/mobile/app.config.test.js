@@ -54,4 +54,12 @@ const development = evaluateConfig({ bundleId: undefined, iosClientId: IOS_CLIEN
 assert.equal(development.android.package, 'com.aquinnmo.timber_dev');
 assert.equal(development.android.googleServicesFile, './google-services-preview.json');
 
+const previousTeamId = process.env.TIMBER_IOS_TEAM_ID;
+process.env.TIMBER_IOS_TEAM_ID = 'A1B2C3D4E5';
+delete require.cache[require.resolve('./app.config')];
+const configuredTeam = require('./app.config')({ config: baseConfig });
+assert.equal(configuredTeam.ios.appleTeamId, 'A1B2C3D4E5');
+if (previousTeamId === undefined) delete process.env.TIMBER_IOS_TEAM_ID;
+else process.env.TIMBER_IOS_TEAM_ID = previousTeamId;
+
 console.log('personal iOS build configuration tests passed');

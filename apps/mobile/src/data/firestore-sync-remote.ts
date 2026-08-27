@@ -177,6 +177,7 @@ function decodeProfile(document: DecodedFirestoreDocument, aiUsage: DecodedFires
     username: document.fields.username ?? null,
     aiUsage: aiUsage?.fields ?? null,
     aiEnabled: document.fields.aiEnabled ?? null,
+    socialEnabled: document.fields.socialEnabled ?? null,
     version: document.version,
   });
 }
@@ -252,7 +253,7 @@ export function createFirestoreSyncRemote(client: DirectFirestoreClient, uid: st
   profile: {
     get(signal?: AbortSignal): Promise<{ version: string; data: ProfileDTO } | undefined>;
     read(signal?: AbortSignal): Promise<{ version: string; data: ProfileDTO }>;
-    write(payload: { workoutSplit?: { type: string; custom: string | null } }, baseVersion: string | null, signal?: AbortSignal): Promise<{ version: string; data: ProfileDTO }>;
+    write(payload: { workoutSplit?: { type: string; custom: string | null }; aiEnabled?: boolean; socialEnabled?: boolean }, baseVersion: string | null, signal?: AbortSignal): Promise<{ version: string; data: ProfileDTO }>;
   };
   pushup: {
     read(signal?: AbortSignal): Promise<{ version: string | null; data: PushupChallengeDTO }>;
@@ -363,19 +364,20 @@ export function createFirestoreSyncRemote(client: DirectFirestoreClient, uid: st
       if (!profile) throw new SyncPermanentError('The profile does not exist yet.');
       return profile;
     },
-    async write(payload: { workoutSplit?: { type: string; custom: string | null }; aiEnabled?: boolean }, baseVersion: string | null, signal?: AbortSignal) {
+    async write(payload: { workoutSplit?: { type: string; custom: string | null }; aiEnabled?: boolean; socialEnabled?: boolean }, baseVersion: string | null, signal?: AbortSignal) {
       const patch = directProfilePatchInput.parse(payload);
-      // The two owner-writable fields, sent independently: a split change must
-      // not carry an aiEnabled the caller never touched, and vice versa. The
+      // Owner-writable fields are sent independently: a split change must not
+      // carry preferences the caller never touched, and vice versa. The
       // updateMask has to name exactly the keys in `fields` — a commit without
       // one replaces the whole document, taking the server-owned username and
       // push token with it.
       const fields = {
         ...(patch.workoutSplit ? { workoutSplit: { ...patch.workoutSplit, updatedAt: firestoreTimestamp(new Date().toISOString()) } } : {}),
         ...(patch.aiEnabled === undefined ? {} : { aiEnabled: patch.aiEnabled }),
+        ...(patch.socialEnabled === undefined ? {} : { socialEnabled: patch.socialEnabled }),
       };
       const updateMask = Object.keys(fields);
-      if (updateMask.length === 0) throw new SyncPermanentError('Only a workout split or the AI opt-in can be synced directly.');
+      if (updateMask.length === 0) throw new SyncPermanentError('Only a workout split, AI opt-in, or social preference can be synced directly.');
       const path = firestorePaths.user(uid);
       return translateError(async () => {
         const [result] = await client.commit([{

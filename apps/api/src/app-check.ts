@@ -22,8 +22,17 @@ function config(env: AppCheckBindings) {
 export function createAppCheckVerifier(jwks: JWTVerifyGetKey = JWKS) {
   return async (token: string | undefined, env: AppCheckBindings): Promise<AppCheckResult> => {
     if (!token) return { verified: false, reason: 'missing' };
+    // config() resolves outside the jwtVerify try on purpose: it throws only on
+    // missing env vars, and the catch below would label that deploy mistake
+    // `invalid` — indistinguishable from a forged token when reading logs.
+    let projectNumber: string;
+    let appIds: Set<string>;
     try {
-      const { projectNumber, appIds } = config(env);
+      ({ projectNumber, appIds } = config(env));
+    } catch {
+      return { verified: false, reason: 'misconfigured' };
+    }
+    try {
       const { payload, protectedHeader } = await jwtVerify(token, jwks, {
       issuer: `https://firebaseappcheck.googleapis.com/${projectNumber}`,
       audience: `projects/${projectNumber}`,

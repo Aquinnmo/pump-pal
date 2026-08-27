@@ -22,6 +22,11 @@ declare class LiveUpdateNotificationNativeModule extends NativeModule<{
 const nativeModule =
   requireOptionalNativeModule<LiveUpdateNotificationNativeModule>('LiveUpdateNotification');
 
+/** Whether the optional native module is present in this installed client. */
+export function isNativeModuleAvailable(): boolean {
+  return nativeModule != null;
+}
+
 export function isSupported(): boolean {
   return nativeModule?.isSupported() ?? false;
 }

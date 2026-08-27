@@ -7,8 +7,8 @@ Workout tracking app built with Expo Router (TypeScript, React Native), backed b
 > Setting up a Mac from scratch to run this on an iPhone? Use
 > **[IOS_LOCAL_PREVIEW.md](IOS_LOCAL_PREVIEW.md)** instead — Xcode plus
 > `bunx expo run:ios --device --configuration Release`. After that,
-> `bun run install:apple` updates the repo and reinstalls a standalone copy on
-> the connected iPhone.
+> `bun run install:apple` rebuilds this checkout and reinstalls a standalone copy
+> on the connected iPhone.
 > Android dev builds are covered in [docs/dev-build.md](docs/dev-build.md).
 
 1. Install dependencies
@@ -87,7 +87,8 @@ Use `production` only for a store-ready build; Android production builds are nor
 ```bash
 bun run android      # start + open Android
 bun run ios          # start + open iOS
-bun run install:apple  # update + install standalone Timber on an iPhone
+bun run install:apple  # build + install standalone Timber on an iPhone
+bun run dev:apple      # build/install the separate development iOS app
 bun run web          # start + open web
 bun run lint         # expo lint
 bun run build:web    # static web export to dist/ (used by Vercel, see vercel.json)

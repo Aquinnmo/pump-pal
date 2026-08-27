@@ -1,7 +1,8 @@
 name = "timber-api"
 main = "src/worker.ts"
 compatibility_date = "2026-08-11"
-workers_dev = true
+workers_dev = false
+preview_urls = false
 
 [env.preview]
 name = "timber-api-preview"
@@ -13,8 +14,8 @@ AI_PROVIDER = "openai"
 AI_MODEL = "gpt-5.6-luna"
 FIREBASE_PROJECT_ID = "pumppal-c9199"
 FIREBASE_PROJECT_NUMBER = "631531267876"
-APP_CHECK_ALLOWED_APP_IDS = "1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1"
-APP_CHECK_MODE = "monitor"
+APP_CHECK_ALLOWED_APP_IDS = "1:631531267876:android:408ab2aa328df72f2cb5b1,1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1"
+APP_CHECK_MODE = "enforce"
 
 [env.production]
 name = "timber-api"
@@ -26,21 +27,16 @@ AI_PROVIDER = "openai"
 AI_MODEL = "gpt-5.6-luna"
 FIREBASE_PROJECT_ID = "pumppal-c9199"
 FIREBASE_PROJECT_NUMBER = "631531267876"
-APP_CHECK_ALLOWED_APP_IDS = "1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1"
-APP_CHECK_MODE = "monitor"
+APP_CHECK_ALLOWED_APP_IDS = "1:631531267876:android:408ab2aa328df72f2cb5b1,1:631531267876:android:fabd8253b44f27302cb5b1,1:631531267876:ios:64cee819c67f9eee2cb5b1,1:631531267876:web:d67fbca4633bf49c2cb5b1"
+APP_CHECK_MODE = "enforce"
 
 [observability]
-enabled = false
+enabled = true
 head_sampling_rate = 1
 
 [observability.logs]
 enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
+invocation_logs = false
 
 [observability.traces]
 enabled = true
-persist = true
-head_sampling_rate = 1
-

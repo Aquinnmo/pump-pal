@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getReactNativePersistence } from '@firebase/auth';
 import { getApps, initializeApp } from 'firebase/app';
 import { getAuth, initializeAuth } from 'firebase/auth';
+import { setAppCheckTokenProvider } from '@/lib/app-check-token';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -43,5 +44,52 @@ function initAuth() {
 }
 
 export const auth = initAuth();
+
+/**
+ * App Check (native). Mirrors the reCAPTCHA registration in
+ * src/config/firebase.web.ts, but the token has to come from
+ * @react-native-firebase: Play Integrity and App Attest are native APIs the JS
+ * SDK cannot reach, so this deliberately runs a second Firebase app instance
+ * configured from google-services.json rather than `firebaseConfig` above. Only
+ * the App Check token crosses over; Auth and Firestore stay on the JS SDK.
+ *
+ * Wrapped in try/catch because the native module exists only in a dev or
+ * production build. Against Expo Go or a stale binary the require throws, and
+ * App Check must degrade to "send no token" rather than break app startup —
+ * the Worker is on APP_CHECK_MODE=monitor, so an absent token still works.
+ *
+ * iOS additionally needs `@react-native-firebase/app-check` in app.json's
+ * plugin list: its config plugin injects `[RNFBAppCheckModule sharedInstance]`
+ * into the AppDelegate ahead of `FirebaseApp.configure()`, which is what
+ * installs the provider factory. Autolinking the pod is not enough — without
+ * the plugin the code below runs, mints nothing, and prints no debug token.
+ */
+function initAppCheck(): void {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { initializeAppCheck, getToken, ReactNativeFirebaseAppCheckProvider } = require('@react-native-firebase/app-check');
+    const provider = new ReactNativeFirebaseAppCheckProvider();
+    // Play Integrity / App Attest only attest a Play Store / TestFlight-distributed
+    // binary with a matching signing cert — a sideloaded `eas build --local` preview
+    // APK always fails with "App attestation failed" (403), throttling every retry
+    // after. EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN opts a non-dev build (preview) into
+    // the debug provider too; that token must be registered in Firebase console
+    // under App Check > the app > Manage debug tokens.
+    const debugToken = process.env.EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN;
+    const useDebugProvider = __DEV__ || !!debugToken;
+    provider.configure({
+      android: useDebugProvider ? { provider: 'debug', debugToken } : { provider: 'playIntegrity' },
+      apple: useDebugProvider ? { provider: 'debug', debugToken } : { provider: 'appAttestWithDeviceCheckFallback' },
+    });
+    // initializeAppCheck returns synchronously (native setup continues in the
+    // background); no readiness promise to await before the first getToken.
+    const appCheckInstance = initializeAppCheck(undefined, { provider, isTokenAutoRefreshEnabled: true });
+    setAppCheckTokenProvider(async () => (await getToken(appCheckInstance)).token);
+  } catch (error) {
+    if (__DEV__) console.warn('[app-check] native module unavailable; requests send no token', error);
+  }
+}
+
+initAppCheck();
 
 export default app;

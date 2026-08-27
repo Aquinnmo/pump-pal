@@ -7,6 +7,7 @@ import { describeError } from './format-ai-error';
 import { isAIEnabled } from './ai-enabled';
 import { recordRemaining } from './ai-quota-cache';
 import { normalizeApiBaseUrl } from './api-client-core';
+import { getAppCheckToken } from './app-check-token';
 
 /**
  * Client for the `/api/ai` proxy.
@@ -90,6 +91,8 @@ export async function callAI<Op extends AIOp>(
 
   const url = `${BASE_URL}/api/ai`;
 
+  const appCheckToken = await getAppCheckToken();
+
   let response: Awaited<ReturnType<typeof expoFetch>>;
   try {
     response = await expoFetch(url, {
@@ -97,6 +100,7 @@ export async function callAI<Op extends AIOp>(
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${await user.getIdToken()}`,
+        ...(appCheckToken ? { 'X-Firebase-AppCheck': appCheckToken } : {}),
       },
       body: JSON.stringify({ op, input }),
     });

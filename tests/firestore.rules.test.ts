@@ -42,6 +42,10 @@ async function main() {
   await assertSucceeds(setDoc(doc(owner, 'users/owner'), { aiEnabled: false }, { merge: true }));
   await assertFails(setDoc(doc(owner, 'users/owner'), { aiEnabled: 'yes' }, { merge: true }));
   await assertFails(setDoc(doc(other, 'users/owner'), { aiEnabled: true }, { merge: true }));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner'), { socialEnabled: false }, { merge: true }));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner'), { socialEnabled: true }, { merge: true }));
+  await assertFails(setDoc(doc(owner, 'users/owner'), { socialEnabled: 'no' }, { merge: true }));
+  await assertFails(setDoc(doc(other, 'users/owner'), { socialEnabled: false }, { merge: true }));
   await assertFails(deleteDoc(doc(owner, 'users/owner')));
 
   await assertSucceeds(getDocs(query(collection(owner, 'users/owner/injuries'), limit(20))));
@@ -56,6 +60,11 @@ async function main() {
   await assertFails(getDoc(doc(owner, 'users/owner/private/notifications')));
   await assertSucceeds(setDoc(doc(owner, 'users/owner/private/notifications'), { expoPushToken: 'ExponentPushToken[next]', updatedAt: now }));
   await assertSucceeds(deleteDoc(doc(owner, 'users/owner/private/notifications')));
+
+  await assertSucceeds(getDoc(doc(owner, 'users/owner/pushup-challenge/data')));
+  await assertFails(getDoc(doc(other, 'users/owner/pushup-challenge/data')));
+  await assertSucceeds(setDoc(doc(owner, 'users/owner/pushup-challenge/data'), { startDate: '2026-08-01', days: [], longestStreak: 0 }));
+  await assertFails(setDoc(doc(owner, 'users/owner/pushup-challenge/data'), { startDate: 'nope', days: [], longestStreak: 0 }));
 
   await assertSucceeds(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(20))));
   await assertFails(getDocs(query(collection(owner, 'workouts'), limit(20))));

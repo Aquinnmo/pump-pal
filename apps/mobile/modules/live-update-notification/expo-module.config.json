@@ -4,6 +4,7 @@
     "modules": ["com.aquinnmo.timber.liveupdate.LiveUpdateNotificationModule"]
   },
   "ios": {
-    "modules": ["LiveUpdateNotificationModule"]
+    "modules": ["LiveUpdateNotificationModule"],
+    "podspecPath": "./LiveUpdateNotification.podspec"
   }
 }

@@ -6,7 +6,12 @@ process.env.FIREBASE_PROJECT_ID = 'test-project';
 process.env.FIREBASE_CLIENT_EMAIL = 'test@example.com';
 process.env.FIREBASE_PRIVATE_KEY = 'test-key';
 
-const { CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, pairId } = await import('./buddies.js');
+const { buddyChallenge, CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, isSocialEnabledField, pairId } = await import('./buddies.js');
+
+// Existing accounts remain social until they explicitly opt out.
+assert.equal(isSocialEnabledField(undefined), true);
+assert.equal(isSocialEnabledField(true), true);
+assert.equal(isSocialEnabledField(false), false);
 
 // --- pairId: the collision that makes friendships unique -------------------
 
@@ -15,6 +20,10 @@ const { CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, pairId } = awa
 assert.equal(pairId('bbb', 'aaa'), pairId('aaa', 'bbb'));
 assert.equal(pairId('aaa', 'bbb'), 'aaa_bbb');
 assert.notEqual(pairId('aaa', 'bbb'), pairId('aaa', 'ccc'));
+
+// Escaping makes the join injective: without it, these two distinct pairs
+// would collide on the same derived doc id ('a_b_c').
+assert.notEqual(pairId('a_b', 'c'), pairId('a', 'b_c'));
 
 // --- currentStreak ---------------------------------------------------------
 
@@ -43,6 +52,24 @@ assert.equal(currentStreak('2026-01-01', days('2026-01-02', '2026-01-01'), '2026
 
 // Crossing a month boundary.
 assert.equal(currentStreak('2026-01-30', days('2026-01-30', '2026-01-31', '2026-02-01'), '2026-02-01'), 3);
+
+// An unparseable calendar date (regex-shaped but not real) must not throw --
+// it degrades to 0 instead of crashing the whole buddy list.
+assert.equal(currentStreak('2026-99-99', [{ date: '2026-99-99' }], '2026-01-01'), 0);
+
+// --- buddyChallenge: degrade malformed buddy data instead of throwing ------
+
+// Every field invalid -- each falls back independently.
+assert.deepEqual(buddyChallenge.parse({ startDate: 'nope', days: [null], longestStreak: 'x' }), {
+  startDate: null,
+  days: [],
+  longestStreak: 0,
+});
+
+// Missing keys entirely (an empty challenge doc) must hit the same
+// fallbacks -- zod's `.catch()` has to fire on an absent key, not just a
+// present-but-invalid one, since `buddyDetail` calls this with `fields ?? {}`.
+assert.deepEqual(buddyChallenge.parse({}), { startDate: null, days: [], longestStreak: 0 });
 
 // --- chop cooldown ---------------------------------------------------------
 

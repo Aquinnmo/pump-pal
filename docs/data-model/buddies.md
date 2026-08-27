@@ -3,6 +3,11 @@
 The social graph behind the Social tab: buddy requests, the buddy list with
 pushup streaks, and Chop.
 
+`users/{uid}.socialEnabled === false` removes that account from search and
+buddy responses and refuses new buddy actions. Missing means enabled for
+backward compatibility. Friendship documents stay in place, username
+reservations stay claimed, and Push-up Challenge data remains independent.
+
 ## Why it is server-only
 
 Every read this feature needs crosses a user boundary — another person's
@@ -19,7 +24,9 @@ target rather than trusting the request.
 
 ## Document shape
 
-Doc id is the **sorted pair**: `[uidA, uidB].sort().join('_')`. One document
+Doc id is the **sorted, escaped pair**: `[uidA, uidB].sort().map(u => u.replaceAll('_', '__')).join('_')`
+(`_` -> `__` per uid before joining on a single `_`, so the join stays
+injective even if a uid itself contains an underscore). One document
 per relationship, whichever side asks first — that collision is the uniqueness
 guarantee, enforced by a `currentDocument: { exists: false }` precondition on
 create. Two people requesting each other simultaneously settle as one pending

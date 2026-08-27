@@ -73,7 +73,7 @@ export function MuscleLoadSummary({ workouts }: MuscleLoadSummaryProps) {
 
   return (
     <AnalyticsNavigationRow
-      title="Muscular Load"
+      title="Muscle Fatigue"
       accessibilityLabel={accessibilityLabel}
       accessibilityHint="Opens the full muscle load diagram"
       onPress={() => router.push("/muscle-load")}

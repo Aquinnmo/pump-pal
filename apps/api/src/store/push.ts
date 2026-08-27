@@ -47,9 +47,15 @@ export async function sendPush(toUid: string, message: PushMessage): Promise<boo
 
     // Expo answers 200 even for a per-message error (e.g. DeviceNotRegistered),
     // so the status alone doesn't mean delivered-to-device.
-    const body = (await res.json()) as { data?: { status?: string; message?: string } };
+    // `details.error` is the machine-readable reason (InvalidCredentials,
+    // DeviceNotRegistered); `message` is only prose, and gets truncated in logs.
+    const body = (await res.json()) as {
+      data?: { status?: string; message?: string; details?: { error?: string } };
+    };
     if (body.data?.status !== 'ok') {
-      console.error(`sendPush(${toUid}): ${body.data?.status} ${body.data?.message ?? ''}`);
+      console.error(
+        `sendPush(${toUid}): ${body.data?.status} [${body.data?.details?.error ?? 'no-code'}] ${body.data?.message ?? ''}`,
+      );
       return false;
     }
     return true;
