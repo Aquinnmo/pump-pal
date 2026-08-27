@@ -1,4 +1,4 @@
-# Pump Pal
+# Timber
 
 Workout tracking app built with Expo Router (TypeScript, React Native), backed by Firebase (auth + Firestore) with AI-powered workout insights.
 
