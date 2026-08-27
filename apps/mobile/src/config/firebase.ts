@@ -69,9 +69,17 @@ function initAppCheck(): void {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { initializeAppCheck, getToken, ReactNativeFirebaseAppCheckProvider } = require('@react-native-firebase/app-check');
     const provider = new ReactNativeFirebaseAppCheckProvider();
+    // Play Integrity / App Attest only attest a Play Store / TestFlight-distributed
+    // binary with a matching signing cert — a sideloaded `eas build --local` preview
+    // APK always fails with "App attestation failed" (403), throttling every retry
+    // after. EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN opts a non-dev build (preview) into
+    // the debug provider too; that token must be registered in Firebase console
+    // under App Check > the app > Manage debug tokens.
+    const debugToken = process.env.EXPO_PUBLIC_APP_CHECK_DEBUG_TOKEN;
+    const useDebugProvider = __DEV__ || !!debugToken;
     provider.configure({
-      android: { provider: __DEV__ ? 'debug' : 'playIntegrity' },
-      apple: { provider: __DEV__ ? 'debug' : 'appAttestWithDeviceCheckFallback' },
+      android: useDebugProvider ? { provider: 'debug', debugToken } : { provider: 'playIntegrity' },
+      apple: useDebugProvider ? { provider: 'debug', debugToken } : { provider: 'appAttestWithDeviceCheckFallback' },
     });
     // initializeAppCheck returns synchronously (native setup continues in the
     // background); no readiness promise to await before the first getToken.

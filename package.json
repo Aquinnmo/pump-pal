@@ -17,7 +17,7 @@
     "install:apple": "cd apps/mobile && bun run install:apple",
     "dev:apple": "cd apps/mobile && bun run dev:apple",
     "dev:android": "cd apps/mobile && bun run dev:android",
-    "install:android": "cd apps/mobile && bun run install:android && adb install ../../build-preview.apk; cd ../..",
+    "install:android": "cd apps/mobile && bun run install:android && adb install ./build-preview.apk",
     "dev:api": "bunx wrangler --config apps/api/wrangler.toml deploy --env preview",
     "install:api": "bunx wrangler --config apps/api/wrangler.toml deploy --env production",
     "tail:dev": "bunx wrangler tail timber-api-preview",
