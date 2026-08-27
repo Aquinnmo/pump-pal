@@ -301,18 +301,6 @@ export default function SocialScreen() {
                 />
               ))
             )}
-
-            <TouchableOpacity
-              style={styles.card}
-              activeOpacity={0.7}
-              onPress={() => router.push("/(tabs)/pushup-challenge")}
-            >
-              <Ionicons name="flame" size={20} color="#e54242" />
-              <View style={styles.cardText}>
-                <Text style={styles.cardTitle}>The Pushup Challenge</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#666" />
-            </TouchableOpacity>
           </>
         ))}
       </FadingScrollView>
