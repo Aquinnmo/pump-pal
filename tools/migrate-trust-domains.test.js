@@ -1,5 +1,11 @@
 const assert = require('node:assert/strict');
-const { copyMigrationPlan, planTrustDomainMigration, verifyMigrationPlan } = require('./migrate-trust-domains');
+const {
+  copyMigrationPlan,
+  hash,
+  planTrustDomainMigration,
+  stableJson,
+  verifyMigrationPlan,
+} = require('./migrate-trust-domains');
 
 const plan = planTrustDomainMigration({
   users: {
@@ -23,14 +29,39 @@ assert.deepEqual(plan.map((item) => item.path), [
 // Dry-run planning is pure and deterministic.
 const deterministicSnapshot = { users: { uid1: { injuries: [{ id: 'inj-a', status: 'ongoing' }], aiUsage: { date: 'x', count: 1 } } } };
 assert.deepEqual(planTrustDomainMigration(deterministicSnapshot), planTrustDomainMigration(deterministicSnapshot));
+const firstOrdering = { z: 1, nested: { b: true, a: ['x', 2] }, a: null };
+const secondOrdering = { a: null, nested: { a: ['x', 2], b: true }, z: 1 };
+assert.equal(stableJson(firstOrdering), stableJson(secondOrdering));
+assert.equal(hash(firstOrdering), hash(secondOrdering));
+
+assert.throws(
+  () => planTrustDomainMigration({ users: { uid1: { injuries: [{ id: 'invalid/id' }] } } }),
+  /Invalid injury id for uid1/
+);
+assert.deepEqual(
+  planTrustDomainMigration({
+    exercises: {
+      missingStatus: { name: 'Missing status' },
+      nullStatus: { status: null },
+      emptyStatus: { status: '' },
+      approved: { status: 'approved' },
+    },
+  }).map((item) => item.path),
+  ['exercises/missingStatus']
+);
 
 void (async () => {
   const docs = new Map([['users/uid1/injuries/inj-a', { id: 'inj-a', status: 'newer' }]]);
+  const created = [];
   const result = await copyMigrationPlan(plan, {
     get: async (path) => docs.get(path),
-    create: async (path, fields) => docs.set(path, fields),
+    create: async (path, fields) => {
+      created.push(path);
+      docs.set(path, fields);
+    },
   });
   assert.deepEqual(result.skippedExisting, ['users/uid1/injuries/inj-a']);
+  assert.ok(!created.includes('users/uid1/injuries/inj-a'));
   assert.equal(docs.get('users/uid1/injuries/inj-a').status, 'newer'); // never overwrite a newer destination
   assert.equal(result.copied.length, 4);
 

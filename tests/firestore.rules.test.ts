@@ -18,6 +18,10 @@ async function seed(path: string, data: unknown) {
 async function main() {
   env = await initializeTestEnvironment({ projectId: 'timber-rules-test', firestore: { rules } });
   await seed('users/owner', { workoutSplit: split, username: 'server-only', usernameLower: 'server-only' });
+  await seed('users/legacy-invalid-split', {
+    workoutSplit: { type: 'Not a split', custom: null, updatedAt: now },
+    username: 'legacy',
+  });
   await seed('users/owner/injuries/inj-1', injury);
   await seed('users/owner/private/aiUsage', { date: '2026-08-12', count: 1 });
   await seed('users/owner/private/notifications', { expoPushToken: 'ExponentPushToken[token]', updatedAt: now });
@@ -26,14 +30,20 @@ async function main() {
   await seed('workouts/w2', { ...workout, userId: 'other' });
   await seed('exercises/approved', { status: 'approved' });
   await seed('exercises/pending', { status: 'pending_review' });
+  await seed('exerciseCatalogMeta/current', { version: 1, exerciseCount: 1 });
+  await seed('random/2026-08-12', { name: 'Test challenge' });
 
   const owner = env.authenticatedContext('owner').firestore();
   const other = env.authenticatedContext('other').firestore();
+  const legacyOwner = env.authenticatedContext('legacy-invalid-split').firestore();
   const anonymous = env.unauthenticatedContext().firestore();
 
   await assertFails(getDoc(doc(anonymous, 'users/owner')));
   await assertSucceeds(getDoc(doc(owner, 'users/owner')));
   await assertFails(getDoc(doc(other, 'users/owner')));
+  await assertFails(getDocs(query(collection(owner, 'users'), limit(20))));
+  await assertFails(setDoc(doc(owner, 'users/create-with-server-fields'), { workoutSplit: split, username: 'server-only' }));
+  await assertFails(setDoc(doc(legacyOwner, 'users/legacy-invalid-split'), { aiEnabled: true }, { merge: true }));
   await assertFails(setDoc(doc(owner, 'users/owner'), { ...split, username: 'nope' }));
   await assertSucceeds(setDoc(doc(owner, 'users/owner'), { workoutSplit: split }, { merge: true }));
   // aiEnabled is the AI opt-in. Owner-writable on its own — a merge that touches
@@ -49,6 +59,8 @@ async function main() {
   await assertFails(deleteDoc(doc(owner, 'users/owner')));
 
   await assertSucceeds(getDocs(query(collection(owner, 'users/owner/injuries'), limit(20))));
+  await assertSucceeds(getDocs(query(collection(owner, 'users/owner/injuries'), limit(200))));
+  await assertFails(getDocs(query(collection(owner, 'users/owner/injuries'), limit(201))));
   await assertFails(getDocs(query(collection(other, 'users/owner/injuries'), limit(20))));
   await assertFails(setDoc(doc(owner, 'users/owner/injuries/inj-2'), { ...injury, id: 'wrong-id' }));
   await assertFails(setDoc(doc(owner, 'users/owner/injuries/inj-2'), { id: 'inj-2', bodyPart: 'shoulder', severity: 'mild' }));
@@ -67,8 +79,13 @@ async function main() {
   await assertFails(setDoc(doc(owner, 'users/owner/pushup-challenge/data'), { startDate: 'nope', days: [], longestStreak: 0 }));
 
   await assertSucceeds(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(20))));
+  await assertSucceeds(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(1))));
+  await assertSucceeds(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(200))));
+  await assertFails(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'other'), limit(20))));
   await assertFails(getDocs(query(collection(owner, 'workouts'), limit(20))));
   await assertFails(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(201))));
+  await assertFails(setDoc(doc(owner, 'workouts/w-invalid-schema'), { ...workout, schemaVersion: 1 }));
+  await assertFails(setDoc(doc(owner, 'workouts/w-unknown-field'), { ...workout, unknownField: true }));
   await assertFails(setDoc(doc(owner, 'workouts/w1'), { ...workout, userId: 'other' }));
   await assertFails(setDoc(doc(other, 'workouts/w3'), workout));
   await assertSucceeds(setDoc(doc(owner, 'workouts/w3'), workout));
@@ -77,6 +94,12 @@ async function main() {
   await assertSucceeds(getDocs(query(collection(owner, 'exercises'), where('status', '==', 'approved'), limit(20))));
   await assertFails(getDocs(query(collection(owner, 'exercises'), limit(20))));
   await assertFails(getDoc(doc(owner, 'exercises/pending')));
+  await assertSucceeds(getDoc(doc(owner, 'exerciseCatalogMeta/current')));
+  await assertFails(getDoc(doc(anonymous, 'exerciseCatalogMeta/current')));
+  await assertFails(setDoc(doc(owner, 'exerciseCatalogMeta/current'), { version: 2, exerciseCount: 2 }));
+  await assertSucceeds(getDoc(doc(owner, 'random/2026-08-12')));
+  await assertFails(getDoc(doc(anonymous, 'random/2026-08-12')));
+  await assertFails(setDoc(doc(owner, 'random/2026-08-12'), { name: 'Overwrite attempt' }));
   await assertFails(getDoc(doc(owner, 'usernames/server-only')));
   await assertFails(getDoc(doc(owner, 'friendships/owner_other')));
   await assertFails(getDoc(doc(owner, 'users/owner/workouts/legacy')));

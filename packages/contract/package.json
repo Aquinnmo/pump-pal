@@ -11,7 +11,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun src/api-contract.test.ts && bun src/firestore-rest.test.ts && bun src/username.test.ts"
+    "test": "bun test"
   },
   "dependencies": {
     "zod": "^4.4.3"

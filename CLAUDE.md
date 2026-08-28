@@ -18,12 +18,19 @@ bun run ios                # start + open iOS
 bun run web                 # start + open web
 bun run lint                 # expo lint (eslint-config-expo flat config)
 bun run typecheck             # tsc --noEmit in all three TS packages
-bun run test                   # contract + api + mobile + tools — NOT `bun test`, which is bun's own built-in test runner and discovers/runs *.test.* files directly instead of the aggregate script
+bun run test                   # contract + api + mobile + tools; each TypeScript package uses Bun's built-in `bun test` discovery
 ```
 
 To work inside one package, use `bun --cwd=<path> run <script>` (`apps/mobile`, `apps/api`, `packages/contract`) or `cd` into it.
 
-There is no single test runner. Suites are individual `bun run test:*` scripts driven by `bun`, with three holdouts still on plain `node` (`app.config.test.js`, `google-oauth.test.js`, and the `tools/` tests — all CJS that relies on `require.cache` invalidation `bun` doesn't replicate); each package's `test` script aggregates its own, and the root `test` runs all four groups.
+TypeScript tests use Bun's built-in `bun test` discovery. The nine JavaScript
+holdouts run explicitly under plain Node: four mobile `.test.js` files and five
+tool `.test.js` files. `app.config.test.js` is the one
+that relies on `require.cache` invalidation, `live-activity-autolinking.test.js`
+shells out to `expo-modules-autolinking`, and the remaining CommonJS tests stay
+on Node for compatibility. The mobile package's `test` script excludes all
+`*.test.js` files from Bun discovery, and the root `test:tools` script runs the
+Node holdouts alongside the static checks.
 
 YOU ARE NEVER ALLOWED TO RUN A LOCAL BUILD `bunx expo run:android` or anything similar. ALL DEV BUILDS WILL BE CREATED BY THE USER
 
