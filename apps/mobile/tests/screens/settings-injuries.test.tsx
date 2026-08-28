@@ -11,6 +11,7 @@ let resolveLoad: (() => void) | null = null;
 const creates: Injury[] = [];
 const updates: Injury[] = [];
 const softDeletes: Array<{ uid: string; id: string }> = [];
+let resolveSoftDelete: (() => void) | null = null;
 
 mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathname, () => ({
   useAuth: () => ({
@@ -40,6 +41,7 @@ mock.module(new URL('../../src/data/injury-repository.web.ts', import.meta.url).
     },
     softDelete: async (uid: string, id: string) => {
       softDeletes.push({ uid, id });
+      resolveSoftDelete?.();
     },
   },
 }));
@@ -114,6 +116,7 @@ beforeEach(() => {
   creates.length = 0;
   updates.length = 0;
   softDeletes.length = 0;
+  resolveSoftDelete = null;
 });
 
 afterEach(() => {
@@ -219,13 +222,15 @@ describe('SettingsInjuriesScreen', () => {
     render(<SettingsInjuriesScreen />);
     await waitFor(() => assert.ok(screen.getByText('No ongoing injuries.')));
 
+    const deletionFinished = new Promise<void>((resolve) => { resolveSoftDelete = resolve; });
     await act(async () => {
       screen.getByText('Add Injury').click();
-      await Promise.resolve();
+      await deletionFinished;
     });
+    resolveSoftDelete = null;
 
     // BUG: load filters unknown body parts from the UI, then persist diffs the
     // filtered list against the raw DB records and soft-deletes the hidden row.
-    await waitFor(() => assert.deepEqual(softDeletes, [{ uid: user.uid, id: 'legacy-body-part' }]));
+    assert.deepEqual(softDeletes, [{ uid: user.uid, id: 'legacy-body-part' }]);
   });
 });
