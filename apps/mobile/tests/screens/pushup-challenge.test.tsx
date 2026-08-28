@@ -149,16 +149,26 @@ describe('PushupChallengeScreen', () => {
   });
 
   it('builds local-day timeline nodes across a local-midnight UTC rollover', async () => {
-    freezeNow('2026-08-13T03:30:00.000Z'); // Aug 12, 11:30 PM in America/Toronto.
-    storedData = challenge({ startDate: '2026-08-12' });
-    render(<PushupChallengeScreen />);
-    await settle();
+    // This case deliberately exercises the local date before UTC midnight.
+    // Pin the process timezone so CI's UTC default cannot reinterpret the
+    // frozen instant as the following local day.
+    const previousTimeZone = process.env.TZ;
+    process.env.TZ = 'America/Toronto';
+    try {
+      freezeNow('2026-08-13T03:30:00.000Z'); // Aug 12, 11:30 PM in Toronto.
+      storedData = challenge({ startDate: '2026-08-12' });
+      render(<PushupChallengeScreen />);
+      await settle();
 
-    assert.ok(screen.getByText('Wednesday, Aug 12, 2026'));
-    assert.ok(screen.getByText('Day 1'));
-    assert.ok(screen.getByText('Incomplete'));
-    assert.ok(screen.getByText('I did 1 pushup today'));
-    assert.equal(screen.queryByText('Thursday, Aug 13, 2026'), null);
+      assert.ok(screen.getByText('Wednesday, Aug 12, 2026'));
+      assert.ok(screen.getByText('Day 1'));
+      assert.ok(screen.getByText('Incomplete'));
+      assert.ok(screen.getByText('I did 1 pushup today'));
+      assert.equal(screen.queryByText('Thursday, Aug 13, 2026'), null);
+    } finally {
+      if (previousTimeZone === undefined) delete process.env.TZ;
+      else process.env.TZ = previousTimeZone;
+    }
   });
 
   it('breaks the streak after a missed day and hides the completion slider', async () => {
