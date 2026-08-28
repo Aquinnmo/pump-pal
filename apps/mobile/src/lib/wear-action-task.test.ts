@@ -32,6 +32,15 @@ async function main() {
     'store-only handler must not import or call workout persistence/sync dependencies',
   );
 
+  // The redraw must land before this promise resolves: on a cold process the handler
+  // runs in a headless task that React Native ends the moment it does, so leaving the
+  // notification to workout-surface-sync's debounced subscriber would drop it.
+  assert.match(
+    executableImplementation,
+    /await flushWorkoutNotification\(\)/,
+    'a remote action must flush the notification immediately, not rely on the debounce',
+  );
+
   endSession();
   const started = startSession({
     uid: 'u1',

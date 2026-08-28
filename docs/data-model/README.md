@@ -66,13 +66,17 @@ separate human approval.
 
 ### Finalized user writes
 
-User-authored drafts are memory-only on every platform. Native workout and
-injury changes are finalized by an explicit action, then commit the local row
-and coalesced outbox intent in one SQLite transaction; synchronization is
-requested only after that transaction succeeds. The active workout is finalized
-once on Finish, while push-up Start/Complete/Undo/Reset are immediate finalized
-actions. Web has no local cache and writes finalized changes directly, retaining
-the Firestore `updateTime` version for optimistic concurrency.
+User-authored drafts are memory-only on every platform. The one exception is
+the active workout draft, which is also snapshotted to `AsyncStorage` so a
+process death doesn't lose it (`apps/mobile/src/lib/active-workout-session.ts`)
+— that snapshot is still a private draft, not a database row, and never enters
+the outbox. Native workout and injury changes are finalized by an explicit
+action, then commit the local row and coalesced outbox intent in one SQLite
+transaction; synchronization is requested only after that transaction
+succeeds. The active workout is finalized once on Finish, while push-up
+Start/Complete/Undo/Reset are immediate finalized actions. Web has no local
+cache and writes finalized changes directly, retaining the Firestore
+`updateTime` version for optimistic concurrency.
 
 Username uniqueness is a Worker-only exception: the Worker must confirm the
 reservation first, after which native stores a synced local profile snapshot

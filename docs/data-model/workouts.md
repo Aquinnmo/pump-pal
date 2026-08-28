@@ -81,8 +81,9 @@ Field notes:
   an otherwise reps-based set (e.g. "3 reps with a 2s hold at the bottom").
   Both can be absent, and in practice are mutually exclusive per set.
 - `status?: WorkoutStatus` (`'planned' | 'in_progress' | 'completed'`, `apps/mobile/src/types/workout.ts`)
-  — the client no longer creates or writes `'in_progress'`. An active workout lives
-  entirely in memory now (`apps/mobile/src/lib/active-workout-session.ts`) and the DB is written
+  — the client no longer creates or writes `'in_progress'`. An active workout is a
+  local draft (`apps/mobile/src/lib/active-workout-session.ts`, snapshotted to
+  device storage so a process death doesn't lose it) and the DB is written
   once, on Finish, going straight from `'planned'` (or nothing, for an ad-hoc
   workout) to `'completed'`. `'in_progress'` remains in the status union and in
   `apps/api/src/store/workouts.ts` only because already-synced server documents still use

@@ -3,9 +3,11 @@ import { retryInitialSync, waitForInitialSync } from '@/data/sync-trigger';
 import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError, subscribeAccountDataChanged } from '@/data/initial-sync';
 import { WorkoutPrefillLoader } from '@/ui/primitives/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
+import { getSession, loadSession } from '@/lib/active-workout-session';
 import { subscribeLiveUpdateNotificationActions } from '@/lib/live-update-notification-actions';
 import { sweepLegacyInProgressWorkouts } from '@/lib/discard-workout';
 import { handleWorkoutAction } from '@/lib/wear-action-task';
+import '@/lib/workout-surface-sync';
 import { subscribeWearActions } from '@/lib/wear-sync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
@@ -29,11 +31,20 @@ function RootLayoutNav() {
   const [accountGate, setAccountGate] = useState<AccountBootstrapDecision>({ state: 'pending' });
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [onboardingSeen, setOnboardingSeen] = useState<boolean | null>(null);
+  const [sessionRestored, setSessionRestored] = useState(false);
+  const resumedRef = useRef(false);
 
   useEffect(() => {
     AsyncStorage.getItem(ONBOARDING_KEY).then((val) => {
       setOnboardingSeen(val === 'true');
     });
+  }, []);
+
+  // Must land before the action-subscription effect below subscribes — on iOS that
+  // subscribe call drains the App Group pending-action outbox, and subscribing
+  // before the session is loaded would replay an action against a null session.
+  useEffect(() => {
+    loadSession().finally(() => setSessionRestored(true));
   }, []);
 
   // Onboarding just wrote a split locally — re-decide, or the redirect below
@@ -109,7 +120,7 @@ function RootLayoutNav() {
   // only happens through the active-workout screen's own Finish flow, which subscribes
   // to these same actions separately while it's mounted.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !sessionRestored) return;
     const handleAction = (action: Parameters<typeof handleWorkoutAction>[0]) => {
       if (action.action === 'startWorkout') {
         // The watch's cached name can be stale, so re-resolve the real target. This
@@ -125,10 +136,10 @@ function RootLayoutNav() {
       unsubscribeWear();
       unsubscribeNotification();
     };
-  }, [user]);
+  }, [user, sessionRestored]);
 
   useEffect(() => {
-    if (loading || onboardingSeen === null || (user && accountGate.state === 'pending')) return;
+    if (loading || onboardingSeen === null || !sessionRestored || (user && accountGate.state === 'pending')) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inSetSplit = segments[0] === 'set-split';
     const inSetUsername = segments[0] === 'set-username';
@@ -141,10 +152,16 @@ function RootLayoutNav() {
       router.replace('/set-split');
     } else if (user && accountGate.state === 'ready' && (inAuthGroup || inSetSplit || inSetUsername)) {
       router.replace('/(tabs)');
+    } else if (user && accountGate.state === 'ready' && !resumedRef.current) {
+      // Once per launch, so this never fights Finish/Discard's own
+      // router.replace('/(tabs)') and navigating Home mid-workout still works.
+      resumedRef.current = true;
+      const restored = getSession();
+      if (restored && restored.uid === user.uid) router.replace('/active-workout');
     }
-  }, [accountGate, user, loading, segments, onboardingSeen]);
+  }, [accountGate, user, loading, segments, onboardingSeen, sessionRestored]);
 
-  const gateUndecided = loading || onboardingSeen === null || (!!user && accountGate.state === 'pending');
+  const gateUndecided = loading || onboardingSeen === null || !sessionRestored || (!!user && accountGate.state === 'pending');
 
   const retryAccountBootstrap = () => {
     if (!user) return;
