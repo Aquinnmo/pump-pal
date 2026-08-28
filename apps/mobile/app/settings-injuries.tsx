@@ -79,14 +79,19 @@ export default function SettingsInjuriesScreen() {
     if (!user) return;
     setSaving(true);
     try {
-      const existing = new Map((await injuryRepository.getAll(user.uid)).map((record) => [record.id, record.data]));
+      const existing = new Set((await injuryRepository.getAll(user.uid)).map((record) => record.id));
       for (const injury of next) {
         await (existing.has(injury.id)
           ? injuryRepository.update(user.uid, injury)
           : injuryRepository.create(user.uid, injury));
-        existing.delete(injury.id);
       }
-      for (const id of existing.keys()) await injuryRepository.softDelete(user.uid, id);
+      // Only delete rows this screen was actually showing. Diffing against the
+      // raw stored ids would also wipe records load() filtered out (legacy or
+      // unknown body parts), which the user never saw and never removed.
+      const kept = new Set(next.map((injury) => injury.id));
+      for (const injury of injuries) {
+        if (!kept.has(injury.id) && existing.has(injury.id)) await injuryRepository.softDelete(user.uid, injury.id);
+      }
       // One run for the whole batch, covering the workout rows this cascades
       // through src/lib/injuries.ts as well.
       triggerSyncAfterWrite();
