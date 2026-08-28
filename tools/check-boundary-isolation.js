@@ -22,11 +22,11 @@
  * Import *direction* between packages needs no check: the Worker cannot reach
  * `apps/mobile` with a relative path, and does not depend on it.
  *
- * Scoped to `apps/api` plus the mobile app's runtime tree (see SCAN_DIRS).
- * `tools/**` and `apps/wear/**` are excluded: the catalog scripts run their own
- * service-account auth (deliberately duplicated, not shared, per that
- * directory's own header comments) and the Wear OS module is a separate native
- * runtime with no Node import graph to check here.
+ * Scoped to `apps/api`, the mobile app's runtime tree, the dependency-free
+ * contract package, and Node-based tools (see SCAN_DIRS). `apps/wear/**` is
+ * excluded: it is a separate native runtime with no Node import graph to check
+ * here. Tools are included to catch an accidental AI SDK/key dependency in a
+ * script that may be imported from a client-facing build or test.
  */
 const { existsSync, readdirSync, readFileSync } = require('node:fs');
 const { join, resolve, relative, sep } = require('node:path');
@@ -37,12 +37,16 @@ const ROOT = resolve(__dirname, '..');
 // one run, because the two rules below are about what crosses between them.
 const MOBILE = 'apps/mobile';
 const API = 'apps/api';
+const CONTRACT = 'packages/contract/src';
+const TOOLS = 'tools';
 const API_DIRS = [`${API}/src`];
 const SCAN_DIRS = [
   ...API_DIRS,
   `${MOBILE}/app`,
   `${MOBILE}/src`,
   `${MOBILE}/widgets`,
+  CONTRACT,
+  TOOLS,
 ];
 
 // A directory that silently doesn't exist makes this whole check pass
@@ -58,6 +62,7 @@ for (const dir of SCAN_DIRS) {
 const FORBIDDEN_IN_API = [/^firebase(\/|$)/, /^firebase-admin(\/|$)/];
 const AI_PACKAGE_PATTERNS = [/^ai$/, /^@ai-sdk\//, /^openai$/, /^@google\/generative-ai$/];
 const AI_ENV_VARS = ['GEMINI_API_KEY', 'OPENAI_API_KEY'];
+const BOUNDARY_CHECKER = `${TOOLS}/check-boundary-isolation.js`;
 
 function* sourceFiles(dir) {
   let entries;
@@ -70,7 +75,7 @@ function* sourceFiles(dir) {
     if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
     const path = join(dir, entry.name);
     if (entry.isDirectory()) yield* sourceFiles(path);
-    else if (/\.tsx?$/.test(entry.name)) yield path;
+    else if (/\.(?:[cm]?js|tsx?)$/.test(entry.name)) yield path;
   }
 }
 
@@ -85,7 +90,15 @@ for (const dir of SCAN_DIRS) {
     const isApi = API_DIRS.some((d) => rel.startsWith(d.split('/').join(sep) + sep));
     const source = readFileSync(file, 'utf8');
 
-    for (const [, specifier] of source.matchAll(/\bfrom\s+['"]([^'"]+)['"]/g)) {
+    // Match every module-loading spelling that can cross the hoisted workspace
+    // boundary. Relative imports stay local regardless of syntax.
+    const moduleSpecifiers = [
+      /\bfrom\s+['"]([^'"]+)['"]/g,                         // import { x } from 'pkg'
+      /\bimport\s*['"]([^'"]+)['"]/g,                       // import 'pkg'
+      /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g,           // import('pkg')
+      /\brequire\s*\(\s*['"]([^'"]+)['"]\s*\)/g,         // require('pkg')
+    ];
+    for (const pattern of moduleSpecifiers) for (const [, specifier] of source.matchAll(pattern)) {
       if (specifier.startsWith('.')) continue; // relative imports never cross a package boundary here
 
       if (isApi && FORBIDDEN_IN_API.some((re) => re.test(specifier))) {
@@ -96,7 +109,9 @@ for (const dir of SCAN_DIRS) {
       }
     }
 
-    if (!isApi) {
+    // The checker necessarily contains the names of the forbidden key env
+    // vars in its own rule definition; do not report that self-reference.
+    if (!isApi && rel !== BOUNDARY_CHECKER.split('/').join(sep)) {
       for (const envVar of AI_ENV_VARS) {
         if (source.includes(envVar)) {
           violations.push(`${rel} -> references ${envVar} (provider keys are server-only, must live under apps/api)`);

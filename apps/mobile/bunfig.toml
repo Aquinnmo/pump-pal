@@ -1,0 +1,7 @@
+[install]
+# This package-level config is resolved before the repository root config.
+# Keep native autolinking and Metro on the same real node_modules tree.
+linker = "hoisted"
+
+[test]
+preload = ["./tests/setup.ts"]

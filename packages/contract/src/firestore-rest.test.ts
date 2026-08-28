@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {
   decodeFirestoreDocument,
+  decodeFirestoreValue,
   decodeFirestoreFields,
+  encodeFirestoreValue,
   encodeFirestoreFields,
   firestoreDocumentReference,
   firestorePaths,
@@ -45,6 +47,27 @@ assert.equal(document.path, 'workouts/w1');
 assert.equal(document.version, timestamp);
 assert.throws(() => decodeFirestoreDocument({ name: 'workouts/w1', updateTime: '', fields: {} }));
 assert.throws(() => decodeFirestoreFields({ bad: { integerValue: 'not-a-number' } }));
+
+// The REST codec deliberately maps both absent and explicit null values to
+// Firestore nullValue. BUG: a bare Date is currently treated as an ordinary
+// object/map instead of throwing; callers must opt into the timestamp wire
+// type with ts()/firestoreTimestamp(), and the focused follow-up bead tracks
+// correcting this codec footgun.
+assert.deepEqual(encodeFirestoreValue(null), { nullValue: null });
+assert.deepEqual(encodeFirestoreValue(undefined), { nullValue: null });
+assert.deepEqual(encodeFirestoreValue(new Date(timestamp)), { mapValue: { fields: {} } });
+assert.throws(() => encodeFirestoreValue(Number.NaN), /finite/);
+assert.throws(() => encodeFirestoreValue(Number.POSITIVE_INFINITY), /finite/);
+assert.deepEqual(encodeFirestoreValue(-0), { integerValue: '0' });
+assert.throws(() => decodeFirestoreValue({ integerValue: String(Number.MAX_SAFE_INTEGER + 1) }), /Malformed Firestore integer/);
+
+// Timestamp decoding intentionally returns an ISO string. Re-encoding that
+// ordinary string therefore changes its Firestore wire kind; this is a codec
+// boundary, not an involution over every tagged value.
+const timestampWire = encodeFirestoreValue(firestoreTimestamp(timestamp));
+assert.deepEqual(timestampWire, { timestampValue: timestamp });
+assert.equal(decodeFirestoreValue(timestampWire), timestamp);
+assert.deepEqual(encodeFirestoreValue(decodeFirestoreValue(timestampWire)), { stringValue: timestamp });
 
 const workout = {
   id: 'w1', name: 'Push Day', status: 'completed' as const, performedExercises: [], createdAt: timestamp, updatedAt: timestamp, version: timestamp,
