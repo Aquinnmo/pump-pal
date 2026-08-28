@@ -83,7 +83,7 @@ mock.module('@/context/auth-context', () => ({
     logOut: async () => {},
   }),
 }));
-mock.module(new URL('../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getById: async () => plannedRecord,
     getHistory: async () => [],
@@ -98,10 +98,10 @@ mock.module(new URL('../src/data/workout-repository.web.ts', import.meta.url).pa
     softDelete: async () => {},
   },
 }));
-mock.module(new URL('../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: { get: async () => null },
 }));
-mock.module(new URL('../src/data/web-direct-firestore.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/data/web-direct-firestore.ts', import.meta.url).pathname, () => ({
   invalidateWebReads: () => {},
   listWebEntities: async (_uid: string, kind: string) => {
     if (kind !== 'injury') return [];
@@ -125,7 +125,7 @@ mock.module('@/lib/use-ai-enabled', () => ({ useAIEnabled: () => false }));
 mock.module('@/lib/use-ai-connectivity', () => ({ useAIGenerationAvailable: () => true }));
 mock.module('@/config/firebase', () => ({ auth: { currentUser: user } }));
 
-const { default: ActiveWorkoutScreen } = await import('./active-workout');
+const { default: ActiveWorkoutScreen } = await import('../../app/active-workout');
 
 function record(data: Workout): { id: string; data: Workout } {
   return { id: data.id, data };

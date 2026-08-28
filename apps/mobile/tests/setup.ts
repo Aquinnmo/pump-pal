@@ -22,6 +22,13 @@ const { plugin } = await import('bun');
 const bunTest = await import('bun:test');
 const mock = bunTest.mock as unknown as <T extends (...args: any[]) => any>(implementation?: T) => T;
 
+// The preload owns long-lived module doubles. Clear only their call history
+// between tests so shared implementations stay available while assertions
+// cannot inherit a prior test's calls.
+bunTest.afterEach(() => {
+  bunTest.mock.clearAllMocks();
+});
+
 const mobileRoot = resolvePath(dirname(fileURLToPath(import.meta.url)), '..');
 const spy = <T extends (...args: any[]) => any>(implementation?: T): T => mock(implementation);
 
