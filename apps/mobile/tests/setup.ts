@@ -9,6 +9,14 @@ import { useEffect } from 'react';
 GlobalRegistrator.register();
 (globalThis as typeof globalThis & { __DEV__: boolean }).__DEV__ = true;
 
+// waitFor's 1s default is a wall-clock budget, not a work budget. CI runners
+// are slow and `bun test --isolate` gives every file its own registry, so a
+// render that takes ~100ms locally can blow 1s there. Raised globally rather
+// than per-call so no future test has to remember. Kept under bun's 5s
+// per-test timeout so a genuinely stuck wait still reports RTL's assertion.
+const { configure } = await import('@testing-library/react');
+configure({ asyncUtilTimeout: 4_000 });
+
 type ModuleExports = Record<string, unknown>;
 type Build = {
   onResolve(options: { filter: RegExp }, callback: (args: { path: string; importer: string }) => unknown): void;
