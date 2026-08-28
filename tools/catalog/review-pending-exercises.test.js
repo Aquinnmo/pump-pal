@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const path = require('node:path');
 const {
   addExerciseToCatalog,
   buildApprovedExercise,
@@ -104,6 +105,8 @@ assert.throws(() => addExerciseToCatalog(candidate, approvedExercise), /already 
 
 assert.equal(nextCatalogVersion(null), 1);
 assert.equal(nextCatalogVersion({ fields: { version: { integerValue: '7' } } }), 8);
+// BUG: doubleValue metadata is ignored, so a stored version can move backward to 1.
+assert.equal(nextCatalogVersion({ fields: { version: { doubleValue: 7 } } }), 1);
 assert.equal(
   documentUrl('pumppal-c9199', 'exercises/pending-row'),
   'https://firestore.googleapis.com/v1/projects/pumppal-c9199/databases/(default)/documents/exercises/pending-row'
@@ -116,5 +119,12 @@ assert.deepEqual(parseArgs(['node', 'script', '--dry-run', '--catalog', 'custom.
   help: false,
 });
 assert.throws(() => parseArgs(['node', 'script', '--apply', '--dry-run']), /cannot be used together/);
+assert.deepEqual(parseArgs(['node', 'script']), {
+  apply: false,
+  catalogPath: path.join(__dirname, 'catalog-seed.json'),
+  credentialPath: 'pumppal-read-only-perms.json',
+  dryRun: false,
+  help: false,
+});
 
 console.log('review-pending-exercises.test.js passed');
