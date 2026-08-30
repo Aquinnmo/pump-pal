@@ -9,9 +9,10 @@ import { reorderItems } from 'react-native-reorderable-list';
 // every set/exercise mutator that is identical between the two.
 //
 // trackCompletion gates the per-set `completed` field: active workouts track which sets
-// are done (and persist it so a killed workout resumes with checkmarks intact), while the
-// plan/log editor must NOT write a `completed` key — expandDraftToSets only persists it
-// when defined, so omitting it here keeps logged/planned docs clean.
+// are done, mirrored into the session snapshot (src/lib/active-workout-session.ts) so a
+// killed workout resumes with checkmarks intact, while the plan/log editor must NOT write
+// a `completed` key — expandDraftToSets only persists it when defined, so omitting it here
+// keeps logged/planned docs clean.
 // Exercise selection also lives here so every editor uses the planning behavior: prefer
 // the latest matching exercise from the same workout day, then fall back to any day.
 // The forward-cascade rule for set edits lives in src/lib/workout-conversion.ts.

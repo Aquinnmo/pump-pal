@@ -29,7 +29,6 @@ import { getOngoingInjuries, getOngoingInjuryIds } from "@/lib/injuries";
 import { describeUpNext } from "@/lib/up-next";
 import { subscribeLiveUpdateNotificationActions } from "@/lib/live-update-notification-actions";
 import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/lib/workout-action";
-import { buildWorkoutNotificationPresentation } from "@/lib/workout-notification-model";
 import {
   applyWearAction,
   buildWearIdleState,
@@ -44,10 +43,8 @@ import {
   recentExercisesForDay,
 } from "@/lib/workout-conversion";
 import {
-  dismissWorkoutNotification,
   ensureWorkoutChannel,
   requestNotificationPermission,
-  showWorkoutNotification,
 } from "@/lib/workout-notification";
 import {
   generateSplitWorkoutNames,
@@ -61,7 +58,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  AppState,
   BackHandler,
   KeyboardAvoidingView,
   Platform,
@@ -157,9 +153,6 @@ export default function ActiveWorkoutScreen() {
     workoutName: effectiveWorkoutName,
   });
   exercisesRef.current = exercises;
-  const notificationWorkoutNameRef = useRef(effectiveWorkoutName);
-  notificationWorkoutNameRef.current = effectiveWorkoutName;
-  const notificationDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saving, setSaving] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
@@ -427,56 +420,6 @@ export default function ActiveWorkoutScreen() {
     });
   }, [sessionId, setExercises]);
 
-  // The notification is a live control surface, not a save artifact. While the app is
-  // foregrounded iOS hides the Live Activity, so draft keystrokes must not spend its
-  // metered update budget. The longer debounce only matters while backgrounded, where
-  // it coalesces edits before the island is visible.
-  useEffect(() => {
-    if (!sessionId || !startedAt || initializing) return;
-    const t = setTimeout(() => {
-      notificationDebounceRef.current = null;
-      if (AppState.currentState !== "active") {
-        showWorkoutNotification(
-          buildWorkoutNotificationPresentation({
-            workoutId: sessionId,
-            workoutName: effectiveWorkoutName,
-            startedAt,
-            rows: exercises,
-          }),
-        ).catch((e) => console.warn("[workout-notification] show failed", e));
-      }
-    }, 1000);
-    notificationDebounceRef.current = t;
-    return () => {
-      clearTimeout(t);
-      if (notificationDebounceRef.current === t) notificationDebounceRef.current = null;
-    };
-  }, [exercises, effectiveWorkoutName, sessionId, initializing, startedAt]);
-
-  useEffect(() => {
-    if (!sessionId || !startedAt || initializing) return;
-    let previousState = AppState.currentState;
-    const subscription = AppState.addEventListener("change", (nextState) => {
-      const movedToBackground = previousState === "active" && nextState !== "active";
-      previousState = nextState;
-      if (!movedToBackground) return;
-
-      if (notificationDebounceRef.current) {
-        clearTimeout(notificationDebounceRef.current);
-        notificationDebounceRef.current = null;
-      }
-      showWorkoutNotification(
-        buildWorkoutNotificationPresentation({
-          workoutId: sessionId,
-          workoutName: notificationWorkoutNameRef.current,
-          startedAt,
-          rows: exercisesRef.current,
-        }),
-      ).catch((e) => console.warn("[workout-notification] show failed", e));
-    });
-    return () => subscription.remove();
-  }, [sessionId, startedAt, initializing]);
-
   const incompleteSetCount = () =>
     exercises
       .filter((ex) => ex.label.trim() !== "")
@@ -537,7 +480,6 @@ export default function ActiveWorkoutScreen() {
       // The session is done — push it now rather than leaving it on the device
       // until the next foreground.
       triggerSyncAfterWrite();
-      await dismissWorkoutNotification();
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
       // moment later when it regains focus.
@@ -646,7 +588,6 @@ export default function ActiveWorkoutScreen() {
     // created, so there is nothing to undo in the database — just tear down the
     // in-memory session and the notification/watch surfaces pointing at it.
     endSession();
-    dismissWorkoutNotification().catch(() => {});
     setShowDiscardConfirm(false);
     router.replace("/(tabs)");
   };

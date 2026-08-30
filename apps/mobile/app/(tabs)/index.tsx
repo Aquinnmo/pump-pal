@@ -9,7 +9,6 @@ import { predictNextWorkoutName, predictWorkoutAfterName } from '@/lib/predict-n
 import { describeUpNext } from '@/lib/up-next';
 import { buildWearIdleState } from '@/lib/wear-state';
 import { pushWearState } from '@/lib/wear-sync';
-import { dismissWorkoutNotification } from '@/lib/workout-notification';
 import { syncUpNextWidget } from '@/lib/widget-up-next';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
@@ -77,8 +76,6 @@ export default function HomeScreen() {
               ? { name: liveSession.name, startedAt: liveSession.startedAt }
               : null;
           setInProgress(liveWorkout);
-          // No live session → clear any notification orphaned by a force-quit.
-          if (!liveWorkout) dismissWorkoutNotification();
 
           // Head of the planned queue, if any — takes priority over the predicted name
           const plannedQueue = (await workoutRepository.getByStatus(user.uid, 'planned'))

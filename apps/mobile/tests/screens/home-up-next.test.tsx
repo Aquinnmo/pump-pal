@@ -11,7 +11,6 @@ const uid = 'user-1';
 const user = { uid };
 let history: Workout[] = [];
 let planned: Workout[] = [];
-let dismissCalls = 0;
 let historyCalls = 0;
 let pendingHistoryResolve: (() => void) | null = null;
 let holdHistory = false;
@@ -105,12 +104,6 @@ mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url)
     })),
   },
 }));
-mock.module(new URL('../../src/lib/workout-notification.ts', import.meta.url).pathname, () => ({
-  ensureWorkoutChannel: async () => 'home',
-  requestNotificationPermission: async () => {},
-  showWorkoutNotification: async () => {},
-  dismissWorkoutNotification: async () => { dismissCalls += 1; },
-}));
 
 const { default: HomeScreen } = await import('../../app/(tabs)/index');
 
@@ -126,7 +119,6 @@ async function renderHome() {
 beforeEach(() => {
   history = [];
   planned = [];
-  dismissCalls = 0;
   historyCalls = 0;
   pendingHistoryResolve = null;
   holdHistory = false;
@@ -156,7 +148,6 @@ describe('Home Up Next priority', () => {
     await renderHome();
     assert.ok(screen.getByRole('button', { name: /Resume Resume Bench Press/ }));
     assert.ok(screen.getByText('Resume workout'));
-    assert.equal(dismissCalls, 0);
   });
 
   it('ignores a live session from another uid and uses the planned queue head', async () => {
@@ -176,7 +167,6 @@ describe('Home Up Next priority', () => {
     await renderHome();
     assert.ok(screen.getByRole('button', { name: 'Start planned workout, Queue head' }));
     assert.equal(screen.queryByText('Other account session'), null);
-    assert.equal(dismissCalls, 1);
   });
 
   it('falls back to the predicted split name when there is no live or planned work', async () => {
@@ -185,7 +175,6 @@ describe('Home Up Next priority', () => {
     await renderHome();
     assert.ok(screen.getByRole('button', { name: 'Start suggested workout, Pull' }));
     assert.ok(screen.getByText('Start workout'));
-    assert.equal(dismissCalls, 1);
   });
 
   it('does not show a spinner during a focus refresh', async () => {
