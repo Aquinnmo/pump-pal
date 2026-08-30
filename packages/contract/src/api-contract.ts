@@ -36,27 +36,6 @@ export const errorResponse = z.object({
 });
 export type ErrorResponse = z.infer<typeof errorResponse>;
 
-/** Standard 409 body for a `baseVersion` mismatch on any versioned mutation. */
-export function conflictResponse<T extends z.ZodTypeAny>(entity: T) {
-  return z.object({
-    error: z.string(),
-    code: z.literal('conflict'),
-    remote: entity,
-    remoteVersion: version,
-  });
-}
-export type ConflictResponse<T> = { error: string; code: 'conflict'; remote: T; remoteVersion: string };
-
-export const listQuery = z.object({
-  cursor: z.string().optional(),
-  limit: z.number().int().min(1).max(200).optional(),
-});
-export type ListQuery = z.infer<typeof listQuery>;
-
-export function listResponse<T extends z.ZodTypeAny>(item: T) {
-  return z.object({ items: z.array(item), nextCursor: z.string().nullable() });
-}
-
 // ------------------------------------------------------------------- profile
 
 export const SPLIT_OPTIONS = [
@@ -189,10 +168,6 @@ export const updateInjuryInput = z.object({
 });
 export type UpdateInjuryInput = z.infer<typeof updateInjuryInput>;
 
-/** Response for every injury mutation: the profile's user doc is what's versioned. */
-export const injuryMutationResponse = z.object({ injury: injuryDTO, version });
-export const injuriesListResponse = z.object({ injuries: z.array(injuryDTO), version });
-
 /**
  * POST /api/injuries/:id/apply-to-history and .../remove-from-history —
  * retroactively (arrayUnion/arrayRemove) stamp `workouts[].injuries` for
@@ -253,56 +228,6 @@ export const workoutDTO = z.object({
   version,
 });
 export type WorkoutDTO = z.infer<typeof workoutDTO>;
-
-/**
- * Every single-workout endpoint (GET/POST/PATCH /api/workouts) wraps the DTO,
- * matching profileResponse and injuryMutationResponse. Note the 409 body is
- * different: its `remote` field carries a *bare* DTO, so `conflictEntitySchema`
- * on the client stays `workoutDTO`.
- */
-export const workoutResponse = z.object({ workout: workoutDTO });
-export type WorkoutResponse = z.infer<typeof workoutResponse>;
-
-/** GET /api/workouts — cursor pages ordered by `date desc` by default. */
-export const listWorkoutsQuery = listQuery.extend({
-  status: workoutStatus.optional(),
-});
-export type ListWorkoutsQuery = z.infer<typeof listWorkoutsQuery>;
-
-/**
- * POST /api/workouts — `id` is client-supplied (offline-created workouts
- * need a stable id before they ever reach the server) so a retried create
- * with the same `id` acknowledges the existing doc instead of duplicating.
- */
-export const createWorkoutInput = z.object({
-  id: z.string().min(1).max(100),
-  name: z.string().max(200),
-  /** Omit for a 'planned'/'in_progress' workout not yet dated. */
-  date: isoTimestamp.optional(),
-  status: workoutStatus,
-  notes: z.string().max(2_000).optional(),
-  performedExercises: z.array(performedExercise).default([]),
-  injuries: z.array(z.string()).optional(),
-});
-export type CreateWorkoutInput = z.infer<typeof createWorkoutInput>;
-
-/** PATCH /api/workouts/:id — full desired-state replace of the mutable fields, versioned. */
-export const updateWorkoutInput = z.object({
-  name: z.string().max(200).optional(),
-  date: isoTimestamp.optional(),
-  status: workoutStatus.optional(),
-  notes: z.string().max(2_000).optional(),
-  performedExercises: z.array(performedExercise).optional(),
-  injuries: z.array(z.string()).optional(),
-  baseVersion: version,
-});
-export type UpdateWorkoutInput = z.infer<typeof updateWorkoutInput>;
-
-/** PATCH /api/workouts/reorder — bulk `queueOrder` update for planned workouts. */
-export const reorderWorkoutsInput = z.object({
-  order: z.array(z.object({ id: z.string(), queueOrder: z.number().int() })).min(1).max(200),
-});
-export type ReorderWorkoutsInput = z.infer<typeof reorderWorkoutsInput>;
 
 // -------------------------------------------------------------------- catalog
 
@@ -384,23 +309,6 @@ export const pushupChallengeDTO = z.object({
   version: version.nullable(), // null when the doc doesn't exist yet
 });
 export type PushupChallengeDTO = z.infer<typeof pushupChallengeDTO>;
-
-/** Wrapper both /api/pushup-challenge verbs return. Same rule as workoutResponse. */
-export const pushupChallengeResponse = z.object({ challenge: pushupChallengeDTO });
-export type PushupChallengeResponse = z.infer<typeof pushupChallengeResponse>;
-
-/**
- * PUT /api/pushup-challenge — full desired-state replace, same semantics as
- * the existing client `setDoc` (no partial merge): starting/restarting a run
- * overwrites `startDate`/`days` and only `longestStreak` can carry over.
- */
-export const putPushupChallengeInput = z.object({
-  startDate: z.string(),
-  days: z.array(challengeDay),
-  longestStreak: z.number().int().min(0),
-  baseVersion: version.nullable().optional(),
-});
-export type PutPushupChallengeInput = z.infer<typeof putPushupChallengeInput>;
 
 // ------------------------------------------------------------ timber buddies
 
@@ -532,8 +440,6 @@ export type SyncableKind = z.infer<typeof syncableKind>;
  * is surfaced as a conflict instead of silently dropped.
  */
 export const manifestEntry = z.object({ kind: syncableKind, id: z.string(), version });
-export const manifestQuery = listQuery;
-export const manifestResponse = listResponse(manifestEntry);
 export type ManifestEntry = z.infer<typeof manifestEntry>;
 
 /**
@@ -545,13 +451,3 @@ export const pullRequest = z.object({
   entities: z.array(z.object({ kind: syncableKind, id: z.string() })).min(1).max(200),
 });
 export type PullRequest = z.infer<typeof pullRequest>;
-
-export const pullResponse = z.object({
-  workouts: z.array(workoutDTO),
-  injuries: z.array(injuryDTO),
-  pushupChallenge: pushupChallengeDTO.optional(),
-  profile: profileDTO.optional(),
-  /** ids requested but not found (deleted, or never existed) — caller should drop them locally. */
-  missing: z.array(z.object({ kind: syncableKind, id: z.string() })),
-});
-export type PullResponse = z.infer<typeof pullResponse>;

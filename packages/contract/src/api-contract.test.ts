@@ -17,89 +17,44 @@ import {
   challengeDay,
   chopInput,
   chopResponse,
-  conflictResponse,
   createInjuryInput,
   createPendingExerciseInput,
-  createWorkoutInput,
   deleteAccountDataResponse,
   errorResponse,
   exerciseVariationDTO,
   injuryHistoryOpResponse,
   injuryDTO,
-  injuryMutationResponse,
   injurySeverity,
   injurySide,
   injuryStatus,
-  injuriesListResponse,
   isoTimestamp,
-  listQuery,
-  listResponse,
-  listWorkoutsQuery,
   localDate,
   manifestEntry,
-  manifestQuery,
-  manifestResponse,
   performedExercise,
   performedSet,
-  pullResponse,
   directProfilePatchInput,
   profilePatchInput,
   profileDTO,
   profileResponse,
   pullRequest,
   pushupChallengeDTO,
-  pushupChallengeResponse,
-  putPushupChallengeInput,
-  reorderWorkoutsInput,
   sendBuddyRequestInput,
   splitOption,
   syncableKind,
   trackingMode,
   updateInjuryInput,
-  updateWorkoutInput,
   updateUsernameInput,
   version,
   workoutSplit,
   workoutStatus,
   workoutDTO,
-  workoutResponse,
 } from './api-contract.js';
 
-// ---- errors / conflict envelope ----
+// ---- errors ----
 assert.equal(errorResponse.safeParse({ error: 'bad' }).success, true);
 assert.equal(errorResponse.safeParse({}).success, false);
 
-const conflict = conflictResponse(workoutDTO);
-assert.equal(
-  conflict.safeParse({ error: 'stale', code: 'conflict', remote: 'not-a-workout', remoteVersion: 'v1' }).success,
-  false
-);
-
 // ---- Timestamp/sentinel types never leak onto the wire: reject non-ISO dates ----
-assert.equal(
-  createWorkoutInput.safeParse({
-    id: 'w1',
-    name: 'Push Day',
-    date: 'not-a-date',
-    status: 'completed',
-  }).success,
-  false
-);
-assert.equal(
-  createWorkoutInput.safeParse({
-    id: 'w1',
-    name: 'Push Day',
-    date: '2026-08-05T12:00:00Z',
-    status: 'completed',
-    performedExercises: [],
-  }).success,
-  true
-);
-
-// updateWorkoutInput requires baseVersion (versioned mutation)
-assert.equal(updateWorkoutInput.safeParse({ name: 'Renamed' }).success, false);
-assert.equal(updateWorkoutInput.safeParse({ name: 'Renamed', baseVersion: 'v2' }).success, true);
-
 // performedSet: superset of fields, all optional except setNumber
 assert.equal(performedSet.safeParse({ setNumber: 1, reps: 8, weight: 135 }).success, true);
 assert.equal(performedSet.safeParse({ reps: 8 }).success, false); // missing setNumber
@@ -181,28 +136,12 @@ assert.equal(catalogExerciseDTO.safeParse(legacyCatalogExercise).success, false)
 assert.equal(catalogResponse.safeParse({ exercises: [catalogExercise], version: 1 }).success, true);
 assert.equal(catalogResponse.safeParse({ exercises: [], version: 1 }).success, false);
 
-// ---- reorder: bounded batch ----
-assert.equal(reorderWorkoutsInput.safeParse({ order: [] }).success, false); // min 1
-assert.equal(reorderWorkoutsInput.safeParse({ order: [{ id: 'w1', queueOrder: 0 }] }).success, true);
-
-// ---- pushup challenge: desired-state replace ----
-assert.equal(
-  putPushupChallengeInput.safeParse({ startDate: '2026-08-01', days: [], longestStreak: 5 }).success,
-  true
-);
-assert.equal(putPushupChallengeInput.safeParse({ startDate: '2026-08-01', days: [], longestStreak: -1 }).success, false);
-
 // ---- sync pull: bounded batch, kind is a closed enum ----
 assert.equal(pullRequest.safeParse({ entities: [] }).success, false); // min 1
 assert.equal(pullRequest.safeParse({ entities: [{ kind: 'workout', id: 'w1' }] }).success, true);
 assert.equal(pullRequest.safeParse({ entities: [{ kind: 'bogus', id: 'w1' }] }).success, false);
 
-// ---- mutation response envelopes ----
-// Every single-entity endpoint wraps its DTO. A client declaring the bare DTO
-// as its responseSchema parses NOTHING, and because the throw isn't a
-// conflict/auth/rate-limit the sync engine retries it forever — which is
-// exactly what shipped for workouts and the push-up challenge. The negative
-// assertion is the one that catches it.
+// ---- workout DTO ----
 const validWorkoutFixture = {
   id: 'w1',
   name: 'Push Day',
@@ -214,32 +153,16 @@ const validWorkoutFixture = {
   version: 'v1',
 };
 assert.equal(workoutDTO.safeParse(validWorkoutFixture).success, true);
-assert.equal(workoutResponse.safeParse({ workout: validWorkoutFixture }).success, true);
 assert.equal(workoutDTO.safeParse({ workout: validWorkoutFixture }).success, false);
 
 const validChallenge = { startDate: '2026-08-05', days: [], longestStreak: 0, version: 'v1' };
 assert.equal(pushupChallengeDTO.safeParse(validChallenge).success, true);
-assert.equal(pushupChallengeResponse.safeParse({ challenge: validChallenge }).success, true);
 assert.equal(pushupChallengeDTO.safeParse({ challenge: validChallenge }).success, false);
-
-// The 409 envelope is the exception: `remote` is a BARE dto, which is why
-// conflictEntitySchema on the client stays workoutDTO, not workoutResponse.
-assert.equal(
-  conflictResponse(workoutDTO).safeParse({
-    error: 'stale', code: 'conflict', remote: validWorkoutFixture, remoteVersion: 'v2',
-  }).success,
-  true
-);
 
 // ---- buddyUid: a Firestore path segment, not just any string ----
 assert.equal(buddyUid.safeParse('a'.repeat(28)).success, true);
 assert.equal(buddyUid.safeParse('ab/cd').success, false); // contains '/'
 assert.equal(buddyUid.safeParse('ab_cd').success, false); // contains '_'
-
-// ---- listResponse helper ----
-const listedWorkouts = listResponse(workoutDTO);
-assert.equal(listedWorkouts.safeParse({ items: [], nextCursor: null }).success, true);
-assert.equal(listedWorkouts.safeParse({ items: [] }).success, false); // nextCursor required
 
 console.log('api-contract: all assertions passed');
 
@@ -324,8 +247,6 @@ assert.equal(injuryDTO.safeParse({ ...validInjury, notes: 'x'.repeat(2_001) }).s
 assert.equal(createInjuryInput.parse({ id: 'i1', bodyPart: 'knee', severity: 'mild', onsetDate: iso }).status, 'ongoing');
 assert.equal(updateInjuryInput.safeParse({ status: 'resolved' }).success, true);
 assert.equal(updateInjuryInput.safeParse({ status: 'resolved', baseVersion: '' }).success, false);
-assert.equal(injuryMutationResponse.safeParse({ injury: validInjury, version: 'v2' }).success, true);
-assert.equal(injuriesListResponse.safeParse({ injuries: [validInjury], version: 'v2' }).success, true);
 assert.equal(injuryHistoryOpResponse.safeParse({ affectedWorkoutIds: ['w-1'] }).success, true);
 assert.equal(injuryHistoryOpResponse.safeParse({ affectedWorkoutIds: [1] }).success, false);
 
@@ -340,18 +261,6 @@ for (const key of ['variationId', 'variationNameSnapshot']) {
 }
 assert.equal(workoutDTO.safeParse(validWorkoutFixture).success, true);
 assert.equal(workoutDTO.safeParse({ ...validWorkoutFixture, name: 'x'.repeat(201) }).success, false);
-assert.equal(workoutResponse.safeParse({ workout: validWorkoutFixture }).success, true);
-assert.equal(listQuery.safeParse({ limit: 1, cursor: 'next' }).success, true);
-assert.equal(listQuery.safeParse({ limit: 0 }).success, false);
-assert.equal(listQuery.safeParse({ limit: 201 }).success, false);
-assert.equal(listWorkoutsQuery.safeParse({ status: 'planned', limit: 200 }).success, true);
-assert.equal(createWorkoutInput.safeParse({ id: 'w1', name: 'x', status: 'planned' }).success, true);
-assert.equal(createWorkoutInput.safeParse({ id: '', name: 'x', status: 'planned' }).success, false);
-assert.equal(createWorkoutInput.safeParse({ id: 'w1', name: 'x', status: 'active' }).success, false);
-assert.equal(updateWorkoutInput.safeParse({ baseVersion: 'v1', status: 'completed' }).success, true);
-assert.equal(updateWorkoutInput.safeParse({ status: 'completed' }).success, false);
-assert.equal(reorderWorkoutsInput.safeParse({ order: [{ id: 'w1', queueOrder: 0 }] }).success, true);
-assert.equal(reorderWorkoutsInput.safeParse({ order: new Array(201).fill({ id: 'w', queueOrder: 0 }) }).success, false);
 
 assert.equal(exerciseVariationDTO.safeParse(validVariation).success, true);
 assert.equal(exerciseVariationDTO.safeParse({ ...validVariation, aliases: 'none' }).success, false);
@@ -365,9 +274,6 @@ assert.equal(createPendingExerciseInput.safeParse({ name: 'x'.repeat(201) }).suc
 assert.equal(challengeDay.safeParse(validChallengeDay).success, true);
 assert.equal(challengeDay.safeParse({ ...validChallengeDay, dayNumber: 0 }).success, false);
 assert.equal(pushupChallengeDTO.safeParse({ startDate: null, days: [validChallengeDay], longestStreak: 1, version: null }).success, true);
-assert.equal(pushupChallengeResponse.safeParse({ challenge: { startDate: null, days: [], longestStreak: 0, version: null } }).success, true);
-assert.equal(putPushupChallengeInput.safeParse({ startDate: '2026-08-12', days: [], longestStreak: 0 }).success, true);
-assert.equal(putPushupChallengeInput.safeParse({ startDate: '2026-08-12', days: [{ ...validChallengeDay, completedAt: 'bad' }], longestStreak: 0 }).success, false);
 
 assert.equal(buddySearchResult.safeParse({ uid: 'u1', username: 'Alice', state: 'none' }).success, true);
 assert.equal(buddySearchResponse.safeParse({ results: [] }).success, true);
@@ -392,9 +298,6 @@ const deleted = { workouts: 1, legacyWorkouts: 2, pushupChallenge: true, friends
 assert.equal(deleteAccountDataResponse.safeParse({ deleted, partial: false }).success, true);
 assert.equal(deleteAccountDataResponse.safeParse({ deleted: { ...deleted, workouts: 1.5 }, partial: false }).success, false);
 assert.equal(manifestEntry.safeParse({ kind: 'workout', id: 'w1', version: 'v1' }).success, true);
-assert.equal(manifestQuery.safeParse({ limit: 200 }).success, true);
-assert.equal(manifestResponse.safeParse({ items: [{ kind: 'profile', id: 'u1', version: 'v1' }], nextCursor: null }).success, true);
-assert.equal(pullResponse.safeParse({ workouts: [], injuries: [], missing: [{ kind: 'workout', id: 'w1' }] }).success, true);
 
 // The profile allowlist is duplicated at three boundaries. Keep the test
 // source-relative so it runs from either the workspace root or this package.
