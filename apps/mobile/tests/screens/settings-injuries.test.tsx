@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import type { Injury } from '../../src/types/user';
 
@@ -106,6 +106,21 @@ async function renderLoaded(): Promise<void> {
   await waitFor(() => assert.ok(screen.getByText('No ongoing injuries.')));
 }
 
+// react-native-web's TouchableOpacity hands `disabled` to its PressResponder
+// from a passive effect, so the responder keeps the *first* render's config
+// until those effects flush. This screen's Add Injury button starts disabled
+// (`saving || loading`), so a click dispatched while the re-configure is still
+// queued is swallowed with no error — the test then burns the whole waitFor
+// budget on an assertion that can never turn true, which is what made this file
+// flake on CI. Draining the act queue first is the part that has to happen; the
+// empty `act` cannot be folded into the one around the click, because a nested
+// act defers the flush to the outer one and the click is already gone by then.
+async function press(element: Element | null | undefined): Promise<void> {
+  assert.ok(element);
+  await act(async () => {});
+  fireEvent.click(element);
+}
+
 beforeEach(() => {
   records = [];
   loadError = null;
@@ -182,10 +197,7 @@ describe('SettingsInjuriesScreen', () => {
   it('creates an injury when the primary Add Injury action is pressed', async () => {
     await renderLoaded();
 
-    await act(async () => {
-      screen.getByText('Add Injury').click();
-      await Promise.resolve();
-    });
+    await press(screen.getByText('Add Injury'));
 
     await waitFor(() => assert.equal(creates.length, 1));
     assert.equal(creates[0]?.bodyPart, 'shoulder');
@@ -200,10 +212,7 @@ describe('SettingsInjuriesScreen', () => {
     render(<SettingsInjuriesScreen />);
     await waitFor(() => assert.ok(screen.getByText('Apply to history')));
 
-    await act(async () => {
-      screen.getByText('Add Injury').click();
-      await Promise.resolve();
-    });
+    await press(screen.getByText('Add Injury'));
 
     await waitFor(() => {
       assert.equal(creates.length, 1);
@@ -219,10 +228,7 @@ describe('SettingsInjuriesScreen', () => {
     render(<SettingsInjuriesScreen />);
     await waitFor(() => assert.ok(screen.getByText('No ongoing injuries.')));
 
-    await act(async () => {
-      screen.getByText('Add Injury').click();
-      await Promise.resolve();
-    });
+    await press(screen.getByText('Add Injury'));
 
     // load() hides unknown body parts from the UI; persist must not read that
     // absence as a removal and delete the row the user never saw.
@@ -236,14 +242,8 @@ describe('SettingsInjuriesScreen', () => {
     render(<SettingsInjuriesScreen />);
     await waitFor(() => assert.ok(screen.getByText('Apply to history')));
 
-    await act(async () => {
-      screen.getByText('Remove').click();
-      await Promise.resolve();
-    });
-    await act(async () => {
-      screen.getAllByText('Remove').at(-1)?.click();
-      await Promise.resolve();
-    });
+    await press(screen.getByText('Remove'));
+    await press(screen.getAllByText('Remove').at(-1));
 
     await waitFor(() => assert.deepEqual(softDeletes, [{ uid: user.uid, id: 'existing-shoulder' }]));
   });
