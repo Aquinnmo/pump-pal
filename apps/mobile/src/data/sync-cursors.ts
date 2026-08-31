@@ -11,6 +11,7 @@ export type SyncCursor = {
   manifestVersion: string | null;
 };
 
+// production never reads cursors yet; retained as the test probe for setSyncCursor
 export async function getSyncCursor(
   db: SqlExecutor,
   uid: string,

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { runMigrations } from './migrate';
 import { openTestDb } from './test-executor';
 import { SqlExecutor } from './executor';
-import { getAll, getById, replaceAll, replaceSnapshot, createPending, getMeta, setMeta } from './catalog';
+import { getById, replaceSnapshot, createPending, getMeta } from './catalog';
 import { listAll } from './outbox';
 import { CatalogExercise } from '@/types/workout';
 
@@ -29,12 +29,6 @@ async function main() {
   const { db } = openTestDb();
   await runMigrations(db);
 
-  // --- replaceAll seeds the synced catalog ---
-  await replaceAll(db, 'u1', [exercise('bench-press', 'Bench Press'), exercise('squat', 'Squat')]);
-  assert.equal((await getAll(db, 'u1')).length, 2);
-  const bench = await getById(db, 'u1', 'bench-press');
-  assert.equal(bench?.syncState, 'synced');
-
   // --- createPending queues a user submission and coalesced outbox entry ---
   await createPending(db, 'u1', exercise('user-curl-thing', 'My Curl'));
   const pending = await getById(db, 'u1', 'user-curl-thing');
@@ -43,16 +37,6 @@ async function main() {
   assert.equal(outboxRows.length, 1);
   assert.equal(outboxRows[0].entityType, 'catalog_exercise');
   assert.equal(outboxRows[0].op, 'create');
-
-  // --- a catalog refresh replaces synced rows but never touches the pending submission ---
-  await replaceAll(db, 'u1', [exercise('bench-press', 'Bench Press v2'), exercise('deadlift', 'Deadlift')]);
-  const all = await getAll(db, 'u1');
-  const ids = all.map((r) => r.id).sort();
-  assert.deepEqual(ids, ['bench-press', 'deadlift', 'user-curl-thing']);
-  const stillPending = await getById(db, 'u1', 'user-curl-thing');
-  assert.equal(stillPending?.syncState, 'dirty', 'pending submission must survive a catalog refresh');
-  const squatGone = await getById(db, 'u1', 'squat');
-  assert.equal(squatGone, null, 'exercises dropped from the server set are removed from the synced cache');
 
   // --- a refresh atomically replaces synced rows and its cache marker ---
   assert.equal(await getMeta(db, 'u1'), null);
@@ -76,15 +60,6 @@ async function main() {
   assert.equal((await getById(db, 'u1', 'squat')), null);
   assert.equal((await getById(db, 'u1', 'bench-press'))?.data.name, 'Bench Press v3');
   assert.equal((await getMeta(db, 'u1'))?.version, 3);
-
-  // --- catalog_meta cache-invalidation marker can still be updated directly ---
-  await setMeta(db, 'u1', { version: 5, exerciseCount: 1 });
-  assert.equal((await getMeta(db, 'u1'))?.version, 5);
-
-  // --- UID isolation ---
-  await replaceAll(db, 'u2', [exercise('bench-press', 'Bench Press')]);
-  assert.equal((await getAll(db, 'u1')).length, 2);
-  assert.equal((await getAll(db, 'u2')).length, 1);
 
   console.log('src/data/catalog.test.ts: all assertions passed');
 }

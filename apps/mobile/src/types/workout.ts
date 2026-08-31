@@ -1,6 +1,7 @@
 import { MuscleId } from '@/constants/muscles';
 import { FlexibleTimestamp } from '@/types/timestamp';
 
+// Describes performed-set entry; intentionally differs from contract TRACKING_MODES, which describes catalog exercise variations on the wire.
 export type TrackingMode = 'reps' | 'duration' | 'distance' | 'calories';
 
 export type PerformedSet = {

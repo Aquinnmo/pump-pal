@@ -3,9 +3,9 @@
 // src/data/catalog-repository.ts binds this to the real
 // native src/data/client.ts for app use.
 //
-// See docs/data-model/exercises.md. Two write paths with different sync
+// See docs/data-model/exercises.md. The two write paths have different sync
 // semantics:
-//   - `replaceAll` — a full server-cache refresh (exerciseCatalogMeta
+//   - `replaceSnapshot` — a full server-cache refresh (exerciseCatalogMeta
 //     version bump). Only ever touches rows this repo previously marked
 //     `synced`, so a user's own pending-review submission (sync_state
 //     'dirty', not yet uploaded) survives a catalog refresh untouched.
@@ -55,18 +55,6 @@ export async function getById(
     [uid, id]
   );
   return row ? fromRow(row) : null;
-}
-
-/** Full server-cache refresh. Never touches the caller's own pending submissions. */
-export async function replaceAll(
-  db: SqlExecutor,
-  uid: string,
-  exercises: CatalogExercise[]
-): Promise<void> {
-  const now = new Date().toISOString();
-  await db.withTransactionAsync(async () => {
-    await replaceSyncedRows(db, uid, exercises, now);
-  });
 }
 
 async function replaceSyncedRows(
@@ -163,19 +151,4 @@ export async function getMeta(db: SqlExecutor, uid: string): Promise<ExerciseCat
     // shapes (see normalizeTimestampsDeep's doc comment).
     updatedAt: row.updated_at as unknown as ExerciseCatalogMeta['updatedAt'],
   };
-}
-
-export async function setMeta(
-  db: SqlExecutor,
-  uid: string,
-  meta: Pick<ExerciseCatalogMeta, 'version' | 'exerciseCount'>
-): Promise<void> {
-  const now = new Date().toISOString();
-  await db.runAsync(
-    `INSERT INTO catalog_meta (uid, version, exercise_count, updated_at)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(uid) DO UPDATE SET
-       version = excluded.version, exercise_count = excluded.exercise_count, updated_at = excluded.updated_at`,
-    [uid, meta.version, meta.exerciseCount, now]
-  );
 }

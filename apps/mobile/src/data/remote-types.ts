@@ -20,20 +20,6 @@ export type StoredRecord<TEntity> = {
   data: TEntity;
 } & SyncMeta;
 
-/**
- * CRUD contract every uid-scoped local entity repository implements.
- * `uid` is a required first argument everywhere (not ambient state) so a
- * call site can't accidentally read/write across accounts — see
- * src/data/schema.ts's uid-scoped tables and src/data/client.ts's purgeUidData.
- */
-export interface LocalRepository<TEntity> {
-  getAll(uid: string): Promise<StoredRecord<TEntity>[]>;
-  getById(uid: string, id: string): Promise<StoredRecord<TEntity> | null>;
-  /** Upserts the entity and marks it dirty (queued for outbox sync) unless `meta` overrides that. */
-  upsert(uid: string, id: string, entity: TEntity, meta?: Partial<SyncMeta>): Promise<void>;
-  softDelete(uid: string, id: string): Promise<void>;
-}
-
 /** Single-document repositories (profile, pushup challenge): one row per uid. */
 export interface LocalSingletonRepository<TEntity> {
   get(uid: string): Promise<StoredRecord<TEntity> | null>;

@@ -12,7 +12,7 @@ type CatalogRepository = {
   getAll: (uid: string) => Promise<StoredRecord<CatalogExercise>[]>;
 };
 
-function approvedCatalog(value: unknown): CatalogExercise[] | null {
+export function approvedCatalog(value: unknown): CatalogExercise[] | null {
   if (!Array.isArray(value) || value.length === 0) return null;
   const catalog = value as CatalogExercise[];
   return catalog.every((exercise) => exercise?.schemaVersion === 2 && !!exercise.name && exercise.status !== 'pending_review')

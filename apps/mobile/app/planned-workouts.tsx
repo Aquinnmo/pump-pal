@@ -1,12 +1,9 @@
-import { profileRepository } from '@/data/profile-repository';
 import { workoutRepository } from '@/data/workout-repository';
 import { triggerSyncAfterWrite } from '@/data/sync-trigger';
-import { isSplitOption } from '@/constants/split-options';
-import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { showAlert } from '@/lib/alert';
-import { generateSplitWorkoutNames } from '@/lib/workout-suggestions';
+import { loadSplitNames } from '@/lib/split-names';
 import { predictWorkoutAfterName } from '@/lib/predict-next-workout';
 import { exerciseLabel, summarizePerformedExerciseSetGroups } from '@/lib/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,9 +33,8 @@ export default function PlannedWorkoutsScreen() {
     if (!user) return;
     setLoading(true);
     try {
-      const [plannedRecords, profile, allRecords] = await Promise.all([
+      const [plannedRecords, allRecords] = await Promise.all([
         workoutRepository.getByStatus(user.uid, 'planned'),
-        profileRepository.get(user.uid),
         workoutRepository.getHistory(user.uid),
       ]);
 
@@ -54,25 +50,7 @@ export default function PlannedWorkoutsScreen() {
         } catch { /* fall back to stored queue order */ }
       }
       const history = allRecords.map((record) => record.data).slice(0, 30);
-      const splitType = profile?.data.workoutSplit?.type;
-      const customSplitDesc: string = profile?.data.workoutSplit?.custom ?? '';
-      let loadedSplitNames: string[] = isSplitOption(splitType) ? SPLIT_WORKOUT_NAMES[splitType] : [];
-
-      if (splitType === 'Other' && customSplitDesc) {
-        const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, '_').slice(0, 60)}`;
-        const cached = await AsyncStorage.getItem(cacheKey);
-        if (cached) {
-          try { loadedSplitNames = JSON.parse(cached); } catch { /* ignore */ }
-        } else {
-          try {
-            const generated = await generateSplitWorkoutNames(customSplitDesc);
-            if (generated.length > 0) {
-              loadedSplitNames = generated;
-              await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
-            }
-          } catch { /* modal still allows a custom workout name */ }
-        }
-      }
+      const loadedSplitNames = await loadSplitNames(user.uid);
 
       setPlans(loadedPlans);
       setSplitNames(loadedSplitNames);

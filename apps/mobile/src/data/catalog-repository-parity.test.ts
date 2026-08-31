@@ -18,10 +18,8 @@ type CatalogRecord = {
 type CatalogRepository = {
   getAll(uid: string): Promise<CatalogRecord[]>;
   getById(uid: string, id: string): Promise<CatalogRecord | null>;
-  replaceAll(uid: string, exercises: CatalogExercise[]): Promise<void>;
   createPending(uid: string, exercise: CatalogExercise): Promise<void>;
   getMeta(uid: string): Promise<ExerciseCatalogMeta | null>;
-  setMeta(uid: string, meta: Pick<ExerciseCatalogMeta, 'version' | 'exerciseCount'>): Promise<void>;
   refresh(uid: string): Promise<CatalogResponse>;
 };
 
@@ -98,7 +96,6 @@ async function assertRepositoryContract(name: 'native' | 'web', repository: Cata
   const uidA = `${name}-user-a`;
   const uidB = `${name}-user-b`;
   const first = exercise('bench-press', 'Bench Press');
-  const second = exercise('squat', 'Squat');
   const pending = exercise('user-curl', 'My Curl', 'pending_review');
 
   // Empty cache and missing reads are ordinary repository results.
@@ -112,19 +109,6 @@ async function assertRepositoryContract(name: 'native' | 'web', repository: Cata
       exerciseCount: 0,
       schemaVersion: 2,
     }, 'web: metadata mirrors the empty direct snapshot');
-  }
-
-  await repository.replaceAll(uidA, [first, second]);
-  assert.deepEqual(
-    (await repository.getAll(uidA)).map((record) => record.id).sort(),
-    name === 'native' ? [first.id, second.id].sort() : [],
-    `${name}: replaceAll follows the adapter's cache semantics`,
-  );
-  if (name === 'native') {
-    assert.equal((await repository.getById(uidA, first.id))?.syncState, 'synced');
-    assert.deepEqual(await repository.getAll(uidB), [], 'native: catalog cache is uid-scoped');
-  } else {
-    assert.deepEqual(await repository.getAll(uidB), [], 'web: empty direct snapshot is global');
   }
 
   await repository.createPending(uidA, pending);
@@ -142,19 +126,6 @@ async function assertRepositoryContract(name: 'native' | 'web', repository: Cata
   } else {
     assert.deepEqual(pendingCalls, [{ name: 'My Curl' }], 'web: pending submission forwards only its name');
     assert.equal(await repository.getById(uidA, pending.id), null, 'web: pending submission is not a local catalog row');
-  }
-
-  // A cache refresh replaces synced rows but preserves a user's pending row.
-  await repository.replaceAll(uidA, [exercise(first.id, 'Bench Press v2'), exercise('deadlift', 'Deadlift')]);
-  if (name === 'native') {
-    assert.deepEqual(
-      (await repository.getAll(uidA)).map((record) => record.id).sort(),
-      ['bench-press', 'deadlift', 'user-curl'],
-      'native: replaceAll removes stale synced rows and preserves pending rows',
-    );
-    assert.equal((await repository.getById(uidA, pending.id))?.syncState, 'dirty');
-  } else {
-    assert.deepEqual((await repository.getAll(uidA)).map((record) => record.data), [], 'web: replaceAll remains a no-op');
   }
 
   snapshot = response([exercise(first.id, 'Bench Press v3')], 3);
@@ -176,14 +147,6 @@ async function assertRepositoryContract(name: 'native' | 'web', repository: Cata
     assert.equal((await repository.getById(uidA, pending.id)), null, 'web: refresh exposes only the direct snapshot');
     assert.deepEqual((await repository.getAll(uidB)).map((record) => record.data), snapshot.exercises, 'web: approved catalog is global across uids');
     assert.equal((await repository.getMeta(uidA))?.version, 3, 'web: refresh reads the direct snapshot version');
-  }
-
-  await repository.setMeta(uidA, { version: 5, exerciseCount: 9 });
-  if (name === 'native') {
-    assert.equal((await repository.getMeta(uidA))?.version, 5, 'native: setMeta updates the local version');
-    assert.equal((await repository.getMeta(uidA))?.exerciseCount, 9);
-  } else {
-    assert.equal((await repository.getMeta(uidA))?.version, 3, 'web: setMeta does not shadow direct metadata');
   }
 
   // Invalid server snapshots are rejected by native before they can replace a

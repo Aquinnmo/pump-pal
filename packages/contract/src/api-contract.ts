@@ -231,6 +231,7 @@ export type WorkoutDTO = z.infer<typeof workoutDTO>;
 
 // -------------------------------------------------------------------- catalog
 
+// Describes catalog exercise variations on the wire; intentionally differs from mobile TrackingMode, which describes performed-set entry.
 export const TRACKING_MODES = ['reps_weight', 'reps_bodyweight', 'duration', 'distance'] as const;
 export const trackingMode = z.enum(TRACKING_MODES);
 

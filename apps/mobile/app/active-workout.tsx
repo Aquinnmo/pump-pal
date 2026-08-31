@@ -6,13 +6,12 @@ import { FocusView } from "@/ui/workout/focus-view";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
 import { triggerSyncAfterWrite } from "@/data/sync-trigger";
-import { isSplitOption } from "@/constants/split-options";
-import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { useAIQuota } from "@/lib/use-ai-quota";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
+import { loadSplitNames } from "@/lib/split-names";
 import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
@@ -47,12 +46,10 @@ import {
   requestNotificationPermission,
 } from "@/lib/workout-notification";
 import {
-  generateSplitWorkoutNames,
   suggestedExercisesToDraftRows,
   suggestWorkoutCompletion,
 } from "@/lib/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -270,33 +267,7 @@ export default function ActiveWorkoutScreen() {
         const data = profile?.data;
         const splitType = data?.workoutSplit?.type;
         setSplitType(splitType ?? "");
-        const customSplitDesc: string = data?.workoutSplit?.custom ?? "";
-        let splitNames: string[] = isSplitOption(splitType)
-          ? SPLIT_WORKOUT_NAMES[splitType]
-          : [];
-
-        if (splitType === "Other" && customSplitDesc) {
-          const cacheKey = `pumppal_split_names_v2_${customSplitDesc.trim().toLowerCase().replace(/\s+/g, "_").slice(0, 60)}`;
-          const cached = await AsyncStorage.getItem(cacheKey);
-          if (cached) {
-            try {
-              splitNames = JSON.parse(cached);
-            } catch {
-              /* ignore */
-            }
-          } else {
-            try {
-              const generated =
-                await generateSplitWorkoutNames(customSplitDesc);
-              if (generated.length > 0) {
-                splitNames = generated;
-                await AsyncStorage.setItem(cacheKey, JSON.stringify(generated));
-              }
-            } catch {
-              /* silently fall through to used names */
-            }
-          }
-        }
+        const splitNames = await loadSplitNames(user.uid);
 
         const merged = [...splitNames];
         const historyData = (await workoutRepository.getHistory(user.uid)).map((record) => record.data);
