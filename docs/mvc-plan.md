@@ -194,14 +194,14 @@ Add a comment at `TRACKING_MODES` (`packages/contract/src/api-contract.ts` ~L309
 
 1. `git mv apps/mobile/src/ui apps/mobile/src/views`
 2. ```
-   rg -l -e '@/views/' -e 'src/views/' apps/mobile CLAUDE.md docs \
-     | xargs sed -i '' -e 's|@/views/|@/views/|g' -e 's|src/views/|src/views/|g'
+   rg -l -e '@/ui/' -e 'src/ui/' apps/mobile CLAUDE.md docs \
+     | xargs sed -i '' -e 's|@/ui/|@/views/|g' -e 's|src/ui/|src/views/|g'
    ```
    (No tools script references `src/ui` — verified.)
 
 ### Verify
 
-- `rg -n "@/views/|src/views/" apps/mobile CLAUDE.md docs --glob '!graphify-out'` → zero.
+- `rg -n "@/ui/|src/ui/" apps/mobile CLAUDE.md docs --glob '!graphify-out'` → zero.
 - `rg -n "mock.module\(new URL" apps/mobile | rg "src/ui"` → zero.
 - Standard command list (the 34 `tests/ui/*.test.tsx` dynamic imports prove resolution).
 
