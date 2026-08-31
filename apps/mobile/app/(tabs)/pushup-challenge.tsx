@@ -1,11 +1,6 @@
-import { pushupRepository } from '@/models/pushup-repository';
-import { triggerSyncAfterWrite } from '@/models/sync-trigger';
-import { useAuth } from '@/context/auth-context';
-import { useDataVersion } from '@/hooks/use-data-version';
+import { usePushupChallenge } from '@/controllers/use-pushup-challenge';
 import { getDailyName } from '@/models/daily-name';
-import { toDateKey } from '@/lib/date-key';
-import { syncStreakReminders } from '@/lib/streak-notification';
-import { dayNumberOn } from '@/lib/streak-schedule';
+import { buildTimeline, isStreakAlive } from '@/models/pushup-timeline';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';
@@ -23,18 +18,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-
-interface ChallengeDay {
-  date: string;       // YYYY-MM-DD
-  dayNumber: number;  // 1-indexed day in the challenge
-  completedAt: string; // ISO timestamp
-}
-
-interface ChallengeData {
-  startDate: string;
-  days: ChallengeDay[];
-  longestStreak: number;
-}
 
 const NODE_DOT = 30;
 const RED = '#e54242';
@@ -56,87 +39,6 @@ function formatDate(dateStr: string): string {
 function formatTime(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-/**
- * Build the list of nodes to render.
- * Returns every day from startDate up to today, annotated with completion info.
- */
-function buildTimeline(data: ChallengeData | null): Array<{
-  date: string;
-  dayNumber: number;
-  completed: boolean;
-  completedAt: string | null;
-  isToday: boolean;
-}> {
-  if (!data) return [];
-
-  const completionMap = new Map<string, ChallengeDay>();
-  for (const day of data.days) {
-    completionMap.set(day.date, day);
-  }
-
-  const today = toDateKey(new Date());
-  const nodes: Array<{
-    date: string;
-    dayNumber: number;
-    completed: boolean;
-    completedAt: string | null;
-    isToday: boolean;
-  }> = [];
-
-  const cursor = new Date(data.startDate + 'T00:00:00');
-  const todayDate = new Date(today + 'T00:00:00');
-  let dayNum = 1;
-
-  while (cursor <= todayDate) {
-    const key = toDateKey(cursor);
-    const entry = completionMap.get(key);
-    nodes.push({
-      date: key,
-      dayNumber: dayNum,
-      completed: !!entry,
-      completedAt: entry?.completedAt ?? null,
-      isToday: key === today,
-    });
-    dayNum++;
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
-  return nodes;
-}
-
-/**
- * Determine if the streak is still alive.
- * The streak is alive if every day before today has been completed.
- * (Today can be incomplete — it's the current day.)
- */
-function isStreakAlive(nodes: ReturnType<typeof buildTimeline>): boolean {
-  for (const n of nodes) {
-    if (n.isToday) continue;
-    if (!n.completed) return false;
-  }
-  return true;
-}
-
-/**
- * Compute current consecutive streak length (from day 1).
- */
-function currentStreakLength(data: ChallengeData | null): number {
-  if (!data) return 0;
-  const sorted = [...data.days].sort((a, b) => a.date.localeCompare(b.date));
-  let streak = 0;
-  const cursor = new Date(data.startDate + 'T00:00:00');
-  for (let i = 0; i < sorted.length; i++) {
-    const key = toDateKey(cursor);
-    if (sorted[i].date === key) {
-      streak++;
-      cursor.setDate(cursor.getDate() + 1);
-    } else {
-      break;
-    }
-  }
-  return streak;
 }
 
 /* ─── Swipe-to-complete slider ─── */
@@ -269,12 +171,16 @@ function SwipeComplete({ label, onUndo }: { label: string; onUndo: () => void })
 }
 
 export default function PushupChallengeScreen() {
-  const { user } = useAuth();
-  const dataVersion = useDataVersion();
-  const [data, setData] = useState<ChallengeData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loaded, setLoaded] = useState(false); // last read succeeded
-  const [saving, setSaving] = useState(false);
+  const {
+    data,
+    loading,
+    saving,
+    restarting,
+    completeToday,
+    restart,
+    startChallenge,
+    undoToday,
+  } = usePushupChallenge();
   const scrollRef = useRef<ScrollView>(null);
   const [scrollViewH, setScrollViewH] = useState(0);
   const [todayNodeY, setTodayNodeY] = useState<number | null>(null);
@@ -287,10 +193,6 @@ export default function PushupChallengeScreen() {
   const undoAnim = useRef(new Animated.Value(0)).current;
   const [undoingToday, setUndoingToday] = useState(false);
   const [dailyName, setDailyName] = useState<string | null>(null);
-  // Restart shows the intro screen again instead of writing straight away, so
-  // nothing is destroyed until the user taps Start Challenge.
-  const [restarting, setRestarting] = useState(false);
-
   // Ember particle animation values (connector fire)
   const emberData = useRef(
     [
@@ -416,76 +318,16 @@ export default function PushupChallengeScreen() {
     setTodayNodeY(null);
   }, [data?.startDate]);
 
-  // Keep the 6 PM / 10 PM streak reminders in sync with challenge state.
-  // Every write path (start / complete / undo / reset / load) ends in setData,
-  // so this one effect covers them all.
-  useEffect(() => {
-    // Don't sync on a pending or failed load: a null `data` from an offline
-    // read would cancel the reminders of a challenge that still exists.
-    if (loading || !loaded) return;
-    const nodes = buildTimeline(data);
-    syncStreakReminders({
-      active: !!data && isStreakAlive(nodes),
-      todayCompleted: nodes.some((n) => n.isToday && n.completed),
-      startDate: data?.startDate ?? null,
-    }).catch((e) => console.error('Failed to sync streak reminders', e));
-  }, [data, loading, loaded]);
-
-  const load = useCallback(async () => {
-    void dataVersion; // refetch trigger, not data — see src/hooks/use-data-version.ts
-    if (!user) return;
-    try {
-      const [stored, name] = await Promise.all([pushupRepository.get(user.uid), getDailyName()]);
-      setData((stored?.data as ChallengeData | undefined) ?? null);
-      setDailyName(name);
-      setLoaded(true);
-    } catch (e) {
-      setLoaded(false);
-      console.error('Failed to load pushup challenge', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, dataVersion]);
-
   useFocusEffect(
     useCallback(() => {
       setScrollTrigger((v) => v + 1);
-      load();
-    }, [load]),
+      void getDailyName().then(setDailyName);
+    }, []),
   );
 
-  const startChallenge = async () => {
-    if (!user) return;
-    const today = toDateKey(new Date());
-    const prev = data?.longestStreak ?? 0;
-    const newData: ChallengeData = { startDate: today, days: [], longestStreak: prev };
-    await pushupRepository.upsert(user.uid, newData);
-    triggerSyncAfterWrite();
-    setData(newData);
-    setRestarting(false);
-  };
-
   const completeTodayPushups = async () => {
-    if (!user || !data) return;
-    setSaving(true);
+    if (!data) return;
     try {
-      const today = toDateKey(new Date());
-      const alreadyDone = data.days.some((d) => d.date === today);
-      if (alreadyDone) return;
-
-      const dayNumber = dayNumberOn(data.startDate, new Date());
-
-      const newDays = [
-        ...data.days,
-        { date: today, dayNumber, completedAt: new Date().toISOString() },
-      ];
-      const newStreak = currentStreakLength({ ...data, days: newDays });
-      const updated: ChallengeData = {
-        ...data,
-        days: newDays,
-        longestStreak: Math.max(data.longestStreak ?? 0, newStreak),
-      };
-
       // Scroll today's node to center before the animation fires so
       // the user sees it in position before the fire starts.
       if (todayNodeY !== null && scrollViewH > 0) {
@@ -522,32 +364,19 @@ export default function PushupChallengeScreen() {
             }),
           ]).start(() => resolve());
         }),
-        pushupRepository.upsert(user.uid, updated).catch((e) => console.error('Failed to save pushup completion', e)),
+        completeToday(),
       ]);
-
-      triggerSyncAfterWrite();
-      setData(updated);
       setAnimatingCompletion(false);
-    } finally {
-      setSaving(false);
+    } catch (e) {
+      console.error('Failed to complete pushup challenge', e);
     }
   };
 
   const undoTodayPushups = async () => {
-    if (!user || !data) return;
-    setSaving(true);
+    if (!data) return;
     try {
-      const today = toDateKey(new Date());
-      const newDays = data.days.filter((d) => d.date !== today);
-      const updated: ChallengeData = {
-        ...data,
-        days: newDays,
-      };
-
       // Save first, then update the swipe bar/state so the UI reflects the undone state.
-      await pushupRepository.upsert(user.uid, updated).catch((e) => console.error('Failed to undo pushup completion', e));
-      triggerSyncAfterWrite();
-      setData(updated);
+      await undoToday();
 
       // Wait a frame so the swipe bar update is applied in the UI, then run the fade animation.
       await new Promise((res) => requestAnimationFrame(res));
@@ -567,13 +396,12 @@ export default function PushupChallengeScreen() {
     } finally {
       setUndoingToday(false);
       undoAnim.setValue(0);
-      setSaving(false);
     }
   };
 
   // Send the user back to the rules screen. The write happens in
   // startChallenge, so backing out of the intro leaves the old data intact.
-  const resetChallenge = () => setRestarting(true);
+  const resetChallenge = restart;
 
   // Reached by a push from the Social tab, so every state needs a way back.
   const backButton = (
