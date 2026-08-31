@@ -1,6 +1,6 @@
 import { Injury } from '@/types/user';
-import * as remote from '@/data/remote/injuries';
-import { listWebEntities } from '@/data/web-direct-firestore';
+import * as remote from '@/models/remote/injuries';
+import { listWebEntities } from '@/models/web-direct-firestore';
 import { toDateObj } from '@/lib/workout-conversion';
 
 export async function getOngoingInjuryIds(_uid: string): Promise<string[]> {

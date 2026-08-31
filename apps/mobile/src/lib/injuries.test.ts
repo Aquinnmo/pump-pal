@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { injuryRepository } from '@/data/injury-repository';
-import { workoutRepository } from '@/data/workout-repository';
-import type { StoredRecord } from '@/data/remote-types';
+import { injuryRepository } from '@/models/injury-repository';
+import { workoutRepository } from '@/models/workout-repository';
+import type { StoredRecord } from '@/models/remote-types';
 import type { Injury } from '@/types/user';
 import type { Workout } from '@/types/workout';
 // Keep the native source explicit at runtime: the mobile test preload maps

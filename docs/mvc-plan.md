@@ -2,7 +2,7 @@
 
 ## Context
 
-The mobile app (`apps/mobile`) has a well-built model layer (`src/data/`: repositories + offline sync, no screen touches Firestore/SQLite directly) and a fully-tested view layer (`src/ui/`), but **no controller tier**: four screens exceed 1000 lines (`analytics` 1324, `pushup-challenge` 1274, `active-workout` 1130, `modal` 1037) and hold inline business logic, state machines, and repository orchestration. There is also real duplication (a 15-line split-names block copy-pasted into three screens) and dead code (~200 lines of retired Worker-transport schemas in `packages/contract`).
+The mobile app (`apps/mobile`) has a well-built model layer (`src/models/`: repositories + offline sync, no screen touches Firestore/SQLite directly) and a fully-tested view layer (`src/ui/`), but **no controller tier**: four screens exceed 1000 lines (`analytics` 1324, `pushup-challenge` 1274, `active-workout` 1130, `modal` 1037) and hold inline business logic, state machines, and repository orchestration. There is also real duplication (a 15-line split-names block copy-pasted into three screens) and dead code (~200 lines of retired Worker-transport schemas in `packages/contract`).
 
 The user chose: **literal `src/models` / `src/views` / `src/controllers` folder layout**, plus **dedupe and dead-code deletion including dead-but-tested code** (delete the now-pointless assertions with it). Core behavior pinned by tests must not change: tests may be MOVED and their import/mock paths updated; assertions may only be DELETED when the production code they pin is deleted as dead.
 
@@ -12,16 +12,16 @@ The user chose: **literal `src/models` / `src/views` / `src/controllers` folder 
 
 - `apps/mobile/tests/setup.ts` is **layout-agnostic**: its `@/` alias resolver (L83–93) walks `<root>/src/<x>` then `<root>/<x>` generically, and `webModuleEntries(join(mobileRoot,'src'))` (L95–109, used at L134) recursively auto-registers every `*.web.ts(x)` under `src/**`. It survives any rename under `src/` — **never edit it**.
 - `tools/check-boundary-isolation.js` scans `apps/mobile/src` wholesale — layout-agnostic, never edit.
-- `tools/check-web-native-deps.js` hardcodes `src/data/*.web.ts` paths at L24–32 and **fails loud** (exit 1) on a missing entry — must be edited in the same commit as the P3 move.
-- `tools/check-direct-boundaries.js` L12 reads `apps/mobile/src/data/remote` by literal path — same commit as P3.
-- **51 mobile test files mock modules by filesystem path** (`mock.module(new URL('../../src/data/x.web.ts', import.meta.url).pathname, …)`). These mocks **fail open**: if the path no longer exists the mock silently doesn't apply and the test hits the real module. Every move phase therefore ends with a zero-stale-path grep — these greps are not optional.
+- `tools/check-web-native-deps.js` hardcodes `src/models/*.web.ts` paths at L24–32 and **fails loud** (exit 1) on a missing entry — must be edited in the same commit as the P3 move.
+- `tools/check-direct-boundaries.js` L12 reads `apps/mobile/src/models/remote` by literal path — same commit as P3.
+- **51 mobile test files mock modules by filesystem path** (`mock.module(new URL('../../src/models/x.web.ts', import.meta.url).pathname, …)`). These mocks **fail open**: if the path no longer exists the mock silently doesn't apply and the test hits the real module. Every move phase therefore ends with a zero-stale-path grep — these greps are not optional.
 - `apps/mobile/tsconfig.json` maps `@/*` → `["./src/*", "./*"]`, so `@/models`, `@/views`, `@/controllers` resolve with **no config change anywhere**.
 - Contract corrections (verified by grep — these override any earlier notes):
-  - `syncableKind`/`SYNCABLE_KINDS`/`SyncableKind` are LIVE (`apps/mobile/src/data/sync-engine.ts` imports `SYNCABLE_KINDS`; live `manifestEntry`/`pullRequest` reference `syncableKind`). KEEP.
+  - `syncableKind`/`SYNCABLE_KINDS`/`SyncableKind` are LIVE (`apps/mobile/src/models/sync-engine.ts` imports `SYNCABLE_KINDS`; live `manifestEntry`/`pullRequest` reference `syncableKind`). KEEP.
   - `createInjuryInput`/`updateInjuryInput` are LIVE (`apps/api/src/store/injuries.ts` imports their `z.infer` types). KEEP.
-- `profileFromDto`/`profilePatch`/`challengeFromDto` (private in `src/data/sync.ts`) and `dtoToWorkout` (private in `workout-repository.web.ts`) each exist exactly once — **no converter consolidation; skip it.**
+- `profileFromDto`/`profilePatch`/`challengeFromDto` (private in `src/models/sync.ts`) and `dtoToWorkout` (private in `workout-repository.web.ts`) each exist exactly once — **no converter consolidation; skip it.**
 - `getSyncCursor` stays: `sync-cursors.test.ts` uses it as the only observer of the live `setSyncCursor` write (`sync-engine.ts:398`). Deleting it deletes coverage of live code.
-- `approvedSnapshot` (`src/data/catalog-repository.ts:9–14`) and `approvedCatalog` (`src/lib/catalog-loader.ts:15–21`) enforce identical conditions — safe to unify on `approvedCatalog`.
+- `approvedSnapshot` (`src/models/catalog-repository.ts:9–14`) and `approvedCatalog` (`src/lib/catalog-loader.ts:15–21`) enforce identical conditions — safe to unify on `approvedCatalog`.
 - Analytics' local formatters (`formatDuration`/`formatPounds`/`formatSignedPounds`) are NOT duplicated elsewhere (`workout-notification-model.ts`'s private `formatDuration` has a different format). They are view formatting — leave in the screen.
 - Web `byDate` sort in `workout-repository.web.ts` deliberately re-derives SQL ORDER BY; comments acknowledge it. Leave it.
 
@@ -46,7 +46,7 @@ Ordering rationale: deletions first while paths are familiar (pure-minus diffs);
 - `apps/mobile/tests/setup.ts` — verified layout-agnostic.
 - `apps/mobile/app/**` file **locations/names** (expo-router + screen-test contract). Contents change only where P2/P6–P8 say so.
 - The `.web.ts`/`.web.tsx` twin convention — twins move together, stay adjacent, keep suffixes (pinned by 7 `*-parity.test.ts` files + `platform-adapters.test.ts`/`platform-native-adapters.test.ts`).
-- `src/data/sync-engine.ts` semantics — import-path edits only, ever.
+- `src/models/sync-engine.ts` semantics — import-path edits only, ever.
 - `firestore.rules`, `firestore.indexes.json`, `firebase.json`, `apps/api/**`, `apps/wear/**`.
 - `tools/check-boundary-isolation.js`.
 - `apps/mobile/metro.config.js`, `apps/mobile/tsconfig.json`, root/package `test` scripts.
@@ -126,12 +126,12 @@ rg -n "conflictResponse|listQuery|listResponse|listWorkoutsQuery|workoutResponse
 - `app/active-workout.tsx` L269–300: this screen also does `setSplitType(splitType ?? "")` — **keep the `profileRepository.get` and `setSplitType` lines**, replace only the names block.
 - In each file: remove now-unused imports (`SPLIT_WORKOUT_NAMES`, `isSplitOption`, `generateSplitWorkoutNames`, possibly `AsyncStorage`); add `import { loadSplitNames } from '@/lib/split-names';`.
 - Note: `loadSplitNames` re-fetches the profile internally — one extra local repository read, not a network call; accepted.
-- Safety: `loadSplitNames` reads via `@/data/profile-repository`, exactly what `tests/screens/{modal,planned-workouts,active-workout}.test.tsx` mock by path — those tests must pass **unchanged**.
+- Safety: `loadSplitNames` reads via `@/models/profile-repository`, exactly what `tests/screens/{modal,planned-workouts,active-workout}.test.tsx` mock by path — those tests must pass **unchanged**.
 
 ### 2.2 Unify the approved-catalog predicate
 
 - `src/lib/catalog-loader.ts`: `function approvedCatalog` (L15) → `export function approvedCatalog`.
-- `src/data/catalog-repository.ts`: delete `approvedSnapshot` (L9–14); in `refresh`, replace L18–22 with:
+- `src/models/catalog-repository.ts`: delete `approvedSnapshot` (L9–14); in `refresh`, replace L18–22 with:
   ```ts
   const exercises = approvedCatalog(response.exercises);
   if (!exercises)
@@ -143,16 +143,16 @@ rg -n "conflictResponse|listQuery|listResponse|listWorkoutsQuery|workoutResponse
 
 ### 2.3 Dead mobile exports
 
-- `src/data/remote-types.ts`: delete `interface LocalRepository<TEntity>`. Pre-grep `rg -n "LocalRepository" apps/mobile`; delete test-only references with it. Keep `LocalSingletonRepository` (implemented by the `.web` singleton repos).
-- `catalogRepository.replaceAll` / `setMeta`: pre-check `rg -n "replaceAll|setMeta" apps/mobile/src/data/catalog.ts` to confirm `replaceSnapshot` doesn't call them internally. Then delete:
-  - the `replaceAll`/`setMeta` methods from `src/data/catalog-repository.ts` (~L30–31, L35–36) and `src/data/catalog-repository.web.ts` (~L33, L45, and both names in the export object ~L52),
-  - `replaceAll` (~L61) and `setMeta` (~L168) from `src/data/catalog.ts`,
+- `src/models/remote-types.ts`: delete `interface LocalRepository<TEntity>`. Pre-grep `rg -n "LocalRepository" apps/mobile`; delete test-only references with it. Keep `LocalSingletonRepository` (implemented by the `.web` singleton repos).
+- `catalogRepository.replaceAll` / `setMeta`: pre-check `rg -n "replaceAll|setMeta" apps/mobile/src/models/catalog.ts` to confirm `replaceSnapshot` doesn't call them internally. Then delete:
+  - the `replaceAll`/`setMeta` methods from `src/models/catalog-repository.ts` (~L30–31, L35–36) and `src/models/catalog-repository.web.ts` (~L33, L45, and both names in the export object ~L52),
+  - `replaceAll` (~L61) and `setMeta` (~L168) from `src/models/catalog.ts`,
   - the test blocks exercising them: `catalog-repository-parity.test.ts` (`Contract` members ~L21/L24 and cases ~L117–181) and any `replaceAll`/`setMeta` cases in `catalog.test.ts`. (Sanctioned deletion: these pin only the deleted code.)
-- `getSyncCursor` in `src/data/sync-cursors.ts`: **KEEP**. Add comment: `// production never reads cursors yet; retained as the test probe for setSyncCursor`.
+- `getSyncCursor` in `src/models/sync-cursors.ts`: **KEEP**. Add comment: `// production never reads cursors yet; retained as the test probe for setSyncCursor`.
 
 ### 2.4 Purge-layer collapse (optional — skip on any friction)
 
-Move `purgeUid`'s body from `src/data/purge.ts` into its only caller `purgeUidData` in `src/data/client.ts` (move the `UID_SCOPED_TABLES` import too), delete `purge.ts`, fix the doc reference at `remote-types.ts` L27. `client.web.ts` stub unchanged.
+Move `purgeUid`'s body from `src/models/purge.ts` into its only caller `purgeUidData` in `src/models/client.ts` (move the `UID_SCOPED_TABLES` import too), delete `purge.ts`, fix the doc reference at `remote-types.ts` L27. `client.web.ts` stub unchanged.
 
 ### 2.5 TrackingMode: document only
 
@@ -171,16 +171,16 @@ Add a comment at `TRACKING_MODES` (`packages/contract/src/api-contract.ts` ~L309
 **Branch:** `refactor/models-dir`
 
 1. `git mv apps/mobile/src/data apps/mobile/src/models`
-2. One rewrite rule (covers `@/data/` imports, relative test imports `../../src/data/…`, path-keyed `mock.module` calls, `tools/check-direct-boundaries.js` L12, `tools/check-web-native-deps.js` ENTRY_POINTS L24–32, and doc/comment references):
+2. One rewrite rule (covers `@/models/` imports, relative test imports `../../src/models/…`, path-keyed `mock.module` calls, `tools/check-direct-boundaries.js` L12, `tools/check-web-native-deps.js` ENTRY_POINTS L24–32, and doc/comment references):
    ```
-   rg -l -e '@/data/' -e 'src/data/' apps/mobile tools CLAUDE.md docs \
-     | xargs sed -i '' -e 's|@/data/|@/models/|g' -e 's|src/data/|src/models/|g'
+   rg -l -e '@/models/' -e 'src/models/' apps/mobile tools CLAUDE.md docs \
+     | xargs sed -i '' -e 's|@/models/|@/models/|g' -e 's|src/models/|src/models/|g'
    ```
 3. Nothing else. No tsconfig/setup.ts/metro changes.
 
 ### Verify
 
-- `rg -n "@/data/|src/data/" apps/mobile tools CLAUDE.md docs --glob '!graphify-out'` → zero.
+- `rg -n "@/models/|src/models/" apps/mobile tools CLAUDE.md docs --glob '!graphify-out'` → zero.
 - `rg -n "mock.module\(new URL" apps/mobile | rg "src/data"` → zero.
 - `ls apps/mobile/src/models/remote` shows 6 files; `ls apps/mobile/src/models/*.web.ts` shows the same twins as before the move.
 - Fail-open canary: `node -e "require('fs').accessSync('apps/mobile/src/models/profile-repository.web.ts')"`.
@@ -326,7 +326,7 @@ Template: pure derivations → new `src/models/<x>.ts` + colocated test; the `us
 
 ## Verification summary (how to know the whole thing worked)
 
-Per phase: `bun run typecheck && bun run test && bun run lint` + that phase's greps, all green, screen tests unedited (except sanctioned deletions in P1/P2). End state: `src/models` (data + domain logic), `src/views` (components), `src/controllers` (per-screen hooks), `src/lib` (transport + platform adapters + utils only), `app/` thin. `rg -n "@/data/|@/ui/" apps/mobile` → zero. `graphify update .` run after each phase.
+Per phase: `bun run typecheck && bun run test && bun run lint` + that phase's greps, all green, screen tests unedited (except sanctioned deletions in P1/P2). End state: `src/models` (data + domain logic), `src/views` (components), `src/controllers` (per-screen hooks), `src/lib` (transport + platform adapters + utils only), `app/` thin. `rg -n "@/models/|@/ui/" apps/mobile` → zero. `graphify update .` run after each phase.
 
 ## Critical files
 

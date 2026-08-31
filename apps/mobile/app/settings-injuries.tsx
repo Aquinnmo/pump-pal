@@ -1,9 +1,9 @@
 import { DateField } from '@/ui/primitives/date-field';
 import { Dropdown } from '@/ui/primitives/dropdown';
 import { Toast } from '@/ui/primitives/toast';
-import { randomId } from '@/data/id';
-import { injuryRepository } from '@/data/injury-repository';
-import { triggerSyncAfterWrite } from '@/data/sync-trigger';
+import { randomId } from '@/models/id';
+import { injuryRepository } from '@/models/injury-repository';
+import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { BODY_PARTS, BodyPart, bodyPartLabel, isBodyPart } from '@/constants/body-parts';
 import { useAuth } from '@/context/auth-context';
 import { Injury, InjurySeverity, InjurySide } from '@/types/user';

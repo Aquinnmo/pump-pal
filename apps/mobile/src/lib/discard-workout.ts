@@ -1,4 +1,4 @@
-import { workoutRepository } from '@/data/workout-repository';
+import { workoutRepository } from '@/models/workout-repository';
 import { dismissWorkoutNotification } from '@/lib/workout-notification';
 import { pushWearState } from '@/lib/wear-sync';
 import { buildWearIdleState } from '@/lib/wear-state';

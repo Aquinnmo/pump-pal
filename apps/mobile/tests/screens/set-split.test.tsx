@@ -29,7 +29,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => {
       if (profileError) throw profileError;
@@ -51,11 +51,11 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
-mock.module(new URL('../../src/data/sync-trigger.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/sync-trigger.web.ts', import.meta.url).pathname, () => ({
   triggerSyncAfterWrite: () => syncCalls.push('trigger-sync'),
 }));
 
-mock.module(new URL('../../src/data/initial-sync.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/initial-sync.ts', import.meta.url).pathname, () => ({
   notifyAccountDataChanged: () => syncCalls.push('account-data-changed'),
 }));
 

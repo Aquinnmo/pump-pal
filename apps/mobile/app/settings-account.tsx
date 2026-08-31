@@ -1,11 +1,11 @@
 import { Toast } from "@/ui/primitives/toast";
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
-import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/data/account-data";
-import { profileRepository } from "@/data/profile-repository";
+import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/models/account-data";
+import { profileRepository } from "@/models/profile-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
 import { endSession } from "@/lib/active-workout-session";
-import { deleteAccountData } from "@/data/remote/account";
+import { deleteAccountData } from "@/models/remote/account";
 import { getFriendlyAuthError } from "@/lib/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";

@@ -21,12 +21,12 @@ const FORBIDDEN_PACKAGES = [
 ];
 
 const ENTRY_POINTS = [
-  'src/data/client.web.ts',
-  'src/data/workout-repository.web.ts',
-  'src/data/profile-repository.web.ts',
-  'src/data/pushup-repository.web.ts',
-  'src/data/catalog-repository.web.ts',
-  'src/data/sync-trigger.web.ts',
+  'src/models/client.web.ts',
+  'src/models/workout-repository.web.ts',
+  'src/models/profile-repository.web.ts',
+  'src/models/pushup-repository.web.ts',
+  'src/models/catalog-repository.web.ts',
+  'src/models/sync-trigger.web.ts',
   // Real app entry points that load on web too (Metro resolves their .ts
   // imports to .web.ts siblings automatically, same as ENTRY_POINTS above).
   'src/context/auth-context.tsx',

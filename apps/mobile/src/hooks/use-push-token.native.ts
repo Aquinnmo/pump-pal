@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
-import { patchProfile } from '@/data/remote/profile';
+import { patchProfile } from '@/models/remote/profile';
 
 /**
  * Registers this device's Expo push token on `users/{uid}.expoPushToken`, so

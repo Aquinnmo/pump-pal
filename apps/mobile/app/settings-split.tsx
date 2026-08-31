@@ -1,7 +1,7 @@
 import { Dropdown } from '@/ui/primitives/dropdown';
 import { Toast } from '@/ui/primitives/toast';
-import { profileRepository } from '@/data/profile-repository';
-import { triggerSyncAfterWrite } from '@/data/sync-trigger';
+import { profileRepository } from '@/models/profile-repository';
+import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/lib/alert';

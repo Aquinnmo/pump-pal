@@ -1,4 +1,4 @@
-import { randomId } from '@/data/id';
+import { randomId } from '@/models/id';
 import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, RecentExercise, Workout } from '@/types/workout';
 
 // Client-only unique id for a draft row (React key + drag identity). Only needs

@@ -3,7 +3,7 @@ import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { useEffect } from 'react';
 import { makeWorkout } from '@/tests/factories';
-import { bumpDataVersion } from '@/data/data-version';
+import { bumpDataVersion } from '@/models/data-version';
 import { endSession, startSession } from '@/lib/active-workout-session';
 import type { Workout } from '@/types/workout';
 
@@ -63,7 +63,7 @@ mock.module('@/context/auth-context', () => ({
     logOut: async () => {},
   }),
 }));
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => ({
       id: 'profile',
@@ -78,7 +78,7 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
     }),
   },
 }));
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getHistory: async () => {
       historyCalls += 1;

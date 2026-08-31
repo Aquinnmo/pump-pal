@@ -86,7 +86,7 @@ Expo Router (file-based routing, typed routes), TypeScript, React 19 / React Nat
 ```
 apps/mobile/app/        expo-router routes (name is fixed by the router)
 apps/mobile/src/ui/     components; src/ui/primitives/ holds the low-level ones
-apps/mobile/src/data/   local SQLite + repositories; src/data/remote/ is the API-backed side
+apps/mobile/src/models/   local SQLite + repositories; src/models/remote/ is the API-backed side
 apps/mobile/src/lib/    non-UI helpers
 apps/mobile/src/{hooks,context,constants,types,config}/
 apps/mobile/{assets,modules,plugins,targets,widgets}/   must stay at the package root
@@ -144,7 +144,7 @@ The `API_ALLOWED_ORIGINS` allowlist is required for any browser caller: the web 
 
 ### Firestore security rules
 
-`firestore.rules` (wired up by `firebase.json`) is the source of truth; deploy with `npx firebase-tools@latest deploy --only firestore:rules`. Composite indexes are a **separate deploy target** — `npx firebase-tools@latest deploy --only firestore:indexes` — and any new direct client query combining a `where` with an `orderBy` on another field needs an entry in `firestore.indexes.json` first, or Firestore answers `400 FAILED_PRECONDITION` (see [docs/data-model/README.md](docs/data-model/README.md)). `exercises`, `exerciseCatalogMeta`, and `random` are client-read-only, and `users/{uid}.aiUsage` cannot be written by the client. On `users/{uid}` the client may write exactly two fields — `workoutSplit` and `aiEnabled` — and both the rules and `directProfilePatchInput` enforce that list; widening it means touching `firestore.rules`, the contract schema, and the `updateMask` in `apps/mobile/src/data/firestore-sync-remote.ts`'s `profile.write`.
+`firestore.rules` (wired up by `firebase.json`) is the source of truth; deploy with `npx firebase-tools@latest deploy --only firestore:rules`. Composite indexes are a **separate deploy target** — `npx firebase-tools@latest deploy --only firestore:indexes` — and any new direct client query combining a `where` with an `orderBy` on another field needs an entry in `firestore.indexes.json` first, or Firestore answers `400 FAILED_PRECONDITION` (see [docs/data-model/README.md](docs/data-model/README.md)). `exercises`, `exerciseCatalogMeta`, and `random` are client-read-only, and `users/{uid}.aiUsage` cannot be written by the client. On `users/{uid}` the client may write exactly two fields — `workoutSplit` and `aiEnabled` — and both the rules and `directProfilePatchInput` enforce that list; widening it means touching `firestore.rules`, the contract schema, and the `updateMask` in `apps/mobile/src/models/firestore-sync-remote.ts`'s `profile.write`.
 
 ### Theming
 

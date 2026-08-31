@@ -12,7 +12,7 @@ let generationError: unknown = null;
 // Both dependencies are seams of this resolver. Mocking them before the
 // dynamic import keeps these tests deterministic and avoids a network/Firebase
 // request while still exercising loadSplitNames itself.
-mock.module(new URL('../data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: { get: async () => currentProfile },
 }));
 mock.module('@/lib/workout-suggestions', () => ({

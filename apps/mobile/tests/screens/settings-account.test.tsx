@@ -37,7 +37,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => {
       if (holdProfile) await new Promise<void>((resolve) => { resolveProfile = resolve; });
@@ -56,7 +56,7 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
-mock.module(new URL('../../src/data/account-data.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/account-data.web.ts', import.meta.url).pathname, () => ({
   countPendingSync: async () => 0,
   syncBeforeSignOut: async () => undefined,
   purgeLocalAccountData: async () => {
@@ -65,7 +65,7 @@ mock.module(new URL('../../src/data/account-data.web.ts', import.meta.url).pathn
   },
 }));
 
-mock.module(new URL('../../src/data/remote/account.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/remote/account.ts', import.meta.url).pathname, () => ({
   deleteAccountData: async () => {
     events.push('delete-account-data');
     if (accountDataError) throw accountDataError;

@@ -1,7 +1,7 @@
 import { Toast } from "@/ui/primitives/toast";
-import { bumpDataVersion } from "@/data/data-version";
-import { profileRepository } from "@/data/profile-repository";
-import { patchProfile } from "@/data/remote/profile";
+import { bumpDataVersion } from "@/models/data-version";
+import { profileRepository } from "@/models/profile-repository";
+import { patchProfile } from "@/models/remote/profile";
 import { isValidUsername } from "@timber/contract/username";
 import { useAuth } from "@/context/auth-context";
 import { ApiValidationError } from "@/lib/api-client";

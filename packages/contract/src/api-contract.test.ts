@@ -302,7 +302,7 @@ assert.equal(manifestEntry.safeParse({ kind: 'workout', id: 'w1', version: 'v1' 
 // The profile allowlist is duplicated at three boundaries. Keep the test
 // source-relative so it runs from either the workspace root or this package.
 const rulesText = readFileSync(new URL('../../../firestore.rules', import.meta.url), 'utf8');
-const remoteText = readFileSync(new URL('../../../apps/mobile/src/data/firestore-sync-remote.ts', import.meta.url), 'utf8');
+const remoteText = readFileSync(new URL('../../../apps/mobile/src/models/firestore-sync-remote.ts', import.meta.url), 'utf8');
 const ownerFields = ['aiEnabled', 'socialEnabled', 'workoutSplit'];
 assert.deepEqual(Object.keys(directProfilePatchInput.shape).filter((key) => key !== 'baseVersion').sort(), ownerFields);
 const rulesAllowlist = rulesText.match(/affectedKeys\(\)\.hasOnly\(\[([^\]]+)\]\)/)?.[1]

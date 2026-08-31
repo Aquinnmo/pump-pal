@@ -9,7 +9,7 @@ const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
 
 const root = join(__dirname, '..');
-const mobileRemote = (name) => readFileSync(join(root, 'apps/mobile/src/data/remote', name), 'utf8');
+const mobileRemote = (name) => readFileSync(join(root, 'apps/mobile/src/models/remote', name), 'utf8');
 const worker = readFileSync(join(root, 'apps/api/src/worker.ts'), 'utf8');
 const failures = [];
 

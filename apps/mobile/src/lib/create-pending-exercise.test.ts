@@ -8,7 +8,7 @@ let pendingError: Error | null = null;
 const pendingCalls: PendingCall[] = [];
 let pendingAttempts = 0;
 
-mock.module(new URL('../data/catalog-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../models/catalog-repository.web.ts', import.meta.url).pathname, () => ({
   catalogRepository: {
     createPending: async (requestedUid: string, exercise: CatalogExercise) => {
       pendingAttempts += 1;

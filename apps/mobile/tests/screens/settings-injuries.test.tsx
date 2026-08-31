@@ -25,7 +25,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/data/injury-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/injury-repository.web.ts', import.meta.url).pathname, () => ({
   injuryRepository: {
     getAll: async () => {
       if (holdLoad) await new Promise<void>((resolve) => { resolveLoad = resolve; });
@@ -44,7 +44,7 @@ mock.module(new URL('../../src/data/injury-repository.web.ts', import.meta.url).
   },
 }));
 
-mock.module(new URL('../../src/data/sync-trigger.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/sync-trigger.ts', import.meta.url).pathname, () => ({
   triggerSyncAfterWrite: () => undefined,
 }));
 

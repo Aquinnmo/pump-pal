@@ -53,7 +53,7 @@ Firestore rules or the outbox/sync layer directly. A rename deletes the old
 `users/{uid}` update, so the three writes succeed or fail together.
 
 Sign-up (manual and Google OAuth) and Settings → Account → Username all reach
-this through `PATCH /api/profile` (`apps/mobile/src/data/remote/profile.ts`'s
+this through `PATCH /api/profile` (`apps/mobile/src/models/remote/profile.ts`'s
 `patchProfile`). A unique username has to be confirmed by the server before
 the UI can call it saved. After that response, native updates its local profile
 snapshot as already-synced state with the returned version and creates no
@@ -147,7 +147,7 @@ inline, resolve, apply-to-history, or remove.
 Sign-up (`PATCH /api/profile` with `{ username }`, from `apps/mobile/app/(auth)/sign-up.tsx`
 or the forced `apps/mobile/app/set-username.tsx` screen for Google OAuth) now creates this
 doc immediately, ahead of `set-split`. `apps/mobile/app/_layout.tsx`'s gating logic
-(`apps/mobile/src/data/initial-sync.ts`'s `decideAccountBootstrap`) checks username before split
+(`apps/mobile/src/models/initial-sync.ts`'s `decideAccountBootstrap`) checks username before split
 — `{ state: 'onboarding', step: 'username' | 'split' }` — routing to
 `/set-username` first, then `/set-split`, when either is missing. Code reading
 this doc must still handle non-existence (a user can be authenticated with

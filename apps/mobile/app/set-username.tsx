@@ -1,8 +1,8 @@
 import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/ui/timber-auth-shell';
-import { bumpDataVersion } from '@/data/data-version';
-import { notifyAccountDataChanged } from '@/data/initial-sync';
-import { profileRepository } from '@/data/profile-repository';
-import { patchProfile } from '@/data/remote/profile';
+import { bumpDataVersion } from '@/models/data-version';
+import { notifyAccountDataChanged } from '@/models/initial-sync';
+import { profileRepository } from '@/models/profile-repository';
+import { patchProfile } from '@/models/remote/profile';
 import { isValidUsername, slugifyUsername } from '@timber/contract/username';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/lib/alert';

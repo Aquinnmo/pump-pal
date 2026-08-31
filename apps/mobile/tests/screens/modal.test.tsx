@@ -27,12 +27,12 @@ const record = (data: Workout) => ({
 mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ user, loading: false }),
 }));
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => ({ data: {} }),
   },
 }));
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getHistory: async () => (storedWorkout ? [record(storedWorkout)] : []),
     getById: async (_uid: string, id: string) => {
@@ -50,7 +50,7 @@ mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url)
     },
   },
 }));
-mock.module('@/data/sync-trigger', () => ({ triggerSyncAfterWrite: () => undefined }));
+mock.module('@/models/sync-trigger', () => ({ triggerSyncAfterWrite: () => undefined }));
 mock.module('@/lib/alert', () => ({ showAlert: (title: string, message?: string) => alertCalls.push([title, message]) }));
 const injuriesMock = () => ({
   getOngoingInjuryIds: async () => [],

@@ -1,4 +1,4 @@
-import { getAIQuota } from '@/data/remote/ai-quota';
+import { getAIQuota } from '@/models/remote/ai-quota';
 import { getCachedRemaining, hydrateAIQuota, recordRemaining, subscribeAIQuota } from '@/lib/ai-quota-cache';
 import { isAIEnabled } from '@/lib/ai-enabled';
 import { useAuth } from '@/context/auth-context';

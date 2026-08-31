@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { mock } from 'bun:test';
-import type { StoredRecord } from '@/data/remote-types';
+import type { StoredRecord } from '@/models/remote-types';
 import type { Workout } from '@/types/workout';
 
 const updates: Array<{ uid: string; id: string; workout: Workout }> = [];
 const softDeletes: Array<{ uid: string; id: string }> = [];
 let stale: StoredRecord<Workout>[] = [];
 
-mock.module(new URL('../data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getByStatus: async () => stale,
     update: async (uid: string, id: string, workout: Workout) => {

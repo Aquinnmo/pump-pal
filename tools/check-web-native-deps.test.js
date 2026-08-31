@@ -7,12 +7,12 @@ const { spawnSync } = require('node:child_process');
 
 const CHECKER = path.join(__dirname, 'check-web-native-deps.js');
 const ENTRY_POINTS = [
-  'src/data/client.web.ts',
-  'src/data/workout-repository.web.ts',
-  'src/data/profile-repository.web.ts',
-  'src/data/pushup-repository.web.ts',
-  'src/data/catalog-repository.web.ts',
-  'src/data/sync-trigger.web.ts',
+  'src/models/client.web.ts',
+  'src/models/workout-repository.web.ts',
+  'src/models/profile-repository.web.ts',
+  'src/models/pushup-repository.web.ts',
+  'src/models/catalog-repository.web.ts',
+  'src/models/sync-trigger.web.ts',
   'src/context/auth-context.tsx',
 ];
 
@@ -75,10 +75,10 @@ function entryPattern(prefix, entry) {
 {
   const fixtureRoot = makeFixture();
   try {
-    removeFixture(fixtureRoot, 'src/data/catalog-repository.web.ts');
+    removeFixture(fixtureRoot, 'src/models/catalog-repository.web.ts');
     const result = runChecker(fixtureRoot);
     assert.notEqual(result.status, 0, 'missing configured entry point was accepted');
-    assert.match(result.stderr, /entry point "src\/data\/catalog-repository\.web\.ts" does not exist/);
+    assert.match(result.stderr, /entry point "src\/models\/catalog-repository\.web\.ts" does not exist/);
   } finally {
     fs.rmSync(fixtureRoot, { recursive: true, force: true });
   }
@@ -89,12 +89,12 @@ function entryPattern(prefix, entry) {
 {
   const fixtureRoot = makeFixture();
   try {
-    writeFixture(fixtureRoot, 'src/data/client.web.ts', "import first from '../lib/first';\nexport default first;\n");
+    writeFixture(fixtureRoot, 'src/models/client.web.ts', "import first from '../lib/first';\nexport default first;\n");
     writeFixture(fixtureRoot, 'src/lib/first.ts', "import second from './second';\nexport default second;\n");
     writeFixture(fixtureRoot, 'src/lib/second.ts', "import sqlite from 'expo-sqlite';\nexport default sqlite;\n");
     const result = runChecker(fixtureRoot);
     assert.notEqual(result.status, 0, 'forbidden transitive import was accepted');
-    assert.match(result.stderr, /FAIL src\/data\/client\.web\.ts/);
+    assert.match(result.stderr, /FAIL src\/models\/client\.web\.ts/);
     assert.match(result.stderr, /transitively imports expo-sqlite/);
   } finally {
     fs.rmSync(fixtureRoot, { recursive: true, force: true });
@@ -106,7 +106,7 @@ function entryPattern(prefix, entry) {
 {
   const fixtureRoot = makeFixture();
   try {
-    writeFixture(fixtureRoot, 'src/data/client.web.ts', "import platform from '../lib/platform';\nexport default platform;\n");
+    writeFixture(fixtureRoot, 'src/models/client.web.ts', "import platform from '../lib/platform';\nexport default platform;\n");
     writeFixture(fixtureRoot, 'src/lib/platform.web.ts', "import sqlite from 'expo-sqlite';\nexport default sqlite;\n");
     writeFixture(fixtureRoot, 'src/lib/platform.web.tsx', 'export default {};\n');
     writeFixture(fixtureRoot, 'src/lib/platform.ts', "import sqlite from 'expo-sqlite';\nexport default sqlite;\n");
@@ -119,7 +119,7 @@ function entryPattern(prefix, entry) {
     removeFixture(fixtureRoot, 'src/lib/platform.web.tsx');
     const fallbackResult = runChecker(fixtureRoot);
     assert.notEqual(fallbackResult.status, 0, 'native fallback was not checked after web sibling removal');
-    assert.match(fallbackResult.stderr, /FAIL src\/data\/client\.web\.ts/);
+    assert.match(fallbackResult.stderr, /FAIL src\/models\/client\.web\.ts/);
   } finally {
     fs.rmSync(fixtureRoot, { recursive: true, force: true });
   }

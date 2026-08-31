@@ -1,5 +1,5 @@
 import { auth } from '@/config/firebase';
-import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/data/sync-trigger';
+import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/models/sync-trigger';
 import { clearAIQuotaCache } from '@/lib/ai-quota-cache';
 import { connectGoogleAccount as linkGoogleAccount, signInWithGoogle as googleSignIn, signOutGoogle } from '@/lib/google-sign-in';
 import { hasGoogleProvider } from '@/lib/google-account-link';
@@ -36,9 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Sign-in/bootstrap and sign-out triggers for the native sync engine
-    // (bead pump-pal-bkp.7) — a no-op on web (src/data/sync-trigger.web.ts).
+    // (bead pump-pal-bkp.7) — a no-op on web (src/models/sync-trigger.web.ts).
     // configureSyncTrigger reads the uid from this same callback rather than
-    // src/data/sync-trigger.ts importing Firebase itself.
+    // src/models/sync-trigger.ts importing Firebase itself.
     configureSyncTrigger(() => ({
       uid: auth.currentUser?.uid ?? null,
       currentUid: auth.currentUser?.uid ?? null,

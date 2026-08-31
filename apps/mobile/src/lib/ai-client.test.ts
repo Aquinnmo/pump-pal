@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { initialSyncOutcomeFromError } from '@/data/initial-sync';
+import { initialSyncOutcomeFromError } from '@/models/initial-sync';
 import { setAppCheckTokenProvider } from './app-check-token';
 
 type TestUser = {
@@ -67,7 +67,7 @@ plugin({
   },
 });
 
-const { profileRepository } = await import('@/data/profile-repository');
+const { profileRepository } = await import('@/models/profile-repository');
 const originalProfileGet = profileRepository.get;
 profileRepository.get = async () => {
   events.push('ai-enabled');

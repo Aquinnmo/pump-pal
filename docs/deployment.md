@@ -60,8 +60,8 @@ origin. The former Vercel API project is obsolete.
    ```bash
    bun run test:contract
    bun run test:api
-   bun apps/mobile/src/data/firestore-sync-remote.test.ts
-   bun apps/mobile/src/data/sync-engine.test.ts
+   bun apps/mobile/src/models/firestore-sync-remote.test.ts
+   bun apps/mobile/src/models/sync-engine.test.ts
    bun run test:firestore-rules
    bun run check:direct-boundaries
    ```

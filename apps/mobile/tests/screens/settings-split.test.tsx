@@ -27,7 +27,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => {
       if (holdProfile) await new Promise<void>((resolve) => { releaseProfile = resolve; });
@@ -49,7 +49,7 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
-mock.module(new URL('../../src/data/sync-trigger.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/sync-trigger.web.ts', import.meta.url).pathname, () => ({
   triggerSyncAfterWrite: () => syncCalls.push('trigger-sync'),
 }));
 

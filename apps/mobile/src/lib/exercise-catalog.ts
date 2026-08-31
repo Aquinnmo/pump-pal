@@ -1,5 +1,5 @@
 import { auth } from '@/config/firebase';
-import { catalogRepository } from '@/data/catalog-repository';
+import { catalogRepository } from '@/models/catalog-repository';
 import { CatalogExercise, ExerciseSearchOption } from '@/types/workout';
 import { createCatalogLoader } from './catalog-loader';
 import AsyncStorage from '@react-native-async-storage/async-storage';

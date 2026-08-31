@@ -28,7 +28,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => ({
       id: 'profile',
@@ -46,7 +46,7 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getHistory: async () => {
       if (workoutError) throw workoutError;

@@ -1,4 +1,4 @@
-import { workoutRepository } from '@/data/workout-repository';
+import { workoutRepository } from '@/models/workout-repository';
 import { Workout } from '@/types/workout';
 import { predictNextWorkoutName } from '@/lib/predict-next-workout';
 import { loadSplitNames } from '@/lib/split-names';

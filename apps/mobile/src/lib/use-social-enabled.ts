@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/auth-context';
-import { profileRepository } from '@/data/profile-repository';
+import { profileRepository } from '@/models/profile-repository';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { useEffect, useState } from 'react';
 

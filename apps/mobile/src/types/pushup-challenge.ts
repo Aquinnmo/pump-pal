@@ -1,5 +1,5 @@
 // Promoted out of app/(tabs)/pushup-challenge.tsx (where it was previously
-// defined inline) so the local repository (src/data/pushup-repository.ts) has a
+// defined inline) so the local repository (src/models/pushup-repository.ts) has a
 // shared type to store/retrieve without importing from a screen component.
 // Shape unchanged — see docs/data-model/pushup-challenge.md.
 export type ChallengeDay = {

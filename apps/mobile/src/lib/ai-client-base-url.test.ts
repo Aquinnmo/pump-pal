@@ -39,7 +39,7 @@ plugin({
   },
 });
 
-const { profileRepository } = await import('@/data/profile-repository');
+const { profileRepository } = await import('@/models/profile-repository');
 const originalProfileGet = profileRepository.get;
 profileRepository.get = async () => {
   events.push('ai-enabled');

@@ -17,12 +17,12 @@ const historyCalls: string[] = [];
 mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ user, loading: false }),
 }));
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => ({ data: { aiEnabled: false } }),
   },
 }));
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getHistory: async (uid: string) => {
       historyCalls.push(uid);

@@ -1,4 +1,4 @@
-import { profileRepository } from '@/data/profile-repository';
+import { profileRepository } from '@/models/profile-repository';
 
 /**
  * The account's AI opt-in (`users/{uid}.aiEnabled`).

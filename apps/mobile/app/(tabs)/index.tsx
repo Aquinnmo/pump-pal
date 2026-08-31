@@ -1,5 +1,5 @@
-import { profileRepository } from '@/data/profile-repository';
-import { workoutRepository } from '@/data/workout-repository';
+import { profileRepository } from '@/models/profile-repository';
+import { workoutRepository } from '@/models/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';

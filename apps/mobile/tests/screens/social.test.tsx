@@ -29,12 +29,12 @@ const chopCalls: Array<{ uid: string; today: string }> = [];
 mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ user, loading: false }),
 }));
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => (profileData ? { data: profileData } : null),
   },
 }));
-mock.module(new URL('../../src/data/remote/buddies.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/remote/buddies.ts', import.meta.url).pathname, () => ({
   getBuddies: async (today: string) => {
     getBuddiesCalls.push(today);
     if (holdLoad) {

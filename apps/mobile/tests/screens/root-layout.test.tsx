@@ -26,7 +26,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   useAuth: () => testGlobal.__rootLayoutAuth ?? { user: null, loading: false },
 }));
 
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => {
       testGlobal.__rootLayoutProfileGets = (testGlobal.__rootLayoutProfileGets ?? 0) + 1;
@@ -36,7 +36,7 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getByStatus: async () => [],
   },
@@ -215,7 +215,7 @@ describe('root layout account redirect wiring', () => {
     assert.deepEqual(testGlobal.__rootLayoutReplacements, []);
 
     testGlobal.__rootLayoutProfile = profile({ username: 'adam', split: 'Push / Pull / Legs' });
-    const { notifyAccountDataChanged } = await import('../../src/data/initial-sync');
+    const { notifyAccountDataChanged } = await import('../../src/models/initial-sync');
     await act(async () => {
       notifyAccountDataChanged();
     });

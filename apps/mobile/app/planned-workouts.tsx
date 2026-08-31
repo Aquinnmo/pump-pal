@@ -1,5 +1,5 @@
-import { workoutRepository } from '@/data/workout-repository';
-import { triggerSyncAfterWrite } from '@/data/sync-trigger';
+import { workoutRepository } from '@/models/workout-repository';
+import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { Workout } from '@/types/workout';
 import { showAlert } from '@/lib/alert';

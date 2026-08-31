@@ -4,7 +4,7 @@ import {
   getBuddies,
   searchUsers,
   sendBuddyRequest,
-} from "@/data/remote/buddies";
+} from "@/models/remote/buddies";
 import { toDateKey } from "@/lib/date-key";
 import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
@@ -32,7 +32,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
  *
  * Nothing here reads Firestore directly — `firestore.rules` denies every
  * cross-user read, so the whole screen is backed by `/api/buddies` (see
- * src/data/remote/buddies.ts).
+ * src/models/remote/buddies.ts).
  */
 
 const CHOP_COOLDOWN_MS = 5 * 60 * 1000;

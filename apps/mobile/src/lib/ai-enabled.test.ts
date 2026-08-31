@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import type { StoredRecord } from '@/data/remote-types';
+import type { StoredRecord } from '@/models/remote-types';
 import type { UserDoc } from '@/types/user';
 
 type Profile = StoredRecord<UserDoc> | null;
@@ -20,7 +20,7 @@ function profile(data: UserDoc): StoredRecord<UserDoc> {
 }
 
 const { isAIEnabled } = await import('./ai-enabled');
-const { profileRepository } = await import('@/data/profile-repository');
+const { profileRepository } = await import('@/models/profile-repository');
 const originalGet = profileRepository.get;
 profileRepository.get = async () => {
   readCalls += 1;

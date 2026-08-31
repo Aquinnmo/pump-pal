@@ -31,10 +31,10 @@ function record(data: Workout) {
 mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathname, () => ({
   useAuth: () => ({ user, loading: false }),
 }));
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: { get: async () => ({ data: { workoutSplit: { type: 'Push / Pull / Legs', custom: null } } }) },
 }));
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getByStatus: async () => {
       if (holdLoad) await new Promise<void>((resolve) => { releaseLoad = resolve; });
@@ -46,7 +46,7 @@ mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url)
     softDelete: async (_uid: string, id: string) => deleted.push(id),
   },
 }));
-mock.module(new URL('../../src/data/sync-trigger.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/sync-trigger.ts', import.meta.url).pathname, () => ({
   triggerSyncAfterWrite: () => undefined,
 }));
 mock.module('@expo/vector-icons', () => ({

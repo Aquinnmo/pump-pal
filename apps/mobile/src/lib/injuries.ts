@@ -1,5 +1,5 @@
-import { injuryRepository } from '@/data/injury-repository';
-import { workoutRepository } from '@/data/workout-repository';
+import { injuryRepository } from '@/models/injury-repository';
+import { workoutRepository } from '@/models/workout-repository';
 import { Injury } from '@/types/user';
 import { toDateObj } from '@/lib/workout-conversion';
 

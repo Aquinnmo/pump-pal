@@ -83,7 +83,7 @@ mock.module('@/context/auth-context', () => ({
     logOut: async () => {},
   }),
 }));
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getById: async () => plannedRecord,
     getHistory: async () => [],
@@ -98,10 +98,10 @@ mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url)
     softDelete: async () => {},
   },
 }));
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: { get: async () => null },
 }));
-mock.module(new URL('../../src/data/web-direct-firestore.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/web-direct-firestore.ts', import.meta.url).pathname, () => ({
   invalidateWebReads: () => {},
   listWebEntities: async (_uid: string, kind: string) => {
     if (kind !== 'injury') return [];

@@ -1,6 +1,6 @@
 import { DevelopmentProgress } from '@/ui/development-progress';
 import { FadingScrollView } from '@/ui/primitives/fading-scroll-view';
-import { workoutRepository } from '@/data/workout-repository';
+import { workoutRepository } from '@/models/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import type { Workout } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';

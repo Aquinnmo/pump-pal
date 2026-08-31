@@ -1,4 +1,4 @@
-import { catalogRepository } from '@/data/catalog-repository';
+import { catalogRepository } from '@/models/catalog-repository';
 import { CatalogExercise, ExerciseRef } from '@/types/workout';
 import { slugify } from './exercise-catalog';
 

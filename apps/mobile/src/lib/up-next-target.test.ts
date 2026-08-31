@@ -12,7 +12,7 @@ let splitNames: string[] = [];
 const repositoryCalls: [string, string][] = [];
 const splitNameCalls: string[] = [];
 
-mock.module(new URL('../data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getByStatus: async (requestedUid: string, status: string) => {
       repositoryCalls.push([requestedUid, status]);

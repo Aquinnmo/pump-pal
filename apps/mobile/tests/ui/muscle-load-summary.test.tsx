@@ -17,7 +17,7 @@ mock.module(new URL('../../src/config/firebase.web.ts', import.meta.url).pathnam
   },
 }));
 
-mock.module(new URL('../../src/data/catalog-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/catalog-repository.web.ts', import.meta.url).pathname, () => ({
   catalogRepository: {
     refresh: () => refreshCatalog(),
     getAll: () => readCatalog(),

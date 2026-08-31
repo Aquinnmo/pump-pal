@@ -1,6 +1,6 @@
 import { WorkoutCard } from '@/ui/workout-card';
-import { workoutRepository } from '@/data/workout-repository';
-import { triggerSyncAfterWrite } from '@/data/sync-trigger';
+import { workoutRepository } from '@/models/workout-repository';
+import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';

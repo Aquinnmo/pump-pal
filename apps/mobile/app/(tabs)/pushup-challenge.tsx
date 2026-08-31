@@ -1,5 +1,5 @@
-import { pushupRepository } from '@/data/pushup-repository';
-import { triggerSyncAfterWrite } from '@/data/sync-trigger';
+import { pushupRepository } from '@/models/pushup-repository';
+import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { getDailyName } from '@/lib/daily-name';

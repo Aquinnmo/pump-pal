@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { randomId } from '@/data/id';
+import { randomId } from '@/models/id';
 import type { DraftExerciseRow } from '@/types/workout';
 
 // The live workout's only home while it is being edited. A module-level singleton

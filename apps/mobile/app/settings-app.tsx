@@ -1,7 +1,7 @@
 import { useAuth } from "@/context/auth-context";
-import { bumpDataVersion } from "@/data/data-version";
-import { profileRepository } from "@/data/profile-repository";
-import { workoutRepository } from "@/data/workout-repository";
+import { bumpDataVersion } from "@/models/data-version";
+import { profileRepository } from "@/models/profile-repository";
+import { workoutRepository } from "@/models/workout-repository";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
 import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { toDateObj } from "@/lib/workout-conversion";
@@ -128,7 +128,7 @@ export default function SettingsAppScreen() {
         ...existing,
         [field]: next,
       });
-      // Local writes don't bump on their own (see src/data/data-version.ts) —
+      // Local writes don't bump on their own (see src/models/data-version.ts) —
       // this is what makes every mounted screen show or hide its AI surface now
       // rather than on the next focus.
       bumpDataVersion();

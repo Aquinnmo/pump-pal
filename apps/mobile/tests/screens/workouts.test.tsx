@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { useEffect } from 'react';
-import { bumpDataVersion } from '@/data/data-version';
+import { bumpDataVersion } from '@/models/data-version';
 import { makeWorkout } from '@/tests/factories';
 import type { Workout } from '@/types/workout';
 
@@ -88,7 +88,7 @@ mock.module('@/context/auth-context', () => ({
     logOut: async () => {},
   }),
 }));
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getHistory: async () => {
       if (holdHistory) {
@@ -109,7 +109,7 @@ mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url)
     },
   },
 }));
-mock.module('@/data/sync-trigger', () => ({ triggerSyncAfterWrite: () => {} }));
+mock.module('@/models/sync-trigger', () => ({ triggerSyncAfterWrite: () => {} }));
 
 const { default: WorkoutsScreen } = await import('../../app/(tabs)/workouts');
 

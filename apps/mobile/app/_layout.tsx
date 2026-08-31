@@ -1,6 +1,6 @@
-import { profileRepository } from '@/data/profile-repository';
-import { retryInitialSync, waitForInitialSync } from '@/data/sync-trigger';
-import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError, subscribeAccountDataChanged } from '@/data/initial-sync';
+import { profileRepository } from '@/models/profile-repository';
+import { retryInitialSync, waitForInitialSync } from '@/models/sync-trigger';
+import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError, subscribeAccountDataChanged } from '@/models/initial-sync';
 import { WorkoutPrefillLoader } from '@/ui/primitives/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { getSession, loadSession } from '@/lib/active-workout-session';

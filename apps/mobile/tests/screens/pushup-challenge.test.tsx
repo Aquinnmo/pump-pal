@@ -23,7 +23,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/data/pushup-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/pushup-repository.web.ts', import.meta.url).pathname, () => ({
   pushupRepository: {
     get: async () => {
       if (loadError) throw loadError;
@@ -117,7 +117,7 @@ describe('PushupChallengeScreen', () => {
     const pending = new Promise<null>((resolve) => {
       resolveLoad = resolve;
     });
-    mock.module(new URL('../../src/data/pushup-repository.web.ts', import.meta.url).pathname, () => ({
+    mock.module(new URL('../../src/models/pushup-repository.web.ts', import.meta.url).pathname, () => ({
       pushupRepository: {
         get: () => pending,
         upsert: async () => undefined,

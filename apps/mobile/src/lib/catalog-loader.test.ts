@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type { CatalogResponse } from '@timber/contract/api';
-import type { StoredRecord } from '@/data/remote-types';
+import type { StoredRecord } from '@/models/remote-types';
 import type { CatalogExercise } from '@/types/workout';
 import { createCatalogLoader } from './catalog-loader';
 

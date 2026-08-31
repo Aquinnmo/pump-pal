@@ -1,8 +1,8 @@
 import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/ui/timber-auth-shell';
 import { Dropdown } from '@/ui/primitives/dropdown';
-import { notifyAccountDataChanged } from '@/data/initial-sync';
-import { profileRepository } from '@/data/profile-repository';
-import { triggerSyncAfterWrite } from '@/data/sync-trigger';
+import { notifyAccountDataChanged } from '@/models/initial-sync';
+import { profileRepository } from '@/models/profile-repository';
+import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { SPLIT_OPTIONS, SplitOption } from '@/constants/split-options';
 import { useAuth } from '@/context/auth-context';
 import { showAlert } from '@/lib/alert';

@@ -1,4 +1,4 @@
-import { profileRepository } from '@/data/profile-repository';
+import { profileRepository } from '@/models/profile-repository';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
 import { generateSplitWorkoutNames } from '@/lib/workout-suggestions';

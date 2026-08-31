@@ -32,7 +32,7 @@ mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ user: currentUser, loading: false }),
 }));
 
-mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getHistory: async (uid: string) => {
       historyCalls.push(uid);

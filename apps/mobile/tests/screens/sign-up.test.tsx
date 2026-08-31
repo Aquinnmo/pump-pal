@@ -47,7 +47,7 @@ mock.module(new URL('../../src/config/firebase.web.ts', import.meta.url).pathnam
   },
 }));
 
-mock.module(new URL('../../src/data/remote/profile.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/remote/profile.ts', import.meta.url).pathname, () => ({
   patchProfile: async (input: { username: string }) => {
     patchCalls.push(input);
     if (patchError) throw patchError;
@@ -55,7 +55,7 @@ mock.module(new URL('../../src/data/remote/profile.ts', import.meta.url).pathnam
   },
 }));
 
-mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: {
     get: async () => {
       if (profileError) throw profileError;
@@ -77,7 +77,7 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
-mock.module(new URL('../../src/data/data-version.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/data-version.ts', import.meta.url).pathname, () => ({
   bumpDataVersion: () => versionBumps.push('bump'),
 }));
 

@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/auth-context";
-import { workoutRepository } from "@/data/workout-repository";
+import { workoutRepository } from "@/models/workout-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
 import {

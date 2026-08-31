@@ -1,6 +1,6 @@
 import { MuscleLoadMap } from "@/ui/muscle-load-map";
 import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
-import { workoutRepository } from "@/data/workout-repository";
+import { workoutRepository } from "@/models/workout-repository";
 import { useAuth } from "@/context/auth-context";
 import type { CatalogExercise, Workout } from "@/types/workout";
 import { loadCatalog } from "@/lib/exercise-catalog";
