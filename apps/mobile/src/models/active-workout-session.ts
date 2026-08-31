@@ -4,7 +4,7 @@ import { randomId } from '@/models/id';
 import type { DraftExerciseRow } from '@/types/workout';
 
 // The live workout's only home while it is being edited. A module-level singleton
-// (mirrors src/lib/catalog-loader.ts, not React state) so it outlives the
+// (mirrors src/models/catalog-loader.ts, not React state) so it outlives the
 // active-workout screen unmounting — the user can navigate Home mid-workout and
 // come back — and is shared with the wear/notification action handlers, which must
 // apply a set even while that screen isn't mounted. It's mirrored to AsyncStorage

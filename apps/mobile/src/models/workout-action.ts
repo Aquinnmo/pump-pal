@@ -1,5 +1,5 @@
 import type { DraftExerciseRow } from '@/types/workout';
-import type { WearAction } from '@/lib/wear-state';
+import type { WearAction } from '@/models/wear-state';
 
 export type WorkoutMutationAction = Extract<
   WearAction,

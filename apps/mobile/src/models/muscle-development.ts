@@ -1,6 +1,6 @@
 import { isMuscleId, MUSCLES, type MuscleId } from '@/constants/muscles';
 import type { CatalogExercise, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
-import { exerciseLabel, toDateObj } from '@/lib/workout-conversion';
+import { exerciseLabel, toDateObj } from '@/models/workout-conversion';
 
 export type MuscleDevelopmentMetric = 'estimated_1rm' | 'reps' | 'duration' | 'distance' | 'calories';
 export type DevelopmentGrade = 'A+' | 'A' | 'B' | 'C' | 'D' | 'F';

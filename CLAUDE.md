@@ -86,9 +86,10 @@ Expo Router (file-based routing, typed routes), TypeScript, React 19 / React Nat
 ```
 apps/mobile/app/        expo-router routes (name is fixed by the router)
 apps/mobile/src/views/     components; src/views/primitives/ holds the low-level ones
-apps/mobile/src/models/   local SQLite + repositories; src/models/remote/ is the API-backed side
-apps/mobile/src/lib/    non-UI helpers
-apps/mobile/src/{hooks,context,constants,types,config}/
+apps/mobile/src/models/    local data, repositories, and domain logic; src/models/remote/ is the API-backed side
+apps/mobile/src/hooks/     reusable React hooks
+apps/mobile/src/lib/       transport, platform adapters, and non-domain utilities
+apps/mobile/src/{context,constants,types,config}/
 apps/mobile/{assets,modules,plugins,targets,widgets}/   must stay at the package root
 ```
 
@@ -138,9 +139,9 @@ The `API_ALLOWED_ORIGINS` allowlist is required for any browser caller: the web 
   - Every write must carry `updateMask`. Without it a Firestore `:commit` **replaces the whole document** instead of merging.
   - `quota.ts` enforces `TEMPORARY_AI_DAILY_LIMIT` against `users/{uid}.aiUsage` using an `updateTime` precondition with retry, not a transaction.
 - The `POST /api/ai` handler in `apps/api/src/worker.ts` is the only place auth, `ai/`, and `store/` meet. It `await import()`s `./ai/prompts.js` inside the handler so the provider SDK never loads on a non-AI request.
-- **AI is opt-in and off by default.** `users/{uid}.aiEnabled` gates it (see [docs/data-model/users.md](docs/data-model/users.md#ai-opt-in)); absent means off, for existing accounts too. The Worker refuses `POST /api/ai` and `GET /api/ai/quota` with `403 ai_disabled` unless it is literally `true` (`readAIEnabled` in `apps/api/src/store/quota.ts`) — that check, not the client, is the enforcement. Any new AI surface must hide itself behind `useAIEnabled()` (`apps/mobile/src/lib/use-ai-enabled.ts`), and any new AI route must call `assertAIEnabled`.
+- **AI is opt-in and off by default.** `users/{uid}.aiEnabled` gates it (see [docs/data-model/users.md](docs/data-model/users.md#ai-opt-in)); absent means off, for existing accounts too. The Worker refuses `POST /api/ai` and `GET /api/ai/quota` with `403 ai_disabled` unless it is literally `true` (`readAIEnabled` in `apps/api/src/store/quota.ts`) — that check, not the client, is the enforcement. Any new AI surface must hide itself behind `useAIEnabled()` (`apps/mobile/src/hooks/use-ai-enabled.ts`), and any new AI route must call `assertAIEnabled`.
 - `apps/mobile/src/lib/ai-client.ts` (`callAI`) is the only client-side entry point; it attaches a Firebase ID token and throws `AIDisabledError` before the request when the account has not opted in — which is what covers the AI paths with no UI to hide (`loadSplitNames`, `getDailyName`).
-- The AI features still live in `apps/mobile/src/lib/muscle-analysis.ts`, `apps/mobile/src/lib/workout-suggestions.ts`, and `apps/mobile/src/lib/daily-name.ts`, which compute summaries locally and call `callAI`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
+- The AI features still live in `apps/mobile/src/models/muscle-analysis.ts`, `apps/mobile/src/models/workout-suggestions.ts`, and `apps/mobile/src/models/daily-name.ts`, which compute summaries locally and call `callAI`. They consume the canonical `performedExercises[].sets` shape from `@/types/workout`.
 
 ### Firestore security rules
 

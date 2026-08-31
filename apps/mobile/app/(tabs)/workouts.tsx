@@ -4,7 +4,7 @@ import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
-import { toDateObj } from '@/lib/workout-conversion';
+import { toDateObj } from '@/models/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useFocusEffect } from 'expo-router';

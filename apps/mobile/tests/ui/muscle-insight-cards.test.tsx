@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { makeCatalogExercise, makeWorkout } from '../factories';
-import { clearAIQuotaCache } from '../../src/lib/ai-quota-cache';
+import { clearAIQuotaCache } from '../../src/models/ai-quota-cache';
 
 let currentUid = 'muscle-insight-test-0';
 let uidSequence = 0;

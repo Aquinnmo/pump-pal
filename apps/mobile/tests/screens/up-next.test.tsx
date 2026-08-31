@@ -16,7 +16,7 @@ mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ user: currentUser, loading: authLoading }),
 }));
 
-mock.module('@/lib/up-next-target', () => ({
+mock.module('@/models/up-next-target', () => ({
   resolveUpNextTarget: async (uid: string) => {
     resolveCalls.push(uid);
     if (holdTarget) {

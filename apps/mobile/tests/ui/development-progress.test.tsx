@@ -9,7 +9,7 @@ let catalog: CatalogExercise[] = [];
 let holdCatalog = false;
 let releaseCatalog: (() => void) | null = null;
 
-mock.module('@/lib/exercise-catalog', () => ({
+mock.module('@/models/exercise-catalog', () => ({
   loadCatalog: async () => {
     if (holdCatalog) {
       await new Promise<void>((resolve) => {

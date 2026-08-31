@@ -3,7 +3,7 @@ import { invalidateWebReads, listWebInjuryRecords, webFirestore } from './web-di
 import { Injury } from '@/types/user';
 import { StoredRecord } from '@/models/remote-types';
 import { normalizeTimestampsDeep } from './normalize-timestamps';
-import { toDateObj } from '@/lib/workout-conversion';
+import { toDateObj } from '@/models/workout-conversion';
 
 const versions = createVersionCache();
 

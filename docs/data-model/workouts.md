@@ -56,7 +56,7 @@ Field notes:
 - `date` accepting three shapes is not an accident to "fix" — freshly-created
   workouts write a `Timestamp`, migrated workouts came through with a plain
   `{ seconds, nanoseconds }` object, and in-memory drafts use `Date`. Always
-  go through `toDateObj()` (`apps/mobile/src/lib/workout-conversion.ts`) rather than
+  go through `toDateObj()` (`apps/mobile/src/models/workout-conversion.ts`) rather than
   assuming one shape.
 - `exerciseId`/`variationId` reference `exercises/{exerciseId}` and its
   embedded `variations[]` (see [exercises.md](./exercises.md)).
@@ -82,18 +82,18 @@ Field notes:
   Both can be absent, and in practice are mutually exclusive per set.
 - `status?: WorkoutStatus` (`'planned' | 'in_progress' | 'completed'`, `apps/mobile/src/types/workout.ts`)
   — the client no longer creates or writes `'in_progress'`. An active workout is a
-  local draft (`apps/mobile/src/lib/active-workout-session.ts`, snapshotted to
+  local draft (`apps/mobile/src/models/active-workout-session.ts`, snapshotted to
   device storage so a process death doesn't lose it) and the DB is written
   once, on Finish, going straight from `'planned'` (or nothing, for an ad-hoc
   workout) to `'completed'`. `'in_progress'` remains in the status union and in
   `apps/api/src/store/workouts.ts` only because already-synced server documents still use
-  it; a one-time client-side sweep (`apps/mobile/src/lib/discard-workout.ts`) cleans up any row a
+  it; a one-time client-side sweep (`apps/mobile/src/models/discard-workout.ts`) cleans up any row a
   pre-rewrite build left in that state.
 - `injuries?: string[]` holds the ids of the user's injuries
   (`users/{uid}.injuries`, see [users.md](./users.md)) that were active when
   this workout was logged. It is a **materialized as-of-then record**, written
   two ways: auto-stamped with the then-ongoing injuries on completion
-  (`apps/mobile/src/lib/injuries.ts` `getOngoingInjuryIds`), and retroactively bulk-editable
+  (`apps/mobile/src/models/ongoing-injuries.ts` `getOngoingInjuryIds`), and retroactively bulk-editable
   from the injuries screen via `applyInjuryToHistory` (`arrayUnion` across an
   injury's date window) / `removeInjuryFromHistory` (`arrayRemove`). It stays
   what it was even if the injury record is later edited or deleted, so it is
@@ -123,7 +123,7 @@ created workouts get Firestore auto-generated IDs.
 
 ## AI consumers
 
-`apps/mobile/src/lib/muscle-analysis.ts` and `apps/mobile/src/lib/workout-suggestions.ts`
+`apps/mobile/src/models/muscle-analysis.ts` and `apps/mobile/src/models/workout-suggestions.ts`
 both read `performedExercises[].sets` to build prompts through AI SDK Core. As of the
 muscle-taxonomy work, neither one joins back to the exercise catalog to read
 `primaryMuscles`/`secondaryMuscles` — `muscle-analysis.ts` now uses

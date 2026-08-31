@@ -1,6 +1,6 @@
-import { getSession, updateSession } from '@/lib/active-workout-session';
-import { applyWearAction, buildWearActiveState, WearAction } from '@/lib/wear-state';
-import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from '@/lib/workout-action';
+import { getSession, updateSession } from '@/models/active-workout-session';
+import { applyWearAction, buildWearActiveState, WearAction } from '@/models/wear-state';
+import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from '@/models/workout-action';
 import { pushWearState } from '@/lib/wear-sync';
 import { flushWorkoutNotification } from '@/lib/workout-surface-sync';
 
@@ -9,7 +9,7 @@ import { flushWorkoutNotification } from '@/lib/workout-surface-sync';
 // the persisted session first, see live-update-notification-action-task.ts) to apply
 // it to its own draft state directly (app/active-workout.tsx's own remote-finish
 // listener still owns finishWorkout — see the comment there for why). Both surfaces
-// converge on the same in-memory session (src/lib/active-workout-session.ts), so
+// converge on the same in-memory session (src/models/active-workout-session.ts), so
 // there is nothing left to reconcile once this writes back to it.
 //
 // finishWorkout is not handled here: finishing always writes to the repository, and

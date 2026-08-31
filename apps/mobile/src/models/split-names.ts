@@ -1,7 +1,7 @@
 import { profileRepository } from '@/models/profile-repository';
 import { isSplitOption } from '@/constants/split-options';
 import { SPLIT_WORKOUT_NAMES } from '@/constants/split-workout-names';
-import { generateSplitWorkoutNames } from '@/lib/workout-suggestions';
+import { generateSplitWorkoutNames } from '@/models/workout-suggestions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Resolves the ordered workout-day names for a user's split. Preset splits map

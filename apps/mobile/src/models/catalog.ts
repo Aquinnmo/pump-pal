@@ -10,7 +10,7 @@
 //     `synced`, so a user's own pending-review submission (sync_state
 //     'dirty', not yet uploaded) survives a catalog refresh untouched.
 //   - `createPending` — the "can't find my exercise" flow
-//     (src/lib/create-pending-exercise.ts today) queues a local create.
+//     (src/models/create-pending-exercise.ts today) queues a local create.
 import { SqlExecutor } from './executor';
 import { enqueue } from './outbox';
 import { normalizeTimestampsDeep } from './normalize-timestamps';

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 
 import type { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { buildWorkoutNotificationPresentation } from '@/lib/workout-notification-model';
+import { buildWorkoutNotificationPresentation } from '@/models/workout-notification-model';
 
 const set = (over: Partial<DraftSet> = {}): DraftSet => ({
   reps: 10,

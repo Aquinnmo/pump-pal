@@ -1,6 +1,6 @@
 import { isMuscleId, MUSCLES, type MuscleId } from '@/constants/muscles';
 import type { CatalogExercise, PerformedExercise, PerformedSet, Workout } from '@/types/workout';
-import { exerciseLabel, toDateObj } from '@/lib/workout-conversion';
+import { exerciseLabel, toDateObj } from '@/models/workout-conversion';
 import { muscleMapColor } from '@/lib/muscle-map-scale';
 
 export type MuscleLoadMetric = 'weight_reps' | 'reps' | 'duration' | 'distance' | 'calories';

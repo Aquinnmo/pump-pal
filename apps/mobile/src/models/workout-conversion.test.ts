@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type { Workout } from '@/types/workout';
-import { recentExercisesForDay, toDateObj } from '@/lib/workout-conversion';
+import { recentExercisesForDay, toDateObj } from '@/models/workout-conversion';
 
 const ISO = '2026-08-05T12:30:00.000Z';
 const MILLIS = new Date(ISO).getTime();

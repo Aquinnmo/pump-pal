@@ -2,8 +2,8 @@ import { BODY_PART_MUSCLES, bodyPartLabel } from '@/constants/body-parts';
 import { Injury } from '@/types/user';
 import { DraftExerciseRow, ExerciseSearchOption, Workout } from '@/types/workout';
 import { callAI } from '@/lib/ai-client';
-import { rankSearchOptions, slugify } from '@/lib/exercise-catalog';
-import { exerciseLabel, isDurationExercise, makeUid, toDateObj } from '@/lib/workout-conversion';
+import { rankSearchOptions, slugify } from '@/models/exercise-catalog';
+import { exerciseLabel, isDurationExercise, makeUid, toDateObj } from '@/models/workout-conversion';
 
 /**
  * Asks the configured AI model to generate a list of workout day/type names for a custom

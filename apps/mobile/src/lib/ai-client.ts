@@ -4,8 +4,8 @@ import { fetch as expoFetch } from 'expo/fetch';
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from 'react-native';
 import { describeError } from './format-ai-error';
-import { isAIEnabled } from './ai-enabled';
-import { recordRemaining } from './ai-quota-cache';
+import { isAIEnabled } from '@/models/ai-enabled';
+import { recordRemaining } from '@/models/ai-quota-cache';
 import { normalizeApiBaseUrl } from './api-client-core';
 import { getAppCheckToken } from './app-check-token';
 

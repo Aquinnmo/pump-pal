@@ -1,6 +1,6 @@
 import { useAuth } from '@/context/auth-context';
 import { CatalogExercise, ExerciseSearchOption } from '@/types/workout';
-import { buildSearchOptions, loadCatalog } from '@/lib/exercise-catalog';
+import { buildSearchOptions, loadCatalog } from '@/models/exercise-catalog';
 import { useEffect, useMemo, useState } from 'react';
 
 export function useExerciseCatalog() {

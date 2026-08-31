@@ -3,8 +3,8 @@ import { FadingScrollView } from "@/views/primitives/fading-scroll-view";
 import { workoutRepository } from "@/models/workout-repository";
 import { useAuth } from "@/context/auth-context";
 import type { CatalogExercise, Workout } from "@/types/workout";
-import { loadCatalog } from "@/lib/exercise-catalog";
-import { computeMuscleLoad } from "@/lib/muscle-load";
+import { loadCatalog } from "@/models/exercise-catalog";
+import { computeMuscleLoad } from "@/models/muscle-load";
 import { Ionicons } from "@expo/vector-icons";
 import { router, Stack } from "expo-router";
 import {

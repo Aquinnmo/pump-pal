@@ -10,7 +10,7 @@ if (Platform.OS === 'android') {
   registerWidgetTaskHandler(widgetTaskHandler);
 
   // Wear OS actions still have no headless path. The session now survives a process
-  // death (see src/lib/active-workout-session.ts), so TimberWearAction could be
+  // death (see src/models/active-workout-session.ts), so TimberWearAction could be
   // registered here the way the notification task below is — it just hasn't been.
 
   // Must match TASK_NAME in LiveUpdateNotificationActionTaskService.kt.

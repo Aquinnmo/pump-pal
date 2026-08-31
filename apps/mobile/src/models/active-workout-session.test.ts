@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import type { DraftExerciseRow } from '@/types/workout';
-import { applyWearAction } from '@/lib/wear-state';
+import { applyWearAction } from '@/models/wear-state';
 
 // AsyncStorage is a native module; loadSession()'s restore/expiry paths need a
 // real-ish backing store to exercise, so an in-memory double stands in — and
@@ -122,7 +122,7 @@ async function main() {
   assert.equal(await stale.loadSession(), null, 'a 25h-old stored session is dropped');
   assert.equal(store.has(STORAGE_KEY), false, 'the stale key is cleared');
 
-  console.log('src/lib/active-workout-session.test.ts: all assertions passed');
+  console.log('src/models/active-workout-session.test.ts: all assertions passed');
 }
 
 await main();

@@ -6,8 +6,8 @@ import type { Injury } from '@/types/user';
 import type { Workout } from '@/types/workout';
 // Keep the native source explicit at runtime: the mobile test preload maps
 // extensionless relative imports to the web sibling first.
-const nativeInjuries = await import(new URL('./injuries.ts', import.meta.url).href);
-import { injuryCoversDate as webInjuryCoversDate } from './injuries.web';
+const nativeInjuries = await import(new URL('./ongoing-injuries.ts', import.meta.url).href);
+import { injuryCoversDate as webInjuryCoversDate } from './ongoing-injuries.web';
 
 const RealDate = Date;
 

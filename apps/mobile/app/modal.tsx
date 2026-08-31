@@ -8,9 +8,9 @@ import { triggerSyncAfterWrite } from "@/models/sync-trigger";
 import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
-import { useAIQuota } from "@/lib/use-ai-quota";
-import { useAIEnabled } from "@/lib/use-ai-enabled";
-import { loadSplitNames } from "@/lib/split-names";
+import { useAIQuota } from "@/hooks/use-ai-quota";
+import { useAIEnabled } from "@/hooks/use-ai-enabled";
+import { loadSplitNames } from "@/models/split-names";
 import {
   DraftExerciseRow,
   PerformedExercise,
@@ -18,21 +18,21 @@ import {
   WorkoutStatus,
 } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
-import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
+import { useAIGenerationAvailable } from "@/hooks/use-ai-connectivity";
 import { showAlert } from "@/lib/alert";
-import { createPendingExercise } from "@/lib/create-pending-exercise";
-import { getOngoingInjuries, getOngoingInjuryIds } from "@/lib/injuries";
-import { predictNextWorkoutName } from "@/lib/predict-next-workout";
+import { createPendingExercise } from "@/models/create-pending-exercise";
+import { getOngoingInjuries, getOngoingInjuryIds } from "@/models/ongoing-injuries";
+import { predictNextWorkoutName } from "@/models/predict-next-workout";
 import {
   buildPerformedExercise,
   collapseSetsToDraft,
   recentExercisesForDay,
   toDateObj,
-} from "@/lib/workout-conversion";
+} from "@/models/workout-conversion";
 import {
   suggestedExercisesToDraftRows,
   suggestWorkoutCompletion,
-} from "@/lib/workout-suggestions";
+} from "@/models/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";

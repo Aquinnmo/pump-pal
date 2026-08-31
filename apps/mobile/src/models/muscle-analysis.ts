@@ -1,8 +1,8 @@
 import { isMuscleId, MUSCLE_REGIONS, MUSCLES, MuscleId, muscleLabel } from '@/constants/muscles';
 import { CatalogExercise, Workout } from '@/types/workout';
 import { callAI } from '@/lib/ai-client';
-import { loadCatalog } from '@/lib/exercise-catalog';
-import { exerciseLabel, toDateObj } from '@/lib/workout-conversion';
+import { loadCatalog } from '@/models/exercise-catalog';
+import { exerciseLabel, toDateObj } from '@/models/workout-conversion';
 
 export interface MuscleInsights {
   overTrained: string[];

@@ -26,7 +26,7 @@ export type BodyPart = (typeof BODY_PARTS)[number];
 
 /**
  * Maps each body part to the canonical muscles it plausibly affects, so injury
- * data joins the muscle-volume engine (src/lib/muscle-analysis.ts) and future AI
+ * data joins the muscle-volume engine (src/models/muscle-analysis.ts) and future AI
  * prompts can reason about which muscles to protect. Coarse by design — an
  * injury also carries an optional precise `muscles` list for finer control.
  */

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { useEffect } from 'react';
 import { makeWorkout } from '@/tests/factories';
 import { bumpDataVersion } from '@/models/data-version';
-import { endSession, startSession } from '@/lib/active-workout-session';
+import { endSession, startSession } from '@/models/active-workout-session';
 import type { Workout } from '@/types/workout';
 
 const uid = 'user-1';

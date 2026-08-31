@@ -6,7 +6,7 @@ import {
   toDateObj,
   workoutTotalReps,
   workoutVolume,
-} from '@/lib/workout-conversion';
+} from '@/models/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';

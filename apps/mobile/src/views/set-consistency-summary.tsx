@@ -4,7 +4,7 @@ import {
   SET_CONSISTENCY_MIN_ENTRIES,
   type SetChangeBucket,
   type SetConsistencyCategory,
-} from "@/lib/set-consistency";
+} from "@/models/set-consistency";
 import type { Workout } from "@/types/workout";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";

@@ -136,7 +136,7 @@ What you have to rebuild depends entirely on **what you touched**.
 
 ### Changed only JavaScript / TypeScript (phone)
 
-Includes `apps/mobile/src/lib/wear-state.ts`, `apps/mobile/src/lib/wear-sync.android.ts`,
+Includes `apps/mobile/src/models/wear-state.ts`, `apps/mobile/src/lib/wear-sync.android.ts`,
 `apps/mobile/src/lib/wear-action-task.ts`, `index.js`, and every screen. Ship it over the air —
 no rebuild, no reinstall:
 
@@ -175,7 +175,7 @@ Both halves have to move together, or the older half silently ignores the newer 
 Rebuild the phone (`eas build`) **and** re-run the watch app, and check that these
 three still agree:
 
-- [`apps/mobile/src/lib/wear-state.ts`](../apps/mobile/src/lib/wear-state.ts) — the payload shape
+- [`apps/mobile/src/models/wear-state.ts`](../apps/mobile/src/models/wear-state.ts) — the payload shape
 - [`Protocol.kt`](../apps/wear/app/src/main/java/com/aquinnmo/timber/wear/Protocol.kt) — the watch's parser
 - [`wear.xml`](../apps/mobile/modules/wear-sync/android/src/main/res/values/wear.xml) — the `timber_phone` capability name
 

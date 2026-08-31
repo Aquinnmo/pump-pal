@@ -48,7 +48,7 @@ mock.module(new URL('../../src/models/sync-trigger.ts', import.meta.url).pathnam
   triggerSyncAfterWrite: () => undefined,
 }));
 
-mock.module(new URL('../../src/lib/injuries.web.ts', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/models/ongoing-injuries.web.ts', import.meta.url).pathname, () => ({
   applyInjuryToHistory: async () => 0,
   removeInjuryFromHistory: async () => 0,
 }));

@@ -9,12 +9,12 @@ import { triggerSyncAfterWrite } from "@/models/sync-trigger";
 import { useAuth } from "@/context/auth-context";
 import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
-import { useAIQuota } from "@/lib/use-ai-quota";
-import { useAIEnabled } from "@/lib/use-ai-enabled";
-import { loadSplitNames } from "@/lib/split-names";
+import { useAIQuota } from "@/hooks/use-ai-quota";
+import { useAIEnabled } from "@/hooks/use-ai-enabled";
+import { loadSplitNames } from "@/models/split-names";
 import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
-import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
+import { useAIGenerationAvailable } from "@/hooks/use-ai-connectivity";
 import { showAlert } from "@/lib/alert";
 import {
   endSession,
@@ -22,25 +22,25 @@ import {
   startSession,
   subscribe as subscribeSession,
   updateSession,
-} from "@/lib/active-workout-session";
-import { createPendingExercise } from "@/lib/create-pending-exercise";
-import { getOngoingInjuries, getOngoingInjuryIds } from "@/lib/injuries";
-import { describeUpNext } from "@/lib/up-next";
+} from "@/models/active-workout-session";
+import { createPendingExercise } from "@/models/create-pending-exercise";
+import { getOngoingInjuries, getOngoingInjuryIds } from "@/models/ongoing-injuries";
+import { describeUpNext } from "@/models/up-next";
 import { subscribeLiveUpdateNotificationActions } from "@/lib/live-update-notification-actions";
-import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/lib/workout-action";
+import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/models/workout-action";
 import {
   applyWearAction,
   buildWearIdleState,
   flattenSets,
   nextSetIndex,
   WearAction,
-} from "@/lib/wear-state";
+} from "@/models/wear-state";
 import { pushWearState, subscribeWearActions } from "@/lib/wear-sync";
 import {
   buildPerformedExercise,
   collapseSetsToDraft,
   recentExercisesForDay,
-} from "@/lib/workout-conversion";
+} from "@/models/workout-conversion";
 import {
   ensureWorkoutChannel,
   requestNotificationPermission,
@@ -48,7 +48,7 @@ import {
 import {
   suggestedExercisesToDraftRows,
   suggestWorkoutCompletion,
-} from "@/lib/workout-suggestions";
+} from "@/models/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { router, useLocalSearchParams } from "expo-router";
@@ -103,7 +103,7 @@ export default function ActiveWorkoutScreen() {
   const { options: catalogOptions } = useExerciseCatalog();
   const aiAvailable = useAIGenerationAvailable();
 
-  // sessionId correlates this screen with the in-memory session (src/lib/active-workout-session.ts)
+  // sessionId correlates this screen with the in-memory session (src/models/active-workout-session.ts)
   // and with notification/wear actions — it exists as soon as a session starts, well before
   // any Firestore document does. planId is only set when the session came from a planned
   // workout; that row is read once to seed state and is never touched again until Finish.
@@ -193,7 +193,7 @@ export default function ActiveWorkoutScreen() {
           setStartedAt(new Date(existing.startedAt));
           setSessionId(existing.id);
         } else if (id) {
-          // `id` only ever points at a planned-queue row (see src/lib/up-next-target.ts) —
+          // `id` only ever points at a planned-queue row (see src/models/up-next-target.ts) —
           // it is read once to seed the session and is never written back to.
           const stored = await workoutRepository.getById(user.uid, id);
           if (!stored) {

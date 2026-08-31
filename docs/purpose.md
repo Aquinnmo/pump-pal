@@ -56,12 +56,12 @@ less insight; it is never acceptable to show a wrong one.
 | Cascade an edit forward through following sets, stopping at the first deliberately different one so pyramids and drop sets survive (`apps/mobile/src/hooks/use-draft-exercises.ts:21`) | ingestion |
 | Exercise picker offers recents-for-this-day before it offers search (`apps/mobile/src/views/primitives/exercise-picker.tsx:319`) | ingestion |
 | Per-set completion checkbox; unchecked sets are dropped at finish (`apps/mobile/app/active-workout.tsx`, `finishWorkout`) | fidelity |
-| An active workout is snapshotted to device storage and restored on launch (`apps/mobile/src/lib/active-workout-session.ts`), but the DB is still written exactly once, on Finish — a process death recovers the draft, not a half-written row (`apps/mobile/app/active-workout.tsx`) | fidelity: the DB never sees a workout the user hasn't finished, even though the draft itself now survives a crash |
+| An active workout is snapshotted to device storage and restored on launch (`apps/mobile/src/models/active-workout-session.ts`), but the DB is still written exactly once, on Finish — a process death recovers the draft, not a half-written row (`apps/mobile/app/active-workout.tsx`) | fidelity: the DB never sees a workout the user hasn't finished, even though the draft itself now survives a crash |
 | iOS 17+ Live Activity with Dynamic Island, Lock Screen, and host-confirmed actions (`apps/mobile/targets/widget/`, `apps/mobile/modules/live-update-notification/ios/`) | log without opening the app; a force-quit action never claims an unconfirmed write |
 | Live Android notification + Pixel Live Update showing current exercise and running totals (`apps/mobile/src/lib/workout-notification.android.ts`, `apps/mobile/modules/live-update-notification/`) | log without opening the app |
-| Plate calculator solves minimum plates per side (`apps/mobile/src/lib/plate-math.ts`) | removes gym math |
-| Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`apps/mobile/src/lib/muscle-analysis.ts:51`) | fidelity |
-| Ongoing injuries auto-stamped onto every finished workout (`apps/mobile/app/active-workout.tsx`, `finishWorkout`, `apps/mobile/src/lib/injuries.ts:21`) | insight with zero extra data entry |
+| Plate calculator solves minimum plates per side (`apps/mobile/src/models/plate-math.ts`) | removes gym math |
+| Muscle attribution joins catalog `exerciseId`/`variationId` exactly — explicitly no name guessing (`apps/mobile/src/models/muscle-analysis.ts:51`) | fidelity |
+| Ongoing injuries auto-stamped onto every finished workout (`apps/mobile/app/active-workout.tsx`, `finishWorkout`, `apps/mobile/src/models/ongoing-injuries.ts:21`) | insight with zero extra data entry |
 | TPC: one swipe, zero fields (`apps/mobile/app/(tabs)/pushup-challenge.tsx`) | habit, at zero ingestion cost |
 
 Read that table as a specification, not a changelog. New features should be able
@@ -74,7 +74,7 @@ Two jobs, both named in the thesis:
 **Injury prevention.** Over- and under-trained muscle groups over a 30-day
 window, and workout suggestions that know about your active injuries — their
 affected muscles, severity, avoid-list, and notes
-(`apps/mobile/src/lib/workout-suggestions.ts:102-119`).
+(`apps/mobile/src/models/workout-suggestions.ts:102-119`).
 
 **Strengths and weaknesses.** Estimated 1RM trend per exercise (Epley), personal
 records, best sets, and volume distribution across muscle groups.
@@ -82,7 +82,7 @@ records, best sets, and volume distribution across muscle groups.
 ### The deterministic-first rule
 
 This is the standard for every AI feature, present and future.
-`apps/mobile/src/lib/muscle-analysis.ts` computes the volume math **in code** — effective sets
+`apps/mobile/src/models/muscle-analysis.ts` computes the volume math **in code** — effective sets
 weighted 1.0 primary / 0.5 secondary, normalized per week, with 0.0 rows emitted
 for untrained muscles specifically to surface neglect — and hands the model a
 finished table to interpret. The model does not count, does not join, and does
@@ -94,9 +94,9 @@ adding an AI feature, compute everything computable first, then let the model do
 only the part that genuinely requires judgment.
 
 Domain knowledge that shapes interpretation belongs in the prompt as an explicit
-constraint, not as vibes — see `apps/mobile/src/lib/muscle-analysis.ts:194` ("roughly 10–20
+constraint, not as vibes — see `apps/mobile/src/models/muscle-analysis.ts:194` ("roughly 10–20
 effective sets per muscle per week") and the split-boundary rules at
-`apps/mobile/src/lib/workout-suggestions.ts:232-241`.
+`apps/mobile/src/models/workout-suggestions.ts:232-241`.
 
 ## Non-goals
 
@@ -110,7 +110,7 @@ effective sets per muscle per week") and the split-boundary rules at
   is the single deliberate exception, and it is quarantined to a feature with no
   data entry.
 - **Not a medical advisor.** Hard constraint, already in the prompt at
-  `apps/mobile/src/lib/workout-suggestions.ts:240`:
+  `apps/mobile/src/models/workout-suggestions.ts:240`:
   > Do not diagnose, prescribe treatment, or claim that any exercise is medically
   > cleared. If no reasonable safe additions remain, return an empty array.
 
@@ -153,7 +153,7 @@ current.
   (`Balance Workout with AI (2 left)`).
 - **The biggest ingestion gap is RPE.** `apps/mobile/src/types/workout.ts:6-18` declares `rpe`,
   and `computeMuscleVolume` already *consumes* it and feeds it to the model as a
-  recovery signal (`apps/mobile/src/lib/muscle-analysis.ts:104-105`, prompt at `:194`). **No
+  recovery signal (`apps/mobile/src/models/muscle-analysis.ts:104-105`, prompt at `:194`). **No
   UI writes it.** The fatigue model runs permanently blind on a signal it was
   designed around. Same story, lower stakes, for `distance`, `calories`, and
   per-set `notes`. Closing this is the single highest-leverage ingestion work

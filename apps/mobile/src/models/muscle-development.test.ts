@@ -7,7 +7,7 @@ import {
   setPerformance,
   topDevelopmentContributors,
   type MuscleDevelopmentContributor,
-} from '@/lib/muscle-development';
+} from '@/models/muscle-development';
 
 const NOW = new Date('2026-08-02T12:00:00.000Z').getTime();
 const DAY = 24 * 60 * 60 * 1000;

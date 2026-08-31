@@ -68,7 +68,7 @@ separate human approval.
 
 User-authored drafts are memory-only on every platform. The one exception is
 the active workout draft, which is also snapshotted to `AsyncStorage` so a
-process death doesn't lose it (`apps/mobile/src/lib/active-workout-session.ts`)
+process death doesn't lose it (`apps/mobile/src/models/active-workout-session.ts`)
 — that snapshot is still a private draft, not a database row, and never enters
 the outbox. Native workout and injury changes are finalized by an explicit
 action, then commit the local row and coalesced outbox intent in one SQLite
@@ -98,7 +98,7 @@ and server bookkeeping are system operations rather than user drafts.
   `serverTimestamp()` on write). One exception — `Workout.date` also accepts a
   plain `{ seconds, nanoseconds }` shape and `Date`, because migrated rows and
   freshly-created rows go through different code paths before they're
-  normalized for display (see `apps/mobile/src/lib/workout-conversion.ts`).
+  normalized for display (see `apps/mobile/src/models/workout-conversion.ts`).
 - **IDs are deterministic where possible.** Exercise doc IDs are slugs
   (`bench-press`), not auto-generated — this is what makes catalog reseeding
   idempotent (see [exercises.md](./exercises.md)). Migrated workout doc IDs

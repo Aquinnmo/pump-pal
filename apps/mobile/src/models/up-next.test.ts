@@ -1,4 +1,4 @@
-import { describeUpNext } from '@/lib/up-next';
+import { describeUpNext } from '@/models/up-next';
 import assert from 'node:assert/strict';
 
 // A live workout wins over everything — the card and the widget say "Resume".

@@ -4,7 +4,7 @@
 // surface like Android's Notifee path (see workout-notification.android.ts).
 
 import * as LiveUpdateNotification from '@/modules/live-update-notification';
-import type { WorkoutNotificationPresentation } from '@/lib/workout-notification-model';
+import type { WorkoutNotificationPresentation } from '@/models/workout-notification-model';
 
 export type WorkoutSegment = WorkoutNotificationPresentation['segments'][number];
 export type WorkoutNotificationData = WorkoutNotificationPresentation;

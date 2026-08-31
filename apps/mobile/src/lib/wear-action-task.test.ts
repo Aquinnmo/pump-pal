@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { DraftExerciseRow } from '@/types/workout';
-import { endSession, getSession, startSession } from '@/lib/active-workout-session';
+import { endSession, getSession, startSession } from '@/models/active-workout-session';
 import { handleWorkoutAction } from '@/lib/wear-action-task';
 
 function row(): DraftExerciseRow {

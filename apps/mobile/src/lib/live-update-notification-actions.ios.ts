@@ -2,7 +2,7 @@ import { drainPendingAction, subscribeActions } from '@/modules/live-update-noti
 import {
   parseLiveUpdateNotificationAction,
   type LiveUpdateNotificationAction,
-} from '@/lib/workout-action';
+} from '@/models/workout-action';
 
 type ActionOwner = 'root' | 'active-workout';
 

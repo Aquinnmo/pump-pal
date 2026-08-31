@@ -3,11 +3,11 @@ import { workoutRepository } from '@/models/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { Workout } from '@/types/workout';
-import { getSession } from '@/lib/active-workout-session';
-import { loadSplitNames } from '@/lib/split-names';
-import { predictNextWorkoutName, predictWorkoutAfterName } from '@/lib/predict-next-workout';
-import { describeUpNext } from '@/lib/up-next';
-import { buildWearIdleState } from '@/lib/wear-state';
+import { getSession } from '@/models/active-workout-session';
+import { loadSplitNames } from '@/models/split-names';
+import { predictNextWorkoutName, predictWorkoutAfterName } from '@/models/predict-next-workout';
+import { describeUpNext } from '@/models/up-next';
+import { buildWearIdleState } from '@/models/wear-state';
 import { pushWearState } from '@/lib/wear-sync';
 import { syncUpNextWidget } from '@/lib/widget-up-next';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ export default function HomeScreen() {
   const [nextWorkout, setNextWorkout] = useState<string | null>(null);
   const [nextWorkoutToPlan, setNextWorkoutToPlan] = useState<string | null>(null);
   const [nextPlan, setNextPlan] = useState<Workout | null>(null);
-  // Only the display slice of the in-memory session (src/lib/active-workout-session.ts) —
+  // Only the display slice of the in-memory session (src/models/active-workout-session.ts) —
   // there is no Firestore id to carry until the user finishes it.
   const [inProgress, setInProgress] = useState<{ name: string; startedAt: string } | null>(null);
   const [elapsed, setElapsed] = useState(0);

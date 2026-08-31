@@ -7,7 +7,7 @@ import type {
 import {
   analyzeSetConsistency,
   type SetChangeBucket,
-} from "@/lib/set-consistency";
+} from "@/models/set-consistency";
 
 function exercise(id: string, sets: PerformedSet[]): PerformedExercise {
   return {
@@ -263,4 +263,4 @@ testErraticCountsBothWays();
 testDistributionTally();
 testLatestThirtyByWorkoutDate();
 
-console.log("src/lib/set-consistency.test.ts: all assertions passed");
+console.log("src/models/set-consistency.test.ts: all assertions passed");

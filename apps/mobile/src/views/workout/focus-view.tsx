@@ -1,6 +1,6 @@
 import { SetField, SetFields } from "@/views/workout/set-fields";
 import { DraftExerciseRow } from "@/types/workout";
-import { flattenSets, nextSetIndex } from "@/lib/wear-state";
+import { flattenSets, nextSetIndex } from "@/models/wear-state";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef } from "react";

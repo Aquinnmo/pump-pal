@@ -5,7 +5,7 @@ import {
   muscleLoadPercentage,
   type MuscleLoadResult,
   type MuscleLoadStat,
-} from "@/lib/muscle-load";
+} from "@/models/muscle-load";
 import { muscleMapColor } from "@/lib/muscle-map-scale";
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";

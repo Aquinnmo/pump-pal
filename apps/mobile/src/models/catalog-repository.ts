@@ -4,7 +4,7 @@ import type { CatalogExercise } from '@/types/workout';
 import type { CatalogResponse } from '@timber/contract/api';
 import { firestoreRestClient } from '@/lib/firestore-rest-client';
 import { getApprovedCatalogSnapshot } from './firestore-sync-remote';
-import { approvedCatalog } from '@/lib/catalog-loader';
+import { approvedCatalog } from '@/models/catalog-loader';
 
 async function refresh(uid: string): Promise<CatalogResponse> {
   const response = await getApprovedCatalogSnapshot(firestoreRestClient());

@@ -50,7 +50,7 @@ plugin({
       exports: { Platform: { OS: 'ios' } },
       loader: 'object',
     }));
-    build.module('@/lib/ai-quota-cache', () => ({
+    build.module('@/models/ai-quota-cache', () => ({
       exports: { recordRemaining: () => {} },
       loader: 'object',
     }));

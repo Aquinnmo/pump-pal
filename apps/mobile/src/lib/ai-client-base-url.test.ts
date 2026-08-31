@@ -32,7 +32,7 @@ plugin({
       exports: { fetch: async () => { events.push('fetch'); throw new Error('fetch should not run'); } },
       loader: 'object',
     }));
-    build.module('@/lib/ai-quota-cache', () => ({
+    build.module('@/models/ai-quota-cache', () => ({
       exports: { recordRemaining: () => {} },
       loader: 'object',
     }));

@@ -11,7 +11,7 @@ export function makeUid(): string {
 // still held the old value, stopping at the first set the user deliberately made
 // different so pyramids / drop sets survive. Completed sets are a record of what was
 // actually lifted — they are skipped, not overwritten, and do not stop the run.
-// Lives here rather than in use-draft-exercises so the watch bridge (src/lib/wear-state.ts)
+// Lives here rather than in use-draft-exercises so the watch bridge (src/models/wear-state.ts)
 // can apply the same semantics without pulling React Native in.
 export function cascadeSetField<K extends keyof DraftSet>(
   sets: DraftSet[],

@@ -1,6 +1,6 @@
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
-import { isAIEnabled } from '@/lib/ai-enabled';
+import { isAIEnabled } from '@/models/ai-enabled';
 import { useEffect, useState } from 'react';
 
 /**

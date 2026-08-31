@@ -2,7 +2,7 @@ import { subscribeActions } from '@/modules/live-update-notification';
 import {
   parseLiveUpdateNotificationAction,
   type LiveUpdateNotificationAction,
-} from '@/lib/workout-action';
+} from '@/models/workout-action';
 
 export function subscribeLiveUpdateNotificationActions(
   onAction: (action: LiveUpdateNotificationAction) => void,

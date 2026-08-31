@@ -1,7 +1,7 @@
 import { AnalyticsNavigationRow } from "@/views/analytics-navigation-row";
 import type { CatalogExercise, Workout } from "@/types/workout";
-import { loadCatalog } from "@/lib/exercise-catalog";
-import { computeMuscleDevelopment } from "@/lib/muscle-development";
+import { loadCatalog } from "@/models/exercise-catalog";
+import { computeMuscleDevelopment } from "@/models/muscle-development";
 import { router } from "expo-router";
 import {
   type ReactNode,

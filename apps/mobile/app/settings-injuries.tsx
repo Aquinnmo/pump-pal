@@ -7,8 +7,8 @@ import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { BODY_PARTS, BodyPart, bodyPartLabel, isBodyPart } from '@/constants/body-parts';
 import { useAuth } from '@/context/auth-context';
 import { Injury, InjurySeverity, InjurySide } from '@/types/user';
-import { applyInjuryToHistory, removeInjuryFromHistory } from '@/lib/injuries';
-import { toDateObj } from '@/lib/workout-conversion';
+import { applyInjuryToHistory, removeInjuryFromHistory } from '@/models/ongoing-injuries';
+import { toDateObj } from '@/models/workout-conversion';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -93,7 +93,7 @@ export default function SettingsInjuriesScreen() {
         if (!kept.has(injury.id) && existing.has(injury.id)) await injuryRepository.softDelete(user.uid, injury.id);
       }
       // One run for the whole batch, covering the workout rows this cascades
-      // through src/lib/injuries.ts as well.
+      // through src/models/ongoing-injuries.ts as well.
       triggerSyncAfterWrite();
       setInjuries(next);
       setDraftDates({});

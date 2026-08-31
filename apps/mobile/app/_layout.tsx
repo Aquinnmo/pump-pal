@@ -3,9 +3,9 @@ import { retryInitialSync, waitForInitialSync } from '@/models/sync-trigger';
 import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError, subscribeAccountDataChanged } from '@/models/initial-sync';
 import { WorkoutPrefillLoader } from '@/views/primitives/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
-import { getSession, loadSession } from '@/lib/active-workout-session';
+import { getSession, loadSession } from '@/models/active-workout-session';
 import { subscribeLiveUpdateNotificationActions } from '@/lib/live-update-notification-actions';
-import { sweepLegacyInProgressWorkouts } from '@/lib/discard-workout';
+import { sweepLegacyInProgressWorkouts } from '@/models/discard-workout';
 import { handleWorkoutAction } from '@/lib/wear-action-task';
 import '@/lib/workout-surface-sync';
 import { subscribeWearActions } from '@/lib/wear-sync';
@@ -101,7 +101,7 @@ function RootLayoutNav() {
   }, [loading, retryAttempt, userId]);
 
   // Devices updated from a pre-rewrite build can still have an 'in_progress' row on
-  // disk (see src/lib/discard-workout.ts) — nothing in the new code will ever finish or
+  // disk (see src/models/discard-workout.ts) — nothing in the new code will ever finish or
   // discard it, so sweep it once per account per app start, right after the account
   // is confirmed open.
   const sweptUidRef = useRef<string | null>(null);

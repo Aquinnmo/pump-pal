@@ -4,8 +4,8 @@ import type { DraftExerciseRow, DraftSet } from '@/types/workout';
 import {
   matchesExpectedCompletedSets,
   parseLiveUpdateNotificationAction,
-} from '@/lib/workout-action';
-import { applyWearAction } from '@/lib/wear-state';
+} from '@/models/workout-action';
+import { applyWearAction } from '@/models/wear-state';
 
 const set = (completed = false): DraftSet => ({
   reps: 10,

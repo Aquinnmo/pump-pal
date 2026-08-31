@@ -1,9 +1,9 @@
 import { auth } from '@/config/firebase';
 import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/models/sync-trigger';
-import { clearAIQuotaCache } from '@/lib/ai-quota-cache';
+import { clearAIQuotaCache } from '@/models/ai-quota-cache';
 import { connectGoogleAccount as linkGoogleAccount, signInWithGoogle as googleSignIn, signOutGoogle } from '@/lib/google-sign-in';
 import { hasGoogleProvider } from '@/lib/google-account-link';
-import { loadCatalog } from '@/lib/exercise-catalog';
+import { loadCatalog } from '@/models/exercise-catalog';
 import {
     User,
     createUserWithEmailAndPassword,

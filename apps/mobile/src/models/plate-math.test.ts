@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-import { PLATE_DENOMS, platesWeight, solvePlates } from '@/lib/plate-math';
+import { PLATE_DENOMS, platesWeight, solvePlates } from '@/models/plate-math';
 
 const plateCount = (counts: Record<number, number>) => Object.values(counts).reduce((sum, count) => sum + count, 0);
 

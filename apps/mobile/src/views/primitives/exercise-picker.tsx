@@ -1,5 +1,5 @@
 import { ExerciseRef, ExerciseSearchOption } from '@/types/workout';
-import { rankSearchOptions, slugify } from '@/lib/exercise-catalog';
+import { rankSearchOptions, slugify } from '@/models/exercise-catalog';
 import { Ionicons } from '@expo/vector-icons';
 import {
   forwardRef,

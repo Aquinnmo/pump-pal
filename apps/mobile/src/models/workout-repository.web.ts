@@ -7,7 +7,7 @@ import { createVersionCache } from '@/models/version-cache';
 import { invalidateWebReads, listWebEntities, webFirestore } from './web-direct-firestore';
 import { Workout, WorkoutStatus } from '@/types/workout';
 import { WorkoutDTO } from '@timber/contract/api';
-import { toDateObj } from '@/lib/workout-conversion';
+import { toDateObj } from '@/models/workout-conversion';
 import { randomId } from './id';
 
 const versions = createVersionCache();

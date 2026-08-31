@@ -1,4 +1,4 @@
-import { PLATE_DENOMS, PlateCounts, platesWeight, solvePlates } from '@/lib/plate-math';
+import { PLATE_DENOMS, PlateCounts, platesWeight, solvePlates } from '@/models/plate-math';
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';

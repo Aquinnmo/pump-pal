@@ -4,7 +4,7 @@ import { createReadCache } from './web-read-cache';
 import type { InjuryDTO, ProfileDTO, PushupChallengeDTO, WorkoutDTO } from '@timber/contract/api';
 
 // One cache for every direct read the web repositories make. The catalog is
-// deliberately absent: src/lib/catalog-loader.ts already memoizes it per session.
+// deliberately absent: src/models/catalog-loader.ts already memoizes it per session.
 const reads = createReadCache();
 
 /**

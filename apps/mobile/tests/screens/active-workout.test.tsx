@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { makePerformedExercise, makeWorkout } from '@/tests/factories';
-import { endSession, getSession, updateSession } from '@/lib/active-workout-session';
+import { endSession, getSession, updateSession } from '@/models/active-workout-session';
 import type { Workout } from '@/types/workout';
 
 const uid = 'user-1';
@@ -120,9 +120,9 @@ mock.module(new URL('../../src/models/web-direct-firestore.ts', import.meta.url)
 mock.module('@/hooks/use-exercise-catalog', () => ({
   useExerciseCatalog: () => ({ options: [], byId: new Map(), loading: false, error: null }),
 }));
-mock.module('@/lib/use-ai-quota', () => ({ useAIQuota: () => ({ usesLeft: null }) }));
-mock.module('@/lib/use-ai-enabled', () => ({ useAIEnabled: () => false }));
-mock.module('@/lib/use-ai-connectivity', () => ({ useAIGenerationAvailable: () => true }));
+mock.module('@/hooks/use-ai-quota', () => ({ useAIQuota: () => ({ usesLeft: null }) }));
+mock.module('@/hooks/use-ai-enabled', () => ({ useAIEnabled: () => false }));
+mock.module('@/hooks/use-ai-connectivity', () => ({ useAIGenerationAvailable: () => true }));
 mock.module('@/config/firebase', () => ({ auth: { currentUser: user } }));
 
 const { default: ActiveWorkoutScreen } = await import('../../app/active-workout');

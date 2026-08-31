@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
 import type { MuscleId } from '@/constants/muscles';
 import { MUSCLES } from '@/constants/muscles';
-import type { MuscleLoadResult, MuscleLoadStat } from '@/lib/muscle-load';
+import type { MuscleLoadResult, MuscleLoadStat } from '@/models/muscle-load';
 
 mock.module(new URL('../../src/views/muscle-map.tsx', import.meta.url).pathname, () => ({
   MuscleMap: ({

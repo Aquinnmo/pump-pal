@@ -1,5 +1,5 @@
 import { Workout } from '@/types/workout';
-import { toDateObj } from '@/lib/workout-conversion';
+import { toDateObj } from '@/models/workout-conversion';
 
 // Predicts the next workout name from the single most recent time the last-done
 // workout type was performed, falling back to round-robin through splitNames when

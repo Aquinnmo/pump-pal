@@ -1,7 +1,7 @@
 import { injuryRepository } from '@/models/injury-repository';
 import { workoutRepository } from '@/models/workout-repository';
 import { Injury } from '@/types/user';
-import { toDateObj } from '@/lib/workout-conversion';
+import { toDateObj } from '@/models/workout-conversion';
 
 /**
  * Ids of the user's currently-ongoing injuries. Read at workout-completion time

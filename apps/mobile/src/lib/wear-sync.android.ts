@@ -1,5 +1,5 @@
 import { wearSyncNativeModule } from '@/modules/wear-sync';
-import { WearAction, WearState } from '@/lib/wear-state';
+import { WearAction, WearState } from '@/models/wear-state';
 
 // Bridge to the paired Wear OS app. Both calls are safe no-ops when the native module
 // is missing (dev client built before it landed) or no watch is paired.

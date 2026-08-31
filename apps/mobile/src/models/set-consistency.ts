@@ -1,5 +1,5 @@
 import type { PerformedSet, Workout } from "@/types/workout";
-import { toDateObj } from "@/lib/workout-conversion";
+import { toDateObj } from "@/models/workout-conversion";
 
 export const SET_CONSISTENCY_WORKOUT_LIMIT = 30;
 export const SET_CONSISTENCY_MIN_ENTRIES = 3;

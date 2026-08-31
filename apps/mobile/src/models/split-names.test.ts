@@ -15,7 +15,7 @@ let generationError: unknown = null;
 mock.module(new URL('../models/profile-repository.web.ts', import.meta.url).pathname, () => ({
   profileRepository: { get: async () => currentProfile },
 }));
-mock.module('@/lib/workout-suggestions', () => ({
+mock.module('@/models/workout-suggestions', () => ({
   generateSplitWorkoutNames: async (description: string) => {
     generateCalls.push(description);
     if (generationError) throw generationError;

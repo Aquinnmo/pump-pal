@@ -1,7 +1,7 @@
 import { useAuth } from '@/context/auth-context';
 import { profileRepository } from '@/models/profile-repository';
 import { useDataVersion } from '@/hooks/use-data-version';
-import { useAIEnabled } from '@/lib/use-ai-enabled';
+import { useAIEnabled } from '@/hooks/use-ai-enabled';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';

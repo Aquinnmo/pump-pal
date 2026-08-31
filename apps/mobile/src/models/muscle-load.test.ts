@@ -6,7 +6,7 @@ import {
   muscleLoadColor,
   muscleLoadPercentage,
   MUSCLE_LOAD_SATURATION_SCORE,
-} from '@/lib/muscle-load';
+} from '@/models/muscle-load';
 import { muscleMapColor } from '@/lib/muscle-map-scale';
 
 const NOW = new Date('2026-08-02T12:00:00.000Z').getTime();

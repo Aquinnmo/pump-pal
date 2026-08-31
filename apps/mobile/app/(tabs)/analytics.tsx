@@ -1,12 +1,12 @@
 import { useAuth } from "@/context/auth-context";
 import { workoutRepository } from "@/models/workout-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
-import { useAIEnabled } from "@/lib/use-ai-enabled";
+import { useAIEnabled } from "@/hooks/use-ai-enabled";
 import {
   exerciseLabel,
   isDurationExercise,
   toDateObj,
-} from "@/lib/workout-conversion";
+} from "@/models/workout-conversion";
 import { Workout } from "@/types/workout";
 import { DevelopmentProgressSummary } from "@/views/development-progress-summary";
 import { MuscleInsightCards } from "@/views/muscle-insight-cards";

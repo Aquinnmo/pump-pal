@@ -4,7 +4,7 @@ import { useAuth } from "@/context/auth-context";
 import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/models/account-data";
 import { profileRepository } from "@/models/profile-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
-import { endSession } from "@/lib/active-workout-session";
+import { endSession } from "@/models/active-workout-session";
 import { deleteAccountData } from "@/models/remote/account";
 import { getFriendlyAuthError } from "@/lib/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
@@ -152,7 +152,7 @@ export default function SettingsAccountScreen() {
     setSignOutError("");
     try {
       // A live workout only ever exists in memory now (see
-      // src/lib/active-workout-session.ts) — nothing was written to it, so there's
+      // src/models/active-workout-session.ts) — nothing was written to it, so there's
       // nothing to discard on the way out. Just drop the session so it doesn't
       // resurrect for whoever signs in next on this device.
       endSession();

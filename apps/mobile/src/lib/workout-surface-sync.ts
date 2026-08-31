@@ -1,7 +1,7 @@
 import { AppState } from 'react-native';
 
-import { getSession, subscribe as subscribeSession } from '@/lib/active-workout-session';
-import { buildWorkoutNotificationPresentation } from '@/lib/workout-notification-model';
+import { getSession, subscribe as subscribeSession } from '@/models/active-workout-session';
+import { buildWorkoutNotificationPresentation } from '@/models/workout-notification-model';
 import {
   dismissWorkoutNotification,
   ensureWorkoutChannel,

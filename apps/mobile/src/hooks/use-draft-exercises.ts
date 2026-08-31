@@ -1,6 +1,6 @@
 import { ExercisePickerSelection } from '@/views/primitives/exercise-picker';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
-import { cascadeSetField, collapseSetsToDraft, makeUid } from '@/lib/workout-conversion';
+import { cascadeSetField, collapseSetsToDraft, makeUid } from '@/models/workout-conversion';
 import { useMemo, useState } from 'react';
 import { reorderItems } from 'react-native-reorderable-list';
 
@@ -9,13 +9,13 @@ import { reorderItems } from 'react-native-reorderable-list';
 // every set/exercise mutator that is identical between the two.
 //
 // trackCompletion gates the per-set `completed` field: active workouts track which sets
-// are done, mirrored into the session snapshot (src/lib/active-workout-session.ts) so a
+// are done, mirrored into the session snapshot (src/models/active-workout-session.ts) so a
 // killed workout resumes with checkmarks intact, while the plan/log editor must NOT write
 // a `completed` key — expandDraftToSets only persists it when defined, so omitting it here
 // keeps logged/planned docs clean.
 // Exercise selection also lives here so every editor uses the planning behavior: prefer
 // the latest matching exercise from the same workout day, then fall back to any day.
-// The forward-cascade rule for set edits lives in src/lib/workout-conversion.ts.
+// The forward-cascade rule for set edits lives in src/models/workout-conversion.ts.
 
 type DraftExerciseOptions = {
   trackCompletion?: boolean;

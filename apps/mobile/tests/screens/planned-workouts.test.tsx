@@ -55,7 +55,7 @@ mock.module('@expo/vector-icons', () => ({
 mock.module('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
-mock.module('@/lib/workout-suggestions', () => ({ generateSplitWorkoutNames: async () => [] }));
+mock.module('@/models/workout-suggestions', () => ({ generateSplitWorkoutNames: async () => [] }));
 
 type Build = { module(path: string, callback: () => { exports: Record<string, unknown>; loader: 'object' }): void };
 // Override the shared preload's router/storage doubles so focus cleanup and

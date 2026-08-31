@@ -1,5 +1,5 @@
 import { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { applyWearAction, buildWearActiveState, nextSetIndex } from '@/lib/wear-state';
+import { applyWearAction, buildWearActiveState, nextSetIndex } from '@/models/wear-state';
 import assert from 'node:assert/strict';
 
 const set = (over: Partial<DraftSet> = {}): DraftSet => ({

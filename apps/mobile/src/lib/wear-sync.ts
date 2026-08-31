@@ -1,4 +1,4 @@
-import { WearAction, WearState } from '@/lib/wear-state';
+import { WearAction, WearState } from '@/models/wear-state';
 
 // No-op stub for iOS/web. The Android implementation lives in wear-sync.android.ts;
 // same split as workout-notification.ts / .android.ts.

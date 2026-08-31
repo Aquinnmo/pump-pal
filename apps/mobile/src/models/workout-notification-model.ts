@@ -1,5 +1,5 @@
 import type { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { nextSetIndex } from '@/lib/wear-state';
+import { nextSetIndex } from '@/models/wear-state';
 
 // This is deliberately a domain-only model. Both notification transports use it
 // so the AOD, compact chip, and fallback never disagree about the current set.

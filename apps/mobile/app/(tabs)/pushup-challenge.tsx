@@ -2,7 +2,7 @@ import { pushupRepository } from '@/models/pushup-repository';
 import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { useAuth } from '@/context/auth-context';
 import { useDataVersion } from '@/hooks/use-data-version';
-import { getDailyName } from '@/lib/daily-name';
+import { getDailyName } from '@/models/daily-name';
 import { toDateKey } from '@/lib/date-key';
 import { syncStreakReminders } from '@/lib/streak-notification';
 import { dayNumberOn } from '@/lib/streak-schedule';

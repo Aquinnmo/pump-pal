@@ -8,7 +8,7 @@ import { Timestamp } from 'firebase/firestore';
  * drafts), or an ISO-8601 string (local SQLite storage — see
  * src/models/normalize-timestamps.ts — and the API wire format — see
  * packages/contract/src/api-contract.ts's `isoTimestamp`). Always read through
- * `src/lib/workout-conversion.ts`'s `toDateObj()` rather than assuming one
+ * `src/models/workout-conversion.ts`'s `toDateObj()` rather than assuming one
  * shape, same rule that already applied to `Workout.date`.
  */
 export type FlexibleTimestamp = Timestamp | { seconds: number; nanoseconds: number } | Date | string;

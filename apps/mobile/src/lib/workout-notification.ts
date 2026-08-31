@@ -2,7 +2,7 @@
 // workout-notification.android.ts and Metro serves it only on Android.
 // (Notifee is Android-only here — see docs/... / issue pump-pal-8ew.)
 
-import type { WorkoutNotificationPresentation } from '@/lib/workout-notification-model';
+import type { WorkoutNotificationPresentation } from '@/models/workout-notification-model';
 
 export type WorkoutSegment = WorkoutNotificationPresentation['segments'][number];
 export type WorkoutNotificationData = WorkoutNotificationPresentation;

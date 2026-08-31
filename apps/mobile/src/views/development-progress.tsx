@@ -2,13 +2,13 @@ import { MuscleMap } from "@/views/muscle-map";
 import { MuscleMapLegend } from "@/views/muscle-map-legend";
 import { muscleLabel, type MuscleId } from "@/constants/muscles";
 import type { CatalogExercise, Workout } from "@/types/workout";
-import { loadCatalog } from "@/lib/exercise-catalog";
+import { loadCatalog } from "@/models/exercise-catalog";
 import {
   computeMuscleDevelopment,
   developmentGrade,
   topDevelopmentContributors,
   type MuscleDevelopmentStat,
-} from "@/lib/muscle-development";
+} from "@/models/muscle-development";
 import { muscleMapColor } from "@/lib/muscle-map-scale";
 import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";

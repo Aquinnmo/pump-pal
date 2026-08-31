@@ -73,7 +73,7 @@ provider.
 It is an owner-writable field on this document and follows the same
 offline-first repository path as `workoutSplit`. The toggle is
 Settings → App (`apps/mobile/app/settings-app.tsx`); reads go through
-`apps/mobile/src/lib/use-ai-enabled.ts`, which resolves `false` while loading so
+`apps/mobile/src/hooks/use-ai-enabled.ts`, which resolves `false` while loading so
 no AI surface flashes in before the opt-in is known.
 
 Enforcement is server-side: `POST /api/ai` and `GET /api/ai/quota` answer
@@ -121,7 +121,7 @@ subcollection above.
 
 Each `Injury` has a client-generated `id`, a `bodyPart` (`apps/mobile/src/constants/body-parts.ts`,
 mapped to canonical muscles via `BODY_PART_MUSCLES` so it joins the
-muscle-volume engine in `apps/mobile/src/lib/muscle-analysis.ts`), `severity`, `status`
+muscle-volume engine in `apps/mobile/src/models/muscle-analysis.ts`), `severity`, `status`
 (`ongoing` | `resolved`), onset/resolved timestamps, and optional
 `side`/`muscles`/`avoid`/`notes`. Injury timestamps use `Timestamp.now()`, not
 `serverTimestamp()` — Firestore forbids sentinel values inside array elements.
@@ -129,7 +129,7 @@ muscle-volume engine in `apps/mobile/src/lib/muscle-analysis.ts`), `severity`, `
 `onsetDate` and `resolvedDate` define an injury's **window** — the span
 `[onsetDate, resolvedDate ?? now]` that its retroactive history apply targets.
 
-Write/read sites (`apps/mobile/src/lib/injuries.ts` + `apps/mobile/app/settings-injuries.tsx`):
+Write/read sites (`apps/mobile/src/models/ongoing-injuries.ts` + `apps/mobile/app/settings-injuries.tsx`):
 - `getOngoingInjuryIds` — read at workout-completion to stamp `workouts/{id}.injuries`.
 - `applyInjuryToHistory(uid, injury)` — from the injuries screen, `arrayUnion`s
   the injury id onto every completed workout whose `date` falls in the injury's

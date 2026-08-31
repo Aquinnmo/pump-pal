@@ -45,7 +45,7 @@ mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.ur
   },
 }));
 
-mock.module('@/lib/exercise-catalog', () => ({
+mock.module('@/models/exercise-catalog', () => ({
   loadCatalog: async () => {
     if (holdCatalog) {
       await new Promise<void>((resolve) => { releaseCatalog = resolve; });

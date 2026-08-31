@@ -1,12 +1,12 @@
 import { workoutRepository } from '@/models/workout-repository';
 import { dismissWorkoutNotification } from '@/lib/workout-notification';
 import { pushWearState } from '@/lib/wear-sync';
-import { buildWearIdleState } from '@/lib/wear-state';
-import { describeUpNext } from '@/lib/up-next';
+import { buildWearIdleState } from '@/models/wear-state';
+import { describeUpNext } from '@/models/up-next';
 
 /**
  * One-time cleanup for a device that still has an 'in_progress' row from before the
- * memory-first workout rewrite (see src/lib/active-workout-session.ts) — the app no
+ * memory-first workout rewrite (see src/models/active-workout-session.ts) — the app no
  * longer produces that status, resumes from an in-memory session instead, and has no
  * code path left that will ever finish or discard an old on-disk one. Restore a
  * plan-sourced row to the planned queue with its sets cleared (the old Discard

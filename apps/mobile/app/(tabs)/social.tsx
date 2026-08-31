@@ -6,7 +6,7 @@ import {
   sendBuddyRequest,
 } from "@/models/remote/buddies";
 import { toDateKey } from "@/lib/date-key";
-import { useSocialEnabled } from "@/lib/use-social-enabled";
+import { useSocialEnabled } from "@/hooks/use-social-enabled";
 import { FadingScrollView } from "@/views/primitives/fading-scroll-view";
 import { Toast } from "@/views/primitives/toast";
 import { Ionicons } from "@expo/vector-icons";

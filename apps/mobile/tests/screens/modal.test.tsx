@@ -56,19 +56,19 @@ const injuriesMock = () => ({
   getOngoingInjuryIds: async () => [],
   getOngoingInjuries: async () => [],
 });
-mock.module('@/lib/injuries', injuriesMock);
-mock.module(new URL('../../src/lib/injuries.web.ts', import.meta.url).pathname, injuriesMock);
+mock.module('@/models/ongoing-injuries', injuriesMock);
+mock.module(new URL('../../src/models/ongoing-injuries.web.ts', import.meta.url).pathname, injuriesMock);
 mock.module('@/hooks/use-exercise-catalog', () => ({ useExerciseCatalog: () => ({ options: [] }) }));
-mock.module('@/lib/use-ai-enabled', () => ({ useAIEnabled: () => false }));
-mock.module('@/lib/use-ai-connectivity', () => ({ useAIGenerationAvailable: () => false }));
-mock.module('@/lib/use-ai-quota', () => ({ useAIQuota: () => ({ usesLeft: 0 }) }));
-mock.module('@/lib/predict-next-workout', () => ({ predictNextWorkoutName: () => null }));
-mock.module('@/lib/workout-suggestions', () => ({
+mock.module('@/hooks/use-ai-enabled', () => ({ useAIEnabled: () => false }));
+mock.module('@/hooks/use-ai-connectivity', () => ({ useAIGenerationAvailable: () => false }));
+mock.module('@/hooks/use-ai-quota', () => ({ useAIQuota: () => ({ usesLeft: 0 }) }));
+mock.module('@/models/predict-next-workout', () => ({ predictNextWorkoutName: () => null }));
+mock.module('@/models/workout-suggestions', () => ({
   generateSplitWorkoutNames: async () => [],
   suggestedExercisesToDraftRows: () => [],
   suggestWorkoutCompletion: async () => ({ suggestions: [] }),
 }));
-mock.module('@/lib/create-pending-exercise', () => ({ createPendingExercise: async () => undefined }));
+mock.module('@/models/create-pending-exercise', () => ({ createPendingExercise: async () => undefined }));
 mock.module('@react-native-async-storage/async-storage', () => ({ default: { getItem: async () => null, setItem: async () => undefined } }));
 mock.module('@expo/vector-icons', () => ({ Ionicons: () => null }));
 mock.module('expo-router', () => ({ router, useLocalSearchParams: () => params }));

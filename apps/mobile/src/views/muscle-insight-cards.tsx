@@ -4,9 +4,9 @@ import {
   analyzeMuscles,
   MuscleInsights,
   normalizeMuscleInsights,
-} from "@/lib/muscle-analysis";
-import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
-import { useAIQuota } from "@/lib/use-ai-quota";
+} from "@/models/muscle-analysis";
+import { useAIGenerationAvailable } from "@/hooks/use-ai-connectivity";
+import { useAIQuota } from "@/hooks/use-ai-quota";
 import { Workout } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";

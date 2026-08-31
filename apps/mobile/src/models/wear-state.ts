@@ -1,5 +1,5 @@
 import { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { cascadeSetField } from '@/lib/workout-conversion';
+import { cascadeSetField } from '@/models/workout-conversion';
 
 // What the Wear OS watch shows, and what it can ask the phone to do. The phone is
 // the only Firestore writer; the watch renders this payload and posts actions back.

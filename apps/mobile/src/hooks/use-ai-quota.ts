@@ -1,6 +1,6 @@
 import { getAIQuota } from '@/models/remote/ai-quota';
-import { getCachedRemaining, hydrateAIQuota, recordRemaining, subscribeAIQuota } from '@/lib/ai-quota-cache';
-import { isAIEnabled } from '@/lib/ai-enabled';
+import { getCachedRemaining, hydrateAIQuota, recordRemaining, subscribeAIQuota } from '@/models/ai-quota-cache';
+import { isAIEnabled } from '@/models/ai-enabled';
 import { useAuth } from '@/context/auth-context';
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 

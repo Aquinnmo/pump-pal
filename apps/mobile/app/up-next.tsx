@@ -1,5 +1,5 @@
 import { useAuth } from '@/context/auth-context';
-import { resolveUpNextTarget } from '@/lib/up-next-target';
+import { resolveUpNextTarget } from '@/models/up-next-target';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';

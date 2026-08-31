@@ -57,7 +57,7 @@ Field notes:
   display/search.
 - `status: 'approved'` is explicit on every seeded/catalog-visible document.
   `status: 'pending_review'` marks exercises created in-app by a user via the
-  "can't find my exercise" flow (`apps/mobile/src/lib/create-pending-exercise.ts`) rather
+  "can't find my exercise" flow (`apps/mobile/src/models/create-pending-exercise.ts`) rather
   than seeded from the catalog. These have `primaryMuscles: []`,
   `secondaryMuscles: []`, and `variations: []` — the muscle-required
   invariant described below is enforced by the seed script's validator, not
@@ -67,7 +67,7 @@ Field notes:
   defines `'reps' | 'duration' | 'distance' | 'calories'`), but the actual
   data (and the code that reads it) uses `'reps_weight' | 'reps_bodyweight' |
   'duration' | 'distance'`. This forces a cast in
-  `apps/mobile/src/lib/create-pending-exercise.ts`. Known issue, not fixed as part of the
+  `apps/mobile/src/models/create-pending-exercise.ts`. Known issue, not fixed as part of the
   muscle-data work — fix the type to match reality before adding a 5th
   tracking mode.
 
@@ -169,7 +169,7 @@ type ExerciseCatalogMeta = {
 ```
 
 The app loads the catalog once after auth, caches it in `AsyncStorage`
-(`apps/mobile/src/lib/exercise-catalog.ts`), and only refetches when `version` here differs
+(`apps/mobile/src/models/exercise-catalog.ts`), and only refetches when `version` here differs
 from the cached `version`. **Any time the seed script writes new catalog
 data with `--apply`, bump `--catalog-version` so clients actually pick up the
 change** — writing new exercise docs without bumping this is a silent no-op
@@ -178,7 +178,7 @@ for every device with a warm cache.
 ## Exercise picker (why the shape is flattened at read time)
 
 The picker must stay a single search field, no "pick family then pick
-variation" step. At runtime `apps/mobile/src/lib/exercise-catalog.ts` flattens every
+variation" step. At runtime `apps/mobile/src/models/exercise-catalog.ts` flattens every
 exercise + variation combination into `ExerciseSearchOption[]`:
 
 ```ts

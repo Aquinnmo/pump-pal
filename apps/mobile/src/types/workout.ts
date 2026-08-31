@@ -129,7 +129,7 @@ export type DraftSet = {
 };
 
 // Modal's per-set editing shape — one row per exercise, expanded to
-// PerformedSet[] on save (see src/lib/workout-conversion.ts). exerciseType and
+// PerformedSet[] on save (see src/models/workout-conversion.ts). exerciseType and
 // bodyweight are exercise-wide; holdSeconds/peNotes/legacy are hidden
 // passthroughs so editing migrated data never drops hold/notes/legacy data.
 export type DraftExerciseRow = {
