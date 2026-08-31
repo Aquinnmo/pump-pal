@@ -8,11 +8,11 @@ import {
   toDateObj,
 } from "@/lib/workout-conversion";
 import { Workout } from "@/types/workout";
-import { DevelopmentProgressSummary } from "@/ui/development-progress-summary";
-import { MuscleInsightCards } from "@/ui/muscle-insight-cards";
-import { MuscleLoadSummary } from "@/ui/muscle-load-summary";
-import { Dropdown } from "@/ui/primitives/dropdown";
-import { SetConsistencySummary } from "@/ui/set-consistency-summary";
+import { DevelopmentProgressSummary } from "@/views/development-progress-summary";
+import { MuscleInsightCards } from "@/views/muscle-insight-cards";
+import { MuscleLoadSummary } from "@/views/muscle-load-summary";
+import { Dropdown } from "@/views/primitives/dropdown";
+import { SetConsistencySummary } from "@/views/set-consistency-summary";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";

@@ -1,4 +1,4 @@
-import { TimberLogo } from '@/ui/timber-logo';
+import { TimberLogo } from '@/views/timber-logo';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PropsWithChildren } from 'react';
 import { StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';

@@ -27,7 +27,7 @@ plugin({
   },
 });
 
-const { TimberLogo } = await import('../../src/ui/timber-logo');
+const { TimberLogo } = await import('../../src/views/timber-logo');
 
 afterEach(() => {
   cleanup();

@@ -6,7 +6,7 @@ mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-const { Toast } = await import('../../src/ui/primitives/toast');
+const { Toast } = await import('../../src/views/primitives/toast');
 
 type FakeTimerApi = {
   advanceTimersByTime(milliseconds: number): void;

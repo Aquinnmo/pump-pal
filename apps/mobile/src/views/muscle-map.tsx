@@ -1,4 +1,4 @@
-import { Dropdown } from '@/ui/primitives/dropdown';
+import { Dropdown } from '@/views/primitives/dropdown';
 import {
   BODY_SILHOUETTES,
   MUSCLE_MAP_VIEWBOX,

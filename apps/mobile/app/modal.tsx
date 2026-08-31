@@ -1,7 +1,7 @@
-import { Dropdown } from "@/ui/primitives/dropdown";
-import { Toast } from "@/ui/primitives/toast";
-import { WorkoutPrefillLoader } from "@/ui/primitives/workout-prefill-loader";
-import { ExerciseCard } from "@/ui/workout/exercise-card";
+import { Dropdown } from "@/views/primitives/dropdown";
+import { Toast } from "@/views/primitives/toast";
+import { WorkoutPrefillLoader } from "@/views/primitives/workout-prefill-loader";
+import { ExerciseCard } from "@/views/workout/exercise-card";
 import { profileRepository } from "@/models/profile-repository";
 import { workoutRepository } from "@/models/workout-repository";
 import { triggerSyncAfterWrite } from "@/models/sync-trigger";

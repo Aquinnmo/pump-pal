@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
 import type { DraftExerciseRow } from '@/types/workout';
-import type { SetField } from '@/ui/workout/set-fields';
+import type { SetField } from '@/views/workout/set-fields';
 
-mock.module(new URL('../../src/ui/workout/set-fields.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/workout/set-fields.tsx', import.meta.url).pathname, () => ({
   SetFields: ({
     set,
     exerciseType,
@@ -100,7 +100,7 @@ function props(overrides: { exercises?: DraftExerciseRow[]; saving?: boolean } =
 
 describe('FocusView', () => {
   it('renders the empty completion baseline and keeps undo disabled', async () => {
-    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const { FocusView } = await import('../../src/views/workout/focus-view');
     const viewProps = props({ exercises: [] });
     render(<FocusView {...viewProps} />);
 
@@ -116,7 +116,7 @@ describe('FocusView', () => {
   });
 
   it('renders the current populated set and forwards visible session/edit actions exactly once', async () => {
-    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const { FocusView } = await import('../../src/views/workout/focus-view');
     const viewProps = props({ exercises: [row(), row({ uid: 'row-2', label: 'Cable Row', sets: [
       { reps: 10, weight: '90', durationMinutes: 0, durationSeconds: 0 },
     ] })] });
@@ -151,7 +151,7 @@ describe('FocusView', () => {
   });
 
   it('shows the done state when every set is complete and keeps Finish disabled while saving', async () => {
-    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const { FocusView } = await import('../../src/views/workout/focus-view');
     const complete = row({ sets: row().sets.map((set) => ({ ...set, completed: true })) });
     const viewProps = props({ exercises: [complete], saving: true });
     render(<FocusView {...viewProps} />);
@@ -166,7 +166,7 @@ describe('FocusView', () => {
   });
 
   it('renders duration fields for the current duration set without reps or weight', async () => {
-    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const { FocusView } = await import('../../src/views/workout/focus-view');
     const duration = row({
       label: 'Plank',
       exerciseType: 'Sets of Duration',

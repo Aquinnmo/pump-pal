@@ -79,7 +79,7 @@ mock.module('firebase/auth', () => ({
   },
 }));
 
-mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
   TimberAuthShell: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   TimberBrand: ({ eyebrow, subtitle }: { eyebrow?: string; subtitle?: string }) => (
     <div>

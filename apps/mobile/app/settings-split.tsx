@@ -1,5 +1,5 @@
-import { Dropdown } from '@/ui/primitives/dropdown';
-import { Toast } from '@/ui/primitives/toast';
+import { Dropdown } from '@/views/primitives/dropdown';
+import { Toast } from '@/views/primitives/toast';
 import { profileRepository } from '@/models/profile-repository';
 import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { SPLIT_OPTIONS, SplitOption, isSplitOption } from '@/constants/split-options';

@@ -1,5 +1,5 @@
-import { HapticTab } from '@/ui/haptic-tab';
-import { TimberTabIcon } from '@/ui/timber-tab-icon';
+import { HapticTab } from '@/views/haptic-tab';
+import { TimberTabIcon } from '@/views/timber-tab-icon';
 import { usePushToken } from '@/hooks/use-push-token';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';

@@ -1,13 +1,13 @@
 import * as Haptics from 'expo-haptics';
 import type { ReactNode } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
-import { shouldPreventDefault, type TabPressEvent } from '@/ui/tab-link-press';
+import { shouldPreventDefault, type TabPressEvent } from '@/views/tab-link-press';
 
 // As of SDK 56 expo-router no longer renders through react-navigation, and its
 // vendored copy of PlatformPressable is deprecated ("copy the component into
 // your codebase"). Plain Pressable covers what the tab bar needs on native —
 // but not on web, where the button is a real anchor and its default navigation
-// has to be cancelled. See src/ui/tab-link-press.ts for why.
+// has to be cancelled. See src/views/tab-link-press.ts for why.
 type HapticTabProps = Omit<PressableProps, 'style'> & {
   href?: string;
   children?: ReactNode;

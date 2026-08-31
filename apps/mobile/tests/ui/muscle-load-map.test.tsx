@@ -5,7 +5,7 @@ import type { MuscleId } from '@/constants/muscles';
 import { MUSCLES } from '@/constants/muscles';
 import type { MuscleLoadResult, MuscleLoadStat } from '@/lib/muscle-load';
 
-mock.module(new URL('../../src/ui/muscle-map.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map.tsx', import.meta.url).pathname, () => ({
   MuscleMap: ({
     accessibilityLabel,
     onSelectMuscle,
@@ -21,7 +21,7 @@ mock.module(new URL('../../src/ui/muscle-map.tsx', import.meta.url).pathname, ()
     </button>
   ),
 }));
-mock.module(new URL('../../src/ui/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
   MuscleMapLegend: ({ accessibilityLabel, labels }: { accessibilityLabel: string; labels: readonly string[] }) => (
     <div aria-label={accessibilityLabel}>{labels.join(' · ')}</div>
   ),
@@ -67,7 +67,7 @@ afterEach(() => {
 
 describe('MuscleLoadMap', () => {
   it('renders the empty map details and no-contributor guidance', async () => {
-    const { MuscleLoadMap } = await import('../../src/ui/muscle-load-map');
+    const { MuscleLoadMap } = await import('../../src/views/muscle-load-map');
     render(<MuscleLoadMap result={result()} />);
 
     assert.ok(screen.getByLabelText(/Selected muscle: Chest\. 0 percent\. Not worked recently/));
@@ -101,7 +101,7 @@ describe('MuscleLoadMap', () => {
         ],
       },
     ]);
-    const { MuscleLoadMap } = await import('../../src/ui/muscle-load-map');
+    const { MuscleLoadMap } = await import('../../src/views/muscle-load-map');
     render(<MuscleLoadMap result={populated} />);
 
     assert.ok(screen.getByLabelText('Chest. 50 percent. Moderate recent load. Last worked 2 days ago. Top exercises: Bench Press, Push Up.'));
@@ -125,7 +125,7 @@ describe('MuscleLoadMap', () => {
         ],
       },
     ]);
-    const { MuscleLoadMap } = await import('../../src/ui/muscle-load-map');
+    const { MuscleLoadMap } = await import('../../src/views/muscle-load-map');
     render(<MuscleLoadMap result={populated} />);
 
     fireEvent.click(screen.getByRole('button', { name: /Selected muscle: Chest/ }));

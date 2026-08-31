@@ -1,5 +1,5 @@
 // Plate math for the active-workout plate calculator. lb-only, matching the rest of
-// the app (see src/ui/workout/exercise-card.tsx's hardcoded "Weight (lbs)").
+// the app (see src/views/workout/exercise-card.tsx's hardcoded "Weight (lbs)").
 
 export const PLATE_DENOMS = [45, 35, 25, 10, 5, 2.5, 1, 0.5, 0.25] as const;
 

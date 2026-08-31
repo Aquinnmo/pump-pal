@@ -56,17 +56,17 @@ mock.module('@/lib/exercise-catalog', () => ({
 
 // Keep the real development metric, grade, contributor, and retry rendering
 // while replacing native-only map and scroll surfaces at stable UI seams.
-mock.module(new URL('../../src/ui/muscle-map.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map.tsx', import.meta.url).pathname, () => ({
   MuscleMap: ({ accessibilityLabel }: { accessibilityLabel: string }) => (
     <div role="img" aria-label={accessibilityLabel} />
   ),
 }));
-mock.module(new URL('../../src/ui/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
   MuscleMapLegend: ({ accessibilityLabel }: { accessibilityLabel: string }) => (
     <div role="img" aria-label={accessibilityLabel} />
   ),
 }));
-mock.module(new URL('../../src/ui/primitives/fading-scroll-view.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/fading-scroll-view.tsx', import.meta.url).pathname, () => ({
   FadingScrollView: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
 mock.module('@expo/vector-icons', () => ({

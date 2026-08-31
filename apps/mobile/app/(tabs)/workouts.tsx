@@ -1,4 +1,4 @@
-import { WorkoutCard } from '@/ui/workout-card';
+import { WorkoutCard } from '@/views/workout-card';
 import { workoutRepository } from '@/models/workout-repository';
 import { triggerSyncAfterWrite } from '@/models/sync-trigger';
 import { useAuth } from '@/context/auth-context';

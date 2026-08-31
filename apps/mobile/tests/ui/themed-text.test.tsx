@@ -10,7 +10,7 @@ mock.module(new URL('../../src/hooks/use-color-scheme.web.ts', import.meta.url).
   useColorScheme: () => themeTestGlobal.__themedComponentColorScheme ?? 'light',
 }));
 
-const { ThemedText } = await import('../../src/ui/themed-text');
+const { ThemedText } = await import('../../src/views/themed-text');
 
 afterEach(() => {
   cleanup();

@@ -1,6 +1,6 @@
-import { DateField } from '@/ui/primitives/date-field';
-import { Dropdown } from '@/ui/primitives/dropdown';
-import { Toast } from '@/ui/primitives/toast';
+import { DateField } from '@/views/primitives/date-field';
+import { Dropdown } from '@/views/primitives/dropdown';
+import { Toast } from '@/views/primitives/toast';
 import { randomId } from '@/models/id';
 import { injuryRepository } from '@/models/injury-repository';
 import { triggerSyncAfterWrite } from '@/models/sync-trigger';

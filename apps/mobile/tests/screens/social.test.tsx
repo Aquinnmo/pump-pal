@@ -59,10 +59,10 @@ mock.module(new URL('../../src/models/remote/buddies.ts', import.meta.url).pathn
     return { delivered: true };
   },
 }));
-mock.module(new URL('../../src/ui/primitives/fading-scroll-view.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/fading-scroll-view.tsx', import.meta.url).pathname, () => ({
   FadingScrollView: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
-mock.module(new URL('../../src/ui/primitives/toast.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/toast.tsx', import.meta.url).pathname, () => ({
   Toast: ({ visible, message }: { visible: boolean; message: string }) =>
     visible ? <div role="alert">{message}</div> : null,
 }));

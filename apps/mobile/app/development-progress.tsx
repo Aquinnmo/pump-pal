@@ -1,5 +1,5 @@
-import { DevelopmentProgress } from '@/ui/development-progress';
-import { FadingScrollView } from '@/ui/primitives/fading-scroll-view';
+import { DevelopmentProgress } from '@/views/development-progress';
+import { FadingScrollView } from '@/views/primitives/fading-scroll-view';
 import { workoutRepository } from '@/models/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import type { Workout } from '@/types/workout';

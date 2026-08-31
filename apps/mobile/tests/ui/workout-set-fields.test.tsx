@@ -7,7 +7,7 @@ mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-const { SetFields } = await import('../../src/ui/workout/set-fields');
+const { SetFields } = await import('../../src/views/workout/set-fields');
 
 afterEach(() => {
   cleanup();

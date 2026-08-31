@@ -67,7 +67,7 @@ mock.module(new URL('../../src/models/data-version.ts', import.meta.url).pathnam
   bumpDataVersion: () => bumps.push('bump'),
 }));
 
-mock.module(new URL('../../src/ui/primitives/toast.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/toast.tsx', import.meta.url).pathname, () => ({
   Toast: ({ visible, message, type }: { visible: boolean; message: string; type: string }) => {
     if (!visible) return null;
     return <span role="alert" data-toast-type={type}>{message}</span>;

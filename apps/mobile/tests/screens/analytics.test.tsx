@@ -45,19 +45,19 @@ mock.module(new URL('../../src/models/workout-repository.web.ts', import.meta.ur
 // These are separate metric surfaces with their own repository/catalog behavior.
 // Keep the analytics screen's inline aggregation real while making this test
 // boundary-specific and deterministic.
-mock.module(new URL('../../src/ui/muscle-insight-cards.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-insight-cards.tsx', import.meta.url).pathname, () => ({
   MuscleInsightCards: () => null,
 }));
-mock.module(new URL('../../src/ui/muscle-load-summary.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-load-summary.tsx', import.meta.url).pathname, () => ({
   MuscleLoadSummary: () => <div>Muscle load summary</div>,
 }));
-mock.module(new URL('../../src/ui/development-progress-summary.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/development-progress-summary.tsx', import.meta.url).pathname, () => ({
   DevelopmentProgressSummary: () => <div>Development progress summary</div>,
 }));
-mock.module(new URL('../../src/ui/set-consistency-summary.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/set-consistency-summary.tsx', import.meta.url).pathname, () => ({
   SetConsistencySummary: () => <div>Set consistency summary</div>,
 }));
-mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
   Dropdown: ({
     accessibilityLabel,
     options,

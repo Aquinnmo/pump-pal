@@ -5,7 +5,7 @@ import { workoutRepository } from "@/models/workout-repository";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
 import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { toDateObj } from "@/lib/workout-conversion";
-import { Toast } from "@/ui/primitives/toast";
+import { Toast } from "@/views/primitives/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Updates from "expo-updates";
@@ -72,7 +72,7 @@ function TogglePulse() {
     if (reducedMotion) {
       // Held mid-expansion rather than removed: the row still shows that
       // something is in flight, it just doesn't move. Same fallback shape as
-      // src/ui/primitives/workout-prefill-loader.tsx.
+      // src/views/primitives/workout-prefill-loader.tsx.
       progress.value = 0.35;
       return;
     }

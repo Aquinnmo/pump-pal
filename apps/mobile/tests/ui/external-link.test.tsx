@@ -62,7 +62,7 @@ plugin({
   },
 });
 
-const { ExternalLink } = await import('../../src/ui/external-link');
+const { ExternalLink } = await import('../../src/views/external-link');
 const originalExpoOs = process.env.EXPO_OS;
 
 afterEach(() => {

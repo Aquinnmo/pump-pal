@@ -1,4 +1,4 @@
-import { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
+import { ExercisePickerSelection } from '@/views/primitives/exercise-picker';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import { cascadeSetField, collapseSetsToDraft, makeUid } from '@/lib/workout-conversion';
 import { useMemo, useState } from 'react';

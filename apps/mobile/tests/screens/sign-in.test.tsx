@@ -27,7 +27,7 @@ mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathn
   }),
 }));
 
-mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
   TimberAuthShell: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   TimberBrand: () => <div>Timber</div>,
   timberAuthStyles: {
@@ -40,7 +40,7 @@ mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathn
   },
 }));
 
-mock.module(new URL('../../src/ui/google-sign-in-button.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/google-sign-in-button.tsx', import.meta.url).pathname, () => ({
   GoogleSignInButton: ({ label = 'Continue with Google', disabled }: { label?: string; disabled?: boolean }) => (
     <button aria-label={label} disabled={disabled}>{label}</button>
   ),

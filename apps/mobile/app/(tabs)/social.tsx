@@ -7,8 +7,8 @@ import {
 } from "@/models/remote/buddies";
 import { toDateKey } from "@/lib/date-key";
 import { useSocialEnabled } from "@/lib/use-social-enabled";
-import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
-import { Toast } from "@/ui/primitives/toast";
+import { FadingScrollView } from "@/views/primitives/fading-scroll-view";
+import { Toast } from "@/views/primitives/toast";
 import { Ionicons } from "@expo/vector-icons";
 import type {
   BuddyDTO,

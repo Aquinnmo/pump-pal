@@ -54,7 +54,7 @@ less insight; it is never acceptable to show a wrong one.
 | --- | --- |
 | Autofill from the last time you did this exercise *on this same split day*, falling back to any day (`apps/mobile/src/hooks/use-draft-exercises.ts:44`) | ingestion |
 | Cascade an edit forward through following sets, stopping at the first deliberately different one so pyramids and drop sets survive (`apps/mobile/src/hooks/use-draft-exercises.ts:21`) | ingestion |
-| Exercise picker offers recents-for-this-day before it offers search (`apps/mobile/src/ui/primitives/exercise-picker.tsx:319`) | ingestion |
+| Exercise picker offers recents-for-this-day before it offers search (`apps/mobile/src/views/primitives/exercise-picker.tsx:319`) | ingestion |
 | Per-set completion checkbox; unchecked sets are dropped at finish (`apps/mobile/app/active-workout.tsx`, `finishWorkout`) | fidelity |
 | An active workout is snapshotted to device storage and restored on launch (`apps/mobile/src/lib/active-workout-session.ts`), but the DB is still written exactly once, on Finish — a process death recovers the draft, not a half-written row (`apps/mobile/app/active-workout.tsx`) | fidelity: the DB never sees a workout the user hasn't finished, even though the draft itself now survives a crash |
 | iOS 17+ Live Activity with Dynamic Island, Lock Screen, and host-confirmed actions (`apps/mobile/targets/widget/`, `apps/mobile/modules/live-update-notification/ios/`) | log without opening the app; a force-quit action never claims an unconfirmed write |

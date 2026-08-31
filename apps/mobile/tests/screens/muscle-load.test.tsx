@@ -57,17 +57,17 @@ mock.module('@/lib/exercise-catalog', () => ({
 // Keep MuscleLoadMap's visible detail rendering real while replacing only its
 // native SVG/dropdown surfaces, so the route test observes the computed load
 // and contributor copy at a stable presentation boundary.
-mock.module(new URL('../../src/ui/muscle-map.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map.tsx', import.meta.url).pathname, () => ({
   MuscleMap: ({ accessibilityLabel }: { accessibilityLabel: string }) => (
     <div role="img" aria-label={accessibilityLabel} />
   ),
 }));
-mock.module(new URL('../../src/ui/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
   MuscleMapLegend: ({ accessibilityLabel }: { accessibilityLabel: string }) => (
     <div role="img" aria-label={accessibilityLabel} />
   ),
 }));
-mock.module(new URL('../../src/ui/primitives/fading-scroll-view.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/fading-scroll-view.tsx', import.meta.url).pathname, () => ({
   FadingScrollView: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
 mock.module('@expo/vector-icons', () => ({

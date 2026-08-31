@@ -1,4 +1,4 @@
-import { Toast } from "@/ui/primitives/toast";
+import { Toast } from "@/views/primitives/toast";
 import { auth } from "@/config/firebase";
 import { useAuth } from "@/context/auth-context";
 import { countPendingSync, purgeLocalAccountData, syncBeforeSignOut } from "@/models/account-data";

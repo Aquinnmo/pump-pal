@@ -1,10 +1,10 @@
 import FirebaseRecaptchaVerifierModal, {
   FirebaseRecaptchaVerifierModalRef,
-} from "@/ui/firebase-recaptcha-modal";
+} from "@/views/firebase-recaptcha-modal";
 import {
   TimberAuthShell,
   timberAuthStyles
-} from "@/ui/timber-auth-shell";
+} from "@/views/timber-auth-shell";
 import app, { auth } from "@/config/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { getLocales } from "expo-localization";

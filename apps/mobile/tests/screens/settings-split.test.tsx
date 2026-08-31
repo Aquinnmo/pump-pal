@@ -65,12 +65,12 @@ mock.module('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
-mock.module(new URL('../../src/ui/primitives/toast.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/toast.tsx', import.meta.url).pathname, () => ({
   Toast: ({ visible, message }: { visible: boolean; message: string }) =>
     visible ? <span role="alert">{message}</span> : null,
 }));
 
-mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
   Dropdown: ({
     options,
     value,

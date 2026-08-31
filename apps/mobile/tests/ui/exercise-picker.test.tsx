@@ -55,7 +55,7 @@ mock.module('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
 }));
 
-const { ExercisePicker } = await import('../../src/ui/primitives/exercise-picker');
+const { ExercisePicker } = await import('../../src/views/primitives/exercise-picker');
 
 const option = (overrides: Partial<ExerciseSearchOption> = {}): ExerciseSearchOption => ({
   label: 'Bench Press',

@@ -8,7 +8,7 @@ mock.module('expo-linear-gradient', () => ({
   LinearGradient: () => null,
 }));
 
-const { MuscleMapLegend } = await import('../../src/ui/muscle-map-legend');
+const { MuscleMapLegend } = await import('../../src/views/muscle-map-legend');
 
 afterEach(() => {
   cleanup();

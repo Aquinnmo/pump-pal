@@ -50,7 +50,7 @@ plugin({
   },
 });
 
-const { PlateCalculator } = await import('../../src/ui/primitives/plate-calculator');
+const { PlateCalculator } = await import('../../src/views/primitives/plate-calculator');
 
 afterEach(() => {
   cleanup();

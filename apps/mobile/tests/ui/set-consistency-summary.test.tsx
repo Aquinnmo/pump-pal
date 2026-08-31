@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, it } from 'bun:test';
 import { makePerformedExercise, makeWorkout } from '../factories';
-import { SetConsistencySummary } from '../../src/ui/set-consistency-summary';
+import { SetConsistencySummary } from '../../src/views/set-consistency-summary';
 
 afterEach(() => {
   cleanup();

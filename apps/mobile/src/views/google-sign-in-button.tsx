@@ -1,7 +1,7 @@
 // Shared by app/(auth)/sign-in.tsx and sign-up.tsx. Reports failures upward via
 // `onError` so each screen renders them in its own existing error banner rather
 // than this component growing a second error surface.
-import { timberAuthStyles } from '@/ui/timber-auth-shell';
+import { timberAuthStyles } from '@/views/timber-auth-shell';
 import { useAuth } from '@/context/auth-context';
 import { getFriendlyAuthError } from '@/lib/firebase-errors';
 import { Ionicons } from '@expo/vector-icons';

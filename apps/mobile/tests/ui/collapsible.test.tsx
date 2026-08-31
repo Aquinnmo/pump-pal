@@ -6,7 +6,7 @@ mock.module('@expo/vector-icons/MaterialIcons', () => ({
   default: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-const { Collapsible } = await import('../../src/ui/primitives/collapsible');
+const { Collapsible } = await import('../../src/views/primitives/collapsible');
 
 afterEach(() => {
   cleanup();

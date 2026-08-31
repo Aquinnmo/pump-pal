@@ -53,17 +53,17 @@ mock.module(new URL('../../src/lib/injuries.web.ts', import.meta.url).pathname, 
   removeInjuryFromHistory: async () => 0,
 }));
 
-mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
   Dropdown: ({ value, placeholder }: { value: string; placeholder?: string }) => (
     <button aria-label={placeholder}>{value || placeholder}</button>
   ),
 }));
 
-mock.module(new URL('../../src/ui/primitives/date-field.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/date-field.tsx', import.meta.url).pathname, () => ({
   DateField: ({ value }: { value: Date }) => <input type="date" value={value.toISOString().split('T')[0]} readOnly />,
 }));
 
-mock.module(new URL('../../src/ui/primitives/toast.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/toast.tsx', import.meta.url).pathname, () => ({
   Toast: ({ visible, message }: { visible: boolean; message: string }) =>
     visible ? <span role="alert">{message}</span> : null,
 }));

@@ -2,7 +2,7 @@
 
 ## Context
 
-The mobile app (`apps/mobile`) has a well-built model layer (`src/models/`: repositories + offline sync, no screen touches Firestore/SQLite directly) and a fully-tested view layer (`src/ui/`), but **no controller tier**: four screens exceed 1000 lines (`analytics` 1324, `pushup-challenge` 1274, `active-workout` 1130, `modal` 1037) and hold inline business logic, state machines, and repository orchestration. There is also real duplication (a 15-line split-names block copy-pasted into three screens) and dead code (~200 lines of retired Worker-transport schemas in `packages/contract`).
+The mobile app (`apps/mobile`) has a well-built model layer (`src/models/`: repositories + offline sync, no screen touches Firestore/SQLite directly) and a fully-tested view layer (`src/views/`), but **no controller tier**: four screens exceed 1000 lines (`analytics` 1324, `pushup-challenge` 1274, `active-workout` 1130, `modal` 1037) and hold inline business logic, state machines, and repository orchestration. There is also real duplication (a 15-line split-names block copy-pasted into three screens) and dead code (~200 lines of retired Worker-transport schemas in `packages/contract`).
 
 The user chose: **literal `src/models` / `src/views` / `src/controllers` folder layout**, plus **dedupe and dead-code deletion including dead-but-tested code** (delete the now-pointless assertions with it). Core behavior pinned by tests must not change: tests may be MOVED and their import/mock paths updated; assertions may only be DELETED when the production code they pin is deleted as dead.
 
@@ -194,14 +194,14 @@ Add a comment at `TRACKING_MODES` (`packages/contract/src/api-contract.ts` ~L309
 
 1. `git mv apps/mobile/src/ui apps/mobile/src/views`
 2. ```
-   rg -l -e '@/ui/' -e 'src/ui/' apps/mobile CLAUDE.md docs \
-     | xargs sed -i '' -e 's|@/ui/|@/views/|g' -e 's|src/ui/|src/views/|g'
+   rg -l -e '@/views/' -e 'src/views/' apps/mobile CLAUDE.md docs \
+     | xargs sed -i '' -e 's|@/views/|@/views/|g' -e 's|src/views/|src/views/|g'
    ```
    (No tools script references `src/ui` — verified.)
 
 ### Verify
 
-- `rg -n "@/ui/|src/ui/" apps/mobile CLAUDE.md docs --glob '!graphify-out'` → zero.
+- `rg -n "@/views/|src/views/" apps/mobile CLAUDE.md docs --glob '!graphify-out'` → zero.
 - `rg -n "mock.module\(new URL" apps/mobile | rg "src/ui"` → zero.
 - Standard command list (the 34 `tests/ui/*.test.tsx` dynamic imports prove resolution).
 
@@ -326,7 +326,7 @@ Template: pure derivations → new `src/models/<x>.ts` + colocated test; the `us
 
 ## Verification summary (how to know the whole thing worked)
 
-Per phase: `bun run typecheck && bun run test && bun run lint` + that phase's greps, all green, screen tests unedited (except sanctioned deletions in P1/P2). End state: `src/models` (data + domain logic), `src/views` (components), `src/controllers` (per-screen hooks), `src/lib` (transport + platform adapters + utils only), `app/` thin. `rg -n "@/models/|@/ui/" apps/mobile` → zero. `graphify update .` run after each phase.
+Per phase: `bun run typecheck && bun run test && bun run lint` + that phase's greps, all green, screen tests unedited (except sanctioned deletions in P1/P2). End state: `src/models` (data + domain logic), `src/views` (components), `src/controllers` (per-screen hooks), `src/lib` (transport + platform adapters + utils only), `app/` thin. `rg -n "@/models/|@/views/" apps/mobile` → zero. `graphify update .` run after each phase.
 
 ## Critical files
 

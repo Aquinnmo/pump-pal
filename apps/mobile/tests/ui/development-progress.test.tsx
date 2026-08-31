@@ -22,7 +22,7 @@ mock.module('@/lib/exercise-catalog', () => ({
 
 // Keep the real development calculations and detail presentation while making
 // the native map an accessible, deterministic interaction boundary.
-mock.module(new URL('../../src/ui/muscle-map.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map.tsx', import.meta.url).pathname, () => ({
   MuscleMap: ({
     accessibilityLabel,
     onSelectMuscle,
@@ -38,7 +38,7 @@ mock.module(new URL('../../src/ui/muscle-map.tsx', import.meta.url).pathname, ()
     </>
   ),
 }));
-mock.module(new URL('../../src/ui/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/muscle-map-legend.tsx', import.meta.url).pathname, () => ({
   MuscleMapLegend: ({ accessibilityLabel }: { accessibilityLabel: string }) => (
     <div role="img" aria-label={accessibilityLabel} />
   ),
@@ -47,7 +47,7 @@ mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-const { DevelopmentProgress } = await import('../../src/ui/development-progress');
+const { DevelopmentProgress } = await import('../../src/views/development-progress');
 
 function catalogExercise(): CatalogExercise {
   return makeCatalogExercise({

@@ -1,4 +1,4 @@
-import { SetField, SetFields } from "@/ui/workout/set-fields";
+import { SetField, SetFields } from "@/views/workout/set-fields";
 import { DraftExerciseRow } from "@/types/workout";
 import { flattenSets, nextSetIndex } from "@/lib/wear-state";
 import { Ionicons } from "@expo/vector-icons";

@@ -28,7 +28,7 @@ plugin({
   },
 });
 
-const { HapticTab } = await import('../../src/ui/haptic-tab');
+const { HapticTab } = await import('../../src/views/haptic-tab');
 const originalExpoOs = process.env.EXPO_OS;
 
 afterEach(() => {

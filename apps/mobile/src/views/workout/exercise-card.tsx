@@ -1,7 +1,7 @@
-import { DragHandle } from '@/ui/primitives/drag-handle';
-import { Dropdown } from '@/ui/primitives/dropdown';
-import { ExercisePicker, ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
-import { SetField, SetFields } from '@/ui/workout/set-fields';
+import { DragHandle } from '@/views/primitives/drag-handle';
+import { Dropdown } from '@/views/primitives/dropdown';
+import { ExercisePicker, ExercisePickerSelection } from '@/views/primitives/exercise-picker';
+import { SetField, SetFields } from '@/views/workout/set-fields';
 import { DraftExerciseRow, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';

@@ -1,8 +1,8 @@
-import { Dropdown } from "@/ui/primitives/dropdown";
-import { PlateCalculator } from "@/ui/primitives/plate-calculator";
-import { Toast } from "@/ui/primitives/toast";
-import { ExerciseCard } from "@/ui/workout/exercise-card";
-import { FocusView } from "@/ui/workout/focus-view";
+import { Dropdown } from "@/views/primitives/dropdown";
+import { PlateCalculator } from "@/views/primitives/plate-calculator";
+import { Toast } from "@/views/primitives/toast";
+import { ExerciseCard } from "@/views/workout/exercise-card";
+import { FocusView } from "@/views/workout/focus-view";
 import { profileRepository } from "@/models/profile-repository";
 import { workoutRepository } from "@/models/workout-repository";
 import { triggerSyncAfterWrite } from "@/models/sync-trigger";

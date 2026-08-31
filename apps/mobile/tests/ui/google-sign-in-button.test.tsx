@@ -8,7 +8,7 @@ const errors: Array<string | null> = [];
 mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ signInWithGoogle }),
 }));
-mock.module('@/ui/timber-auth-shell', () => ({
+mock.module('@/views/timber-auth-shell', () => ({
   timberAuthStyles: {
     secondaryButton: {},
     secondaryButtonText: {},
@@ -18,7 +18,7 @@ mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-const { GoogleSignInButton } = await import('../../src/ui/google-sign-in-button');
+const { GoogleSignInButton } = await import('../../src/views/google-sign-in-button');
 
 async function settle(): Promise<void> {
   await act(async () => {

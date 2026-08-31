@@ -5,7 +5,7 @@ import { forwardRef, useImperativeHandle, useState, type ForwardedRef, type Reac
 
 const routerReplacements: string[] = [];
 
-mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
   TimberAuthShell: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   TimberBrand: ({ title = 'Timber' }: { title?: string }) => <div>{title}</div>,
   timberAuthStyles: {
@@ -13,7 +13,7 @@ mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathn
     primaryButtonText: {},
   },
 }));
-mock.module(new URL('../../src/ui/timber-logo.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/timber-logo.tsx', import.meta.url).pathname, () => ({
   TimberLogo: () => <span aria-label="Timber logo" />,
 }));
 mock.module('@expo/vector-icons', () => ({

@@ -1,5 +1,5 @@
-import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/ui/timber-auth-shell';
-import { Dropdown } from '@/ui/primitives/dropdown';
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/views/timber-auth-shell';
+import { Dropdown } from '@/views/primitives/dropdown';
 import { notifyAccountDataChanged } from '@/models/initial-sync';
 import { profileRepository } from '@/models/profile-repository';
 import { triggerSyncAfterWrite } from '@/models/sync-trigger';

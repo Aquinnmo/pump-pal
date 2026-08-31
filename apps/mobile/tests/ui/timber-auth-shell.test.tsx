@@ -45,7 +45,7 @@ mock.module('react-native-safe-area-context', () => ({
   ),
 }));
 
-const { TimberAuthShell, TimberBrand } = await import('../../src/ui/timber-auth-shell');
+const { TimberAuthShell, TimberBrand } = await import('../../src/views/timber-auth-shell');
 
 afterEach(() => {
   cleanup();

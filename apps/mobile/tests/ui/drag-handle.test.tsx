@@ -60,7 +60,7 @@ plugin({
   },
 });
 
-const { DragHandle } = await import('../../src/ui/primitives/drag-handle');
+const { DragHandle } = await import('../../src/views/primitives/drag-handle');
 const { ReorderableList } = await import('react-native-reorderable-list') as unknown as {
   ReorderableList: ({ children }: { children?: ReactNode }) => ReactNode;
 };

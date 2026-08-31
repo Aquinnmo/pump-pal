@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, it } from 'bun:test';
 import { createRef, type ReactNode } from 'react';
-import type { FirebaseRecaptchaVerifierModalRef } from '../../src/ui/firebase-recaptcha-modal';
+import type { FirebaseRecaptchaVerifierModalRef } from '../../src/views/firebase-recaptcha-modal';
 
 type Build = {
   module(path: string, callback: () => { exports: Record<string, unknown>; loader: 'object' }): void;
@@ -44,7 +44,7 @@ plugin({
   },
 });
 
-const { default: FirebaseRecaptchaVerifierModal } = await import('../../src/ui/firebase-recaptcha-modal');
+const { default: FirebaseRecaptchaVerifierModal } = await import('../../src/views/firebase-recaptcha-modal');
 
 const firebaseConfig = {
   apiKey: 'test-api-key',

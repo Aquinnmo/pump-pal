@@ -73,7 +73,7 @@ mock.module('react-native-reanimated', () => {
   };
 });
 
-const { default: ParallaxScrollView } = await import('../../src/ui/parallax-scroll-view');
+const { default: ParallaxScrollView } = await import('../../src/views/parallax-scroll-view');
 
 function renderView(children?: ReactNode) {
   return render(

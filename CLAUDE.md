@@ -85,7 +85,7 @@ Expo Router (file-based routing, typed routes), TypeScript, React 19 / React Nat
 
 ```
 apps/mobile/app/        expo-router routes (name is fixed by the router)
-apps/mobile/src/ui/     components; src/ui/primitives/ holds the low-level ones
+apps/mobile/src/views/     components; src/views/primitives/ holds the low-level ones
 apps/mobile/src/models/   local SQLite + repositories; src/models/remote/ is the API-backed side
 apps/mobile/src/lib/    non-UI helpers
 apps/mobile/src/{hooks,context,constants,types,config}/
@@ -148,7 +148,7 @@ The `API_ALLOWED_ORIGINS` allowlist is required for any browser caller: the web 
 
 ### Theming
 
-`apps/mobile/src/constants/theme.ts` + `apps/mobile/src/hooks/use-color-scheme(.web).ts` + `apps/mobile/src/hooks/use-theme-color.ts` drive light/dark theming consumed by `apps/mobile/src/ui/themed-text.tsx` / `apps/mobile/src/ui/themed-view.tsx`. Tab bar and accent colors are currently hardcoded dark-style values in `apps/mobile/app/(tabs)/_layout.tsx` rather than pulled from the theme constants.
+`apps/mobile/src/constants/theme.ts` + `apps/mobile/src/hooks/use-color-scheme(.web).ts` + `apps/mobile/src/hooks/use-theme-color.ts` drive light/dark theming consumed by `apps/mobile/src/views/themed-text.tsx` / `apps/mobile/src/views/themed-view.tsx`. Tab bar and accent colors are currently hardcoded dark-style values in `apps/mobile/app/(tabs)/_layout.tsx` rather than pulled from the theme constants.
 
 ## graphify
 

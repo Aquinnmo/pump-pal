@@ -28,7 +28,7 @@ plugin({
   },
 });
 
-const { TimberTabIcon } = await import('../../src/ui/timber-tab-icon');
+const { TimberTabIcon } = await import('../../src/views/timber-tab-icon');
 
 afterEach(() => {
   cleanup();

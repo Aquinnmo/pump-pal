@@ -1,5 +1,5 @@
-import { MuscleMap } from "@/ui/muscle-map";
-import { MuscleMapLegend } from "@/ui/muscle-map-legend";
+import { MuscleMap } from "@/views/muscle-map";
+import { MuscleMapLegend } from "@/views/muscle-map-legend";
 import { muscleLabel, type MuscleId } from "@/constants/muscles";
 import {
   muscleLoadPercentage,

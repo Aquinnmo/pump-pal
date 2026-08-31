@@ -1,9 +1,9 @@
-import { GoogleSignInButton } from "@/ui/google-sign-in-button";
+import { GoogleSignInButton } from "@/views/google-sign-in-button";
 import {
   TimberAuthShell,
   TimberBrand,
   timberAuthStyles,
-} from "@/ui/timber-auth-shell";
+} from "@/views/timber-auth-shell";
 import { useAuth } from "@/context/auth-context";
 import { getFriendlyAuthError } from "@/lib/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";

@@ -17,7 +17,7 @@ mock.module('react-native-reanimated', () => {
   return { default: { Text: AnimatedText } };
 });
 
-const { HelloWave } = await import('../../src/ui/hello-wave');
+const { HelloWave } = await import('../../src/views/hello-wave');
 
 afterEach(() => {
   cleanup();

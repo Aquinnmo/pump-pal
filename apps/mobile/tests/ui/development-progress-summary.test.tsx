@@ -49,7 +49,7 @@ plugin({
 });
 
 const storage = await import('@react-native-async-storage/async-storage');
-const { DevelopmentProgressSummary } = await import('../../src/ui/development-progress-summary');
+const { DevelopmentProgressSummary } = await import('../../src/views/development-progress-summary');
 
 beforeEach(async () => {
   currentUid = `development-progress-test-${++uidSequence}`;

@@ -62,7 +62,7 @@ plugin({
   },
 });
 
-const { DateField } = await import('../../src/ui/primitives/date-field');
+const { DateField } = await import('../../src/views/primitives/date-field');
 const selectedDate = new Date('2024-06-20T12:00:00');
 
 afterEach(() => {

@@ -1,5 +1,5 @@
-import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/ui/timber-auth-shell';
-import { TimberLogo } from '@/ui/timber-logo';
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/views/timber-auth-shell';
+import { TimberLogo } from '@/views/timber-logo';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   // Bark fill + sapwood border kept deliberately — same arrival marker as the
-  // logo frame in src/ui/timber-auth-shell.tsx.
+  // logo frame in src/views/timber-auth-shell.tsx.
   iconFrame: {
     width: 128,
     height: 128,

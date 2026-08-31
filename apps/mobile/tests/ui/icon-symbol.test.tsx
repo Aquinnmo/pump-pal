@@ -27,7 +27,7 @@ mock.module('@expo/vector-icons/MaterialIcons', () => ({
   ),
 }));
 
-const { IconSymbol } = await import('../../src/ui/primitives/icon-symbol');
+const { IconSymbol } = await import('../../src/views/primitives/icon-symbol');
 
 afterEach(() => {
   cleanup();

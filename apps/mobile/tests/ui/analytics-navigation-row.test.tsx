@@ -6,7 +6,7 @@ mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-const { AnalyticsNavigationRow } = await import('../../src/ui/analytics-navigation-row');
+const { AnalyticsNavigationRow } = await import('../../src/views/analytics-navigation-row');
 
 afterEach(() => {
   cleanup();

@@ -74,7 +74,7 @@ mock.module('expo-linear-gradient', () => ({
   ),
 }));
 
-const { FadingScrollView } = await import('../../src/ui/primitives/fading-scroll-view');
+const { FadingScrollView } = await import('../../src/views/primitives/fading-scroll-view');
 
 afterEach(() => {
   cleanup();

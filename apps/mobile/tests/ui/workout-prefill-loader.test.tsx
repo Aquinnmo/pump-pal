@@ -39,7 +39,7 @@ mock.module('react-native-reanimated', () => {
   };
 });
 
-const { WorkoutPrefillLoader } = await import('../../src/ui/primitives/workout-prefill-loader');
+const { WorkoutPrefillLoader } = await import('../../src/views/primitives/workout-prefill-loader');
 
 afterEach(() => {
   cleanup();

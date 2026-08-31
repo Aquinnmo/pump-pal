@@ -1,9 +1,9 @@
-import { GoogleSignInButton } from "@/ui/google-sign-in-button";
+import { GoogleSignInButton } from "@/views/google-sign-in-button";
 import {
   TimberAuthShell,
   TimberBrand,
   timberAuthStyles,
-} from "@/ui/timber-auth-shell";
+} from "@/views/timber-auth-shell";
 import { auth } from "@/config/firebase";
 import { bumpDataVersion } from "@/models/data-version";
 import { profileRepository } from "@/models/profile-repository";

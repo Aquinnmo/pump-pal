@@ -63,7 +63,7 @@ mock.module(new URL('../../src/lib/alert.ts', import.meta.url).pathname, () => (
   showAlert: (title: string, message?: string) => alerts.push({ title, message }),
 }));
 
-mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
   TimberAuthShell: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   TimberBrand: ({ eyebrow, subtitle }: { eyebrow?: string; subtitle?: string }) => (
     <div>
@@ -79,7 +79,7 @@ mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathn
   },
 }));
 
-mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
   Dropdown: ({
     options,
     value,

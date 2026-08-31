@@ -1,4 +1,4 @@
-import { Toast } from "@/ui/primitives/toast";
+import { Toast } from "@/views/primitives/toast";
 import { bumpDataVersion } from "@/models/data-version";
 import { profileRepository } from "@/models/profile-repository";
 import { patchProfile } from "@/models/remote/profile";

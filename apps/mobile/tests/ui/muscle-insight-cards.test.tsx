@@ -45,7 +45,7 @@ mock.module('@expo/vector-icons', () => ({
 }));
 
 const storage = await import('@react-native-async-storage/async-storage');
-const { MuscleInsightCards } = await import('../../src/ui/muscle-insight-cards');
+const { MuscleInsightCards } = await import('../../src/views/muscle-insight-cards');
 
 function recentWorkout() {
   return makeWorkout({ date: new Date(), name: 'Recent workout' });

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
-import type { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
-import type { SetField } from '@/ui/workout/set-fields';
+import type { ExercisePickerSelection } from '@/views/primitives/exercise-picker';
+import type { SetField } from '@/views/workout/set-fields';
 import type { DraftExerciseRow, ExerciseSearchOption, RecentExercise } from '@/types/workout';
 import { makeDraftExerciseRow } from '@/tests/factories';
 
@@ -10,7 +10,7 @@ mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
 
-mock.module(new URL('../../src/ui/primitives/exercise-picker.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/exercise-picker.tsx', import.meta.url).pathname, () => ({
   ExercisePicker: ({
     value,
     placeholder,
@@ -32,7 +32,7 @@ mock.module(new URL('../../src/ui/primitives/exercise-picker.tsx', import.meta.u
   ),
 }));
 
-mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/dropdown.tsx', import.meta.url).pathname, () => ({
   Dropdown: ({
     value,
     onSelect,
@@ -48,11 +48,11 @@ mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pat
   ),
 }));
 
-mock.module(new URL('../../src/ui/primitives/drag-handle.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/primitives/drag-handle.tsx', import.meta.url).pathname, () => ({
   DragHandle: () => <span aria-label="Reorder exercise" />,
 }));
 
-mock.module(new URL('../../src/ui/workout/set-fields.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/workout/set-fields.tsx', import.meta.url).pathname, () => ({
   SetFields: ({
     set,
     exerciseType,
@@ -110,7 +110,7 @@ afterEach(() => {
 
 describe('ExerciseCard', () => {
   it('renders the empty exercise baseline with selection and add-set affordances', async () => {
-    const { ExerciseCard } = await import('../../src/ui/workout/exercise-card');
+    const { ExerciseCard } = await import('../../src/views/workout/exercise-card');
     render(
       <ExerciseCard
         exercise={makeDraftExerciseRow({ label: '', sets: [] })}
@@ -155,7 +155,7 @@ describe('ExerciseCard', () => {
     const decrements: Array<[number, number]> = [];
     const addedSets: number[] = [];
     const removedSets: Array<[number, number]> = [];
-    const { ExerciseCard } = await import('../../src/ui/workout/exercise-card');
+    const { ExerciseCard } = await import('../../src/views/workout/exercise-card');
 
     render(
       <ExerciseCard
@@ -210,7 +210,7 @@ describe('ExerciseCard', () => {
       sets: [{ reps: 0, weight: '', durationMinutes: 1, durationSeconds: 30 }],
     });
     const removed: number[] = [];
-    const { ExerciseCard } = await import('../../src/ui/workout/exercise-card');
+    const { ExerciseCard } = await import('../../src/views/workout/exercise-card');
 
     render(
       <ExerciseCard

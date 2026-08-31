@@ -108,12 +108,12 @@ plugin({
     }));
   },
 });
-mock.module('@/ui/primitives/toast', () => ({ Toast: () => null }));
-mock.module('@/ui/primitives/workout-prefill-loader', () => ({ WorkoutPrefillLoader: ({ workoutName }: { workoutName: string | null }) => <div>Preparing {workoutName}</div> }));
-mock.module('@/ui/primitives/dropdown', () => ({
+mock.module('@/views/primitives/toast', () => ({ Toast: () => null }));
+mock.module('@/views/primitives/workout-prefill-loader', () => ({ WorkoutPrefillLoader: ({ workoutName }: { workoutName: string | null }) => <div>Preparing {workoutName}</div> }));
+mock.module('@/views/primitives/dropdown', () => ({
   Dropdown: ({ placeholder }: { placeholder: string }) => <button>{placeholder}</button>,
 }));
-mock.module('@/ui/workout/exercise-card', () => ({
+mock.module('@/views/workout/exercise-card', () => ({
   ExerciseCard: ({ index, onSelectExercise }: { index: number; onSelectExercise: (index: number, selection: unknown) => void }) => (
     <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
       Choose Bench Press

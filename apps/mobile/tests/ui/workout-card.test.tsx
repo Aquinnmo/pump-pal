@@ -55,7 +55,7 @@ mock.module('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ bottom: 0, left: 0, right: 0, top: 0 }),
 }));
 
-const { WorkoutCard } = await import('../../src/ui/workout-card');
+const { WorkoutCard } = await import('../../src/views/workout-card');
 
 afterEach(() => {
   cleanup();

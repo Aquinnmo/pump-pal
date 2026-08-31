@@ -1,4 +1,4 @@
-import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/ui/timber-auth-shell';
+import { TimberAuthShell, TimberBrand, timberAuthStyles } from '@/views/timber-auth-shell';
 import { bumpDataVersion } from '@/models/data-version';
 import { notifyAccountDataChanged } from '@/models/initial-sync';
 import { profileRepository } from '@/models/profile-repository';

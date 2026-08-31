@@ -1,5 +1,5 @@
 /**
- * Web click policy for the tab bar's anchors, split out of src/ui/haptic-tab.tsx
+ * Web click policy for the tab bar's anchors, split out of src/views/haptic-tab.tsx
  * so it can be tested without a DOM or a react-native transform.
  *
  * The tab bar hands every button an `href`, and react-native-web renders a

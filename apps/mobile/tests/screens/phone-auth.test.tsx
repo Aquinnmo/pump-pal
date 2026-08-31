@@ -16,7 +16,7 @@ let confirmation: { confirm: (code: string) => Promise<void> } = {
 let holdPhoneRequest = false;
 let releasePhoneRequest: (() => void) | null = null;
 
-mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/timber-auth-shell.tsx', import.meta.url).pathname, () => ({
   TimberAuthShell: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
   timberAuthStyles: {
     field: {},
@@ -26,7 +26,7 @@ mock.module(new URL('../../src/ui/timber-auth-shell.tsx', import.meta.url).pathn
   },
 }));
 
-mock.module(new URL('../../src/ui/firebase-recaptcha-modal.tsx', import.meta.url).pathname, () => ({
+mock.module(new URL('../../src/views/firebase-recaptcha-modal.tsx', import.meta.url).pathname, () => ({
   default: () => <div aria-label="reCAPTCHA verifier" />,
 }));
 

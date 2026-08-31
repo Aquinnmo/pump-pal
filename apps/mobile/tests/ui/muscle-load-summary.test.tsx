@@ -49,7 +49,7 @@ plugin({
 });
 
 const storage = await import('@react-native-async-storage/async-storage');
-const { MuscleLoadSummary } = await import('../../src/ui/muscle-load-summary');
+const { MuscleLoadSummary } = await import('../../src/views/muscle-load-summary');
 
 beforeEach(async () => {
   currentUid = `muscle-load-test-${++uidSequence}`;

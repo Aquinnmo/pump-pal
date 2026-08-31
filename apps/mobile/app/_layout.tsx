@@ -1,7 +1,7 @@
 import { profileRepository } from '@/models/profile-repository';
 import { retryInitialSync, waitForInitialSync } from '@/models/sync-trigger';
 import { AccountBootstrapDecision, decideAccountBootstrap, initialSyncOutcomeFromError, subscribeAccountDataChanged } from '@/models/initial-sync';
-import { WorkoutPrefillLoader } from '@/ui/primitives/workout-prefill-loader';
+import { WorkoutPrefillLoader } from '@/views/primitives/workout-prefill-loader';
 import { AuthProvider, useAuth } from '@/context/auth-context';
 import { getSession, loadSession } from '@/lib/active-workout-session';
 import { subscribeLiveUpdateNotificationActions } from '@/lib/live-update-notification-actions';

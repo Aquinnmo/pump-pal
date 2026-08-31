@@ -98,7 +98,7 @@ plugin({
   },
 });
 
-const { MuscleMap } = await import('../../src/ui/muscle-map');
+const { MuscleMap } = await import('../../src/views/muscle-map');
 
 afterEach(() => {
   cleanup();

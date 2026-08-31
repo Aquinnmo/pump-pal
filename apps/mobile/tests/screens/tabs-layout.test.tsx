@@ -22,8 +22,8 @@ const testGlobal = globalThis as TestGlobal;
 testGlobal.__tabsLayoutDeclarations = [];
 testGlobal.__tabsLayoutPresses = [];
 
-const hapticTabPath = new URL('../../src/ui/haptic-tab.tsx', import.meta.url).pathname;
-const timberTabIconPath = new URL('../../src/ui/timber-tab-icon.tsx', import.meta.url).pathname;
+const hapticTabPath = new URL('../../src/views/haptic-tab.tsx', import.meta.url).pathname;
+const timberTabIconPath = new URL('../../src/views/timber-tab-icon.tsx', import.meta.url).pathname;
 
 type TabButtonProps = {
   accessibilityLabel?: string;
