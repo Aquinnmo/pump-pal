@@ -126,7 +126,7 @@ function entryPattern(prefix, entry) {
 }
 
 // Each configured entry point must participate in the same transitive guard,
-// including the context entry point outside src/data.
+// including the context entry point outside src/models.
 {
   const fixtureRoot = makeFixture();
   try {

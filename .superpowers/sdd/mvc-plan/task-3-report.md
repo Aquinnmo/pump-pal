@@ -29,3 +29,10 @@
 ## Concerns
 
 The brief's literal stale-path grep conflicts with the explicit prohibition on touching protected `apps/mobile/tsconfig.json`; only its old explanatory comment remains. No runtime or test path depends on that comment.
+
+## Review fix round 1
+
+- Corrected the stale prose reference in `tools/check-web-native-deps.test.js:129` from `src/data` to `src/models`.
+- `node tools/check-web-native-deps.test.js`: passed (`check-web-native-deps.test.js passed`).
+- `git diff --check`: passed.
+- Protected `apps/mobile/tsconfig.json` and pre-existing `.beads` changes were untouched and unstaged.
