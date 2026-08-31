@@ -201,7 +201,7 @@ Add a comment at `TRACKING_MODES` (`packages/contract/src/api-contract.ts` ~L309
 
 ### Verify
 
-- `rg -n "@/ui/|src/ui/" apps/mobile CLAUDE.md docs --glob '!graphify-out'` → zero.
+- `rg -n "@/ui/|src/ui/" apps/mobile CLAUDE.md docs --glob '!graphify-out' --glob '!docs/mvc-plan.md'` → zero.
 - `rg -n "mock.module\(new URL" apps/mobile | rg "src/ui"` → zero.
 - Standard command list (the 34 `tests/ui/*.test.tsx` dynamic imports prove resolution).
 
