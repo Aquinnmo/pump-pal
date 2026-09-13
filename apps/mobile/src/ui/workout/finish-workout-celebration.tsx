@@ -1,7 +1,8 @@
 import { TimberLogoEndFace } from '@/ui/timber-logo';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
+  interpolate,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -11,29 +12,56 @@ import Animated, {
 
 const LOG_SIZE = 48;
 
-// The fixed shuffle keeps tests deterministic while making the nine arrivals feel
-// independent. Every log falls on one vertical track into a 3x3 end-face stack.
-const LOG_MOTION = [
-  { left: 48, top: 48, start: -152, delay: 96, duration: 520 },
-  { left: 0, top: 96, start: -224, delay: 12, duration: 600 },
-  { left: 96, top: 0, start: -184, delay: 184, duration: 470 },
-  { left: 48, top: 0, start: -208, delay: 64, duration: 560 },
-  { left: 0, top: 0, start: -176, delay: 232, duration: 440 },
-  { left: 96, top: 96, start: -240, delay: 40, duration: 610 },
-  { left: 0, top: 48, start: -192, delay: 144, duration: 480 },
-  { left: 96, top: 48, start: -216, delay: 8, duration: 620 },
-  { left: 48, top: 96, start: -168, delay: 112, duration: 500 },
+const LOG_TARGETS = [
+  { x: -121, y: -38 },
+  { x: -87, y: -4 },
+  { x: -53, y: 30 },
+  { x: -19, y: 64 },
+  { x: 15, y: 30 },
+  { x: 49, y: -4 },
+  { x: 83, y: -38 },
+  { x: 117, y: -72 },
+  { x: 151, y: -106 },
 ] as const;
+
+const ARRIVAL_DELAYS = [0, 35, 70, 105, 140, 175, 210, 245, 280] as const;
+
+function shuffle<T>(items: readonly T[]) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapWith = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapWith]] = [shuffled[swapWith], shuffled[index]];
+  }
+  return shuffled;
+}
+
+function createLogMotion() {
+  const delays = shuffle(ARRIVAL_DELAYS);
+  return LOG_TARGETS.map((target, index) => ({
+    ...target,
+    delay: delays[index],
+    startY: -Math.round(Math.random() * 110 + 350),
+    duration: Math.round(Math.random() * 60 + 340),
+  }));
+}
 
 type FinishLogProps = {
   index: number;
-  motion: (typeof LOG_MOTION)[number];
+  motion: ReturnType<typeof createLogMotion>[number];
   reducedMotion: boolean;
 };
 
 function FinishLog({ index, motion, reducedMotion }: FinishLogProps) {
-  const translateY = useSharedValue(reducedMotion ? 0 : motion.start);
+  const translateY = useSharedValue(reducedMotion ? 0 : motion.startY);
   const animatedStyle = useAnimatedStyle(() => ({
+    opacity: reducedMotion
+      ? 1
+      : interpolate(
+          translateY.value,
+          [motion.startY, motion.startY * 0.88, 0],
+          [0, 1, 1],
+          'clamp',
+        ),
     transform: [{ translateY: reducedMotion ? 0 : translateY.value }],
   }));
 
@@ -43,7 +71,7 @@ function FinishLog({ index, motion, reducedMotion }: FinishLogProps) {
       return;
     }
 
-    translateY.value = motion.start;
+    translateY.value = motion.startY;
     translateY.value = withDelay(
       motion.delay,
       withTiming(0, { duration: motion.duration }),
@@ -55,7 +83,14 @@ function FinishLog({ index, motion, reducedMotion }: FinishLogProps) {
       testID={`finish-workout-log-${index}`}
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
-      style={[styles.log, { left: motion.left, top: motion.top }, animatedStyle]}
+      style={[
+        styles.log,
+        {
+          marginLeft: motion.x - LOG_SIZE / 2,
+          marginTop: motion.y - LOG_SIZE / 2,
+        },
+        animatedStyle,
+      ]}
     >
       <TimberLogoEndFace size={LOG_SIZE} />
     </Animated.View>
@@ -63,26 +98,41 @@ function FinishLog({ index, motion, reducedMotion }: FinishLogProps) {
 }
 
 export function FinishWorkoutCelebration() {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = Boolean(useReducedMotion());
+  const motion = useMemo(() => createLogMotion(), []);
+  const labelOpacity = useSharedValue(reducedMotion ? 1 : 0);
+  const labelStyle = useAnimatedStyle(() => ({
+    opacity: reducedMotion ? 1 : labelOpacity.value,
+    transform: [{ translateY: reducedMotion ? 0 : 4 * (1 - labelOpacity.value) }],
+  }));
+
+  useEffect(() => {
+    if (reducedMotion) {
+      labelOpacity.value = 1;
+      return;
+    }
+
+    labelOpacity.value = 0;
+    labelOpacity.value = withDelay(760, withTiming(1, { duration: 180 }));
+  }, [labelOpacity, reducedMotion]);
 
   return (
     <View style={styles.container}>
-      <View style={styles.logField}>
-        {LOG_MOTION.map((motion, index) => (
+      <View style={styles.stage}>
+        {motion.map((logMotion, index) => (
           <FinishLog
-            key={`${motion.left}-${motion.top}`}
+            key={`${logMotion.x}-${logMotion.y}`}
             index={index}
-            motion={motion}
+            motion={logMotion}
             reducedMotion={reducedMotion}
           />
         ))}
-        <Text accessibilityElementsHidden style={styles.check}>
-          ✓
-        </Text>
       </View>
-      <Text accessibilityLiveRegion="polite" style={styles.label}>
-        Workout complete
-      </Text>
+      <Animated.View testID="finish-workout-label" style={[styles.label, labelStyle]}>
+        <Text accessibilityLiveRegion="polite" style={styles.labelText}>
+          Workout complete
+        </Text>
+      </Animated.View>
     </View>
   );
 }
@@ -92,31 +142,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  logField: {
-    width: LOG_SIZE * 3,
-    height: LOG_SIZE * 3,
+  stage: {
+    width: '100%',
+    maxWidth: 390,
+    height: 300,
     position: 'relative',
+    overflow: 'hidden',
   },
   log: {
     width: LOG_SIZE,
     height: LOG_SIZE,
     position: 'absolute',
-  },
-  check: {
-    position: 'absolute',
-    top: 48,
-    left: 54,
-    color: '#fff',
-    fontSize: 38,
-    fontWeight: '800',
-    lineHeight: 48,
+    top: '47%',
+    left: '50%',
   },
   label: {
-    marginTop: 16,
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: -0.5,
-    lineHeight: 24 * 1.2,
+    marginTop: 112,
+  },
+  labelText: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '500',
+    letterSpacing: 0.3,
+    lineHeight: 15 * 1.4,
+    textAlign: 'center',
   },
 });

@@ -26,11 +26,21 @@ mock.module('react-native-reanimated', () => {
       )
       .flatMap((entry) => entry.transform ?? []);
     const translateY = transform.find((entry) => 'translateY' in entry)?.translateY;
+    const readStyle = (key: string) =>
+      styles.find(
+        (entry): entry is Record<string, unknown> =>
+          Boolean(entry && typeof entry === 'object' && key in entry),
+      )?.[key];
 
     return (
       <div
         aria-hidden={accessibilityElementsHidden ? 'true' : undefined}
+        data-left={readStyle('left')}
+        data-margin-left={readStyle('marginLeft')}
+        data-margin-top={readStyle('marginTop')}
+        data-opacity={readStyle('opacity')}
         data-testid={testID}
+        data-top={readStyle('top')}
         data-translate-y={translateY}
       >
         {children}
@@ -40,6 +50,7 @@ mock.module('react-native-reanimated', () => {
 
   return {
     default: { View: AnimatedView },
+    interpolate: () => 1,
     useAnimatedStyle: (factory: () => unknown) => factory(),
     useReducedMotion: () => reducedMotion,
     useSharedValue: (value: number) => ({ value }),
@@ -95,26 +106,47 @@ describe('FinishWorkoutCelebration', () => {
 
     const label = screen.getByText('Workout complete', { exact: true });
     assert.equal(label.getAttribute('aria-live'), 'polite');
-    assert.ok(screen.getByText('✓', { exact: true }));
+    assert.ok(screen.getByTestId('finish-workout-label'));
+    assert.equal(screen.queryByText('✓', { exact: true }), null);
   });
 
   it('uses varied bounded timing and only straight vertical motion', () => {
     render(<FinishWorkoutCelebration />);
 
-    assert.equal(timingCalls.length, 9);
-    assert.equal(delayCalls.length, 9);
-    assert.ok(new Set(delayCalls).size >= 5);
-    for (const delay of delayCalls) assert.ok(delay >= 0 && delay <= 240);
-    for (const { to, duration } of timingCalls) {
+    assert.equal(timingCalls.length, 10);
+    assert.equal(delayCalls.length, 10);
+    assert.ok(new Set(delayCalls.slice(0, 9)).size >= 5);
+    for (const delay of delayCalls.slice(0, 9)) assert.ok(delay >= 0 && delay <= 280);
+    for (const { to, duration } of timingCalls.slice(0, 9)) {
       assert.equal(to, 0);
-      assert.ok(duration >= 420 && duration <= 620);
+      assert.ok(duration >= 340 && duration <= 400);
     }
+    assert.deepEqual(timingCalls[9], { to: 1, duration: 180 });
+    assert.equal(delayCalls[9], 760);
 
-    const startHeights = screen
-      .getAllByTestId(/^finish-workout-log-/)
-      .map((log) => Number(log.getAttribute('data-translate-y')));
+    const logs = screen.getAllByTestId(/^finish-workout-log-/);
+    const startHeights = logs.map((log) => Number(log.getAttribute('data-translate-y')));
     assert.equal(new Set(startHeights).size, 9);
-    assert.ok(startHeights.every((height) => height < 0));
+    assert.ok(startHeights.every((height) => height <= -350 && height >= -460));
+    assert.ok(logs.every((log) => !log.getAttribute('data-translate-x')));
+
+    const targetOffsets = logs
+      .map((log) => [
+        Number(log.getAttribute('data-margin-left')),
+        Number(log.getAttribute('data-margin-top')),
+      ])
+      .sort(([leftA, topA], [leftB, topB]) => leftA - leftB || topA - topB);
+    assert.deepEqual(targetOffsets, [
+      [-145, -62],
+      [-111, -28],
+      [-77, 6],
+      [-43, 40],
+      [-9, 6],
+      [25, -28],
+      [59, -62],
+      [93, -96],
+      [127, -130],
+    ]);
   });
 
   it('keeps all logs assembled and static when reduced motion is enabled', () => {
@@ -127,5 +159,6 @@ describe('FinishWorkoutCelebration', () => {
       .getAllByTestId(/^finish-workout-log-/)
       .map((log) => Number(log.getAttribute('data-translate-y')));
     assert.deepEqual(finalHeights, Array.from({ length: 9 }, () => 0));
+    assert.equal(screen.getByTestId('finish-workout-label').getAttribute('data-opacity'), '1');
   });
 });
