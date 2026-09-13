@@ -17,6 +17,7 @@ let ongoingInjuries: { id: string; status: string }[] = [];
 let throwOnInjuryRead = false;
 const alerts: string[] = [];
 const routerReplacements: string[] = [];
+const hapticCalls: unknown[] = [];
 const router = {
   replace: (path: string) => routerReplacements.push(path),
   push: (_path: string) => {},
@@ -35,7 +36,11 @@ plugin({
   name: 'active-workout-icon-test-double',
   setup(build: Build) {
     build.module('@expo/vector-icons', () => ({
-      exports: { Ionicons: () => null, MaterialIcons: () => null, default: () => null },
+      exports: {
+        Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
+        MaterialIcons: () => null,
+        default: () => null,
+      },
       loader: 'object',
     }));
     build.module('expo-router', () => ({
@@ -59,12 +64,32 @@ plugin({
     }));
     build.module('react-native-reanimated', () => ({
       exports: {
-        default: {},
+        default: {
+          View: ({ children }: { children?: unknown }) => children ?? null,
+        },
+        FadeIn: { duration: (duration: number) => ({ duration }) },
+        FadeOut: { duration: (duration: number) => ({ duration }) },
+        interpolate: () => 1,
         runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
         useAnimatedStyle: (factory: () => unknown) => factory(),
         useSharedValue: (value: unknown) => ({ value }),
         withSpring: (value: unknown) => value,
         withTiming: (value: unknown) => value,
+      },
+      loader: 'object',
+    }));
+    build.module('expo-haptics', () => ({
+      exports: {
+        ImpactFeedbackStyle: { Light: 'light' },
+        NotificationFeedbackType: { Success: 'success' },
+        impactAsync: (style: unknown) => {
+          hapticCalls.push(['impact', style]);
+          return Promise.resolve();
+        },
+        notificationAsync: (type: unknown) => {
+          hapticCalls.push(['notification', type]);
+          return Promise.resolve();
+        },
       },
       loader: 'object',
     }));
@@ -135,6 +160,18 @@ function finishButton(): HTMLElement {
   return screen.getByText('Finish', { exact: true });
 }
 
+function focusPlan(id = 'focus-plan'): { id: string; data: Workout } {
+  return record(makeWorkout({
+    id,
+    name: 'Focus Day',
+    status: 'planned',
+    queueOrder: 0,
+    performedExercises: [makePerformedExercise({
+      sets: [{ setNumber: 1, reps: 8, weight: 20, completed: true }],
+    })],
+  }));
+}
+
 async function renderScreen(params: { id?: string; suggestion?: string } = {}) {
   routeParams = params;
   render(<ActiveWorkoutScreen />);
@@ -152,6 +189,7 @@ beforeEach(() => {
   throwOnInjuryRead = false;
   alerts.length = 0;
   routerReplacements.length = 0;
+  hapticCalls.length = 0;
   window.alert = (message: string) => alerts.push(message);
   endSession();
 });
@@ -330,6 +368,42 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(routerReplacements.length, 0);
     assert.equal(alerts[0], 'Error\n\nCould not finish workout. write failed');
     assert.equal(getSession()?.name, 'Write Failure');
+  });
+
+  it('keeps Focus View pending until persistence succeeds, then confirms before navigating', async () => {
+    plannedRecord = focusPlan();
+    let resolveUpdate!: () => void;
+    updateBehavior = () => new Promise<void>((resolve) => { resolveUpdate = resolve; });
+
+    await renderScreen({ id: 'focus-plan' });
+    fireEvent.click(screen.getByText('Finish Workout', { exact: true }));
+    await waitFor(() => assert.equal(updateCalls.length, 1));
+
+    assert.ok(screen.getAllByRole('progressbar').length >= 2);
+    assert.equal(screen.queryByText('Workout complete', { exact: true }), null);
+    assert.equal(routerReplacements.length, 0);
+    assert.equal(hapticCalls.length, 0);
+
+    await act(async () => resolveUpdate());
+    await waitFor(() => assert.ok(screen.getByText('Workout complete', { exact: true })));
+    assert.ok(screen.getAllByLabelText('checkmark-sharp icon').length >= 2);
+    assert.equal(routerReplacements.length, 0);
+    assert.deepEqual(hapticCalls, [['notification', 'success']]);
+
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 1_000 });
+  });
+
+  it('does not show Focus View success or navigate after a failed persistence write', async () => {
+    plannedRecord = focusPlan('failed-focus-plan');
+    updateBehavior = async () => { throw new Error('write failed'); };
+
+    await renderScreen({ id: 'failed-focus-plan' });
+    fireEvent.click(screen.getByText('Finish Workout', { exact: true }));
+    await waitFor(() => assert.equal(alerts.length, 1));
+
+    assert.equal(screen.queryByText('Workout complete', { exact: true }), null);
+    assert.equal(routerReplacements.length, 0);
+    assert.equal(hapticCalls.length, 0);
   });
 
   it('falls back from focus to the editor when all rows become empty', async () => {

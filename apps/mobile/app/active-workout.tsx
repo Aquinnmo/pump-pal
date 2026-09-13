@@ -154,6 +154,7 @@ export default function ActiveWorkoutScreen() {
   });
   exercisesRef.current = exercises;
   const [saving, setSaving] = useState(false);
+  const [focusFinishSucceeded, setFocusFinishSucceeded] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showLogConfirm, setShowLogConfirm] = useState(false);
@@ -425,7 +426,7 @@ export default function ActiveWorkoutScreen() {
       .filter((ex) => ex.label.trim() !== "")
       .reduce((sum, ex) => sum + ex.sets.filter((s) => !s.completed).length, 0);
 
-  const finishWorkout = async () => {
+  const finishWorkout = async (fromFocus = false) => {
     if (!sessionId || terminalRef.current) return;
     terminalRef.current = true;
     setSaving(true);
@@ -484,6 +485,10 @@ export default function ActiveWorkoutScreen() {
       // Clear the watch immediately; the Home screen pushes the real Up Next copy a
       // moment later when it regains focus.
       pushWearState(buildWearIdleState(describeUpNext({})));
+      if (fromFocus) {
+        setFocusFinishSucceeded(true);
+        return;
+      }
       endSession();
       router.replace("/(tabs)");
     } catch (err: any) {
@@ -645,7 +650,12 @@ export default function ActiveWorkoutScreen() {
           saving={saving}
           onCompleteSet={handleCompleteSet}
           onUndo={handleUndoSet}
-          onFinish={handleFinishPress}
+          onFinish={() => finishWorkout(true)}
+          finishSucceeded={focusFinishSucceeded}
+          onFinishSuccess={() => {
+            endSession();
+            router.replace("/(tabs)");
+          }}
           onEdit={() => setMode("editor")}
           onOpenPlateCalc={() => setShowPlateCalc(true)}
           onUpdateSet={updateSet}
@@ -841,7 +851,7 @@ export default function ActiveWorkoutScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmConfirmButton}
-                onPress={finishWorkout}
+                onPress={() => finishWorkout()}
                 activeOpacity={0.8}
               >
                 <Text style={styles.confirmConfirmText}>Finish Anyway</Text>
