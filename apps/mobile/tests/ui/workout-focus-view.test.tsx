@@ -11,12 +11,12 @@ const fadeOutDurations: number[] = [];
 
 mock.module('react-native-reanimated', () => {
   const AnimatedView = ({
-    accessibilityLabel,
     children,
+    testID,
   }: {
-    accessibilityLabel?: string;
     children?: ReactNode;
-  }) => <div aria-label={accessibilityLabel}>{children}</div>;
+    testID?: string;
+  }) => <div data-testid={testID}>{children}</div>;
 
   return {
     default: { View: AnimatedView },
@@ -242,7 +242,7 @@ describe('FocusView', () => {
     });
     rerender(<FocusView {...viewProps} exercises={[afterFirstSet]} />);
 
-    assert.ok(screen.getByLabelText('set-complete-feedback'));
+    assert.ok(screen.getByTestId('set-complete-feedback'));
     assert.ok(timingDurations.includes(180));
     assert.ok(fadeInDurations.includes(180));
     assert.ok(fadeOutDurations.includes(160));

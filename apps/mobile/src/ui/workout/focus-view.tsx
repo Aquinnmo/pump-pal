@@ -342,7 +342,7 @@ export function FocusView({
               </Text>
               {showCheck && !done ? (
                 <Animated.View
-                  accessibilityLabel="set-complete-feedback"
+                  testID="set-complete-feedback"
                   entering={FadeIn.duration(180)}
                   exiting={FadeOut.duration(160)}
                 >
