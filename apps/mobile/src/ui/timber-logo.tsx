@@ -33,19 +33,33 @@ type Props = {
   withBackground?: boolean;
 };
 
+function LogFace({ cx, cy }: { cx: number; cy: number }) {
+  return (
+    <Fragment>
+      <Circle cx={cx} cy={cy} r={R} fill={BARK} />
+      <Circle cx={cx} cy={cy} r={R * 0.82} fill={SAPWOOD} />
+      <Circle cx={cx} cy={cy} r={R * 0.72} fill={FACE} />
+      <Circle cx={cx} cy={cy} r={R * 0.5} fill="none" stroke={RING} strokeWidth={10} />
+      <Circle cx={cx} cy={cy} r={R * 0.28} fill="none" stroke={RING} strokeWidth={10} />
+      <Circle cx={cx} cy={cy} r={14} fill={PITH} />
+    </Fragment>
+  );
+}
+
+export function TimberLogoEndFace({ size = 48 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 224 224">
+      <LogFace cx={112} cy={112} />
+    </Svg>
+  );
+}
+
 export function TimberLogo({ size = 96, withBackground = false }: Props) {
   return (
     <Svg width={size} height={size} viewBox="0 0 1024 1024">
       {withBackground && <Rect x={0} y={0} width={1024} height={1024} rx={220} fill={GROUND} />}
       {LOGS.map((l) => (
-        <Fragment key={`${l.cx}-${l.cy}`}>
-          <Circle cx={l.cx} cy={l.cy} r={R} fill={BARK} />
-          <Circle cx={l.cx} cy={l.cy} r={R * 0.82} fill={SAPWOOD} />
-          <Circle cx={l.cx} cy={l.cy} r={R * 0.72} fill={FACE} />
-          <Circle cx={l.cx} cy={l.cy} r={R * 0.5} fill="none" stroke={RING} strokeWidth={10} />
-          <Circle cx={l.cx} cy={l.cy} r={R * 0.28} fill="none" stroke={RING} strokeWidth={10} />
-          <Circle cx={l.cx} cy={l.cy} r={14} fill={PITH} />
-        </Fragment>
+        <LogFace key={`${l.cx}-${l.cy}`} cx={l.cx} cy={l.cy} />
       ))}
     </Svg>
   );
