@@ -38,7 +38,6 @@ type FocusViewProps = {
   onUndo: () => void;
   onFinish: () => void;
   finishSucceeded?: boolean;
-  onFinishSuccess?: () => void;
   onEdit: () => void;
   onOpenPlateCalc: () => void;
   onUpdateSet: (
@@ -82,7 +81,6 @@ export function FocusView({
   onUndo,
   onFinish,
   finishSucceeded = false,
-  onFinishSuccess,
   onEdit,
   onOpenPlateCalc,
   onUpdateSet,
@@ -194,12 +192,6 @@ export function FocusView({
     [],
   );
 
-  useEffect(() => {
-    if (!finishSucceeded || !onFinishSuccess) return;
-    const timer = setTimeout(onFinishSuccess, 360);
-    return () => clearTimeout(timer);
-  }, [finishSucceeded, onFinishSuccess]);
-
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
   const cardState = (row: DraftExerciseRow): CardState => {
@@ -292,12 +284,7 @@ export function FocusView({
           }
           exiting={FadeOut.duration(160)}
         >
-          {finishSucceeded ? (
-            <View style={styles.doneZone}>
-              <Text style={styles.completionTitle}>Workout complete</Text>
-              <Ionicons name="checkmark-sharp" size={56} color="#fff" />
-            </View>
-          ) : done ? (
+          {done ? (
             <View style={styles.doneZone}>
               <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
               <Text style={[styles.metric, styles.tabularNums]}>
@@ -336,10 +323,15 @@ export function FocusView({
         <TouchableOpacity
           style={styles.completeButton}
           onPress={done ? handleFinish : handleCompleteSet}
-          disabled={done && saving}
+          disabled={finishSucceeded || (done && saving)}
           activeOpacity={0.8}
         >
-          {done && saving ? (
+          {finishSucceeded ? (
+            <>
+              <Text style={styles.completeButtonText}>Workout complete</Text>
+              <Ionicons name="checkmark-sharp" size={56} color="#fff" />
+            </>
+          ) : done && saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>
@@ -481,11 +473,6 @@ const styles = StyleSheet.create({
   },
   doneZone: {
     alignItems: "center",
-  },
-  completionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#fff",
   },
   setHeaderRow: {
     alignItems: "center",

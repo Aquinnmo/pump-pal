@@ -486,7 +486,11 @@ export default function ActiveWorkoutScreen() {
       // moment later when it regains focus.
       pushWearState(buildWearIdleState(describeUpNext({})));
       if (fromFocus) {
+        endSession();
         setFocusFinishSucceeded(true);
+        setSaving(false);
+        await new Promise<void>((resolve) => setTimeout(resolve, 360));
+        router.replace("/(tabs)");
         return;
       }
       endSession();
@@ -652,10 +656,6 @@ export default function ActiveWorkoutScreen() {
           onUndo={handleUndoSet}
           onFinish={() => finishWorkout(true)}
           finishSucceeded={focusFinishSucceeded}
-          onFinishSuccess={() => {
-            endSession();
-            router.replace("/(tabs)");
-          }}
           onEdit={() => setMode("editor")}
           onOpenPlateCalc={() => setShowPlateCalc(true)}
           onUpdateSet={updateSet}

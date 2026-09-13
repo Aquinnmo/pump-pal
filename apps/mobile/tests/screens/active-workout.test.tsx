@@ -386,7 +386,16 @@ describe('ActiveWorkoutScreen finish boundary', () => {
 
     await act(async () => resolveUpdate());
     await waitFor(() => assert.ok(screen.getByText('Workout complete', { exact: true })));
-    assert.ok(screen.getAllByLabelText('checkmark-sharp icon').length >= 2);
+    const successLabel = screen.getByText('Workout complete', { exact: true });
+    assert.deepEqual(
+      {
+        sessionEnded: getSession() === null,
+        successOnButton: successLabel.parentElement?.getAttribute('aria-disabled') === 'true',
+        finishHidden: screen.queryByText('Finish Workout', { exact: true }) === null,
+      },
+      { sessionEnded: true, successOnButton: true, finishHidden: true },
+    );
+    assert.ok(screen.getByLabelText('checkmark-sharp icon'));
     assert.equal(routerReplacements.length, 0);
     assert.deepEqual(hapticCalls, [['notification', 'success']]);
 
