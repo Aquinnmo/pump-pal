@@ -8,6 +8,8 @@ import type { SetField } from '@/ui/workout/set-fields';
 const timingDurations: number[] = [];
 const fadeInDurations: number[] = [];
 const fadeOutDurations: number[] = [];
+const fadeInRightDurations: number[] = [];
+const fadeOutLeftDurations: number[] = [];
 
 mock.module('react-native-reanimated', () => {
   const AnimatedView = ({
@@ -29,6 +31,18 @@ mock.module('react-native-reanimated', () => {
     FadeOut: {
       duration: (duration: number) => {
         fadeOutDurations.push(duration);
+        return { duration };
+      },
+    },
+    FadeInRight: {
+      duration: (duration: number) => {
+        fadeInRightDurations.push(duration);
+        return { duration };
+      },
+    },
+    FadeOutLeft: {
+      duration: (duration: number) => {
+        fadeOutLeftDurations.push(duration);
         return { duration };
       },
     },
@@ -105,6 +119,8 @@ afterEach(() => {
   timingDurations.length = 0;
   fadeInDurations.length = 0;
   fadeOutDurations.length = 0;
+  fadeInRightDurations.length = 0;
+  fadeOutLeftDurations.length = 0;
 });
 
 function row(overrides: Partial<DraftExerciseRow> = {}): DraftExerciseRow {
@@ -227,13 +243,17 @@ describe('FocusView', () => {
     const initial = row();
     const viewProps = props({ exercises: [initial] });
     const { rerender } = render(<FocusView {...viewProps} />);
+    const initialFadeOutLeftCalls = fadeOutLeftDurations.length;
 
     assert.equal(timingDurations.length, 0);
     assert.equal(fadeInDurations.length, 0);
+    assert.equal(fadeInRightDurations.length, 0);
 
     fireEvent.click(screen.getByText('Complete set 1/2', { exact: true }));
     assert.equal(timingDurations.length, 0);
     assert.equal(fadeInDurations.length, 0);
+    assert.equal(fadeInRightDurations.length, 0);
+    assert.equal(fadeOutLeftDurations.length, initialFadeOutLeftCalls);
 
     const afterFirstSet = row({
       sets: initial.sets.map((set, index) =>
@@ -244,8 +264,8 @@ describe('FocusView', () => {
 
     assert.ok(screen.getByTestId('set-complete-feedback'));
     assert.ok(timingDurations.includes(180));
-    assert.ok(fadeInDurations.includes(180));
-    assert.ok(fadeOutDurations.includes(160));
+    assert.ok(fadeInRightDurations.includes(180));
+    assert.ok(fadeOutLeftDurations.includes(160));
     assert.ok(screen.getByText('Complete set 2/2', { exact: true }));
 
     const afterFinalSet = row({

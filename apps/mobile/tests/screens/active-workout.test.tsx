@@ -69,6 +69,8 @@ plugin({
         },
         FadeIn: { duration: (duration: number) => ({ duration }) },
         FadeOut: { duration: (duration: number) => ({ duration }) },
+        FadeInRight: { duration: (duration: number) => ({ duration }) },
+        FadeOutLeft: { duration: (duration: number) => ({ duration }) },
         interpolate: () => 1,
         runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
         useAnimatedStyle: (factory: () => unknown) => factory(),

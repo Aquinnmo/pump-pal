@@ -16,7 +16,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   FadeIn,
+  FadeInRight,
   FadeOut,
+  FadeOutLeft,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -280,9 +282,9 @@ export function FocusView({
         <Animated.View
           key={contentTransition}
           entering={
-            contentTransition > 0 ? FadeIn.duration(180) : undefined
+            contentTransition > 0 ? FadeInRight.duration(180) : undefined
           }
-          exiting={FadeOut.duration(160)}
+          exiting={FadeOutLeft.duration(160)}
         >
           {done ? (
             <View style={styles.doneZone}>
