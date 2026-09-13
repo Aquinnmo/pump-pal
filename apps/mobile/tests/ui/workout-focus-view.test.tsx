@@ -6,10 +6,7 @@ import type { DraftExerciseRow } from '@/types/workout';
 import type { SetField } from '@/ui/workout/set-fields';
 
 const timingDurations: number[] = [];
-const fadeInDurations: number[] = [];
-const fadeOutDurations: number[] = [];
-const fadeInRightDurations: number[] = [];
-const fadeOutLeftDurations: number[] = [];
+const sharedValueWrites: number[] = [];
 
 mock.module('react-native-reanimated', () => {
   const AnimatedView = ({
@@ -22,33 +19,20 @@ mock.module('react-native-reanimated', () => {
 
   return {
     default: { View: AnimatedView },
-    FadeIn: {
-      duration: (duration: number) => {
-        fadeInDurations.push(duration);
-        return { duration };
-      },
-    },
-    FadeOut: {
-      duration: (duration: number) => {
-        fadeOutDurations.push(duration);
-        return { duration };
-      },
-    },
-    FadeInRight: {
-      duration: (duration: number) => {
-        fadeInRightDurations.push(duration);
-        return { duration };
-      },
-    },
-    FadeOutLeft: {
-      duration: (duration: number) => {
-        fadeOutLeftDurations.push(duration);
-        return { duration };
-      },
-    },
-    interpolate: () => 1,
     useAnimatedStyle: (factory: () => unknown) => factory(),
-    useSharedValue: (value: number) => ({ value }),
+    useSharedValue: (value: number) => {
+      let current: unknown = value;
+      return {
+        get value() {
+          return current;
+        },
+        set value(next: unknown) {
+          if (typeof next === 'number') sharedValueWrites.push(next);
+          current = next;
+        },
+      };
+    },
+    withSequence: (...animations: unknown[]) => animations.at(-1),
     withTiming: (value: number, config: { duration: number }) => {
       timingDurations.push(config.duration);
       return value;
@@ -117,10 +101,7 @@ const createMock = mock as unknown as (implementation: (...args: any[]) => unkno
 afterEach(() => {
   cleanup();
   timingDurations.length = 0;
-  fadeInDurations.length = 0;
-  fadeOutDurations.length = 0;
-  fadeInRightDurations.length = 0;
-  fadeOutLeftDurations.length = 0;
+  sharedValueWrites.length = 0;
 });
 
 function row(overrides: Partial<DraftExerciseRow> = {}): DraftExerciseRow {
@@ -238,22 +219,20 @@ describe('FocusView', () => {
     assert.equal(screen.queryByDisplayValue('135'), null);
   });
 
-  it('animates only after confirmed set progress and preserves next and final states', async () => {
+  it('uses only a confirmed-progress ring for set feedback', async () => {
     const { FocusView } = await import('../../src/ui/workout/focus-view');
     const initial = row();
     const viewProps = props({ exercises: [initial] });
     const { rerender } = render(<FocusView {...viewProps} />);
-    const initialFadeOutLeftCalls = fadeOutLeftDurations.length;
 
+    assert.ok(screen.getByTestId('completion-feedback-ring'));
     assert.equal(timingDurations.length, 0);
-    assert.equal(fadeInDurations.length, 0);
-    assert.equal(fadeInRightDurations.length, 0);
+    assert.equal(sharedValueWrites.length, 0);
+    assert.equal(screen.queryByTestId('set-complete-feedback'), null);
 
     fireEvent.click(screen.getByText('Complete set 1/2', { exact: true }));
     assert.equal(timingDurations.length, 0);
-    assert.equal(fadeInDurations.length, 0);
-    assert.equal(fadeInRightDurations.length, 0);
-    assert.equal(fadeOutLeftDurations.length, initialFadeOutLeftCalls);
+    assert.equal(sharedValueWrites.length, 0);
 
     const afterFirstSet = row({
       sets: initial.sets.map((set, index) =>
@@ -262,10 +241,8 @@ describe('FocusView', () => {
     });
     rerender(<FocusView {...viewProps} exercises={[afterFirstSet]} />);
 
-    assert.ok(screen.getByTestId('set-complete-feedback'));
-    assert.ok(timingDurations.includes(180));
-    assert.ok(fadeInRightDurations.includes(180));
-    assert.ok(fadeOutLeftDurations.includes(160));
+    assert.deepEqual(timingDurations, [120, 240]);
+    assert.equal(screen.queryByTestId('set-complete-feedback'), null);
     assert.ok(screen.getByText('Complete set 2/2', { exact: true }));
 
     const afterFinalSet = row({
@@ -273,8 +250,15 @@ describe('FocusView', () => {
     });
     rerender(<FocusView {...viewProps} exercises={[afterFinalSet]} />);
 
+    assert.deepEqual(timingDurations, [120, 240, 120, 240]);
     assert.ok(screen.getByText('ALL SETS COMPLETE', { exact: true }));
     assert.ok(screen.getByText('2/2', { exact: true }));
     assert.ok(screen.getByText('Finish Workout', { exact: true }));
+
+    const writesBeforeUndo = sharedValueWrites.length;
+    rerender(<FocusView {...viewProps} exercises={[afterFirstSet]} />);
+    assert.equal(timingDurations.length, 4);
+    assert.equal(sharedValueWrites.length, writesBeforeUndo + 1);
+    assert.equal(sharedValueWrites.at(-1), 0);
   });
 });

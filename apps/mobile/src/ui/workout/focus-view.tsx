@@ -3,7 +3,7 @@ import { DraftExerciseRow } from "@/types/workout";
 import { flattenSets, nextSetIndex } from "@/lib/wear-state";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   LayoutChangeEvent,
@@ -15,13 +15,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
-  FadeIn,
-  FadeInRight,
-  FadeOut,
-  FadeOutLeft,
-  interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
 } from "react-native-reanimated";
 
@@ -116,19 +112,10 @@ export function FocusView({
   const currentUid = currentRowIndex >= 0 ? rows[currentRowIndex].uid : null;
   const previousCompletedCount = useRef(completedCount);
   const previousCurrentUid = useRef(currentUid);
-  const previousFeedbackCount = useRef(completedCount);
-  const completionFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const [showCheck, setShowCheck] = useState(false);
-  const [contentTransition, setContentTransition] = useState(0);
-  const buttonFeedback = useSharedValue(0);
-  const buttonFeedbackStyle = useAnimatedStyle(() => ({
-    transform: [
-      {
-        scale: interpolate(buttonFeedback.value, [0, 0.5, 1], [1, 0.96, 1]),
-      },
-    ],
+  const previousRingCount = useRef(completedCount);
+  const ringOpacity = useSharedValue(0);
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: ringOpacity.value,
   }));
 
   const centerCurrent = (animated: boolean) => {
@@ -167,32 +154,22 @@ export function FocusView({
   }, [completedCount, currentUid]);
 
   useEffect(() => {
-    const completionAdvanced = completedCount > previousFeedbackCount.current;
-    previousFeedbackCount.current = completedCount;
+    const completionAdvanced = completedCount > previousRingCount.current;
+    const completionReversed = completedCount < previousRingCount.current;
+    previousRingCount.current = completedCount;
+
+    if (completionReversed) {
+      ringOpacity.value = 0;
+      return;
+    }
     if (!completionAdvanced) return;
 
-    buttonFeedback.value = 0;
-    buttonFeedback.value = withTiming(1, { duration: 180 });
-    setContentTransition((transition) => transition + 1);
-    setShowCheck(true);
-
-    if (completionFeedbackTimer.current) {
-      clearTimeout(completionFeedbackTimer.current);
-    }
-    completionFeedbackTimer.current = setTimeout(() => {
-      setShowCheck(false);
-      completionFeedbackTimer.current = null;
-    }, 180);
-  }, [buttonFeedback, completedCount]);
-
-  useEffect(
-    () => () => {
-      if (completionFeedbackTimer.current) {
-        clearTimeout(completionFeedbackTimer.current);
-      }
-    },
-    [],
-  );
+    ringOpacity.value = 0;
+    ringOpacity.value = withSequence(
+      withTiming(1, { duration: 120 }),
+      withTiming(0, { duration: 240 }),
+    );
+  }, [completedCount, ringOpacity]);
 
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
@@ -279,13 +256,7 @@ export function FocusView({
       </View>
 
       <View style={styles.infoZone}>
-        <Animated.View
-          key={contentTransition}
-          entering={
-            contentTransition > 0 ? FadeInRight.duration(180) : undefined
-          }
-          exiting={FadeOutLeft.duration(160)}
-        >
+        <View>
           {done ? (
             <View style={styles.doneZone}>
               <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
@@ -318,10 +289,17 @@ export function FocusView({
               </View>
             </>
           )}
-        </Animated.View>
+        </View>
       </View>
 
-      <Animated.View style={[styles.completeButtonFeedback, buttonFeedbackStyle]}>
+      <View style={styles.completeButtonFeedback}>
+        <Animated.View
+          testID="completion-feedback-ring"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.completionFeedbackRing, ringStyle]}
+        />
         <TouchableOpacity
           style={styles.completeButton}
           onPress={done ? handleFinish : handleCompleteSet}
@@ -342,25 +320,15 @@ export function FocusView({
                   ? "Finish Workout"
                   : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
               </Text>
-              {showCheck && !done ? (
-                <Animated.View
-                  testID="set-complete-feedback"
-                  entering={FadeIn.duration(180)}
-                  exiting={FadeOut.duration(160)}
-                >
-                  <Ionicons name="checkmark-sharp" size={56} color="#fff" />
-                </Animated.View>
-              ) : (
-                <Ionicons
-                  name={done ? "checkmark-sharp" : "arrow-forward"}
-                  size={56}
-                  color="#fff"
-                />
-              )}
+              <Ionicons
+                name={done ? "checkmark-sharp" : "arrow-forward"}
+                size={56}
+                color="#fff"
+              />
             </>
           )}
         </TouchableOpacity>
-      </Animated.View>
+      </View>
 
       <TouchableOpacity
         style={[
@@ -525,6 +493,16 @@ const styles = StyleSheet.create({
   completeButtonFeedback: {
     flex: 1,
     marginTop: 16,
+  },
+  completionFeedbackRing: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    bottom: -3,
+    left: -3,
+    borderWidth: 3,
+    borderColor: "#4ade80",
+    borderRadius: 17,
   },
   completeButtonText: {
     color: "#fff",
