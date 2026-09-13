@@ -3,7 +3,7 @@ import { DraftExerciseRow } from "@/types/workout";
 import { flattenSets, nextSetIndex } from "@/lib/wear-state";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   LayoutChangeEvent,
@@ -14,6 +14,14 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 // Single-set-at-a-time layout for a live workout: a horizontal strip of exercise
 // cards, the current set's numbers, and one big button to mark it done. The cursor
@@ -104,6 +112,20 @@ export function FocusView({
   const currentUid = currentRowIndex >= 0 ? rows[currentRowIndex].uid : null;
   const previousCompletedCount = useRef(completedCount);
   const previousCurrentUid = useRef(currentUid);
+  const previousFeedbackCount = useRef(completedCount);
+  const completionFeedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const [showCheck, setShowCheck] = useState(false);
+  const [contentTransition, setContentTransition] = useState(0);
+  const buttonFeedback = useSharedValue(0);
+  const buttonFeedbackStyle = useAnimatedStyle(() => ({
+    transform: [
+      {
+        scale: interpolate(buttonFeedback.value, [0, 0.5, 1], [1, 0.96, 1]),
+      },
+    ],
+  }));
 
   const centerCurrent = (animated: boolean) => {
     if (!currentUid) return;
@@ -139,6 +161,34 @@ export function FocusView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedCount, currentUid]);
+
+  useEffect(() => {
+    const completionAdvanced = completedCount > previousFeedbackCount.current;
+    previousFeedbackCount.current = completedCount;
+    if (!completionAdvanced) return;
+
+    buttonFeedback.value = 0;
+    buttonFeedback.value = withTiming(1, { duration: 180 });
+    setContentTransition((transition) => transition + 1);
+    setShowCheck(true);
+
+    if (completionFeedbackTimer.current) {
+      clearTimeout(completionFeedbackTimer.current);
+    }
+    completionFeedbackTimer.current = setTimeout(() => {
+      setShowCheck(false);
+      completionFeedbackTimer.current = null;
+    }, 180);
+  }, [buttonFeedback, completedCount]);
+
+  useEffect(
+    () => () => {
+      if (completionFeedbackTimer.current) {
+        clearTimeout(completionFeedbackTimer.current);
+      }
+    },
+    [],
+  );
 
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
@@ -226,63 +276,83 @@ export function FocusView({
       </View>
 
       <View style={styles.infoZone}>
-        {done ? (
-          <View style={styles.doneZone}>
-            <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
-            <Text style={[styles.metric, styles.tabularNums]}>
-              {completedCount}/{totalCount}
-            </Text>
-          </View>
-        ) : (
-          <>
-            <View style={styles.setHeaderRow}>
-              <Text style={styles.exerciseLabel} numberOfLines={1}>
-                {currentRow!.label}
+        <Animated.View
+          key={contentTransition}
+          entering={
+            contentTransition > 0 ? FadeIn.duration(180) : undefined
+          }
+          exiting={FadeOut.duration(160)}
+        >
+          {done ? (
+            <View style={styles.doneZone}>
+              <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
+              <Text style={[styles.metric, styles.tabularNums]}>
+                {completedCount}/{totalCount}
               </Text>
             </View>
-            <View style={styles.setFieldsRow}>
-              <SetFields
-                set={currentSet!}
-                exerciseType={currentRow!.exerciseType}
-                bodyweight={currentRow!.bodyweight}
-                onUpdate={(field, v) =>
-                  onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
-                }
-                onIncrement={() =>
-                  onIncrementSet(current!.rowIndex, current!.setIndex)
-                }
-                onDecrement={() =>
-                  onDecrementSet(current!.rowIndex, current!.setIndex)
-                }
-              />
-            </View>
-          </>
-        )}
+          ) : (
+            <>
+              <View style={styles.setHeaderRow}>
+                <Text style={styles.exerciseLabel} numberOfLines={1}>
+                  {currentRow!.label}
+                </Text>
+              </View>
+              <View style={styles.setFieldsRow}>
+                <SetFields
+                  set={currentSet!}
+                  exerciseType={currentRow!.exerciseType}
+                  bodyweight={currentRow!.bodyweight}
+                  onUpdate={(field, v) =>
+                    onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
+                  }
+                  onIncrement={() =>
+                    onIncrementSet(current!.rowIndex, current!.setIndex)
+                  }
+                  onDecrement={() =>
+                    onDecrementSet(current!.rowIndex, current!.setIndex)
+                  }
+                />
+              </View>
+            </>
+          )}
+        </Animated.View>
       </View>
 
-      <TouchableOpacity
-        style={styles.completeButton}
-        onPress={done ? handleFinish : handleCompleteSet}
-        disabled={done && saving}
-        activeOpacity={0.8}
-      >
-        {done && saving ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Text style={styles.completeButtonText}>
-              {done
-                ? "Finish Workout"
-                : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
-            </Text>
-            <Ionicons
-              name={done ? "checkmark-sharp" : "arrow-forward"}
-              size={56}
-              color="#fff"
-            />
-          </>
-        )}
-      </TouchableOpacity>
+      <Animated.View style={[styles.completeButtonFeedback, buttonFeedbackStyle]}>
+        <TouchableOpacity
+          style={styles.completeButton}
+          onPress={done ? handleFinish : handleCompleteSet}
+          disabled={done && saving}
+          activeOpacity={0.8}
+        >
+          {done && saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.completeButtonText}>
+                {done
+                  ? "Finish Workout"
+                  : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
+              </Text>
+              {showCheck && !done ? (
+                <Animated.View
+                  accessibilityLabel="set-complete-feedback"
+                  entering={FadeIn.duration(180)}
+                  exiting={FadeOut.duration(160)}
+                >
+                  <Ionicons name="checkmark-sharp" size={56} color="#fff" />
+                </Animated.View>
+              ) : (
+                <Ionicons
+                  name={done ? "checkmark-sharp" : "arrow-forward"}
+                  size={56}
+                  color="#fff"
+                />
+              )}
+            </>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
 
       <TouchableOpacity
         style={[
@@ -432,7 +502,7 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     flex: 1,
-    marginTop: 16,
+    marginTop: 0,
     backgroundColor: "#e54242",
     borderRadius: 14,
     alignItems: "center",
@@ -443,6 +513,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
+  },
+  completeButtonFeedback: {
+    flex: 1,
+    marginTop: 16,
   },
   completeButtonText: {
     color: "#fff",

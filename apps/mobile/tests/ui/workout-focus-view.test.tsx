@@ -1,8 +1,46 @@
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
+import type { ReactNode } from 'react';
 import type { DraftExerciseRow } from '@/types/workout';
 import type { SetField } from '@/ui/workout/set-fields';
+
+const timingDurations: number[] = [];
+const fadeInDurations: number[] = [];
+const fadeOutDurations: number[] = [];
+
+mock.module('react-native-reanimated', () => {
+  const AnimatedView = ({
+    accessibilityLabel,
+    children,
+  }: {
+    accessibilityLabel?: string;
+    children?: ReactNode;
+  }) => <div aria-label={accessibilityLabel}>{children}</div>;
+
+  return {
+    default: { View: AnimatedView },
+    FadeIn: {
+      duration: (duration: number) => {
+        fadeInDurations.push(duration);
+        return { duration };
+      },
+    },
+    FadeOut: {
+      duration: (duration: number) => {
+        fadeOutDurations.push(duration);
+        return { duration };
+      },
+    },
+    interpolate: () => 1,
+    useAnimatedStyle: (factory: () => unknown) => factory(),
+    useSharedValue: (value: number) => ({ value }),
+    withTiming: (value: number, config: { duration: number }) => {
+      timingDurations.push(config.duration);
+      return value;
+    },
+  };
+});
 
 mock.module(new URL('../../src/ui/workout/set-fields.tsx', import.meta.url).pathname, () => ({
   SetFields: ({
@@ -64,6 +102,9 @@ const createMock = mock as unknown as (implementation: (...args: any[]) => unkno
 
 afterEach(() => {
   cleanup();
+  timingDurations.length = 0;
+  fadeInDurations.length = 0;
+  fadeOutDurations.length = 0;
 });
 
 function row(overrides: Partial<DraftExerciseRow> = {}): DraftExerciseRow {
@@ -179,5 +220,41 @@ describe('FocusView', () => {
     assert.ok(screen.getByText('Seconds', { exact: true }));
     assert.equal(screen.queryByText('Reps', { exact: true }), null);
     assert.equal(screen.queryByDisplayValue('135'), null);
+  });
+
+  it('animates only after confirmed set progress and preserves next and final states', async () => {
+    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const initial = row();
+    const viewProps = props({ exercises: [initial] });
+    const { rerender } = render(<FocusView {...viewProps} />);
+
+    assert.equal(timingDurations.length, 0);
+    assert.equal(fadeInDurations.length, 0);
+
+    fireEvent.click(screen.getByText('Complete set 1/2', { exact: true }));
+    assert.equal(timingDurations.length, 0);
+    assert.equal(fadeInDurations.length, 0);
+
+    const afterFirstSet = row({
+      sets: initial.sets.map((set, index) =>
+        index === 0 ? { ...set, completed: true } : set,
+      ),
+    });
+    rerender(<FocusView {...viewProps} exercises={[afterFirstSet]} />);
+
+    assert.ok(screen.getByLabelText('set-complete-feedback'));
+    assert.ok(timingDurations.includes(180));
+    assert.ok(fadeInDurations.includes(180));
+    assert.ok(fadeOutDurations.includes(160));
+    assert.ok(screen.getByText('Complete set 2/2', { exact: true }));
+
+    const afterFinalSet = row({
+      sets: afterFirstSet.sets.map((set) => ({ ...set, completed: true })),
+    });
+    rerender(<FocusView {...viewProps} exercises={[afterFinalSet]} />);
+
+    assert.ok(screen.getByText('ALL SETS COMPLETE', { exact: true }));
+    assert.ok(screen.getByText('2/2', { exact: true }));
+    assert.ok(screen.getByText('Finish Workout', { exact: true }));
   });
 });
