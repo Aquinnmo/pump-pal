@@ -18,6 +18,7 @@ let throwOnInjuryRead = false;
 const alerts: string[] = [];
 const routerReplacements: string[] = [];
 const hapticCalls: unknown[] = [];
+let remoteFinishListener: ((action: { action: string; workoutId: string }) => void) | null = null;
 const router = {
   replace: (path: string) => routerReplacements.push(path),
   push: (_path: string) => {},
@@ -150,6 +151,23 @@ mock.module('@/lib/use-ai-quota', () => ({ useAIQuota: () => ({ usesLeft: null }
 mock.module('@/lib/use-ai-enabled', () => ({ useAIEnabled: () => false }));
 mock.module('@/lib/use-ai-connectivity', () => ({ useAIGenerationAvailable: () => true }));
 mock.module('@/config/firebase', () => ({ auth: { currentUser: user } }));
+mock.module('@/lib/wear-sync', () => ({
+  pushWearState: () => {},
+  subscribeWearActions: (listener: (action: { action: string; workoutId: string }) => void) => {
+    remoteFinishListener = listener;
+    return () => {
+      remoteFinishListener = null;
+    };
+  },
+}));
+mock.module('@/lib/live-update-notification-actions', () => ({
+  subscribeLiveUpdateNotificationActions: () => () => {},
+}));
+mock.module(new URL('../../src/ui/workout/finish-workout-celebration.tsx', import.meta.url).pathname, () => ({
+  FinishWorkoutCelebration: () => (
+    <div data-testid="finish-workout-celebration">Workout complete</div>
+  ),
+}));
 
 const { default: ActiveWorkoutScreen } = await import('../../app/active-workout');
 
@@ -191,6 +209,7 @@ beforeEach(() => {
   alerts.length = 0;
   routerReplacements.length = 0;
   hapticCalls.length = 0;
+  remoteFinishListener = null;
   window.alert = (message: string) => alerts.push(message);
   endSession();
 });
@@ -213,7 +232,9 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(createCalls[0]!.uid, uid);
     assert.deepEqual(createCalls[0]!.workout.performedExercises, []);
     assert.equal(createCalls[0]!.workout.name, 'Push Day');
-    assert.equal(routerReplacements.length, 1);
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(routerReplacements.length, 0);
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
   });
 
   it('shows confirmation before finishing with incomplete sets', async () => {
@@ -298,6 +319,8 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(saved.performedExercises.some((exercise) => exercise.exerciseNameSnapshot === ''), false);
     assert.equal(saved.performedExercises.some((exercise) => exercise.sets.some((set) => 'completed' in set)), false);
     assert.equal(saved.status, 'completed');
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(routerReplacements.length, 0);
   });
 
   it('guards a terminal double Finish while the repository write is pending', async () => {
@@ -314,7 +337,9 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(updateCalls.length, 1);
 
     resolveUpdate();
-    await waitFor(() => assert.equal(routerReplacements.length, 1));
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(routerReplacements.length, 0);
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
   });
 
   it('resets the terminal guard after a failed Finish so retry can write', async () => {
@@ -332,7 +357,8 @@ describe('ActiveWorkoutScreen finish boundary', () => {
 
     fireEvent.click(finishButton());
     await waitFor(() => assert.equal(createCalls.length, 2));
-    assert.equal(routerReplacements.length, 1);
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(routerReplacements.length, 0);
   });
 
   it('stamps ongoing injury ids onto a completed workout', async () => {
@@ -342,7 +368,8 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     fireEvent.click(finishButton());
     await waitFor(() => assert.equal(createCalls.length, 1));
     assert.deepEqual(createCalls[0]!.workout.injuries, ['injury-shoulder']);
-    assert.equal(routerReplacements.length, 1);
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(routerReplacements.length, 0);
   });
 
   // BUG: The web implementation does not preserve the documented fail-closed
@@ -367,6 +394,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     await waitFor(() => assert.equal(alerts.length, 1));
     assert.equal(createCalls.length, 1);
     assert.equal(routerReplacements.length, 0);
+    assert.equal(screen.queryByTestId('finish-workout-celebration'), null);
     assert.equal(alerts[0], 'Error\n\nCould not finish workout. write failed');
     assert.equal(getSession()?.name, 'Write Failure');
   });
@@ -382,25 +410,33 @@ describe('ActiveWorkoutScreen finish boundary', () => {
 
     assert.ok(screen.getAllByRole('progressbar').length >= 2);
     assert.equal(screen.queryByText('Workout complete', { exact: true }), null);
+    assert.equal(screen.queryByTestId('finish-workout-celebration'), null);
     assert.equal(routerReplacements.length, 0);
     assert.equal(hapticCalls.length, 0);
 
     await act(async () => resolveUpdate());
-    await waitFor(() => assert.ok(screen.getByText('Workout complete', { exact: true })));
-    const successLabel = screen.getByText('Workout complete', { exact: true });
-    assert.deepEqual(
-      {
-        sessionEnded: getSession() === null,
-        successOnButton: successLabel.parentElement?.getAttribute('aria-disabled') === 'true',
-        finishHidden: screen.queryByText('Finish Workout', { exact: true }) === null,
-      },
-      { sessionEnded: true, successOnButton: true, finishHidden: true },
-    );
-    assert.ok(screen.getByLabelText('checkmark-sharp icon'));
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(getSession(), null);
+    assert.equal(screen.queryByText('Finish Workout', { exact: true }), null);
     assert.equal(routerReplacements.length, 0);
     assert.deepEqual(hapticCalls, [['notification', 'success']]);
 
-    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 1_000 });
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
+  });
+
+  it('routes a mounted remote finish through the same persisted celebration hold', async () => {
+    await renderScreen({ suggestion: 'Remote Day' });
+    const session = getSession();
+    assert.ok(session);
+    assert.ok(remoteFinishListener);
+
+    await act(async () => {
+      remoteFinishListener!({ action: 'finishWorkout', workoutId: session!.id });
+    });
+    await waitFor(() => assert.equal(createCalls.length, 1));
+    await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
+    assert.equal(routerReplacements.length, 0);
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
   });
 
   it('does not show Focus View success or navigate after a failed persistence write', async () => {
@@ -412,6 +448,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     await waitFor(() => assert.equal(alerts.length, 1));
 
     assert.equal(screen.queryByText('Workout complete', { exact: true }), null);
+    assert.equal(screen.queryByTestId('finish-workout-celebration'), null);
     assert.equal(routerReplacements.length, 0);
     assert.equal(hapticCalls.length, 0);
   });

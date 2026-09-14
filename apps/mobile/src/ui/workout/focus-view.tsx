@@ -35,7 +35,6 @@ type FocusViewProps = {
   onCompleteSet: () => void;
   onUndo: () => void;
   onFinish: () => void;
-  finishSucceeded?: boolean;
   onEdit: () => void;
   onOpenPlateCalc: () => void;
   onUpdateSet: (
@@ -78,7 +77,6 @@ export function FocusView({
   onCompleteSet,
   onUndo,
   onFinish,
-  finishSucceeded = false,
   onEdit,
   onOpenPlateCalc,
   onUpdateSet,
@@ -303,15 +301,10 @@ export function FocusView({
         <TouchableOpacity
           style={styles.completeButton}
           onPress={done ? handleFinish : handleCompleteSet}
-          disabled={finishSucceeded || (done && saving)}
+          disabled={done && saving}
           activeOpacity={0.8}
         >
-          {finishSucceeded ? (
-            <>
-              <Text style={styles.completeButtonText}>Workout complete</Text>
-              <Ionicons name="checkmark-sharp" size={56} color="#fff" />
-            </>
-          ) : done && saving ? (
+          {done && saving ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <>

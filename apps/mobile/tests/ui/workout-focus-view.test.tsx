@@ -203,6 +203,16 @@ describe('FocusView', () => {
     assert.equal(screen.queryByText('Complete set 1/2', { exact: true }), null);
   });
 
+  it('keeps completion feedback at the screen boundary instead of rendering a Focus success state', async () => {
+    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const complete = row({ sets: row().sets.map((set) => ({ ...set, completed: true })) });
+    const legacySuccessProp = { finishSucceeded: true } as any;
+    render(<FocusView {...props({ exercises: [complete] })} {...legacySuccessProp} />);
+
+    assert.ok(screen.getByText('Finish Workout', { exact: true }));
+    assert.equal(screen.queryByText('Workout complete', { exact: true }), null);
+  });
+
   it('renders duration fields for the current duration set without reps or weight', async () => {
     const { FocusView } = await import('../../src/ui/workout/focus-view');
     const duration = row({
