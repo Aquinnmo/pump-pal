@@ -214,7 +214,9 @@ describe('AnalyticsScreen', () => {
     assert.match(summary.getAttribute('aria-label') ?? '', /Current 128 lbs/);
     assert.match(summary.getAttribute('aria-label') ?? '', /All-time record 128 lbs/);
     assert.match(summary.getAttribute('aria-label') ?? '', /Change since first session \+12 lbs/);
-    assert.equal(screen.getAllByText('110 lbs', { exact: true }).length, 2);
+    await waitFor(() =>
+      assert.equal(screen.getAllByText('110 lbs', { exact: true }).length, 2),
+    );
     assert.ok(screen.getByText('12 reps', { exact: true }));
     assert.ok(screen.getByText('2m 5s', { exact: true }));
     assert.ok(screen.getByLabelText('Favorite Exercise. Bench Press'));
