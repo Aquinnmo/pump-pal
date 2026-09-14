@@ -240,6 +240,31 @@ describe('AnalyticsScreen', () => {
     assert.equal(screen.queryByText('Personal record', { exact: true }), null);
   });
 
+  it('shows the rounded average of valid workout durations without detail copy', async () => {
+    history = [
+      { ...workout('w-timed-a', 'Push', '2026-03-01T12:00:00.000Z', []), durationSeconds: 61 },
+      { ...workout('w-timed-b', 'Pull', '2026-03-02T12:00:00.000Z', []), durationSeconds: 62 },
+      { ...workout('w-timed-zero', 'Legs', '2026-03-03T12:00:00.000Z', []), durationSeconds: 0 },
+      { ...workout('w-legacy', 'Old', '2026-03-04T12:00:00.000Z', []), durationSeconds: null },
+      { ...workout('w-invalid-negative', 'Bad', '2026-03-05T12:00:00.000Z', []), durationSeconds: -1 },
+      { ...workout('w-invalid-fraction', 'Bad 2', '2026-03-06T12:00:00.000Z', []), durationSeconds: 1.5 },
+    ];
+    render(<AnalyticsScreen />);
+    await waitFor(() => assert.ok(screen.getByLabelText('Average Workout Time. 41s')));
+
+    const average = screen.getByLabelText('Average Workout Time. 41s');
+    const favoriteExercise = screen.getByLabelText('Favorite Exercise. Not available');
+    assert.equal(Boolean(average.compareDocumentPosition(favoriteExercise) & Node.DOCUMENT_POSITION_FOLLOWING), true);
+    assert.equal(screen.queryByText('Based on 3 timed workouts', { exact: true }), null);
+    assert.equal(screen.queryByText('No timed workouts yet', { exact: true }), null);
+  });
+
+  it('shows the empty average workout time state when history has no valid timings', async () => {
+    history = [{ ...workout('w-legacy', 'Old', '2026-03-01T12:00:00.000Z', []), durationSeconds: null }];
+    render(<AnalyticsScreen />);
+    await waitFor(() => assert.ok(screen.getByLabelText('Average Workout Time. —')));
+  });
+
   it('preserves the favorite workout tie-break based on the overwritten oldest date', async () => {
     history = [
       workout('w-push-latest', 'Push', '2026-01-10T12:00:00.000Z', [performed('Bench Press', [weightedSet(110, 5)])]),

@@ -140,6 +140,7 @@ export default function AnalyticsScreen() {
     heaviestLift,
     strengthHistories,
     eligibleStrengthExercises,
+    averageWorkoutDuration,
   } = useMemo(() => {
     if (workouts.length === 0) {
       return {
@@ -154,6 +155,7 @@ export default function AnalyticsScreen() {
         heaviestLift: null as { exercise: string; weight: number } | null,
         strengthHistories: {} as Record<string, StrengthHistoryPoint[]>,
         eligibleStrengthExercises: [] as string[],
+        averageWorkoutDuration: null as number | null,
       };
     }
 
@@ -168,10 +170,17 @@ export default function AnalyticsScreen() {
     const bodyweightExerciseSet = new Set<string>();
     const durationExerciseSet = new Set<string>();
     let heaviest: { exercise: string; weight: number } | null = null;
+    let durationTotal = 0;
+    let timedWorkoutCount = 0;
     const workoutTypeCounts: Record<string, number> = {};
     const workoutTypeLastDate: Record<string, number> = {};
 
     workouts.forEach((workout) => {
+      const durationSeconds = workout.durationSeconds;
+      if (typeof durationSeconds === "number" && Number.isInteger(durationSeconds) && durationSeconds >= 0) {
+        durationTotal += durationSeconds;
+        timedWorkoutCount += 1;
+      }
       const date = toDateObj(workout.date);
       if (!date) return;
       const dateLabel = `${date.getMonth() + 1}/${date.getDate()}`;
@@ -301,6 +310,7 @@ export default function AnalyticsScreen() {
       heaviestLift: heaviest,
       strengthHistories,
       eligibleStrengthExercises,
+      averageWorkoutDuration: timedWorkoutCount > 0 ? Math.round(durationTotal / timedWorkoutCount) : null,
     };
   }, [workouts]);
 
@@ -637,6 +647,12 @@ export default function AnalyticsScreen() {
               <HighlightRow
                 label="Favorite Workout Type"
                 value={favoriteWorkoutType || "Not available"}
+              />
+              <View style={styles.divider} />
+              <HighlightRow
+                label="Average Workout Time"
+                value={averageWorkoutDuration === null ? "—" : formatDuration(averageWorkoutDuration)}
+                numeric
               />
               <View style={styles.divider} />
               <HighlightRow
