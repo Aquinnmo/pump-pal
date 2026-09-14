@@ -31,6 +31,7 @@ async function main() {
   assert.equal(stored!.data.userId, 'u1');
   // date normalized from {seconds,nanoseconds} to ISO for local storage.
   assert.equal(stored!.data.date, new Date(1750000000 * 1000).toISOString());
+  assert.equal(stored!.data.durationSeconds, null, 'legacy rows normalize absent duration to null');
   assert.equal(stored!.syncState, 'dirty');
 
   // Create queues a coalesced 'create' outbox intent.
@@ -40,12 +41,14 @@ async function main() {
   assert.equal(outbox[0].entityId, id);
 
   // --- update() atomically rewrites entity + coalesces the outbox intent ---
-  await update(db, 'u1', id, { ...stored!.data, name: 'Push (edited)' });
+  await update(db, 'u1', id, { ...stored!.data, name: 'Push (edited)', durationSeconds: 3600 });
   const afterUpdate = await getById(db, 'u1', id);
   assert.equal(afterUpdate!.data.name, 'Push (edited)');
+  assert.equal(afterUpdate!.data.durationSeconds, 3600);
   outbox = await listAll(db, 'u1');
   assert.equal(outbox.length, 1, 'update coalesces into the still-unsynced create');
   assert.equal(outbox[0].op, 'create', 'never-synced create stays a create after an edit');
+  assert.equal((outbox[0].payload as Workout).durationSeconds, 3600, 'outbox carries duration');
 
   // --- getByStatus filters correctly ---
   await create(db, 'u1', baseWorkout({ name: 'Planned Pull', status: 'planned', date: undefined }));

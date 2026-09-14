@@ -70,7 +70,7 @@ assert.equal(decodeFirestoreValue(timestampWire), timestamp);
 assert.deepEqual(encodeFirestoreValue(decodeFirestoreValue(timestampWire)), { stringValue: timestamp });
 
 const workout = {
-  id: 'w1', name: 'Push Day', status: 'completed' as const, performedExercises: [], createdAt: timestamp, updatedAt: timestamp, version: timestamp,
+  id: 'w1', name: 'Push Day', status: 'completed' as const, durationSeconds: null, performedExercises: [], createdAt: timestamp, updatedAt: timestamp, version: timestamp,
 };
 const profile = { workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, socialEnabled: null, version: timestamp };
 const injury = { id: 'inj1', bodyPart: 'shoulder' as const, severity: 'mild' as const, status: 'ongoing' as const, onsetDate: timestamp, createdAt: timestamp, updatedAt: timestamp };
@@ -85,6 +85,7 @@ function roundTrip<T>(schema: { parse(value: unknown): T }, value: T): T {
 }
 
 assert.deepEqual(roundTrip(workoutDTO, workout), workout);
+assert.deepEqual(roundTrip(workoutDTO, { ...workout, durationSeconds: 3600 }), { ...workout, durationSeconds: 3600 });
 assert.deepEqual(roundTrip(profileDTO, profile), {
   workoutSplit: null, username: null, aiUsage: null, aiEnabled: null, socialEnabled: null, version: timestamp,
 });

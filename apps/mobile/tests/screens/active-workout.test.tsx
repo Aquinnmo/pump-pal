@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { makePerformedExercise, makeWorkout } from '@/tests/factories';
-import { endSession, getSession, updateSession } from '@/lib/active-workout-session';
+import { endSession, getSession, startSession, updateSession } from '@/lib/active-workout-session';
 import type { Workout } from '@/types/workout';
 
 const uid = 'user-1';
@@ -15,6 +15,8 @@ let createBehavior: () => Promise<string> = async () => 'created-workout';
 let updateBehavior: () => Promise<void> = async () => undefined;
 let ongoingInjuries: { id: string; status: string }[] = [];
 let throwOnInjuryRead = false;
+let holdInjuryRead = false;
+let releaseInjuryRead: (() => void) | null = null;
 const alerts: string[] = [];
 const routerReplacements: string[] = [];
 const hapticCalls: unknown[] = [];
@@ -133,6 +135,7 @@ mock.module(new URL('../../src/data/web-direct-firestore.ts', import.meta.url).p
   listWebEntities: async (_uid: string, kind: string) => {
     if (kind !== 'injury') return [];
     if (throwOnInjuryRead) throw new Error('injury read failed');
+    if (holdInjuryRead) await new Promise<void>((resolve) => { releaseInjuryRead = resolve; });
     return ongoingInjuries;
   },
   listWebInjuryRecords: async () => [],
@@ -206,6 +209,8 @@ beforeEach(() => {
   updateBehavior = async () => undefined;
   ongoingInjuries = [];
   throwOnInjuryRead = false;
+  holdInjuryRead = false;
+  releaseInjuryRead = null;
   alerts.length = 0;
   routerReplacements.length = 0;
   hapticCalls.length = 0;
@@ -319,6 +324,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(saved.performedExercises.some((exercise) => exercise.exerciseNameSnapshot === ''), false);
     assert.equal(saved.performedExercises.some((exercise) => exercise.sets.some((set) => 'completed' in set)), false);
     assert.equal(saved.status, 'completed');
+    assert.equal(Number.isInteger(saved.durationSeconds), true, 'planned Finish captures an integer duration');
     await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
     assert.equal(routerReplacements.length, 0);
   });
@@ -370,6 +376,56 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.deepEqual(createCalls[0]!.workout.injuries, ['injury-shoulder']);
     await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
     assert.equal(routerReplacements.length, 0);
+  });
+
+  it('captures duration at Finish before the injury read and includes restored-session time', async () => {
+    const realDateNow = Date.now;
+    let now = 1_000_900;
+    Date.now = () => now;
+    try {
+      const restored = startSession({ uid, planId: null, name: 'Restored Day', rows: [], cameFromPlan: false });
+      restored.startedAt = new Date(990_000).toISOString();
+      holdInjuryRead = true;
+      await renderScreen();
+
+      fireEvent.click(finishButton());
+      await waitFor(() => assert.ok(releaseInjuryRead));
+      assert.equal(createCalls.length, 0, 'Finish waits for injury lookup after capturing duration');
+      now = 2_000_000;
+      releaseInjuryRead!();
+      await waitFor(() => assert.equal(createCalls.length, 1));
+      assert.equal(createCalls[0]!.workout.durationSeconds, 10);
+    } finally {
+      Date.now = realDateNow;
+    }
+  });
+
+  it('stores null duration for an invalid restored start without failing Finish', async () => {
+    const restored = startSession({ uid, planId: null, name: 'Invalid Start', rows: [], cameFromPlan: false });
+    restored.startedAt = 'not-a-date';
+    await renderScreen();
+
+    fireEvent.click(finishButton());
+    await waitFor(() => assert.equal(createCalls.length, 1));
+    assert.equal(createCalls[0]!.workout.durationSeconds, null);
+    assert.doesNotThrow(() => new Date(createCalls[0]!.workout.startedAt as string).toISOString());
+  });
+
+  it('stores null duration for a future restored start', async () => {
+    const realDateNow = Date.now;
+    Date.now = () => 1_000_000;
+    try {
+      const restored = startSession({ uid, planId: null, name: 'Future Start', rows: [], cameFromPlan: false });
+      restored.startedAt = new Date(2_000_000).toISOString();
+      await renderScreen();
+
+      fireEvent.click(finishButton());
+      await waitFor(() => assert.equal(createCalls.length, 1));
+      assert.equal(createCalls[0]!.workout.durationSeconds, null);
+      assert.equal(createCalls[0]!.workout.startedAt, restored.startedAt);
+    } finally {
+      Date.now = realDateNow;
+    }
   });
 
   // BUG: The web implementation does not preserve the documented fail-closed

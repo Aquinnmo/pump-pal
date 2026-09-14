@@ -36,13 +36,14 @@ service cloud.firestore {
 
     function validWorkout(workout, uid) {
       return workout.keys().hasAll(['userId', 'name', 'performedExercises', 'schemaVersion', 'createdAt', 'updatedAt'])
-        && workout.keys().hasOnly(['userId', 'name', 'date', 'status', 'startedAt', 'queueOrder', 'notes', 'performedExercises', 'injuries', 'schemaVersion', 'createdAt', 'updatedAt'])
+        && workout.keys().hasOnly(['userId', 'name', 'date', 'status', 'startedAt', 'durationSeconds', 'queueOrder', 'notes', 'performedExercises', 'injuries', 'schemaVersion', 'createdAt', 'updatedAt'])
         && workout.userId == uid
         && workout.name is string && workout.name.size() <= 200
         && workout.performedExercises is list && workout.performedExercises.size() <= 100
         && workout.schemaVersion == 2
         && workout.createdAt is timestamp && workout.updatedAt is timestamp
         && (!('status' in workout) || workout.status in ['planned', 'in_progress', 'completed'])
+        && (!('durationSeconds' in workout) || workout.durationSeconds == null || (workout.durationSeconds is int && workout.durationSeconds >= 0))
         && (!('notes' in workout) || (workout.notes is string && workout.notes.size() <= 2000))
         && (!('injuries' in workout) || (workout.injuries is list && workout.injuries.size() <= 100));
     }

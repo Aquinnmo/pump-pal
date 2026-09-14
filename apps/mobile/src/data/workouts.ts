@@ -29,9 +29,10 @@ type Row = {
 };
 
 function fromRow(row: Row): StoredRecord<Workout> {
+  const data = JSON.parse(row.data) as Workout;
   return {
     id: row.id,
-    data: JSON.parse(row.data) as Workout,
+    data: { ...data, durationSeconds: data.durationSeconds ?? null },
     syncState: row.sync_state,
     serverVersion: row.server_version,
     updatedAt: row.updated_at,

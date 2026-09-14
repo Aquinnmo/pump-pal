@@ -56,6 +56,8 @@ export type Workout = {
   status?: WorkoutStatus;
   queueOrder?: number;
   startedAt?: FlexibleTimestamp;
+  /** Total elapsed workout time captured at Finish; absent legacy reads normalize to null. */
+  durationSeconds?: number | null;
   // Ids of the user's injuries that were ongoing when this workout was logged
   // (auto-attached on completion). Analytics/AI join these back to users/{uid}.injuries.
   injuries?: string[];

@@ -23,6 +23,7 @@ type Workout = {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   injuries?: string[]; // ids of the user's injuries active when this workout was logged
+  durationSeconds?: number | null; // elapsed time at Finish; null for legacy/manual records
 };
 
 type PerformedExercise = {
@@ -98,6 +99,17 @@ Field notes:
   injury's date window) / `removeInjuryFromHistory` (`arrayRemove`). It stays
   what it was even if the injury record is later edited or deleted, so it is
   independent of the current user injury list.
+- `durationSeconds` is the floored elapsed time from the existing `startedAt`
+  to Finish, including rest, background, and restored-session time. It is
+  captured before Finish awaits other work. Missing, invalid, or future starts
+  produce `null`; legacy reads normalize an absent field to `null`. New manual
+  history and planned records also carry `null`, and editing a recorded workout
+  preserves its value. Rules accept only a nonnegative integer or explicit
+  `null`.
+
+For rollout, deploy the Firestore rules before shipping a client that writes
+`durationSeconds`; the client field is allowlisted and validated there. No
+backfill is planned, so existing documents remain absent and read as `null`.
 
 ## `MigrationSource`
 

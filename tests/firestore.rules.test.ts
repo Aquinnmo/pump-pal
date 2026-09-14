@@ -86,6 +86,11 @@ async function main() {
   await assertFails(getDocs(query(collection(owner, 'workouts'), where('userId', '==', 'owner'), limit(201))));
   await assertFails(setDoc(doc(owner, 'workouts/w-invalid-schema'), { ...workout, schemaVersion: 1 }));
   await assertFails(setDoc(doc(owner, 'workouts/w-unknown-field'), { ...workout, unknownField: true }));
+  await assertSucceeds(setDoc(doc(owner, 'workouts/w-duration'), { ...workout, durationSeconds: 3600 }));
+  await assertSucceeds(setDoc(doc(owner, 'workouts/w-duration-null'), { ...workout, durationSeconds: null }));
+  await assertFails(setDoc(doc(owner, 'workouts/w-duration-negative'), { ...workout, durationSeconds: -1 }));
+  await assertFails(setDoc(doc(owner, 'workouts/w-duration-fraction'), { ...workout, durationSeconds: 1.5 }));
+  await assertFails(setDoc(doc(owner, 'workouts/w-duration-string'), { ...workout, durationSeconds: '3600' }));
   await assertFails(setDoc(doc(owner, 'workouts/w1'), { ...workout, userId: 'other' }));
   await assertFails(setDoc(doc(other, 'workouts/w3'), workout));
   await assertSucceeds(setDoc(doc(owner, 'workouts/w3'), workout));

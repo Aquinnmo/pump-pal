@@ -82,6 +82,12 @@ function formatElapsed(totalSeconds: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
+function workoutDurationSeconds(startedAt: Date | null, now = Date.now()): number | null {
+  const startedMs = startedAt?.getTime();
+  if (!Number.isFinite(startedMs) || startedMs! > now) return null;
+  return Math.floor((now - startedMs!) / 1000);
+}
+
 // Self-contained so its 1Hz tick re-renders only this text, not the whole
 // ActiveWorkout tree — a parent re-render mid-drag jars the reorderable list.
 function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
@@ -429,6 +435,9 @@ export default function ActiveWorkoutScreen() {
 
   const finishWorkout = async () => {
     if (!sessionId || terminalRef.current) return;
+    // Capture before any awaited injury/repository work so the value includes
+    // rest, background, and restored-session time up to the user's Finish tap.
+    const capturedDurationSeconds = workoutDurationSeconds(startedAt);
     terminalRef.current = true;
     setSaving(true);
     try {
@@ -449,7 +458,9 @@ export default function ActiveWorkoutScreen() {
 
       const injuries = await getOngoingInjuryIds(user.uid);
       const now = new Date().toISOString();
-      const sessionStartedAt = (startedAt ?? new Date()).toISOString();
+      const sessionStartedAt = startedAt && Number.isFinite(startedAt.getTime())
+        ? startedAt.toISOString()
+        : new Date().toISOString();
 
       // This is the only write this screen ever makes: a plan-sourced session
       // completes the row it was seeded from, an ad-hoc one is created fresh here.
@@ -464,6 +475,7 @@ export default function ActiveWorkoutScreen() {
           status: "completed",
           injuries,
           startedAt: sessionStartedAt,
+          durationSeconds: capturedDurationSeconds,
           updatedAt: now,
         });
       } else {
@@ -475,6 +487,7 @@ export default function ActiveWorkoutScreen() {
           injuries,
           schemaVersion: 2,
           startedAt: sessionStartedAt,
+          durationSeconds: capturedDurationSeconds,
           createdAt: now,
           updatedAt: now,
         });
