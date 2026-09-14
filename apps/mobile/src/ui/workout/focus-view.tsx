@@ -14,6 +14,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 
 // Single-set-at-a-time layout for a live workout: a horizontal strip of exercise
 // cards, the current set's numbers, and one big button to mark it done. The cursor
@@ -104,6 +110,11 @@ export function FocusView({
   const currentUid = currentRowIndex >= 0 ? rows[currentRowIndex].uid : null;
   const previousCompletedCount = useRef(completedCount);
   const previousCurrentUid = useRef(currentUid);
+  const previousRingCount = useRef(completedCount);
+  const ringOpacity = useSharedValue(0);
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: ringOpacity.value,
+  }));
 
   const centerCurrent = (animated: boolean) => {
     if (!currentUid) return;
@@ -140,6 +151,24 @@ export function FocusView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completedCount, currentUid]);
 
+  useEffect(() => {
+    const completionAdvanced = completedCount > previousRingCount.current;
+    const completionReversed = completedCount < previousRingCount.current;
+    previousRingCount.current = completedCount;
+
+    if (completionReversed) {
+      ringOpacity.value = 0;
+      return;
+    }
+    if (!completionAdvanced) return;
+
+    ringOpacity.value = 0;
+    ringOpacity.value = withSequence(
+      withTiming(1, { duration: 120 }),
+      withTiming(0, { duration: 240 }),
+    );
+  }, [completedCount, ringOpacity]);
+
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
   const cardState = (row: DraftExerciseRow): CardState => {
@@ -155,7 +184,6 @@ export function FocusView({
   };
 
   const handleFinish = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onFinish();
   };
 
@@ -226,63 +254,74 @@ export function FocusView({
       </View>
 
       <View style={styles.infoZone}>
-        {done ? (
-          <View style={styles.doneZone}>
-            <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
-            <Text style={[styles.metric, styles.tabularNums]}>
-              {completedCount}/{totalCount}
-            </Text>
-          </View>
-        ) : (
-          <>
-            <View style={styles.setHeaderRow}>
-              <Text style={styles.exerciseLabel} numberOfLines={1}>
-                {currentRow!.label}
+        <View>
+          {done ? (
+            <View style={styles.doneZone}>
+              <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
+              <Text style={[styles.metric, styles.tabularNums]}>
+                {completedCount}/{totalCount}
               </Text>
             </View>
-            <View style={styles.setFieldsRow}>
-              <SetFields
-                set={currentSet!}
-                exerciseType={currentRow!.exerciseType}
-                bodyweight={currentRow!.bodyweight}
-                onUpdate={(field, v) =>
-                  onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
-                }
-                onIncrement={() =>
-                  onIncrementSet(current!.rowIndex, current!.setIndex)
-                }
-                onDecrement={() =>
-                  onDecrementSet(current!.rowIndex, current!.setIndex)
-                }
-              />
-            </View>
-          </>
-        )}
+          ) : (
+            <>
+              <View style={styles.setHeaderRow}>
+                <Text style={styles.exerciseLabel} numberOfLines={1}>
+                  {currentRow!.label}
+                </Text>
+              </View>
+              <View style={styles.setFieldsRow}>
+                <SetFields
+                  set={currentSet!}
+                  exerciseType={currentRow!.exerciseType}
+                  bodyweight={currentRow!.bodyweight}
+                  onUpdate={(field, v) =>
+                    onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
+                  }
+                  onIncrement={() =>
+                    onIncrementSet(current!.rowIndex, current!.setIndex)
+                  }
+                  onDecrement={() =>
+                    onDecrementSet(current!.rowIndex, current!.setIndex)
+                  }
+                />
+              </View>
+            </>
+          )}
+        </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.completeButton}
-        onPress={done ? handleFinish : handleCompleteSet}
-        disabled={done && saving}
-        activeOpacity={0.8}
-      >
-        {done && saving ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <>
-            <Text style={styles.completeButtonText}>
-              {done
-                ? "Finish Workout"
-                : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
-            </Text>
-            <Ionicons
-              name={done ? "checkmark-sharp" : "arrow-forward"}
-              size={56}
-              color="#fff"
-            />
-          </>
-        )}
-      </TouchableOpacity>
+      <View style={styles.completeButtonFeedback}>
+        <Animated.View
+          testID="completion-feedback-ring"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={[styles.completionFeedbackRing, ringStyle]}
+        />
+        <TouchableOpacity
+          style={styles.completeButton}
+          onPress={done ? handleFinish : handleCompleteSet}
+          disabled={done && saving}
+          activeOpacity={0.8}
+        >
+          {done && saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <>
+              <Text style={styles.completeButtonText}>
+                {done
+                  ? "Finish Workout"
+                  : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
+              </Text>
+              <Ionicons
+                name={done ? "checkmark-sharp" : "arrow-forward"}
+                size={56}
+                color="#fff"
+              />
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={[
@@ -432,7 +471,7 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     flex: 1,
-    marginTop: 16,
+    marginTop: 0,
     backgroundColor: "#e54242",
     borderRadius: 14,
     alignItems: "center",
@@ -443,6 +482,20 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 5 },
     elevation: 4,
+  },
+  completeButtonFeedback: {
+    flex: 1,
+    marginTop: 16,
+  },
+  completionFeedbackRing: {
+    position: "absolute",
+    top: -3,
+    right: -3,
+    bottom: -3,
+    left: -3,
+    borderWidth: 3,
+    borderColor: "#4ade80",
+    borderRadius: 17,
   },
   completeButtonText: {
     color: "#fff",

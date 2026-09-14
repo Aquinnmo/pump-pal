@@ -1,8 +1,44 @@
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
+import type { ReactNode } from 'react';
 import type { DraftExerciseRow } from '@/types/workout';
 import type { SetField } from '@/ui/workout/set-fields';
+
+const timingDurations: number[] = [];
+const sharedValueWrites: number[] = [];
+
+mock.module('react-native-reanimated', () => {
+  const AnimatedView = ({
+    children,
+    testID,
+  }: {
+    children?: ReactNode;
+    testID?: string;
+  }) => <div data-testid={testID}>{children}</div>;
+
+  return {
+    default: { View: AnimatedView },
+    useAnimatedStyle: (factory: () => unknown) => factory(),
+    useSharedValue: (value: number) => {
+      let current: unknown = value;
+      return {
+        get value() {
+          return current;
+        },
+        set value(next: unknown) {
+          if (typeof next === 'number') sharedValueWrites.push(next);
+          current = next;
+        },
+      };
+    },
+    withSequence: (...animations: unknown[]) => animations.at(-1),
+    withTiming: (value: number, config: { duration: number }) => {
+      timingDurations.push(config.duration);
+      return value;
+    },
+  };
+});
 
 mock.module(new URL('../../src/ui/workout/set-fields.tsx', import.meta.url).pathname, () => ({
   SetFields: ({
@@ -64,6 +100,8 @@ const createMock = mock as unknown as (implementation: (...args: any[]) => unkno
 
 afterEach(() => {
   cleanup();
+  timingDurations.length = 0;
+  sharedValueWrites.length = 0;
 });
 
 function row(overrides: Partial<DraftExerciseRow> = {}): DraftExerciseRow {
@@ -179,5 +217,48 @@ describe('FocusView', () => {
     assert.ok(screen.getByText('Seconds', { exact: true }));
     assert.equal(screen.queryByText('Reps', { exact: true }), null);
     assert.equal(screen.queryByDisplayValue('135'), null);
+  });
+
+  it('uses only a confirmed-progress ring for set feedback', async () => {
+    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const initial = row();
+    const viewProps = props({ exercises: [initial] });
+    const { rerender } = render(<FocusView {...viewProps} />);
+
+    assert.ok(screen.getByTestId('completion-feedback-ring'));
+    assert.equal(timingDurations.length, 0);
+    assert.equal(sharedValueWrites.length, 0);
+    assert.equal(screen.queryByTestId('set-complete-feedback'), null);
+
+    fireEvent.click(screen.getByText('Complete set 1/2', { exact: true }));
+    assert.equal(timingDurations.length, 0);
+    assert.equal(sharedValueWrites.length, 0);
+
+    const afterFirstSet = row({
+      sets: initial.sets.map((set, index) =>
+        index === 0 ? { ...set, completed: true } : set,
+      ),
+    });
+    rerender(<FocusView {...viewProps} exercises={[afterFirstSet]} />);
+
+    assert.deepEqual(timingDurations, [120, 240]);
+    assert.equal(screen.queryByTestId('set-complete-feedback'), null);
+    assert.ok(screen.getByText('Complete set 2/2', { exact: true }));
+
+    const afterFinalSet = row({
+      sets: afterFirstSet.sets.map((set) => ({ ...set, completed: true })),
+    });
+    rerender(<FocusView {...viewProps} exercises={[afterFinalSet]} />);
+
+    assert.deepEqual(timingDurations, [120, 240, 120, 240]);
+    assert.ok(screen.getByText('ALL SETS COMPLETE', { exact: true }));
+    assert.ok(screen.getByText('2/2', { exact: true }));
+    assert.ok(screen.getByText('Finish Workout', { exact: true }));
+
+    const writesBeforeUndo = sharedValueWrites.length;
+    rerender(<FocusView {...viewProps} exercises={[afterFirstSet]} />);
+    assert.equal(timingDurations.length, 4);
+    assert.equal(sharedValueWrites.length, writesBeforeUndo + 1);
+    assert.equal(sharedValueWrites.at(-1), 0);
   });
 });

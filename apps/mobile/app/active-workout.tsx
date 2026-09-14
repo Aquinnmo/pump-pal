@@ -3,6 +3,7 @@ import { PlateCalculator } from "@/ui/primitives/plate-calculator";
 import { Toast } from "@/ui/primitives/toast";
 import { ExerciseCard } from "@/ui/workout/exercise-card";
 import { FocusView } from "@/ui/workout/focus-view";
+import { FinishWorkoutCelebration } from "@/ui/workout/finish-workout-celebration";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
 import { triggerSyncAfterWrite } from "@/data/sync-trigger";
@@ -154,6 +155,7 @@ export default function ActiveWorkoutScreen() {
   });
   exercisesRef.current = exercises;
   const [saving, setSaving] = useState(false);
+  const [finishSucceeded, setFinishSucceeded] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [showLogConfirm, setShowLogConfirm] = useState(false);
@@ -485,7 +487,7 @@ export default function ActiveWorkoutScreen() {
       // moment later when it regains focus.
       pushWearState(buildWearIdleState(describeUpNext({})));
       endSession();
-      router.replace("/(tabs)");
+      setFinishSucceeded(true);
     } catch (err: any) {
       terminalRef.current = false;
       showAlert("Error", "Could not finish workout. " + err.message);
@@ -494,6 +496,12 @@ export default function ActiveWorkoutScreen() {
       setShowFinishConfirm(false);
     }
   };
+
+  useEffect(() => {
+    if (!finishSucceeded) return;
+    const timeoutId = setTimeout(() => router.replace("/(tabs)"), 1200);
+    return () => clearTimeout(timeoutId);
+  }, [finishSucceeded]);
 
   const handleFinishPress = () => {
     if (incompleteSetCount() > 0) {
@@ -600,6 +608,10 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
+  if (finishSucceeded) {
+    return <FinishWorkoutCelebration />;
+  }
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -645,7 +657,7 @@ export default function ActiveWorkoutScreen() {
           saving={saving}
           onCompleteSet={handleCompleteSet}
           onUndo={handleUndoSet}
-          onFinish={handleFinishPress}
+          onFinish={finishWorkout}
           onEdit={() => setMode("editor")}
           onOpenPlateCalc={() => setShowPlateCalc(true)}
           onUpdateSet={updateSet}
@@ -841,7 +853,7 @@ export default function ActiveWorkoutScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.confirmConfirmButton}
-                onPress={finishWorkout}
+                onPress={() => finishWorkout()}
                 activeOpacity={0.8}
               >
                 <Text style={styles.confirmConfirmText}>Finish Anyway</Text>
