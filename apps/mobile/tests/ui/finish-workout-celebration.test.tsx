@@ -3,7 +3,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
 import type { ReactNode } from 'react';
 
-const timingCalls: Array<{ to: number; duration: number }> = [];
+const timingCalls: Array<{ to: number; duration: number; easing: unknown }> = [];
 const delayCalls: number[] = [];
 let reducedMotion = false;
 
@@ -52,6 +52,11 @@ mock.module('react-native-reanimated', () => {
 
   return {
     default: { View: AnimatedView },
+    Easing: {
+      bezier: (...controlPoints: number[]) => ({ type: 'bezier', controlPoints }),
+      out: (easing: unknown) => ({ type: 'out', easing }),
+      quad: { type: 'quad' },
+    },
     interpolate: () => 1,
     useAnimatedStyle: (factory: () => unknown) => factory(),
     useReducedMotion: () => reducedMotion,
@@ -60,8 +65,8 @@ mock.module('react-native-reanimated', () => {
       delayCalls.push(delay);
       return animation;
     },
-    withTiming: (to: number, config: { duration: number }) => {
-      timingCalls.push({ to, duration: config.duration });
+    withTiming: (to: number, config: { duration: number; easing: unknown }) => {
+      timingCalls.push({ to, duration: config.duration, easing: config.easing });
       return to;
     },
   };
@@ -134,7 +139,18 @@ describe('FinishWorkoutCelebration', () => {
       assert.equal(to, 0);
       assert.ok(duration >= 340 && duration <= 400);
     }
-    assert.deepEqual(timingCalls[9], { to: 1, duration: 180 });
+    assert.deepEqual(
+      timingCalls.slice(0, 9).map(({ easing }) => easing),
+      Array.from({ length: 9 }, () => ({
+        type: 'bezier',
+        controlPoints: [0.22, 0.78, 0.3, 1],
+      })),
+    );
+    assert.deepEqual(timingCalls[9], {
+      to: 1,
+      duration: 180,
+      easing: { type: 'out', easing: { type: 'quad' } },
+    });
     assert.equal(delayCalls[9], 760);
 
     const logs = screen.getAllByTestId(/^finish-workout-log-/);

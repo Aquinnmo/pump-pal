@@ -2,6 +2,7 @@ import { TimberLogoEndFace } from '@/ui/timber-logo';
 import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
+  Easing,
   interpolate,
   useAnimatedStyle,
   useReducedMotion,
@@ -74,7 +75,10 @@ function FinishLog({ index, motion, reducedMotion }: FinishLogProps) {
     translateY.value = motion.startY;
     translateY.value = withDelay(
       motion.delay,
-      withTiming(0, { duration: motion.duration }),
+      withTiming(0, {
+        duration: motion.duration,
+        easing: Easing.bezier(0.22, 0.78, 0.3, 1),
+      }),
     );
   }, [motion, reducedMotion, translateY]);
 
@@ -115,7 +119,10 @@ export function FinishWorkoutCelebration() {
     }
 
     labelOpacity.value = 0;
-    labelOpacity.value = withDelay(760, withTiming(1, { duration: 180 }));
+    labelOpacity.value = withDelay(
+      760,
+      withTiming(1, { duration: 180, easing: Easing.out(Easing.quad) }),
+    );
   }, [labelOpacity, reducedMotion]);
 
   return (
