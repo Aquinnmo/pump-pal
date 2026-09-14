@@ -59,7 +59,7 @@ export type DirectFirestoreClient = {
 
 const MAX_QUERY_LIMIT = 200;
 const WORKOUT_FIELDS = [
-  'userId', 'name', 'date', 'status', 'startedAt', 'queueOrder', 'notes',
+  'userId', 'name', 'date', 'status', 'startedAt', 'durationSeconds', 'queueOrder', 'notes',
   'performedExercises', 'injuries', 'schemaVersion', 'createdAt', 'updatedAt',
 ];
 const INJURY_FIELDS = ['id', 'bodyPart', 'side', 'muscles', 'severity', 'status', 'onsetDate', 'resolvedDate', 'avoid', 'notes', 'createdAt', 'updatedAt'];
@@ -103,6 +103,7 @@ function workoutFields(uid: string, id: string, payload: Workout): Record<string
   };
   optional(workout.date === undefined ? undefined : timestamp(workout.date, now), 'date', fields);
   optional(workout.startedAt === undefined ? undefined : timestamp(workout.startedAt, now), 'startedAt', fields);
+  optional(workout.durationSeconds, 'durationSeconds', fields);
   optional(workout.queueOrder, 'queueOrder', fields);
   optional(workout.notes, 'notes', fields);
   optional(workout.injuries, 'injuries', fields);
@@ -120,6 +121,7 @@ function workoutDto(id: string, payload: Workout, version: string): WorkoutDTO {
     ...(workout.date === undefined ? {} : { date: iso(workout.date, now) }),
     status: workout.status ?? 'completed',
     ...(workout.startedAt === undefined ? {} : { startedAt: iso(workout.startedAt, now) }),
+    durationSeconds: workout.durationSeconds ?? null,
     ...(workout.queueOrder === undefined ? {} : { queueOrder: workout.queueOrder }),
     ...(workout.notes === undefined ? {} : { notes: workout.notes }),
     performedExercises: workout.performedExercises ?? [],
@@ -131,7 +133,7 @@ function workoutDto(id: string, payload: Workout, version: string): WorkoutDTO {
 }
 
 function decodeWorkout(document: DecodedFirestoreDocument): WorkoutDTO {
-  return workoutDTO.parse({ ...document.fields, id: idFromPath(document), status: document.fields.status ?? 'completed', version: document.version });
+  return workoutDTO.parse({ ...document.fields, id: idFromPath(document), status: document.fields.status ?? 'completed', durationSeconds: document.fields.durationSeconds ?? null, version: document.version });
 }
 
 function injuryFields(payload: Injury): Record<string, unknown> {

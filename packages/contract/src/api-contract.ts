@@ -244,6 +244,8 @@ export const workoutDTO = z.object({
   date: isoTimestamp.optional(),
   status: workoutStatus,
   startedAt: isoTimestamp.optional(),
+  /** Total elapsed workout time captured when the workout was finished. */
+  durationSeconds: z.number().int().min(0).nullable().optional(),
   queueOrder: z.number().int().optional(),
   notes: z.string().max(2_000).optional(),
   performedExercises: z.array(performedExercise),
@@ -280,6 +282,7 @@ export const createWorkoutInput = z.object({
   /** Omit for a 'planned'/'in_progress' workout not yet dated. */
   date: isoTimestamp.optional(),
   status: workoutStatus,
+  durationSeconds: z.number().int().min(0).nullable().optional(),
   notes: z.string().max(2_000).optional(),
   performedExercises: z.array(performedExercise).default([]),
   injuries: z.array(z.string()).optional(),
@@ -291,6 +294,7 @@ export const updateWorkoutInput = z.object({
   name: z.string().max(200).optional(),
   date: isoTimestamp.optional(),
   status: workoutStatus.optional(),
+  durationSeconds: z.number().int().min(0).nullable().optional(),
   notes: z.string().max(2_000).optional(),
   performedExercises: z.array(performedExercise).optional(),
   injuries: z.array(z.string()).optional(),

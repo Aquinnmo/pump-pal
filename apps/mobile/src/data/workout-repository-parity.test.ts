@@ -54,6 +54,7 @@ function workout(overrides: Partial<Omit<Workout, 'id' | 'userId'>> = {}): Omit<
     status: 'completed',
     queueOrder: 1,
     startedAt: '2026-08-12T11:30:00.000Z',
+    durationSeconds: 3600,
     injuries: ['injury-a'],
     createdAt: '2026-08-12T11:00:00.000Z',
     updatedAt: '2026-08-12T12:00:00.000Z',

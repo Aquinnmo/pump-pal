@@ -15,7 +15,7 @@
     "lint": "cd apps/mobile && bun run lint",
     "build:web": "cd apps/mobile && bun run build:web",
     "install:apple": "cd apps/mobile && bun run install:apple",
-    "dev:apple": "cd apps/mobile && bun run dev:apple",
+    "dev:ios": "cd apps/mobile && bun run dev:ios",
     "dev:android": "cd apps/mobile && bun run dev:android",
     "install:android": "cd apps/mobile && bun run install:android && adb install ./build-preview.apk",
     "dev:api": "bunx wrangler --config apps/api/wrangler.toml deploy --env preview",

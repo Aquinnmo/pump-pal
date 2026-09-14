@@ -223,16 +223,17 @@ describe('AddWorkoutModal', () => {
     fireEvent.click(screen.getByText('Save Workout', { exact: true }));
 
     await waitFor(() => assert.equal(created.length, 1));
-    const data = created[0]!.data as { performedExercises: Workout['performedExercises'] };
+    const data = created[0]!.data as { performedExercises: Workout['performedExercises']; durationSeconds: number | null };
     assert.equal(data.performedExercises.length, 1);
     assert.equal('completed' in data.performedExercises[0]!.sets[0]!, false);
+    assert.equal(data.durationSeconds, null, 'manual history starts without an elapsed session');
   });
 
   it('reads and writes the web date using the documented UTC-date/local-noon contract', async () => {
     const previousTZ = process.env.TZ;
     process.env.TZ = 'America/Toronto';
     params = { id: 'workout-1' };
-    storedWorkout = workout();
+    storedWorkout = workout({ durationSeconds: 123 });
     try {
       render(<AddWorkoutModal />);
       await waitFor(() => assert.ok(screen.getByText('Save Changes', { exact: true })));
@@ -245,6 +246,7 @@ describe('AddWorkoutModal', () => {
       await waitFor(() => assert.equal(updated.length, 1));
       const expected = new Date(2026, 7, 25, 12, 0, 0, 0).toISOString();
       assert.equal(updated[0]!.data.date, expected);
+      assert.equal(updated[0]!.data.durationSeconds, 123, 'manual edits preserve recorded duration');
     } finally {
       if (previousTZ === undefined) delete process.env.TZ;
       else process.env.TZ = previousTZ;

@@ -17,6 +17,13 @@ function workout(id: string, updatedAt = timestamp) {
   }, `version-${id}`);
 }
 
+function durationPayload(id: string, durationSeconds: number | null) {
+  return {
+    id, userId: 'u1', name: 'Push', status: 'completed' as const,
+    performedExercises: [], schemaVersion: 2 as const, createdAt: timestamp, durationSeconds,
+  };
+}
+
 class FakeFirestore implements DirectFirestoreClient {
   documents = new Map<string, DecodedFirestoreDocument>();
   commits: Parameters<DirectFirestoreClient['commit']>[0][] = [];
@@ -53,6 +60,8 @@ class FakeFirestore implements DirectFirestoreClient {
 async function main() {
   const client = new FakeFirestore();
   for (let index = 0; index < 201; index += 1) client.documents.set(`workouts/w${index}`, workout(`w${index}`, `2026-08-12T12:00:${String(index % 60).padStart(2, '0')}.000Z`));
+  client.documents.get('workouts/w0')!.fields.durationSeconds = 3600;
+  client.documents.get('workouts/w1')!.fields.durationSeconds = null;
   client.documents.set('users/u1/injuries/i1', document('users/u1/injuries/i1', {
     id: 'i1', bodyPart: 'shoulder', severity: 'mild', status: 'ongoing', onsetDate: timestamp, createdAt: timestamp, updatedAt: timestamp,
   }, 'injury-v1'));
@@ -63,6 +72,8 @@ async function main() {
   const directWorkouts = await direct.workouts.list();
   assert.equal(directWorkouts.length, 201, 'web-safe list reads every bounded query page directly');
   assert.equal(client.queries.filter((query) => query.collectionId === 'workouts').length, 2);
+  assert.equal(directWorkouts.find((item) => item.data.id === 'w0')!.data.durationSeconds, 3600, 'Firestore reads numeric duration');
+  assert.equal(directWorkouts.find((item) => item.data.id === 'w1')!.data.durationSeconds, null, 'Firestore reads null duration');
 
   const queryCountBeforeManifest = client.queries.length;
   const manifest = await direct.remote.manifest('u1', undefined);
@@ -75,12 +86,21 @@ async function main() {
   assert.equal(pulled.found.length, 4);
   assert.equal((pulled.found.find((item) => item.kind === 'workout')?.data as { id: string }).id, 'w0');
 
-  const result = await direct.workouts.update('w0', {
-    id: 'w0', userId: 'u1', name: 'Edited', status: 'completed', performedExercises: [], schemaVersion: 2, createdAt: timestamp,
-  }, 'version-w0');
-  assert.equal(result.version, 'write-1-0');
-  assert.deepEqual(client.commits[0][0].currentDocument, { updateTime: 'version-w0' });
-  assert.ok(client.commits[0][0].updateMask?.includes('userId'));
+  const createdNumber = await direct.workouts.create(durationPayload('w-create-number', 3600), 'w-create-number');
+  assert.equal(createdNumber.data.durationSeconds, 3600);
+  assert.equal(client.commits[0][0].fields?.durationSeconds, 3600);
+  const createdNull = await direct.workouts.create(durationPayload('w-create-null', null), 'w-create-null');
+  assert.equal(createdNull.data.durationSeconds, null);
+  assert.equal(client.commits[1][0].fields?.durationSeconds, null);
+  const result = await direct.workouts.update('w0', durationPayload('w0', 3600), 'version-w0');
+  assert.equal(result.version, 'write-3-0');
+  assert.deepEqual(client.commits[2][0].currentDocument, { updateTime: 'version-w0' });
+  assert.equal(client.commits[2][0].fields?.durationSeconds, 3600);
+  assert.ok(client.commits[2][0].updateMask?.includes('userId'));
+  assert.ok(client.commits[2][0].updateMask?.includes('durationSeconds'));
+  const updatedNull = await direct.workouts.update('w1', durationPayload('w1', null), 'version-w1');
+  assert.equal(updatedNull.data.durationSeconds, null);
+  assert.equal(client.commits[3][0].fields?.durationSeconds, null);
   assert.equal(client.queries.length, 5, 'a direct mutation does not trigger a redundant full manifest query');
 
   const commitsBeforeDrafts = client.commits.length;

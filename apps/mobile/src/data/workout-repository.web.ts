@@ -36,6 +36,7 @@ function dtoToWorkout(uid: string, dto: WorkoutDTO): Workout {
     status: dto.status,
     queueOrder: dto.queueOrder,
     startedAt: dto.startedAt,
+    durationSeconds: dto.durationSeconds ?? null,
     injuries: dto.injuries,
     createdAt: dto.createdAt,
     updatedAt: dto.updatedAt,

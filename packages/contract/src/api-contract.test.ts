@@ -266,6 +266,7 @@ const validInjury = {
 };
 const validWorkout = {
   id: 'w-1', name: 'Push Day', date: iso, status: 'completed', startedAt: iso, queueOrder: 1, notes: 'steady',
+  durationSeconds: 3600,
   performedExercises: [validExercise], injuries: ['inj-1'], createdAt: iso, updatedAt: iso, version: 'v1',
 };
 const validVariation = { id: 'wide', name: 'Wide Grip', aliases: [], primaryMuscles: ['chest'], secondaryMuscles: [], equipment: 'barbell' };
@@ -340,6 +341,10 @@ for (const key of ['variationId', 'variationNameSnapshot']) {
 }
 assert.equal(workoutDTO.safeParse(validWorkoutFixture).success, true);
 assert.equal(workoutDTO.safeParse({ ...validWorkoutFixture, name: 'x'.repeat(201) }).success, false);
+assert.equal(workoutDTO.safeParse({ ...validWorkoutFixture, durationSeconds: null }).success, true);
+for (const durationSeconds of [-1, 1.5, Number.POSITIVE_INFINITY, '3600']) {
+  assert.equal(workoutDTO.safeParse({ ...validWorkoutFixture, durationSeconds }).success, false);
+}
 assert.equal(workoutResponse.safeParse({ workout: validWorkoutFixture }).success, true);
 assert.equal(listQuery.safeParse({ limit: 1, cursor: 'next' }).success, true);
 assert.equal(listQuery.safeParse({ limit: 0 }).success, false);
@@ -350,6 +355,8 @@ assert.equal(createWorkoutInput.safeParse({ id: '', name: 'x', status: 'planned'
 assert.equal(createWorkoutInput.safeParse({ id: 'w1', name: 'x', status: 'active' }).success, false);
 assert.equal(updateWorkoutInput.safeParse({ baseVersion: 'v1', status: 'completed' }).success, true);
 assert.equal(updateWorkoutInput.safeParse({ status: 'completed' }).success, false);
+assert.equal(createWorkoutInput.safeParse({ id: 'w1', name: 'x', status: 'completed', durationSeconds: null }).success, true);
+assert.equal(updateWorkoutInput.safeParse({ baseVersion: 'v1', durationSeconds: 0 }).success, true);
 assert.equal(reorderWorkoutsInput.safeParse({ order: [{ id: 'w1', queueOrder: 0 }] }).success, true);
 assert.equal(reorderWorkoutsInput.safeParse({ order: new Array(201).fill({ id: 'w', queueOrder: 0 }) }).success, false);
 
