@@ -141,6 +141,7 @@ export default function AnalyticsScreen() {
     strengthHistories,
     eligibleStrengthExercises,
     averageWorkoutDuration,
+    longestWorkoutDuration,
   } = useMemo(() => {
     if (workouts.length === 0) {
       return {
@@ -156,6 +157,7 @@ export default function AnalyticsScreen() {
         strengthHistories: {} as Record<string, StrengthHistoryPoint[]>,
         eligibleStrengthExercises: [] as string[],
         averageWorkoutDuration: null as number | null,
+        longestWorkoutDuration: null as number | null,
       };
     }
 
@@ -172,6 +174,7 @@ export default function AnalyticsScreen() {
     let heaviest: { exercise: string; weight: number } | null = null;
     let durationTotal = 0;
     let timedWorkoutCount = 0;
+    let longestWorkout: number | null = null;
     const workoutTypeCounts: Record<string, number> = {};
     const workoutTypeLastDate: Record<string, number> = {};
 
@@ -180,6 +183,7 @@ export default function AnalyticsScreen() {
       if (typeof durationSeconds === "number" && Number.isInteger(durationSeconds) && durationSeconds >= 0) {
         durationTotal += durationSeconds;
         timedWorkoutCount += 1;
+        longestWorkout = Math.max(longestWorkout ?? 0, durationSeconds);
       }
       const date = toDateObj(workout.date);
       if (!date) return;
@@ -311,6 +315,7 @@ export default function AnalyticsScreen() {
       strengthHistories,
       eligibleStrengthExercises,
       averageWorkoutDuration: timedWorkoutCount > 0 ? Math.round(durationTotal / timedWorkoutCount) : null,
+      longestWorkoutDuration: longestWorkout,
     };
   }, [workouts]);
 
@@ -738,6 +743,12 @@ export default function AnalyticsScreen() {
                   />
                 </>
               )}
+              <View style={styles.divider} />
+              <HighlightRow
+                label="Longest Workout"
+                value={longestWorkoutDuration === null ? "—" : formatDuration(longestWorkoutDuration)}
+                numeric
+              />
             </View>
           </View>
         </>

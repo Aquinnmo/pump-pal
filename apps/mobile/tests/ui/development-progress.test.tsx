@@ -143,7 +143,9 @@ describe('DevelopmentProgress', () => {
     const map = screen.getByRole('img', { name: /Selected muscle: Chest\./ });
     assert.match(map.getAttribute('aria-label') ?? '', /Development grade A\+.*Performance change \+25\.0%/);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Select lats' }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Select lats' }));
+    });
     await waitFor(() => assert.ok(screen.getByText('Not enough history for this muscle.', { exact: true })));
     assert.match(screen.getByRole('img', { name: /Selected muscle: Lats\./ }).getAttribute('aria-label') ?? '', /not enough history/);
   });

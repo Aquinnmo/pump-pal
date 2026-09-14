@@ -253,6 +253,7 @@ describe('AnalyticsScreen', () => {
     await waitFor(() => assert.ok(screen.getByLabelText('Average Workout Time. 41s')));
 
     const average = screen.getByLabelText('Average Workout Time. 41s');
+    assert.ok(screen.getByLabelText('Longest Workout. 1m 2s'));
     const favoriteExercise = screen.getByLabelText('Favorite Exercise. Not available');
     assert.equal(Boolean(average.compareDocumentPosition(favoriteExercise) & Node.DOCUMENT_POSITION_FOLLOWING), true);
     assert.equal(screen.queryByText('Based on 3 timed workouts', { exact: true }), null);
@@ -263,6 +264,7 @@ describe('AnalyticsScreen', () => {
     history = [{ ...workout('w-legacy', 'Old', '2026-03-01T12:00:00.000Z', []), durationSeconds: null }];
     render(<AnalyticsScreen />);
     await waitFor(() => assert.ok(screen.getByLabelText('Average Workout Time. —')));
+    assert.ok(screen.getByLabelText('Longest Workout. —'));
   });
 
   it('preserves the favorite workout tie-break based on the overwritten oldest date', async () => {
