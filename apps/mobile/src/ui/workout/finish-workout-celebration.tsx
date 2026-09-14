@@ -1,6 +1,6 @@
 import { TimberLogoEndFace } from '@/ui/timber-logo';
 import { useEffect, useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedStyle,
@@ -35,12 +35,12 @@ function shuffle<T>(items: readonly T[]) {
   return shuffled;
 }
 
-function createLogMotion() {
+function createLogMotion(screenHeight: number) {
   const delays = shuffle(ARRIVAL_DELAYS);
   return LOG_TARGETS.map((target, index) => ({
     ...target,
     delay: delays[index],
-    startY: -Math.round(Math.random() * 110 + 350),
+    startY: -Math.round(screenHeight * 0.55 + Math.random() * 110),
     duration: Math.round(Math.random() * 60 + 340),
   }));
 }
@@ -99,7 +99,9 @@ function FinishLog({ index, motion, reducedMotion }: FinishLogProps) {
 
 export function FinishWorkoutCelebration() {
   const reducedMotion = Boolean(useReducedMotion());
-  const motion = useMemo(() => createLogMotion(), []);
+  const { height: measuredHeight } = useWindowDimensions();
+  const screenHeight = measuredHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
+  const motion = useMemo(() => createLogMotion(screenHeight), [screenHeight]);
   const labelOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const labelStyle = useAnimatedStyle(() => ({
     opacity: reducedMotion ? 1 : labelOpacity.value,
@@ -117,8 +119,8 @@ export function FinishWorkoutCelebration() {
   }, [labelOpacity, reducedMotion]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.stage}>
+    <View testID="finish-workout-celebration" style={styles.container}>
+      <View testID="finish-workout-stage" style={styles.stage}>
         {motion.map((logMotion, index) => (
           <FinishLog
             key={`${logMotion.x}-${logMotion.y}`}
@@ -139,15 +141,17 @@ export function FinishWorkoutCelebration() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#0f0f0f',
   },
   stage: {
-    width: '100%',
-    maxWidth: 390,
-    height: 300,
-    position: 'relative',
-    overflow: 'hidden',
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
   },
   log: {
     width: LOG_SIZE,
@@ -157,7 +161,11 @@ const styles = StyleSheet.create({
     left: '50%',
   },
   label: {
-    marginTop: 112,
+    position: 'absolute',
+    bottom: 112,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
   },
   labelText: {
     color: '#888',
