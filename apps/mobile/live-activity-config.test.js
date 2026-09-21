@@ -13,6 +13,11 @@ const widgetConfig = require(path.join(widgetRoot, 'expo-target.config.js'))({ i
 assert.equal(ios.infoPlist.NSSupportsLiveActivities, true);
 assert.equal(ios.infoPlist.NSSupportsLiveActivitiesFrequentUpdates, true);
 assert.deepEqual(appGroups, ['group.com.aquinnmo.timber.liveactivity']);
+assert.equal(
+  ios.entitlements['com.apple.developer.devicecheck.appattest-environment'],
+  'development',
+  'the host app must opt into App Attest; TestFlight uses its production environment automatically',
+);
 assert.match(mobilePackage.scripts['dev:ios'] ?? mobilePackage.scripts['dev:apple'], /APP_VARIANT=development/);
 assert.match(mobilePackage.scripts['install:ios'] ?? mobilePackage.scripts['install:apple'], /expo run:ios --device/);
 

@@ -18,6 +18,7 @@
         "NSSupportsLiveActivitiesFrequentUpdates": true
       },
       "entitlements": {
+        "com.apple.developer.devicecheck.appattest-environment": "development",
         "com.apple.security.application-groups": [
           "group.com.aquinnmo.timber.liveactivity"
         ]
