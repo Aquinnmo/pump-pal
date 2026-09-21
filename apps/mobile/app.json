@@ -56,6 +56,7 @@
         }
       ],
       "@react-native-firebase/app-check",
+      "@react-native-firebase/crashlytics",
       [
         "expo-build-properties",
         {

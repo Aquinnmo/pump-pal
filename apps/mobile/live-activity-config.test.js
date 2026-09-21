@@ -5,6 +5,7 @@ const path = require('node:path');
 const mobileRoot = __dirname;
 const appJson = JSON.parse(fs.readFileSync(path.join(mobileRoot, 'app.json'), 'utf8'));
 const mobilePackage = JSON.parse(fs.readFileSync(path.join(mobileRoot, 'package.json'), 'utf8'));
+const firebaseJson = JSON.parse(fs.readFileSync(path.join(mobileRoot, '..', '..', 'firebase.json'), 'utf8'));
 const ios = appJson.expo.ios;
 const appGroups = ios.entitlements['com.apple.security.application-groups'];
 const widgetRoot = path.join(mobileRoot, 'targets', 'widget');
@@ -18,6 +19,16 @@ assert.equal(
   'development',
   'the host app must opt into App Attest; TestFlight uses its production environment automatically',
 );
+assert.equal(mobilePackage.dependencies['@react-native-firebase/crashlytics'], '26.2.0');
+assert.ok(
+  appJson.expo.plugins.includes('@react-native-firebase/crashlytics'),
+  'app.json must register the Crashlytics config plugin',
+);
+assert.deepEqual(firebaseJson['react-native'], {
+  crashlytics_auto_collection_enabled: true,
+  crashlytics_debug_enabled: false,
+  crashlytics_javascript_exception_handler_chaining_enabled: false,
+});
 assert.match(mobilePackage.scripts['dev:ios'] ?? mobilePackage.scripts['dev:apple'], /APP_VARIANT=development/);
 assert.match(mobilePackage.scripts['install:ios'] ?? mobilePackage.scripts['install:apple'], /expo run:ios --device/);
 

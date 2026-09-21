@@ -2,11 +2,12 @@ import { useAuth } from '@/context/auth-context';
 import { profileRepository } from '@/data/profile-repository';
 import { useDataVersion } from '@/hooks/use-data-version';
 import { useAIEnabled } from '@/lib/use-ai-enabled';
+import { crash, getCrashlytics } from '@react-native-firebase/crashlytics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SettingsScreen() {
   const { user } = useAuth();
@@ -31,6 +32,17 @@ export default function SettingsScreen() {
   const updateFades = () => {
     setShowTopFade(scrollYRef.current > 2);
     setShowBottomFade(scrollYRef.current + containerHeightRef.current < contentHeightRef.current - 2);
+  };
+
+  const confirmCrashlyticsTest = () => {
+    Alert.alert(
+      'Test Crashlytics',
+      'Timber will close immediately. Relaunch the app after the crash so Crashlytics can upload the report.',
+      [
+        { text: 'Keep App Open', style: 'cancel' },
+        { text: 'Crash for Test', style: 'destructive', onPress: () => crash(getCrashlytics()) },
+      ],
+    );
   };
 
   return (
@@ -92,6 +104,14 @@ export default function SettingsScreen() {
         <Text style={styles.navRowText}>App</Text>
         <Ionicons name="chevron-forward" size={20} color="#888" />
       </TouchableOpacity>
+
+      {Platform.OS !== 'web' && (
+        <TouchableOpacity style={styles.navRow} onPress={confirmCrashlyticsTest} activeOpacity={0.8}>
+          <Ionicons name="bug-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <Text style={styles.navRowText}>Test Crashlytics</Text>
+          <Ionicons name="chevron-forward" size={20} color="#888" />
+        </TouchableOpacity>
+      )}
 
       {aiEnabled && (
         <View style={styles.attributionCard}>
