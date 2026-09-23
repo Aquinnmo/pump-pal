@@ -17,6 +17,11 @@ Dir.mktmpdir do |root|
   patched = File.read(path)
   raise 'deprecated calls remain' if patched.include?('statusBarOrientation')
   raise 'scene calls missing' unless patched.scan('FIRCLSSceneOrientation()').length == 2
+  scene_call = '((UIApplication *)FIRCLSApplicationSharedInstance()).connectedScenes'
+  raise 'scene call is untyped' unless patched.include?(scene_call)
+  File.write(path, patched.sub(scene_call, 'FIRCLSApplicationSharedInstance().connectedScenes'))
+  patch_firebase_crashlytics_status_bar(root)
+  raise 'previous patch was not upgraded' unless File.read(path) == patched
   patch_firebase_crashlytics_status_bar(root)
   raise 'patch is not idempotent' unless File.read(path) == patched
 end
