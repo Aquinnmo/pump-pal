@@ -1,0 +1,21 @@
+diff --git a/ios/RNSScreen.mm b/ios/RNSScreen.mm
+index 9b66012dc8db1e3af0cb5457f8dad86e7f2fe5e3..7915cbbfc8dc31e91562c9bb91451ee2b7de3ce1 100644
+--- a/ios/RNSScreen.mm
++++ b/ios/RNSScreen.mm
+@@ -1582,11 +1582,13 @@ - (BOOL)hasNestedStack
+ - (CGSize)getStatusBarHeightIsModal:(BOOL)isModal
+ {
+ #if !TARGET_OS_TV && !TARGET_OS_VISION
+-  CGSize fallbackStatusBarSize = [[UIApplication sharedApplication] statusBarFrame].size;
+-
+   CGSize primaryStatusBarSize = self.view.window.windowScene.statusBarManager.statusBarFrame.size;
+   if (primaryStatusBarSize.height == 0 || primaryStatusBarSize.width == 0) {
+-    return fallbackStatusBarSize;
++    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
++      if ([scene isKindOfClass:[UIWindowScene class]] && scene.activationState == UISceneActivationStateForegroundActive) {
++        return ((UIWindowScene *)scene).statusBarManager.statusBarFrame.size;
++      }
++    }
+   }
+ 
+   return primaryStatusBarSize;
