@@ -10,7 +10,7 @@ import Foundation
 public enum LiveUpdateSharedStore {
   // Must match the App Group entitlement declared on both the host app target and the
   // widget-extension target in app.json / the apple-targets config.
-  public static let appGroupId = "group.com.aquinnmo.timber.liveactivity"
+  public static let appGroupId = "group.com.aquinnmo.timber.lkpt5wjq99.liveactivity"
 
   private static let stateKey = "com.aquinnmo.timber.liveupdate.state"
   private static let pendingActionKey = "com.aquinnmo.timber.liveupdate.pendingAction"

@@ -13,7 +13,7 @@ const widgetConfig = require(path.join(widgetRoot, 'expo-target.config.js'))({ i
 
 assert.equal(ios.infoPlist.NSSupportsLiveActivities, true);
 assert.equal(ios.infoPlist.NSSupportsLiveActivitiesFrequentUpdates, true);
-assert.deepEqual(appGroups, ['group.com.aquinnmo.timber.liveactivity']);
+assert.deepEqual(appGroups, ['group.com.aquinnmo.timber.lkpt5wjq99.liveactivity']);
 assert.equal(
   ios.entitlements['com.apple.developer.devicecheck.appattest-environment'],
   'development',
@@ -37,6 +37,11 @@ const buildProperties = appJson.expo.plugins.find(
 );
 assert.ok(buildProperties, 'expo-build-properties must configure the Apple build');
 assert.equal(buildProperties[1].ios.deploymentTarget, undefined);
+assert.equal(
+  buildProperties[1].ios.enableSceneSupport,
+  true,
+  'Xcode 27 builds must use the UIKit scene lifecycle required by iOS 27',
+);
 
 assert.equal(widgetConfig.type, 'widget');
 assert.equal(widgetConfig.deploymentTarget, '17.0');
@@ -66,6 +71,8 @@ const moduleStore = fs.readFileSync(
   'utf8',
 );
 const widgetStore = fs.readFileSync(path.join(widgetRoot, 'LiveUpdateSharedStore.swift'), 'utf8');
+assert.equal(moduleStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
+assert.equal(widgetStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
 assert.match(moduleSwift, /stored\.workoutId == payload\.workoutId[\s\S]*stored\.asContentState == contentState/);
 assert.match(moduleStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
 assert.match(widgetStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
