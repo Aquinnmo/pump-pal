@@ -14,7 +14,7 @@
     "web": "cd apps/mobile && bun run web",
     "lint": "cd apps/mobile && bun run lint",
     "build:web": "cd apps/mobile && bun run build:web",
-    "install:apple": "cd apps/mobile && bun run install:apple",
+    "install:ios": "cd apps/mobile && bun run install:ios",
     "dev:ios": "cd apps/mobile && bun run dev:ios",
     "dev:android": "cd apps/mobile && bun run dev:android",
     "install:android": "cd apps/mobile && bun run install:android && adb install ./build-preview.apk",

@@ -12,7 +12,7 @@ Build and install Timber directly from this checkout on a connected iPhone. This
   brew install node bun
   ```
 
-- Access to the Apple developer team that can sign `com.aquinnmo.timber` and its `group.com.aquinnmo.timber.liveactivity` App Group. A different personal team cannot sign the default configuration. The project includes a Live Activity extension and App Group entitlement, so its required signing capabilities must be available to that team. Ask a project administrator for a separately configured personal build if you do not have that access.
+- Access to the Apple developer team that can sign `com.aquinnmo.timber` and its `group.com.aquinnmo.timber.lkpt5wjq99.liveactivity` App Group. A different personal team cannot sign the default configuration. The project includes a Live Activity extension and App Group entitlement, so its required signing capabilities must be available to that team. Ask a project administrator for a separately configured personal build if you do not have that access.
 
   Before the first iOS prebuild, a project administrator must provide that team's 10-character ID. It can be added to `apps/mobile/app.json`:
 
@@ -26,7 +26,7 @@ Build and install Timber directly from this checkout on a connected iPhone. This
   }
   ```
 
-  For a local-only override, set `TIMBER_IOS_TEAM_ID` to the same ID when invoking Expo. The dynamic app config validates this value and forwards it to `@bacons/apple-targets`; it has no default and must never be guessed. Do not use an Apple Account email address or the `YOUR_TEAM_ID` placeholder.
+  For a local-only override, set `TIMBER_IOS_TEAM_ID` in the repository-root `.env`, then run `bun run install:apple` from the repository root. Bun loads that file before invoking Expo. The dynamic app config validates this value and forwards it to `@bacons/apple-targets`; it has no default and must never be guessed. Do not use an Apple Account email address or the `YOUR_TEAM_ID` placeholder.
 
   In Xcode, find it under **Signing & Capabilities → Team** after signing in. Do not guess this value or use an Apple Account email address.
 
@@ -73,7 +73,7 @@ coexist with the release-shaped app.
 
 Live Activities require iOS 17 or later and a physical iPhone with Dynamic Island
 for the Island-specific surfaces. The extension and host app must be signed by a
-team that owns `group.com.aquinnmo.timber.liveactivity`; a simulator or unsigned
+team that owns `group.com.aquinnmo.timber.lkpt5wjq99.liveactivity`; a simulator or unsigned
 target cannot verify App Group action delivery.
 
 Run this checklist after a native rebuild. It is intentionally a device check —

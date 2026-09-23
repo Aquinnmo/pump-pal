@@ -18,8 +18,9 @@
         "NSSupportsLiveActivitiesFrequentUpdates": true
       },
       "entitlements": {
+        "com.apple.developer.devicecheck.appattest-environment": "development",
         "com.apple.security.application-groups": [
-          "group.com.aquinnmo.timber.liveactivity"
+          "group.com.aquinnmo.timber.lkpt5wjq99.liveactivity"
         ]
       }
     },
@@ -55,10 +56,12 @@
         }
       ],
       "@react-native-firebase/app-check",
+      "@react-native-firebase/crashlytics",
       [
         "expo-build-properties",
         {
           "ios": {
+            "enableSceneSupport": true,
             "useFrameworks": "static"
           }
         }
@@ -76,7 +79,9 @@
         }
       ],
       "@react-native-community/datetimepicker",
+      "expo-image",
       "expo-localization",
+      "expo-sharing",
       "expo-web-browser",
       "expo-sqlite",
       "expo-background-task",

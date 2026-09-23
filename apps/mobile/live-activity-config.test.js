@@ -5,6 +5,7 @@ const path = require('node:path');
 const mobileRoot = __dirname;
 const appJson = JSON.parse(fs.readFileSync(path.join(mobileRoot, 'app.json'), 'utf8'));
 const mobilePackage = JSON.parse(fs.readFileSync(path.join(mobileRoot, 'package.json'), 'utf8'));
+const firebaseJson = JSON.parse(fs.readFileSync(path.join(mobileRoot, '..', '..', 'firebase.json'), 'utf8'));
 const ios = appJson.expo.ios;
 const appGroups = ios.entitlements['com.apple.security.application-groups'];
 const widgetRoot = path.join(mobileRoot, 'targets', 'widget');
@@ -12,7 +13,22 @@ const widgetConfig = require(path.join(widgetRoot, 'expo-target.config.js'))({ i
 
 assert.equal(ios.infoPlist.NSSupportsLiveActivities, true);
 assert.equal(ios.infoPlist.NSSupportsLiveActivitiesFrequentUpdates, true);
-assert.deepEqual(appGroups, ['group.com.aquinnmo.timber.liveactivity']);
+assert.deepEqual(appGroups, ['group.com.aquinnmo.timber.lkpt5wjq99.liveactivity']);
+assert.equal(
+  ios.entitlements['com.apple.developer.devicecheck.appattest-environment'],
+  'development',
+  'the host app must opt into App Attest; TestFlight uses its production environment automatically',
+);
+assert.equal(mobilePackage.dependencies['@react-native-firebase/crashlytics'], '26.2.0');
+assert.ok(
+  appJson.expo.plugins.includes('@react-native-firebase/crashlytics'),
+  'app.json must register the Crashlytics config plugin',
+);
+assert.deepEqual(firebaseJson['react-native'], {
+  crashlytics_auto_collection_enabled: true,
+  crashlytics_debug_enabled: false,
+  crashlytics_javascript_exception_handler_chaining_enabled: false,
+});
 assert.match(mobilePackage.scripts['dev:ios'] ?? mobilePackage.scripts['dev:apple'], /APP_VARIANT=development/);
 assert.match(mobilePackage.scripts['install:ios'] ?? mobilePackage.scripts['install:apple'], /expo run:ios --device/);
 
@@ -21,6 +37,11 @@ const buildProperties = appJson.expo.plugins.find(
 );
 assert.ok(buildProperties, 'expo-build-properties must configure the Apple build');
 assert.equal(buildProperties[1].ios.deploymentTarget, undefined);
+assert.equal(
+  buildProperties[1].ios.enableSceneSupport,
+  true,
+  'Xcode 27 builds must use the UIKit scene lifecycle required by iOS 27',
+);
 
 assert.equal(widgetConfig.type, 'widget');
 assert.equal(widgetConfig.deploymentTarget, '17.0');
@@ -50,6 +71,8 @@ const moduleStore = fs.readFileSync(
   'utf8',
 );
 const widgetStore = fs.readFileSync(path.join(widgetRoot, 'LiveUpdateSharedStore.swift'), 'utf8');
+assert.equal(moduleStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
+assert.equal(widgetStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
 assert.match(moduleSwift, /stored\.workoutId == payload\.workoutId[\s\S]*stored\.asContentState == contentState/);
 assert.match(moduleStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
 assert.match(widgetStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);

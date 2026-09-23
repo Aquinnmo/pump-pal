@@ -12,6 +12,9 @@ const user = { uid: 'settings-test-user', email: 'adam@example.com' };
 let profileData: UserDoc | null = { username: 'Adam', aiEnabled: false };
 let profileError: Error | null = null;
 const pushes: string[] = [];
+const testPlatform = { OS: 'web' };
+const alertCalls: Array<{ title: string; message?: string; buttons?: Array<{ text?: string; onPress?: () => void }> }> = [];
+let crashCalls = 0;
 
 mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathname, () => ({
   useAuth: () => ({
@@ -44,6 +47,11 @@ mock.module(new URL('../../src/data/profile-repository.web.ts', import.meta.url)
   },
 }));
 
+mock.module('@react-native-firebase/crashlytics', () => ({
+  getCrashlytics: () => ({}),
+  crash: () => { crashCalls += 1; },
+}));
+
 mock.module('expo-linear-gradient', () => ({
   LinearGradient: ({ children }: { children?: ReactNode }) => <div>{children}</div>,
 }));
@@ -64,6 +72,12 @@ plugin({
     build.module('react-native', () => ({
       exports: {
         ...reactNativeWeb,
+        Platform: testPlatform,
+        Alert: {
+          alert: (title: string, message?: string, buttons?: Array<{ text?: string; onPress?: () => void }>) => {
+            alertCalls.push({ title, message, buttons });
+          },
+        },
         TouchableOpacity: ({
           accessibilityLabel,
           children,
@@ -97,6 +111,9 @@ beforeEach(() => {
   profileData = { username: 'Adam', aiEnabled: false };
   profileError = null;
   pushes.length = 0;
+  testPlatform.OS = 'web';
+  alertCalls.length = 0;
+  crashCalls = 0;
   testRouter.push = (href) => pushes.push(href);
 });
 
@@ -168,5 +185,39 @@ describe('SettingsScreen', () => {
       '/settings-account',
       '/settings-app',
     ]);
+  });
+
+  it('does not expose the temporary crash action on web', async () => {
+    const { default: SettingsScreen } = await import('../../app/(tabs)/settings');
+    render(<SettingsScreen />);
+    await settle();
+
+    assert.equal(screen.queryByText('Test Crashlytics', { exact: true }), null);
+  });
+
+  it('keeps the app open when the temporary crash action is cancelled', async () => {
+    testPlatform.OS = 'ios';
+    const { default: SettingsScreen } = await import('../../app/(tabs)/settings');
+    render(<SettingsScreen />);
+    await settle();
+
+    fireEvent.click(screen.getByText('Test Crashlytics', { exact: true }));
+    assert.equal(alertCalls.length, 1);
+    assert.match(alertCalls[0].message ?? '', /Timber will close immediately/);
+    assert.match(alertCalls[0].message ?? '', /relaunch/i);
+    assert.deepEqual(alertCalls[0].buttons?.map(({ text }) => text), ['Keep App Open', 'Crash for Test']);
+    alertCalls[0].buttons?.[0].onPress?.();
+    assert.equal(crashCalls, 0);
+  });
+
+  it('crashes exactly once after confirming the temporary crash action', async () => {
+    testPlatform.OS = 'android';
+    const { default: SettingsScreen } = await import('../../app/(tabs)/settings');
+    render(<SettingsScreen />);
+    await settle();
+
+    fireEvent.click(screen.getByText('Test Crashlytics', { exact: true }));
+    alertCalls[0].buttons?.[1].onPress?.();
+    assert.equal(crashCalls, 1);
   });
 });
