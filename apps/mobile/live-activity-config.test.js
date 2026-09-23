@@ -88,7 +88,12 @@ assert.match(moduleSwift, /Task \{ @MainActor/);
 assert.match(moduleSwift, /clearPendingAction\(\)/);
 assert.match(moduleSwift, /activityGeneration/);
 assert.match(moduleSwift, /isCurrentActivityOperation\(generation\)/);
-assert.match(moduleSwift, /guard hasListeners else \{ return \}/);
+const noListenerActionBranch = moduleSwift.match(
+  /guard hasListeners else \{([\s\S]*?)\n      \}\s*\n      guard let pending = LiveUpdateSharedStore\.drainPendingAction/,
+);
+assert.ok(noListenerActionBranch, 'no-listener branch returns before the pending action is drained');
+assert.match(noListenerActionBranch[1], /\breturn\b/);
+assert.doesNotMatch(noListenerActionBranch[1], /drainPendingAction/);
 
 const iosNotification = fs.readFileSync(
   path.join(mobileRoot, 'src', 'lib', 'workout-notification.ios.ts'),
@@ -190,6 +195,19 @@ assert.match(widgetSwift, /\.layoutPriority\(1\)/);
 assert.match(widgetSwift, /\.contentMargins\(\.horizontal, 4\)/);
 assert.match(widgetSwift, /\.minimumScaleFactor\(0\.8\)/);
 assert.match(widgetSwift, /longCopyPreviewState/);
+const lockScreenDetailRow = widgetSwift.match(/if let detail = context\.state\.detail \{([\s\S]*?)\n\s+\}\n\s+Spacer\(minLength: 8\)\n\s+Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)/)?.[1];
+assert.ok(lockScreenDetailRow, 'Lock Screen detail and completed-set count must share one row');
+assert.doesNotMatch(lockScreenDetailRow, /layoutPriority/);
+const lockScreenCount = widgetSwift.match(/if let detail = context\.state\.detail \{[\s\S]*?\n\s+\}\n\s+Spacer\(minLength: 8\)\n\s+Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)([\s\S]*?)\n\s+\}/)?.[1];
+assert.match(lockScreenCount ?? '', /\.fixedSize\(horizontal: true, vertical: false\)\n\s+\.layoutPriority\(1\)/);
+assert.match(widgetSwift, /trackerOffset = min\(max\(trackerX - 5, 0\), max\(geometry\.size\.width - 10, 0\)\)/);
+assert.match(widgetSwift, /\.fixedSize\(horizontal: true, vertical: false\)\n\s+\.layoutPriority\(1\)/);
+assert.match(widgetSwift, /\.frame\(height: 44\)/);
+assert.match(widgetSwift, /HStack\(spacing: 8\) \{\n\s+ActionChip\(\n\s+title: "Finish workout"[\s\S]*?title: "Undo set"/);
+assert.match(widgetSwift, /completedSets: 102,[\s\S]*?totalSets: 122,[\s\S]*?Single Arm Cable Triceps Pushdown · 8 reps · 25 lbs/);
+assert.match(widgetSwift, /Date\(timeIntervalSinceNow: -12 \* 60 \* 60\)/);
+assert.match(widgetSwift, /select Accessibility 3 in the Xcode preview canvas/);
+assert.match(widgetSwift, /overlay\(Circle\(\)\.strokeBorder\(colorPipRing, lineWidth: 2\)\)/);
 
 // Tracker pip — the one element that makes Android's Notification.ProgressStyle
 // recognizable, and the layout's one spend of boldness.
@@ -231,7 +249,7 @@ assert.match(actionBridge, /releasePendingAction/);
 assert.match(actionBridge, /setTimeout\(releasePendingAction, 10_000\)/);
 
 const localPreview = fs.readFileSync(path.join(mobileRoot, '..', '..', 'IOS_LOCAL_PREVIEW.md'), 'utf8');
-assert.match(localPreview, /queued action is rejected and cleared/);
+assert.match(localPreview, /restore the\s+private draft from AsyncStorage and validate the\s+queued action/);
 assert.doesNotMatch(localPreview, /pending action is delivered once to the in-memory session/);
 assert.match(localPreview, /backgrounded but alive/);
 assert.match(localPreview, /background-launch/);

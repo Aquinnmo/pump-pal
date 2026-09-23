@@ -37,7 +37,7 @@ async function main() {
   // notification to workout-surface-sync's debounced subscriber would drop it.
   assert.match(
     executableImplementation,
-    /await flushWorkoutNotification\(\)/,
+    /await flushWorkoutNotification\([^)]*\)/,
     'a remote action must flush the notification immediately, not rely on the debounce',
   );
 
