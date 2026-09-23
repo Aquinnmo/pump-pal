@@ -43,10 +43,9 @@ async function runAndReportSync(): Promise<ReportedSyncResult> {
   if (!uid || !currentUid || uid !== currentUid) return { outcome: { status: 'auth-required' } };
   try {
     const outcome = await syncNow(uid, currentUid);
-    // "pulled: 0" and "the run threw" are different diagnoses, and there is no
-    // in-app status surface any more, so these two lines are the only place a
-    // sync outcome is observable at all.
-    console.log('[sync]', JSON.stringify(outcome));
+    if (outcome.status !== 'ok' || outcome.pushed || outcome.pulled || outcome.remoteDeletions) {
+      console.log('[sync]', JSON.stringify(outcome));
+    }
     announceLocalChanges(outcome);
     return { outcome };
   } catch (err) {
@@ -84,7 +83,9 @@ TaskManager.defineTask(BACKGROUND_TASK_NAME, async () => {
   const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
     const outcome = await syncNow(uid, currentUid, { maxOutboxItems: 50, signal: controller.signal });
-    console.log('[sync] background', JSON.stringify(outcome));
+    if (outcome.status !== 'ok' || outcome.pushed || outcome.pulled || outcome.remoteDeletions) {
+      console.log('[sync] background', JSON.stringify(outcome));
+    }
     announceLocalChanges(outcome);
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (err) {
@@ -157,9 +158,14 @@ export function startSyncTriggers(): void {
     lastConnected = connected;
   });
 
-  BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
-    minimumInterval: 15, // minutes — OS treats this as a floor, not a guarantee
-  }).catch((err) => {
+  void (async () => {
+    if (Platform.OS === 'ios' &&
+      await BackgroundTask.getStatusAsync() === BackgroundTask.BackgroundTaskStatus.Restricted) return;
+    if (!started) return;
+    await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_NAME, {
+      minimumInterval: 15, // minutes — OS treats this as a floor, not a guarantee
+    });
+  })().catch((err) => {
     console.warn('Background sync task registration failed', err);
   });
 }
