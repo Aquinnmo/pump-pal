@@ -5,9 +5,13 @@
 
 import * as LiveUpdateNotification from '@/modules/live-update-notification';
 import type { WorkoutNotificationPresentation } from '@/lib/workout-notification-model';
+import type { LiveActivityLatencyTrace } from '@/lib/live-activity-latency-debug';
+import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
 export type WorkoutSegment = WorkoutNotificationPresentation['segments'][number];
-export type WorkoutNotificationData = WorkoutNotificationPresentation;
+export type WorkoutNotificationData = WorkoutNotificationPresentation & {
+  latencyTrace?: LiveActivityLatencyTrace;
+};
 
 let warnedAboutMissingModule = false;
 let warnedAboutDisabledActivities = false;
@@ -66,9 +70,13 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     progress: data.completedSets,
     segments: data.segments,
     actions: data.actions,
+    ...(data.latencyTrace && __DEV__
+      ? { latencyTraceId: data.latencyTrace.id, latencyStartedAtMs: data.latencyTrace.startedAtMs }
+      : {}),
   };
 
   const didShow = LiveUpdateNotification.show(payload);
+  logLiveActivityLatency(data.latencyTrace, 'js.native-show.return');
 
   if (!didShow) {
     warnOnce(

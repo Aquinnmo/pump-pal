@@ -14,4 +14,6 @@ export type LiveUpdateNotificationPayload = {
   progress: number;
   segments: LiveUpdateSegment[];
   actions: Array<'completeSet' | 'uncompleteSet' | 'finishWorkout'>;
+  latencyTraceId?: string;
+  latencyStartedAtMs?: number;
 };

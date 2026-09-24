@@ -1,0 +1,14 @@
+diff --git a/ios/Utilities/ConstantsProvider.swift b/ios/Utilities/ConstantsProvider.swift
+index b573eb88004a888a2575d2cdbd31e7174c753bbd..46e8a1c7e96a128015e1db5627833ac4f5df137f 100644
+--- a/ios/Utilities/ConstantsProvider.swift
++++ b/ios/Utilities/ConstantsProvider.swift
+@@ -48,7 +48,8 @@ private func getBuildVersion() -> String? {
+ @MainActor
+ private func getStatusBarHeight() -> Double {
+   #if os(iOS)
+-  let statusBarSize = UIApplication.shared.statusBarFrame.size
++  let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
++  let statusBarSize = (scenes.first { $0.activationState == .foregroundActive } ?? scenes.first)?.statusBarManager?.statusBarFrame.size ?? .zero
+   return min(statusBarSize.width, statusBarSize.height)
+   #else
+   return 0

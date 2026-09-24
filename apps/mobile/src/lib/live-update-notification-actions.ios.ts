@@ -3,6 +3,7 @@ import {
   parseLiveUpdateNotificationAction,
   type LiveUpdateNotificationAction,
 } from '@/lib/workout-action';
+import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
 type ActionOwner = 'root' | 'active-workout';
 
@@ -40,6 +41,7 @@ function markPendingDelivered(owner: ActionOwner, json: string): void {
 function deliver(json: string): void {
   const action = parseLiveUpdateNotificationAction(json);
   if (!action) return;
+  logLiveActivityLatency(action.latencyTrace, 'js.event');
 
   const deliveredForOwner = new Set<ActionOwner>();
   for (const [listener, owner] of listeners) {
@@ -89,6 +91,7 @@ export function subscribeLiveUpdateNotificationActions(
         releasePendingAction();
         return;
       }
+      logLiveActivityLatency(action.latencyTrace, 'js.replay');
       try {
         onAction(action);
       } finally {

@@ -105,10 +105,9 @@ there is no iOS notification fallback when Activities are disabled or unsupporte
      foregrounded tap.
    - **Force-quit**: swipe the app away, then tap a Live Activity action. The
      visual state must not advance or dismiss Finish; the Activity stays frozen.
-     On relaunch, the in-memory session is gone by design, so the
-     queued action is rejected and cleared and the stale Activity is
-     reconciled; the app must not pretend to resume that workout or claim that
-     its data was saved.
+     On relaunch, restore the private draft from AsyncStorage and validate the
+     queued action against that workout and its expected completed-set count.
+     The draft remains unsaved workout data; only Finish writes the workout.
 5. Test an empty workout (no nonblank exercise rows), a duration set such as
    `Plank · 0:45`, and a very long workout title/detail. Empty workouts show no
    controls; duration copy omits irrelevant weight/reps; long text truncates
@@ -116,6 +115,23 @@ there is no iOS notification fallback when Activities are disabled or unsupporte
 6. Turn off Live Activities for Timber in iOS Settings (or test below iOS 17).
    Starting/logging a workout must continue normally with no crash and no
    alternate iOS notification. Re-enable Activities and repeat step 1.
+
+### Temporary tap-latency capture
+
+This diagnostic exists only in a Debug native build and a development JS bundle.
+After rebuilding, start a fresh Live Activity, then tap Complete or Undo once.
+Filter Xcode's device console for `LiveActivityLatency` or
+`live-activity-latency`; each line carries the same trace id. Compare
+`intent.entry`/`intent.return`, `native.event-delivery`, `js.event`,
+`js.handler.start`/`js.handler.flush-return`, `native.show-entry`, and
+`activity.update-start`/`activity.update-complete` (or `activity.request-return`).
+The native show return is synchronous acceptance; ActivityKit completion and the
+visible redraw are separate later boundaries. A `native.show-deduped` line means
+there was no ActivityKit update for that tap. Rejected/no-op logs identify taps
+that never reach a redraw. Record taps one at a time on the same fresh activity,
+waiting for the trace and redraw to settle before the next tap. Repeat after
+background suspension and capture a separate cold-start case. These timings are diagnostic evidence only;
+they do not identify the cause without a device capture.
 
 ## Signing issues
 

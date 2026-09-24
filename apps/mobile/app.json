@@ -14,6 +14,7 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "UIViewControllerBasedStatusBarAppearance": true,
         "NSSupportsLiveActivities": true,
         "NSSupportsLiveActivitiesFrequentUpdates": true
       },
@@ -57,11 +58,13 @@
       ],
       "@react-native-firebase/app-check",
       "@react-native-firebase/crashlytics",
+      "./plugins/with-ios27-status-bar",
       [
         "expo-build-properties",
         {
           "ios": {
             "enableSceneSupport": true,
+            "usePrecompiledModules": false,
             "useFrameworks": "static"
           }
         }

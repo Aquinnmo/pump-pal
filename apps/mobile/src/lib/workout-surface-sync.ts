@@ -1,4 +1,6 @@
 import { AppState } from 'react-native';
+import type { LiveActivityLatencyTrace } from '@/lib/live-activity-latency-debug';
+import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
 import { getSession, subscribe as subscribeSession } from '@/lib/active-workout-session';
 import { buildWorkoutNotificationPresentation } from '@/lib/workout-notification-model';
@@ -26,19 +28,22 @@ function clearPending(): void {
 
 // Re-reads getSession() at call time rather than closing over a snapshot, so a
 // debounced fire always reflects the latest edits, not whatever triggered it.
-async function postNow(): Promise<void> {
+async function postNow(latencyTrace?: LiveActivityLatencyTrace): Promise<void> {
   const session = getSession();
   if (!session) return;
   try {
+    logLiveActivityLatency(latencyTrace, 'js.show.start');
     await ensureWorkoutChannel();
-    await showWorkoutNotification(
-      buildWorkoutNotificationPresentation({
+    await showWorkoutNotification({
+      ...buildWorkoutNotificationPresentation({
         workoutId: session.id,
         workoutName: session.name,
         startedAt: new Date(session.startedAt),
         rows: session.rows,
       }),
-    );
+      ...(latencyTrace && __DEV__ ? { latencyTrace } : {}),
+    });
+    logLiveActivityLatency(latencyTrace, 'js.show.return');
   } catch (e) {
     console.warn('[workout-notification] show failed', e);
   }
@@ -77,7 +82,7 @@ AppState.addEventListener('change', (nextState) => {
 // timer is torn down before it fires. One update per deliberate tap is what the
 // ActivityKit budget was always sized for; it's draft keystrokes that must not
 // spend it.
-export async function flushWorkoutNotification(): Promise<void> {
+export async function flushWorkoutNotification(latencyTrace?: LiveActivityLatencyTrace): Promise<void> {
   clearPending();
-  await postNow();
+  await postNow(latencyTrace);
 }

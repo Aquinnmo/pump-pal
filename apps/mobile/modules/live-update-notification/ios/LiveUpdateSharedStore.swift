@@ -61,11 +61,21 @@ public enum LiveUpdateSharedStore {
     public var action: String // 'completeSet' | 'uncompleteSet' | 'finishWorkout'
     public var workoutId: String
     public var expectedCompletedSets: Int
+    public var latencyTraceId: String?
+    public var latencyStartedAtMs: Double?
 
-    public init(action: String, workoutId: String, expectedCompletedSets: Int) {
+    public init(
+      action: String,
+      workoutId: String,
+      expectedCompletedSets: Int,
+      latencyTraceId: String? = nil,
+      latencyStartedAtMs: Double? = nil
+    ) {
       self.action = action
       self.workoutId = workoutId
       self.expectedCompletedSets = expectedCompletedSets
+      self.latencyTraceId = latencyTraceId
+      self.latencyStartedAtMs = latencyStartedAtMs
     }
   }
 
@@ -97,6 +107,11 @@ public enum LiveUpdateSharedStore {
   public static func drainPendingAction() -> PendingAction? {
     guard let data = defaults?.data(forKey: pendingActionKey) else { return nil }
     defaults?.removeObject(forKey: pendingActionKey)
+    return try? JSONDecoder().decode(PendingAction.self, from: data)
+  }
+
+  public static func loadPendingAction() -> PendingAction? {
+    guard let data = defaults?.data(forKey: pendingActionKey) else { return nil }
     return try? JSONDecoder().decode(PendingAction.self, from: data)
   }
 

@@ -37,7 +37,10 @@ private struct SegmentBar: View {
       let sumSets = max(segments.reduce(0) { $0 + max($1.sets, 0) }, 1)
       let gap = CGFloat(max(segments.count - 1, 0) * 4)
       let availableWidth = max(geometry.size.width - gap, 0)
-      let trackerX = totalSets > 0 ? geometry.size.width * CGFloat(completedSets) / CGFloat(totalSets) : 0
+      let trackerX = totalSets > 0
+        ? geometry.size.width * CGFloat(min(max(completedSets, 0), totalSets)) / CGFloat(totalSets)
+        : 0
+      let trackerOffset = min(max(trackerX - 5, 0), max(geometry.size.width - 10, 0))
 
       ZStack(alignment: .leading) {
         HStack(spacing: 4) {
@@ -51,8 +54,8 @@ private struct SegmentBar: View {
           Circle()
             .fill(Color.white)
             .frame(width: 10, height: 10)
-            .overlay(Circle().stroke(colorPipRing, lineWidth: 2))
-            .offset(x: trackerX - 5)
+            .overlay(Circle().strokeBorder(colorPipRing, lineWidth: 2))
+            .offset(x: trackerOffset)
         }
       }
     }
@@ -97,7 +100,7 @@ private struct ActionChip<I: AppIntent>: View {
         .lineLimit(1)
         .minimumScaleFactor(0.85)
         .frame(maxWidth: .infinity)
-        .frame(height: 38)
+        .frame(height: 44)
     }
     .buttonStyle(.plain)
     .background(
@@ -137,25 +140,17 @@ private struct ActionButtons: View {
         )
       }
     } else if actions == ["finishWorkout", "uncompleteSet"] {
-      // Finish full-width, Undo below as a plain text button: the user chose this
-      // over two equal chips because both shrink below comfortable size side by
-      // side in the Dynamic Island bottom region.
-      VStack(spacing: 8) {
+      HStack(spacing: 8) {
         ActionChip(
           title: "Finish workout",
           prominent: true,
           intent: FinishWorkoutIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
         )
-        Button(intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)) {
-          Text("Undo set")
-            .font(.subheadline.weight(.semibold))
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
-            .frame(maxWidth: .infinity)
-            .frame(height: 38)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white)
+        ActionChip(
+          title: "Undo set",
+          prominent: false,
+          intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
+        )
       }
     }
   }
@@ -172,12 +167,13 @@ struct WorkoutLiveActivity: Widget {
             .lineLimit(1)
             .truncationMode(.tail)
             .minimumScaleFactor(0.8)
-            .layoutPriority(1)
             .frame(maxWidth: .infinity, alignment: .leading)
           Spacer(minLength: 8)
           Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
             .font(.headline.monospacedDigit())
             .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(1)
         }
         HStack(alignment: .firstTextBaseline, spacing: 8) {
           if let detail = context.state.detail {
@@ -187,12 +183,14 @@ struct WorkoutLiveActivity: Widget {
               .lineLimit(1)
               .truncationMode(.tail)
               .minimumScaleFactor(0.8)
-              .layoutPriority(1)
           }
           Spacer(minLength: 8)
           Text("\(context.state.completedSets)/\(context.state.totalSets)")
             .font(.caption.monospacedDigit())
             .foregroundStyle(colorTextSecondary)
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
+            .layoutPriority(1)
             .accessibilityLabel("Completed sets")
             .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
         }
@@ -252,7 +250,6 @@ struct WorkoutLiveActivity: Widget {
                 .lineLimit(1)
                 .truncationMode(.tail)
                 .minimumScaleFactor(0.8)
-                .layoutPriority(1)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             SegmentBar(
@@ -333,13 +330,13 @@ private extension WorkoutActivityAttributes {
   )
 
   static let longCopyPreviewState = ContentState(
-    completedSets: 6,
-    totalSets: 19,
-    detail: "Incline Dumbbell Press · 8 reps · 55 lbs · controlled eccentric tempo",
+    completedSets: 102,
+    totalSets: 122,
+    detail: "Single Arm Cable Triceps Pushdown · 8 reps · 25 lbs",
     segments: [
-      .init(sets: 6, started: true, completed: true),
-      .init(sets: 8, started: true, completed: false),
-      .init(sets: 5, started: false, completed: false),
+      .init(sets: 40, started: true, completed: true),
+      .init(sets: 52, started: true, completed: false),
+      .init(sets: 30, started: false, completed: false),
     ],
     actions: ["completeSet", "uncompleteSet"]
   )
@@ -367,7 +364,7 @@ private extension WorkoutActivityAttributes {
   static let longTitlePreview = WorkoutActivityAttributes(
     workoutId: "preview-long-workout",
     title: "Logging Very Long Upper Body Strength Session Workout",
-    startedAt: Date(timeIntervalSince1970: 1_700_000_000)
+    startedAt: Date(timeIntervalSinceNow: -12 * 60 * 60)
   )
 }
 
@@ -401,13 +398,15 @@ private extension WorkoutActivityAttributes {
   WorkoutActivityAttributes.durationPreviewState
 }
 
-#Preview("Lock Screen — long copy", as: .content, using: WorkoutActivityAttributes.longTitlePreview) {
+// For dynamic-type coverage, select Accessibility 3 in the Xcode preview canvas
+// Environment Overrides; applying `.environment` to a Widget is unsupported.
+#Preview("Lock Screen — long copy (Accessibility 3)", as: .content, using: WorkoutActivityAttributes.longTitlePreview) {
   WorkoutLiveActivity()
 } contentStates: {
   WorkoutActivityAttributes.longCopyPreviewState
 }
 
-#Preview("Dynamic Island — expanded long title", as: .dynamicIsland(.expanded), using: WorkoutActivityAttributes.longTitlePreview) {
+#Preview("Dynamic Island — expanded long title (Accessibility 3)", as: .dynamicIsland(.expanded), using: WorkoutActivityAttributes.longTitlePreview) {
   WorkoutLiveActivity()
 } contentStates: {
   WorkoutActivityAttributes.longCopyPreviewState

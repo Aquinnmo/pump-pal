@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const appJson = require('./app.json');
 
 const IOS_CLIENT_ID = '123456789012-zyxwvutsrqponmlkjihgfedcba.apps.googleusercontent.com';
 const PERSONAL_BUNDLE_ID = 'com.aquinnmo.timber.personal.0123abcdef45';
@@ -9,6 +10,9 @@ const baseConfig = {
   android: { package: 'com.aquinnmo.timber' },
   plugins: ['expo-router'],
 };
+
+assert.equal(appJson.expo.ios.infoPlist.UIViewControllerBasedStatusBarAppearance, true);
+assert(appJson.expo.plugins.includes('./plugins/with-ios27-status-bar'));
 
 function evaluateConfig({ bundleId, iosClientId, variant }) {
   const previousBundleId = process.env.TIMBER_IOS_BUNDLE_IDENTIFIER;

@@ -20,6 +20,8 @@ struct LiveUpdateNotificationPayloadRecord: Record {
   @Field var progress: Int = 0
   @Field var segments: [LiveUpdateSegmentRecord] = []
   @Field var actions: [String] = []
+  @Field var latencyTraceId: String? = nil
+  @Field var latencyStartedAtMs: Double? = nil
 }
 
 public class LiveUpdateNotificationModule: Module {
@@ -86,6 +88,11 @@ public class LiveUpdateNotificationModule: Module {
 
   private func show(_ payload: LiveUpdateNotificationPayloadRecord) -> Bool {
     guard #available(iOS 17.0, *), isSupported() else { return false }
+#if DEBUG
+    if let id = payload.latencyTraceId, let startedAt = payload.latencyStartedAtMs {
+      NSLog("[LiveActivityLatency] id=\(id) phase=native.show-entry elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - startedAt))")
+    }
+#endif
 
     let segments = payload.segments.map {
       WorkoutActivityAttributes.SegmentState(sets: $0.sets, started: $0.started, completed: $0.completed)
@@ -101,6 +108,11 @@ public class LiveUpdateNotificationModule: Module {
     if let stored = LiveUpdateSharedStore.loadState(),
        stored.workoutId == payload.workoutId,
        stored.asContentState == contentState {
+#if DEBUG
+      if let id = payload.latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=native.show-deduped")
+      }
+#endif
       return true
     }
 
@@ -129,7 +141,9 @@ public class LiveUpdateNotificationModule: Module {
       await self?.synchronizeActivity(
         attributes: attributes,
         contentState: contentState,
-        generation: generation
+        generation: generation,
+        latencyTraceId: payload.latencyTraceId,
+        latencyStartedAtMs: payload.latencyStartedAtMs
       )
     }
     return true
@@ -150,9 +164,17 @@ public class LiveUpdateNotificationModule: Module {
   private func synchronizeActivity(
     attributes: WorkoutActivityAttributes,
     contentState: WorkoutActivityAttributes.ContentState,
-    generation: UInt64
+    generation: UInt64,
+    latencyTraceId: String?,
+    latencyStartedAtMs: Double?
   ) async {
     guard isCurrentActivityOperation(generation) else { return }
+#if DEBUG
+    if let id = latencyTraceId {
+      let elapsed = latencyStartedAtMs.map { Int(Date().timeIntervalSince1970 * 1000 - $0) } ?? -1
+      NSLog("[LiveActivityLatency] id=\(id) phase=activity.sync-start elapsedMs=\(elapsed)")
+    }
+#endif
     let allActivities = Activity<WorkoutActivityAttributes>.activities
     for activity in allActivities where activity.attributes.workoutId != attributes.workoutId {
       guard isCurrentActivityOperation(generation) else { return }
@@ -171,17 +193,43 @@ public class LiveUpdateNotificationModule: Module {
         guard isCurrentActivityOperation(generation) else { return }
       }
       guard isCurrentActivityOperation(generation) else { return }
+#if DEBUG
+      if let id = latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=activity.update-start elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? 0)))")
+      }
+#endif
       await activity.update(ActivityContent(state: contentState, staleDate: nil))
+#if DEBUG
+      if let id = latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=activity.update-complete elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? 0)))")
+      }
+#endif
       return
     }
 
     guard isCurrentActivityOperation(generation) else { return }
     do {
+#if DEBUG
+      if let id = latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=activity.request-start elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? Date().timeIntervalSince1970 * 1000)))")
+      }
+#endif
       _ = try Activity<WorkoutActivityAttributes>.request(
         attributes: attributes,
         content: ActivityContent(state: contentState, staleDate: nil)
       )
+#if DEBUG
+      if let id = latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=activity.request-return elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? 0)))")
+      }
+#endif
     } catch {
+#if DEBUG
+      if let id = latencyTraceId {
+        let elapsed = latencyStartedAtMs.map { Int(Date().timeIntervalSince1970 * 1000 - $0) } ?? -1
+        NSLog("[LiveActivityLatency] id=\(id) phase=activity.request-failed elapsedMs=\(elapsed)")
+      }
+#endif
       NSLog("[\(TAG)] show() failed: \(error)")
     }
   }
@@ -231,19 +279,37 @@ public class LiveUpdateNotificationModule: Module {
     // with the host's foreground lifecycle.
     Task { @MainActor [weak self] in
       guard let self else { return }
-      guard hasListeners else { return }
+      guard hasListeners else {
+#if DEBUG
+        if let pending = LiveUpdateSharedStore.loadPendingAction(), let id = pending.latencyTraceId {
+          NSLog("[LiveActivityLatency] id=\(id) phase=native.no-listener elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (pending.latencyStartedAtMs ?? 0)))")
+        }
+#endif
+        return
+      }
       guard let pending = LiveUpdateSharedStore.drainPendingAction(),
             let json = Self.jsonString(from: pending) else { return }
+#if DEBUG
+      if let id = pending.latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=native.event-delivery elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (pending.latencyStartedAtMs ?? 0)))")
+      }
+#endif
       self.sendEvent("onNotificationAction", ["json": json])
     }
   }
 
   private static func jsonString(from action: LiveUpdateSharedStore.PendingAction) -> String? {
-    let dict: [String: Any] = [
+    var dict: [String: Any] = [
       "action": action.action,
       "workoutId": action.workoutId,
       "expectedCompletedSets": action.expectedCompletedSets,
     ]
+#if DEBUG
+    if let id = action.latencyTraceId, let startedAt = action.latencyStartedAtMs {
+      dict["latencyTraceId"] = id
+      dict["latencyStartedAtMs"] = startedAt
+    }
+#endif
     guard let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
     return String(data: data, encoding: .utf8)
   }

@@ -23,28 +23,52 @@ import Foundation
 private func performSetAction(
   action: String,
   workoutId: String,
-  expectedCompletedSets: Int
+  expectedCompletedSets: Int,
+  latencyTraceId: String,
+  latencyStartedAtMs: Double
 ) async {
+#if DEBUG
+  NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.entry")
+#endif
   guard let stored = LiveUpdateSharedStore.loadState() else {
+#if DEBUG
+    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.rejected-no-state")
+#endif
     NSLog("WorkoutLiveActivityIntents: rejected \(action) — no stored state")
     return
   }
   guard stored.workoutId == workoutId else {
+#if DEBUG
+    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.rejected-workout")
+#endif
     NSLog("WorkoutLiveActivityIntents: rejected \(action) — workoutId mismatch (stored \(stored.workoutId), tapped \(workoutId))")
     return
   }
   guard expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets else {
+#if DEBUG
+    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.rejected-stale")
+#endif
     NSLog("WorkoutLiveActivityIntents: rejected \(action) — expected-count mismatch (stored \(stored.completedSets), expected \(expectedCompletedSets))")
     return
   }
 
-  LiveUpdateSharedStore.writePendingAction(
-    .init(action: action, workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
+  var pendingAction = LiveUpdateSharedStore.PendingAction(
+    action: action,
+    workoutId: workoutId,
+    expectedCompletedSets: expectedCompletedSets
   )
+#if DEBUG
+  pendingAction.latencyTraceId = latencyTraceId
+  pendingAction.latencyStartedAtMs = latencyStartedAtMs
+#endif
+  LiveUpdateSharedStore.writePendingAction(pendingAction)
   // Best-effort: only reaches a live host-app process. The outbox write above is the
   // durable path a terminated app picks up on next launch (see
   // utils/live-update-notification-actions.ios.ts's drain-on-subscribe).
   LiveUpdateSharedStore.postActionDarwinNotification()
+#if DEBUG
+  NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.darwin-posted elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - latencyStartedAtMs))")
+#endif
 }
 
 @available(iOS 17.0, *)
@@ -65,11 +89,23 @@ public struct CompleteSetIntent: LiveActivityIntent {
   }
 
   public func perform() async throws -> some IntentResult {
+#if DEBUG
+    let latencyTraceId = UUID().uuidString
+    let latencyStartedAtMs = Date().timeIntervalSince1970 * 1000
+#else
+    let latencyTraceId = ""
+    let latencyStartedAtMs = 0.0
+#endif
     await performSetAction(
       action: "completeSet",
       workoutId: workoutId,
-      expectedCompletedSets: expectedCompletedSets
+      expectedCompletedSets: expectedCompletedSets,
+      latencyTraceId: latencyTraceId,
+      latencyStartedAtMs: latencyStartedAtMs
     )
+#if DEBUG
+    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.return elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - latencyStartedAtMs))")
+#endif
     return .result()
   }
 }
@@ -92,11 +128,23 @@ public struct UncompleteSetIntent: LiveActivityIntent {
   }
 
   public func perform() async throws -> some IntentResult {
+#if DEBUG
+    let latencyTraceId = UUID().uuidString
+    let latencyStartedAtMs = Date().timeIntervalSince1970 * 1000
+#else
+    let latencyTraceId = ""
+    let latencyStartedAtMs = 0.0
+#endif
     await performSetAction(
       action: "uncompleteSet",
       workoutId: workoutId,
-      expectedCompletedSets: expectedCompletedSets
+      expectedCompletedSets: expectedCompletedSets,
+      latencyTraceId: latencyTraceId,
+      latencyStartedAtMs: latencyStartedAtMs
     )
+#if DEBUG
+    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.return elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - latencyStartedAtMs))")
+#endif
     return .result()
   }
 }
