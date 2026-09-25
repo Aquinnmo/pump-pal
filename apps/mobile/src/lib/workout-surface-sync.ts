@@ -1,4 +1,4 @@
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import type { LiveActivityLatencyTrace } from '@/lib/live-activity-latency-debug';
 import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
@@ -18,6 +18,7 @@ import {
 // so it's live whether or not any screen is mounted, cold headless runtime included.
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let observedSessionId: string | null = null;
 
 function clearPending(): void {
   if (debounceTimer) {
@@ -33,7 +34,7 @@ async function postNow(latencyTrace?: LiveActivityLatencyTrace): Promise<void> {
   if (!session) return;
   try {
     logLiveActivityLatency(latencyTrace, 'js.show.start');
-    await ensureWorkoutChannel();
+    if (Platform.OS === 'android') await ensureWorkoutChannel();
     await showWorkoutNotification({
       ...buildWorkoutNotificationPresentation({
         workoutId: session.id,
@@ -51,10 +52,21 @@ async function postNow(latencyTrace?: LiveActivityLatencyTrace): Promise<void> {
 
 subscribeSession(() => {
   clearPending();
-  if (!getSession()) {
+  const session = getSession();
+  if (!session) {
+    observedSessionId = null;
     // Ending a session (Finish/Discard, or a stale action landing after either)
     // dismisses it here — no caller has to remember to.
     dismissWorkoutNotification().catch(() => {});
+    return;
+  }
+  if (Platform.OS === 'ios' && session.id !== observedSessionId) {
+    observedSessionId = session.id;
+    const latencyTrace = __DEV__ ? { id: `startup-${session.id}`, startedAtMs: Date.now() } : undefined;
+    logLiveActivityLatency(latencyTrace, 'session.observed');
+    // Create the Activity while the app is still active. Waiting for the
+    // background callback can lose the first request when iOS suspends JS.
+    void postNow(latencyTrace);
     return;
   }
   // The notification is a live control surface, not a save artifact. While the app

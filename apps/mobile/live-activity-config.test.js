@@ -73,7 +73,8 @@ const moduleStore = fs.readFileSync(
 const widgetStore = fs.readFileSync(path.join(widgetRoot, 'LiveUpdateSharedStore.swift'), 'utf8');
 assert.equal(moduleStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
 assert.equal(widgetStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
-assert.match(moduleSwift, /stored\.workoutId == payload\.workoutId[\s\S]*stored\.asContentState == contentState/);
+assert.match(moduleSwift, /stored\.workoutId == attributes\.workoutId[\s\S]*stored\.asContentState == contentState[\s\S]*allActivities\.contains\(where:[\s\S]*\.content\.state == contentState/);
+assert.match(moduleSwift, /Activity<WorkoutActivityAttributes>\.request\([\s\S]*content: ActivityContent\(state: contentState/);
 assert.match(moduleStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
 assert.match(widgetStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
 const stripStoreHeader = (source) => source.replace(/^[\s\S]*?(?=public enum LiveUpdateSharedStore)/, '');
@@ -99,6 +100,11 @@ const iosNotification = fs.readFileSync(
   path.join(mobileRoot, 'src', 'lib', 'workout-notification.ios.ts'),
   'utf8',
 );
+const workoutSurfaceSync = fs.readFileSync(path.join(mobileRoot, 'src', 'lib', 'workout-surface-sync.ts'), 'utf8');
+assert.match(workoutSurfaceSync, /Platform\.OS === 'ios' && session\.id !== observedSessionId[\s\S]*session\.observed[\s\S]*postNow\(latencyTrace\)/);
+assert.match(workoutSurfaceSync, /if \(Platform\.OS === 'android'\) await ensureWorkoutChannel\(\);[\s\S]*await showWorkoutNotification/);
+assert.match(iosNotification, /js\.native-module-missing/);
+assert.match(iosNotification, /js\.activities-disabled/);
 assert.match(iosNotification, /isNativeModuleAvailable\(\)/);
 assert.match(iosNotification, /console\.warn/);
 assert.match(iosNotification, /Rebuild the iOS development client/);
@@ -186,7 +192,8 @@ assert.doesNotMatch(expandedTrailing, /\.frame\([^)]*alignment: \./);
 assert.match(expandedLeading, /\.frame\(maxWidth: \.infinity\)/);
 assert.match(expandedTrailing, /\.frame\(maxWidth: \.infinity\)/);
 
-assert.match(widgetSwift, /GeometryReader/);
+assert.doesNotMatch(widgetSwift, /GeometryReader/);
+assert.match(widgetSwift, /let barWidth: CGFloat = 320[\s\S]*?\.frame\(width: barWidth, height: 10, alignment: \.leading\)/);
 assert.match(widgetSwift, /availableWidth \* CGFloat\(max\(segment\.sets, 0\)\)/);
 assert.match(widgetSwift, /\.accessibilityLabel\("Workout exercise progress"\)/);
 assert.match(widgetSwift, /0x66 \/ 255/);
@@ -195,12 +202,28 @@ assert.match(widgetSwift, /\.layoutPriority\(1\)/);
 assert.match(widgetSwift, /\.contentMargins\(\.horizontal, 4\)/);
 assert.match(widgetSwift, /\.minimumScaleFactor\(0\.8\)/);
 assert.match(widgetSwift, /longCopyPreviewState/);
+const lockScreenActivity = widgetSwift.slice(
+  widgetSwift.indexOf('ActivityConfiguration(for:'),
+  widgetSwift.indexOf('} dynamicIsland: { context in'),
+);
+assert.ok(lockScreenActivity.length > 0, 'Lock Screen ActivityConfiguration content must be present');
+assert.match(
+  lockScreenActivity,
+  /timerInterval: context\.attributes\.startedAt\.\.\.context\.attributes\.startedAt\.addingTimeInterval\(24 \* 60 \* 60\),\s+countsDown: false,\s+showsHours: true/,
+);
+assert.match(lockScreenActivity, /\.frame\(width: 76, alignment: \.trailing\)/);
+assert.match(lockScreenActivity, /VStack\(alignment: \.leading, spacing: 4\)/);
+assert.match(lockScreenActivity, /\.padding\(\.vertical, 12\)/);
+const lockScreenHeader = lockScreenActivity.match(/HStack\(alignment: \.firstTextBaseline, spacing: 8\) \{([\s\S]*?)\n\s+\}/)?.[1];
+assert.ok(lockScreenHeader, 'Lock Screen title and elapsed timer must share a header');
+assert.match(lockScreenHeader, /Spacer\(minLength: 8\)/);
+assert.doesNotMatch(lockScreenHeader, /layoutPriority|frame\(maxWidth: \.infinity/);
 const lockScreenDetailRow = widgetSwift.match(/if let detail = context\.state\.detail \{([\s\S]*?)\n\s+\}\n\s+Spacer\(minLength: 8\)\n\s+Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)/)?.[1];
 assert.ok(lockScreenDetailRow, 'Lock Screen detail and completed-set count must share one row');
 assert.doesNotMatch(lockScreenDetailRow, /layoutPriority/);
 const lockScreenCount = widgetSwift.match(/if let detail = context\.state\.detail \{[\s\S]*?\n\s+\}\n\s+Spacer\(minLength: 8\)\n\s+Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)([\s\S]*?)\n\s+\}/)?.[1];
 assert.match(lockScreenCount ?? '', /\.fixedSize\(horizontal: true, vertical: false\)\n\s+\.layoutPriority\(1\)/);
-assert.match(widgetSwift, /trackerOffset = min\(max\(trackerX - 5, 0\), max\(geometry\.size\.width - 10, 0\)\)/);
+assert.match(widgetSwift, /trackerOffset = min\(max\(trackerX - 5, 0\), max\(barWidth - 10, 0\)\)/);
 assert.match(widgetSwift, /\.fixedSize\(horizontal: true, vertical: false\)\n\s+\.layoutPriority\(1\)/);
 assert.match(widgetSwift, /\.frame\(height: 44\)/);
 assert.match(widgetSwift, /HStack\(spacing: 8\) \{\n\s+ActionChip\(\n\s+title: "Finish workout"[\s\S]*?title: "Undo set"/);

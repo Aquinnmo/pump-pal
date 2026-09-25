@@ -33,33 +33,33 @@ private struct SegmentBar: View {
   let totalSets: Int
 
   var body: some View {
-    GeometryReader { geometry in
-      let sumSets = max(segments.reduce(0) { $0 + max($1.sets, 0) }, 1)
-      let gap = CGFloat(max(segments.count - 1, 0) * 4)
-      let availableWidth = max(geometry.size.width - gap, 0)
-      let trackerX = totalSets > 0
-        ? geometry.size.width * CGFloat(min(max(completedSets, 0), totalSets)) / CGFloat(totalSets)
-        : 0
-      let trackerOffset = min(max(trackerX - 5, 0), max(geometry.size.width - 10, 0))
+    let barWidth: CGFloat = 320
+    let sumSets = max(segments.reduce(0) { $0 + max($1.sets, 0) }, 1)
+    let gap = CGFloat(max(segments.count - 1, 0) * 4)
+    let availableWidth = max(barWidth - gap, 0)
+    let trackerX = totalSets > 0
+      ? barWidth * CGFloat(min(max(completedSets, 0), totalSets)) / CGFloat(totalSets)
+      : 0
+    let trackerOffset = min(max(trackerX - 5, 0), max(barWidth - 10, 0))
 
-      ZStack(alignment: .leading) {
-        HStack(spacing: 4) {
-          ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
-            Capsule()
-              .fill(segmentColor(segment))
-              .frame(width: availableWidth * CGFloat(max(segment.sets, 0)) / CGFloat(sumSets), height: 6)
-          }
-        }
-        if totalSets > 0 {
-          Circle()
-            .fill(Color.white)
-            .frame(width: 10, height: 10)
-            .overlay(Circle().strokeBorder(colorPipRing, lineWidth: 2))
-            .offset(x: trackerOffset)
+    ZStack(alignment: .leading) {
+      HStack(spacing: 4) {
+        ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
+          Capsule()
+            .fill(segmentColor(segment))
+            .frame(width: availableWidth * CGFloat(max(segment.sets, 0)) / CGFloat(sumSets), height: 6)
         }
       }
+      if totalSets > 0 {
+        Circle()
+          .fill(Color.white)
+          .frame(width: 10, height: 10)
+          .overlay(Circle().strokeBorder(colorPipRing, lineWidth: 2))
+          .offset(x: trackerOffset)
+      }
     }
-    .frame(height: 10)
+    // ponytail: fixed 320pt bar avoids unbounded ActivityKit proposals; widen only with a bounded parent layout.
+    .frame(width: barWidth, height: 10, alignment: .leading)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Workout exercise progress")
     .accessibilityValue(
@@ -160,20 +160,23 @@ struct WorkoutLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
       // Lock Screen / banner presentation.
-      VStack(alignment: .leading, spacing: 8) {
+      VStack(alignment: .leading, spacing: 4) {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
           Text(context.attributes.title)
             .font(.headline.weight(.semibold))
             .lineLimit(1)
             .truncationMode(.tail)
             .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity, alignment: .leading)
           Spacer(minLength: 8)
-          Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
+          Text(
+            timerInterval: context.attributes.startedAt...context.attributes.startedAt.addingTimeInterval(24 * 60 * 60),
+            countsDown: false,
+            showsHours: true
+          )
             .font(.headline.monospacedDigit())
             .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
-            .layoutPriority(1)
+            .minimumScaleFactor(0.8)
+            .frame(width: 76, alignment: .trailing)
         }
         HStack(alignment: .firstTextBaseline, spacing: 8) {
           if let detail = context.state.detail {
@@ -205,7 +208,9 @@ struct WorkoutLiveActivity: Widget {
           actions: context.state.actions
         )
       }
-      .padding(16)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .padding(.horizontal, 16)
+      .padding(.vertical, 12)
       .activityBackgroundTint(nil)
       .activitySystemActionForegroundColor(.primary)
     } dynamicIsland: { context in

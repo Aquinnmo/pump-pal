@@ -105,17 +105,6 @@ public class LiveUpdateNotificationModule: Module {
       actions: payload.actions
     )
 
-    if let stored = LiveUpdateSharedStore.loadState(),
-       stored.workoutId == payload.workoutId,
-       stored.asContentState == contentState {
-#if DEBUG
-      if let id = payload.latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=native.show-deduped")
-      }
-#endif
-      return true
-    }
-
     let generation = beginActivityOperation()
 
     LiveUpdateSharedStore.saveState(
@@ -176,6 +165,19 @@ public class LiveUpdateNotificationModule: Module {
     }
 #endif
     let allActivities = Activity<WorkoutActivityAttributes>.activities
+    if let stored = LiveUpdateSharedStore.loadState(),
+       stored.workoutId == attributes.workoutId,
+       stored.asContentState == contentState,
+       allActivities.contains(where: {
+         $0.attributes.workoutId == attributes.workoutId && $0.content.state == contentState
+       }) {
+#if DEBUG
+      if let id = latencyTraceId {
+        NSLog("[LiveActivityLatency] id=\(id) phase=native.show-deduped")
+      }
+#endif
+      return
+    }
     for activity in allActivities where activity.attributes.workoutId != attributes.workoutId {
       guard isCurrentActivityOperation(generation) else { return }
       await activity.end(nil, dismissalPolicy: .immediate)
