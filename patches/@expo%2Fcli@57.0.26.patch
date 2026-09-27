@@ -1,0 +1,14 @@
+diff --git a/build/src/start/platforms/ios/simctlLogging.js b/build/src/start/platforms/ios/simctlLogging.js
+index 3006aa5204388e12df26f2fb0b078555003b1d35..b91d4427189a4c1579452bf0c9f9a8843bd00e2b 100644
+--- a/build/src/start/platforms/ios/simctlLogging.js
++++ b/build/src/start/platforms/ios/simctlLogging.js
+@@ -230,6 +230,9 @@ function formatMessage(simLog) {
+     return (0, _wrapansi().default)(category + ' ' + message, process.stdout.columns || 80);
+ }
+ function onMessage(simLog) {
++    if (simLog.subsystem === 'com.apple.coreanimation' && simLog.eventMessage === 'cannot add handler to 0 from 0 - dropping') {
++        return;
++    }
+     let hasLogged = false;
+     if (simLog.messageType === 'Error') {
+         if (// Hide all networking errors which are mostly useless.
