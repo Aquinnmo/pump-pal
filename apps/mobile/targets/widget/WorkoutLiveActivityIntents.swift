@@ -1,111 +1,78 @@
-// The app target gets this file via plugins/with-live-activity-intents.js, where these
-// types come from the LiveUpdateNotification pod (useFrameworks: static makes it a real
-// Swift module). In the widget extension the pod is absent and the same types come from
-// this folder's own copies, so canImport is false and the import is skipped.
-//
-// `internal` is required, not stylistic: Pods-Timber/ExpoModulesProvider.swift already
-// imports this module as `internal import`, and Swift rejects a bare `import` elsewhere
-// in the same module as an ambiguous implicit access level.
 #if canImport(LiveUpdateNotification)
 internal import LiveUpdateNotification
+internal import Expo
+import React
+import UIKit
 #endif
 import AppIntents
 import Foundation
 
-// Each intent runs in the host APP's process (LiveActivityIntent, iOS 17+) — that is
-// the entire reason the protocol exists instead of plain AppIntent, which would run in
-// the widget extension. It leaves a durable App Group record for the host app to
-// reconcile when it is alive. The host remains authoritative: intents do not
-// recompute the app's next-set cursor or update/dismiss the Activity before JS
-// validates the mutation.
-
-@available(iOS 17.0, *)
-private func performSetAction(
-  action: String,
-  workoutId: String,
-  expectedCompletedSets: Int,
-  latencyTraceId: String,
-  latencyStartedAtMs: Double
-) async {
-#if DEBUG
-  NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.entry")
-#endif
-  guard let stored = LiveUpdateSharedStore.loadState() else {
-#if DEBUG
-    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.rejected-no-state")
-#endif
-    NSLog("WorkoutLiveActivityIntents: rejected \(action) — no stored state")
-    return
+private enum WorkoutIntentError: Error, LocalizedError {
+  case unavailable, busy, rejected, timedOut
+  var errorDescription: String? {
+    switch self {
+    case .unavailable: "This workout is no longer available."
+    case .busy: "The previous action is still processing."
+    case .rejected: "Could not update the workout. Try again."
+    case .timedOut: "Timber could not respond. Try again when it is available."
+    }
   }
-  guard stored.workoutId == workoutId else {
-#if DEBUG
-    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.rejected-workout")
-#endif
-    NSLog("WorkoutLiveActivityIntents: rejected \(action) — workoutId mismatch (stored \(stored.workoutId), tapped \(workoutId))")
-    return
-  }
-  guard expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets else {
-#if DEBUG
-    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.rejected-stale")
-#endif
-    NSLog("WorkoutLiveActivityIntents: rejected \(action) — expected-count mismatch (stored \(stored.completedSets), expected \(expectedCompletedSets))")
-    return
-  }
-
-  var pendingAction = LiveUpdateSharedStore.PendingAction(
-    action: action,
-    workoutId: workoutId,
-    expectedCompletedSets: expectedCompletedSets
-  )
-#if DEBUG
-  pendingAction.latencyTraceId = latencyTraceId
-  pendingAction.latencyStartedAtMs = latencyStartedAtMs
-#endif
-  LiveUpdateSharedStore.writePendingAction(pendingAction)
-  // Best-effort: only reaches a live host-app process. The outbox write above is the
-  // durable path a terminated app picks up on next launch (see
-  // utils/live-update-notification-actions.ios.ts's drain-on-subscribe).
-  LiveUpdateSharedStore.postActionDarwinNotification()
-#if DEBUG
-  NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.darwin-posted elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - latencyStartedAtMs))")
-#endif
 }
+
+// LiveActivityIntent runs in the host APP's process, without opening its UI.
+// The intent grants runtime while JS restores and commits the authoritative draft.
+@available(iOS 17.0, *)
+private func performWorkoutAction(action: String, workoutId: String, expectedCompletedSets: Int) async throws {
+  guard let stored = LiveUpdateSharedStore.loadState(), stored.workoutId == workoutId,
+        expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets,
+        stored.actions.contains(action) else { throw WorkoutIntentError.unavailable }
+  let pending = LiveUpdateSharedStore.PendingAction(actionId: UUID().uuidString,
+    action: action, workoutId: workoutId, expectedCompletedSets: expectedCompletedSets, createdAt: Date())
+  guard LiveUpdateSharedStore.enqueue(pending) else { throw WorkoutIntentError.busy }
+#if canImport(LiveUpdateNotification)
+  await startWorkoutRuntime()
+#endif
+  LiveUpdateSharedStore.postActionDarwinNotification()
+  // Bounded to the intent's runtime; the durable record survives suspension.
+  // No speculative ActivityKit update and no detached fire-and-forget task.
+  let deadline = ContinuousClock.now.advanced(by: .seconds(15))
+  while ContinuousClock.now < deadline {
+    if let result = LiveUpdateSharedStore.result(for: pending.actionId) {
+      LiveUpdateSharedStore.release(pending.actionId)
+      guard result.succeeded else { throw WorkoutIntentError.rejected }
+      return
+    }
+    try await Task.sleep(for: .milliseconds(100))
+  }
+  throw WorkoutIntentError.timedOut
+}
+
+#if canImport(LiveUpdateNotification)
+@MainActor
+private func startWorkoutRuntime() {
+  guard let provider = UIApplication.shared.delegate as? ExpoReactNativeFactoryProvider,
+        let factory = provider.reactNativeFactory else { return }
+  // Expo's scene lifecycle starts JS only when a window connects. An intent
+  // starts the existing factory's host without a scene, window, or root view.
+  factory.rootViewFactory.initializeReactHost(launchOptions: nil,
+    bundleConfiguration: factory.bundleConfiguration,
+    devMenuConfiguration: factory.devMenuConfiguration ?? RCTDevMenuConfiguration.default())
+}
+#endif
 
 @available(iOS 17.0, *)
 public struct CompleteSetIntent: LiveActivityIntent {
   public static var title: LocalizedStringResource = "Complete Set"
-
-  @Parameter(title: "Workout ID")
-  public var workoutId: String
-
-  @Parameter(title: "Expected Completed Sets")
-  public var expectedCompletedSets: Int
-
+  public static var openAppWhenRun: Bool = false
+  @Parameter(title: "Workout ID") public var workoutId: String
+  @Parameter(title: "Expected Completed Sets") public var expectedCompletedSets: Int
   public init() {}
-
   public init(workoutId: String, expectedCompletedSets: Int) {
     self.workoutId = workoutId
     self.expectedCompletedSets = expectedCompletedSets
   }
-
   public func perform() async throws -> some IntentResult {
-#if DEBUG
-    let latencyTraceId = UUID().uuidString
-    let latencyStartedAtMs = Date().timeIntervalSince1970 * 1000
-#else
-    let latencyTraceId = ""
-    let latencyStartedAtMs = 0.0
-#endif
-    await performSetAction(
-      action: "completeSet",
-      workoutId: workoutId,
-      expectedCompletedSets: expectedCompletedSets,
-      latencyTraceId: latencyTraceId,
-      latencyStartedAtMs: latencyStartedAtMs
-    )
-#if DEBUG
-    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.return elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - latencyStartedAtMs))")
-#endif
+    try await performWorkoutAction(action: "completeSet", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
     return .result()
   }
 }
@@ -113,81 +80,33 @@ public struct CompleteSetIntent: LiveActivityIntent {
 @available(iOS 17.0, *)
 public struct UncompleteSetIntent: LiveActivityIntent {
   public static var title: LocalizedStringResource = "Undo Set"
-
-  @Parameter(title: "Workout ID")
-  public var workoutId: String
-
-  @Parameter(title: "Expected Completed Sets")
-  public var expectedCompletedSets: Int
-
+  public static var openAppWhenRun: Bool = false
+  @Parameter(title: "Workout ID") public var workoutId: String
+  @Parameter(title: "Expected Completed Sets") public var expectedCompletedSets: Int
   public init() {}
-
   public init(workoutId: String, expectedCompletedSets: Int) {
     self.workoutId = workoutId
     self.expectedCompletedSets = expectedCompletedSets
   }
-
   public func perform() async throws -> some IntentResult {
-#if DEBUG
-    let latencyTraceId = UUID().uuidString
-    let latencyStartedAtMs = Date().timeIntervalSince1970 * 1000
-#else
-    let latencyTraceId = ""
-    let latencyStartedAtMs = 0.0
-#endif
-    await performSetAction(
-      action: "uncompleteSet",
-      workoutId: workoutId,
-      expectedCompletedSets: expectedCompletedSets,
-      latencyTraceId: latencyTraceId,
-      latencyStartedAtMs: latencyStartedAtMs
-    )
-#if DEBUG
-    NSLog("[LiveActivityLatency] id=\(latencyTraceId) phase=intent.return elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - latencyStartedAtMs))")
-#endif
+    try await performWorkoutAction(action: "uncompleteSet", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
     return .result()
   }
 }
 
-// Cannot write to the database from the extension process, and the RN app's in-memory
-// active-workout-session.ts doesn't persist across process death. The host app remains
-// authoritative: this only queues the action, and the host redraws or dismisses after
-// validating and applying it. In particular, a force-quit tap must not claim that data
-// persisted by advancing or ending the Live Activity locally.
 @available(iOS 17.0, *)
 public struct FinishWorkoutIntent: LiveActivityIntent {
   public static var title: LocalizedStringResource = "Finish Workout"
-
-  @Parameter(title: "Workout ID")
-  public var workoutId: String
-
-  @Parameter(title: "Expected Completed Sets")
-  public var expectedCompletedSets: Int
-
+  public static var openAppWhenRun: Bool = false
+  @Parameter(title: "Workout ID") public var workoutId: String
+  @Parameter(title: "Expected Completed Sets") public var expectedCompletedSets: Int
   public init() {}
-
   public init(workoutId: String, expectedCompletedSets: Int) {
     self.workoutId = workoutId
     self.expectedCompletedSets = expectedCompletedSets
   }
-
   public func perform() async throws -> some IntentResult {
-    guard let stored = LiveUpdateSharedStore.loadState() else {
-      NSLog("WorkoutLiveActivityIntents: rejected finishWorkout — no stored state")
-      return .result()
-    }
-    guard stored.workoutId == workoutId else {
-      NSLog("WorkoutLiveActivityIntents: rejected finishWorkout — workoutId mismatch (stored \(stored.workoutId), tapped \(workoutId))")
-      return .result()
-    }
-    guard expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets else {
-      NSLog("WorkoutLiveActivityIntents: rejected finishWorkout — expected-count mismatch (stored \(stored.completedSets), expected \(expectedCompletedSets))")
-      return .result()
-    }
-    LiveUpdateSharedStore.writePendingAction(
-      .init(action: "finishWorkout", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
-    )
-    LiveUpdateSharedStore.postActionDarwinNotification()
+    try await performWorkoutAction(action: "finishWorkout", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
     return .result()
   }
 }

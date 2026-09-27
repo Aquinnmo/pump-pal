@@ -1,3 +1,4 @@
+/* global __dirname */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -73,208 +74,46 @@ const moduleStore = fs.readFileSync(
 const widgetStore = fs.readFileSync(path.join(widgetRoot, 'LiveUpdateSharedStore.swift'), 'utf8');
 assert.equal(moduleStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
 assert.equal(widgetStore.match(/public static let appGroupId = "([^"]+)"/)?.[1], appGroups[0]);
-assert.match(moduleSwift, /stored\.workoutId == attributes\.workoutId[\s\S]*stored\.asContentState == contentState[\s\S]*allActivities\.contains\(where:[\s\S]*\.content\.state == contentState/);
-assert.match(moduleSwift, /Activity<WorkoutActivityAttributes>\.request\([\s\S]*content: ActivityContent\(state: contentState/);
-assert.match(moduleStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
-assert.match(widgetStore, /public var asContentState: WorkoutActivityAttributes\.ContentState/);
-const stripStoreHeader = (source) => source.replace(/^[\s\S]*?(?=public enum LiveUpdateSharedStore)/, '');
-assert.equal(
-  stripStoreHeader(widgetStore),
-  stripStoreHeader(moduleStore),
-  'host and widget LiveUpdateSharedStore bodies must stay synchronized',
-);
-assert.match(moduleSwift, /#available\(iOS 17\.0, \*\)/);
-assert.doesNotMatch(moduleSwift, /#available\(iOS 16\.1, \*\)/);
-assert.match(moduleSwift, /Task \{ @MainActor/);
-assert.match(moduleSwift, /clearPendingAction\(\)/);
-assert.match(moduleSwift, /activityGeneration/);
-assert.match(moduleSwift, /isCurrentActivityOperation\(generation\)/);
-const noListenerActionBranch = moduleSwift.match(
-  /guard hasListeners else \{([\s\S]*?)\n      \}\s*\n      guard let pending = LiveUpdateSharedStore\.drainPendingAction/,
-);
-assert.ok(noListenerActionBranch, 'no-listener branch returns before the pending action is drained');
-assert.match(noListenerActionBranch[1], /\breturn\b/);
-assert.doesNotMatch(noListenerActionBranch[1], /drainPendingAction/);
+// Wiring and cross-target contracts; behavior is covered by JS and Swift checks.
+assert.equal(widgetStore, moduleStore, 'host and widget must use the same durable store');
+assert.match(moduleSwift, /AsyncFunction\("showAsync"\)/);
+assert.match(moduleSwift, /AsyncFunction\("dismissAsync"\)/);
+assert.match(moduleSwift, /Function\("acknowledgeAction"\)/);
+assert.match(moduleSwift, /loadPendingAction\(\)/);
+assert.doesNotMatch(moduleSwift, /drainPendingAction/);
+assert.match(moduleStore, /NSFileCoordinator/);
+assert.match(moduleStore, /options: \.atomic/);
+assert.match(moduleStore, /pending\.actionId == actionId/);
+assert.match(moduleAttributes, /public var title: String\?/);
 
-const iosNotification = fs.readFileSync(
-  path.join(mobileRoot, 'src', 'lib', 'workout-notification.ios.ts'),
-  'utf8',
-);
-const workoutSurfaceSync = fs.readFileSync(path.join(mobileRoot, 'src', 'lib', 'workout-surface-sync.ts'), 'utf8');
-assert.match(workoutSurfaceSync, /Platform\.OS === 'ios' && session\.id !== observedSessionId[\s\S]*session\.observed[\s\S]*postNow\(latencyTrace\)/);
-assert.match(workoutSurfaceSync, /if \(Platform\.OS === 'android'\) await ensureWorkoutChannel\(\);[\s\S]*await showWorkoutNotification/);
-assert.match(iosNotification, /js\.native-module-missing/);
-assert.match(iosNotification, /js\.activities-disabled/);
-assert.match(iosNotification, /isNativeModuleAvailable\(\)/);
-assert.match(iosNotification, /console\.warn/);
-assert.match(iosNotification, /Rebuild the iOS development client/);
-assert.match(iosNotification, /Live Activities are unavailable/);
-assert.match(iosNotification, /no iOS notification fallback is provided/);
-assert.doesNotMatch(iosNotification, /lastPayloadKey|force/);
-
-// The intents run in the app's process (LiveActivityIntent, iOS 17+) — that wrong
-// "own process" claim is what the missing app-target membership followed from, and
-// each guard rejection must log so a device run can tell "never ran" from "ran and
-// rejected" (pump-pal-l4d8).
 const intentsSwift = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivityIntents.swift'), 'utf8');
+assert.equal((intentsSwift.match(/: LiveActivityIntent/g) ?? []).length, 3);
 assert.match(intentsSwift, /stored\.workoutId == workoutId/);
 assert.match(intentsSwift, /stored\.completedSets == expectedCompletedSets/);
-assert.doesNotMatch(intentsSwift, /activity\.end/);
-assert.match(intentsSwift, /runs in the host APP's process/);
-assert.doesNotMatch(intentsSwift, /Live Activity's own process/);
-assert.equal((intentsSwift.match(/NSLog\(/g) ?? []).length >= 6, true);
-
-// Single-writer contract (pump-pal-byyv.8): JS is the only writer of StoredState and
-// the only caller of activity.update — the intents file must not race it. These
-// replace the old per-function-body extraction that asserted the opposite (an
-// optimistic push inside performSetAction), which pump-pal-byyv.8 deleted.
-assert.doesNotMatch(intentsSwift, /activity\.update/);
-assert.doesNotMatch(intentsSwift, /saveState\(/); // JS is the only StoredState writer
-// `internal`, not a bare `import`: ExpoModulesProvider.swift imports the same module
-// as `internal import`, and a bare one elsewhere in the app module is an
-// 'ambiguous implicit access level' build error.
-assert.match(
-  intentsSwift,
-  /#if canImport\(LiveUpdateNotification\)\ninternal import LiveUpdateNotification\n#endif/,
-);
-
-// The config plugin gives the app target its own membership of the intents file —
-// without it LiveActivityIntent taps resolve to nothing (pump-pal-ks2l).
-const intentsPluginPath = path.join(mobileRoot, 'plugins', 'with-live-activity-intents.js');
-assert.ok(fs.existsSync(intentsPluginPath), 'with-live-activity-intents.js plugin must exist');
-const intentsPlugin = fs.readFileSync(intentsPluginPath, 'utf8');
-assert.match(intentsPlugin, /WorkoutLiveActivityIntents\.swift/);
-assert.match(intentsPlugin, /platformProjectRoot/);
-assert.match(intentsPlugin, /'Timber'/);
+assert.match(intentsSwift, /stored\.actions\.contains\(action\)/);
+assert.match(intentsSwift, /result\(for: pending\.actionId\)/);
+assert.doesNotMatch(intentsSwift, /activity\.update|activity\.end|saveState\(/);
+assert.match(intentsSwift, /internal import LiveUpdateNotification/);
+assert.match(intentsSwift, /initializeReactHost\(launchOptions:/);
+assert.doesNotMatch(intentsSwift, /startReactNative\(|makeKeyAndVisible\(/);
+const entry = fs.readFileSync(path.join(mobileRoot, 'index.js'), 'utf8');
+assert.ok(entry.indexOf("require('./src/lib/live-activity-runtime.ios')") < entry.indexOf("require('expo-router/entry')"));
 
 const pluginList = appJson.expo.plugins;
-const intentsPluginIndex = pluginList.indexOf('./plugins/with-live-activity-intents');
-const appleTargetsIndex = pluginList.indexOf('@bacons/apple-targets');
-assert.ok(intentsPluginIndex !== -1, 'app.json must register ./plugins/with-live-activity-intents');
-assert.ok(
-  intentsPluginIndex > appleTargetsIndex,
-  'with-live-activity-intents must be registered after @bacons/apple-targets',
-);
+assert.ok(pluginList.indexOf('./plugins/with-live-activity-intents') > pluginList.indexOf('@bacons/apple-targets'));
+const plugin = fs.readFileSync(path.join(mobileRoot, 'plugins', 'with-live-activity-intents.js'), 'utf8');
+assert.match(plugin, /WorkoutLiveActivityIntents\.swift/);
+assert.match(plugin, /platformProjectRoot/);
+assert.match(mobilePackage.scripts['dev:ios'], /APP_VARIANT=development bunx expo prebuild --clean --platform ios && APP_VARIANT=development bunx expo run:ios/,
+  'dev:ios must refresh generated intent sources before compiling an existing native project');
 
-const widgetSwift = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivity.swift'), 'utf8');
-const compactLeading = widgetSwift.match(
-  /compactLeading: \{([\s\S]*?)\n\s*\} compactTrailing:/,
-)?.[1];
-const compactTrailing = widgetSwift.match(
-  /compactTrailing: \{([\s\S]*?)\n\s*\} minimal:/,
-)?.[1];
-assert.ok(compactLeading, 'compactLeading region must be present');
-assert.ok(compactTrailing, 'compactTrailing region must be present');
-assert.match(compactLeading, /ProgressRing\(completedSets:/);
-// The pill must size to its content; maxWidth stretches it to full width.
-assert.doesNotMatch(compactLeading, /maxWidth: \.infinity/);
-assert.doesNotMatch(compactLeading, /\.padding\(/);
-assert.match(compactTrailing, /Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)/);
-assert.doesNotMatch(compactTrailing, /maxWidth: \.infinity/);
-assert.doesNotMatch(compactTrailing, /timerInterval/);
-assert.doesNotMatch(compactTrailing, /\.padding\(/);
-
-const expandedLeading = widgetSwift.match(
-  /DynamicIslandExpandedRegion\(\.leading\) \{([\s\S]*?)\n\s*\}\n\s*\.contentMargins/,
-)?.[1];
-const expandedTrailing = widgetSwift.match(
-  /DynamicIslandExpandedRegion\(\.trailing\) \{([\s\S]*?)\n\s*\}\n\s*\.contentMargins/,
-)?.[1];
-assert.ok(expandedLeading, 'expanded .leading region must be present');
-assert.ok(expandedTrailing, 'expanded .trailing region must be present');
-// These bands run to the display's rounded corner; edge-pinned text lands under
-// the mask. Centered (no alignment: argument on .frame) is the only safe
-// placement. Matched against an actual .frame(...) call rather than a bare
-// "alignment: ." substring, since the explanatory comment on the .leading
-// region legitimately contains the string "alignment: .leading" in prose.
-assert.doesNotMatch(expandedLeading, /\.frame\([^)]*alignment: \./);
-assert.doesNotMatch(expandedTrailing, /\.frame\([^)]*alignment: \./);
-assert.match(expandedLeading, /\.frame\(maxWidth: \.infinity\)/);
-assert.match(expandedTrailing, /\.frame\(maxWidth: \.infinity\)/);
-
-assert.doesNotMatch(widgetSwift, /GeometryReader/);
-assert.match(widgetSwift, /let barWidth: CGFloat = 320[\s\S]*?\.frame\(width: barWidth, height: 10, alignment: \.leading\)/);
-assert.match(widgetSwift, /availableWidth \* CGFloat\(max\(segment\.sets, 0\)\)/);
-assert.match(widgetSwift, /\.accessibilityLabel\("Workout exercise progress"\)/);
-assert.match(widgetSwift, /0x66 \/ 255/);
-assert.match(widgetSwift, /\.frame\(maxWidth: \.infinity, alignment: \.leading\)/);
-assert.match(widgetSwift, /\.layoutPriority\(1\)/);
-assert.match(widgetSwift, /\.contentMargins\(\.horizontal, 4\)/);
-assert.match(widgetSwift, /\.minimumScaleFactor\(0\.8\)/);
-assert.match(widgetSwift, /longCopyPreviewState/);
-const lockScreenActivity = widgetSwift.slice(
-  widgetSwift.indexOf('ActivityConfiguration(for:'),
-  widgetSwift.indexOf('} dynamicIsland: { context in'),
-);
-assert.ok(lockScreenActivity.length > 0, 'Lock Screen ActivityConfiguration content must be present');
-assert.match(
-  lockScreenActivity,
-  /timerInterval: context\.attributes\.startedAt\.\.\.context\.attributes\.startedAt\.addingTimeInterval\(24 \* 60 \* 60\),\s+countsDown: false,\s+showsHours: true/,
-);
-assert.match(lockScreenActivity, /\.frame\(width: 76, alignment: \.trailing\)/);
-assert.match(lockScreenActivity, /VStack\(alignment: \.leading, spacing: 4\)/);
-assert.match(lockScreenActivity, /\.padding\(\.vertical, 12\)/);
-const lockScreenHeader = lockScreenActivity.match(/HStack\(alignment: \.firstTextBaseline, spacing: 8\) \{([\s\S]*?)\n\s+\}/)?.[1];
-assert.ok(lockScreenHeader, 'Lock Screen title and elapsed timer must share a header');
-assert.match(lockScreenHeader, /Spacer\(minLength: 8\)/);
-assert.doesNotMatch(lockScreenHeader, /layoutPriority|frame\(maxWidth: \.infinity/);
-const lockScreenDetailRow = widgetSwift.match(/if let detail = context\.state\.detail \{([\s\S]*?)\n\s+\}\n\s+Spacer\(minLength: 8\)\n\s+Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)/)?.[1];
-assert.ok(lockScreenDetailRow, 'Lock Screen detail and completed-set count must share one row');
-assert.doesNotMatch(lockScreenDetailRow, /layoutPriority/);
-const lockScreenCount = widgetSwift.match(/if let detail = context\.state\.detail \{[\s\S]*?\n\s+\}\n\s+Spacer\(minLength: 8\)\n\s+Text\("\\\(context\.state\.completedSets\)\/\\\(context\.state\.totalSets\)"\)([\s\S]*?)\n\s+\}/)?.[1];
-assert.match(lockScreenCount ?? '', /\.fixedSize\(horizontal: true, vertical: false\)\n\s+\.layoutPriority\(1\)/);
-assert.match(widgetSwift, /trackerOffset = min\(max\(trackerX - 5, 0\), max\(barWidth - 10, 0\)\)/);
-assert.match(widgetSwift, /\.fixedSize\(horizontal: true, vertical: false\)\n\s+\.layoutPriority\(1\)/);
-assert.match(widgetSwift, /\.frame\(height: 44\)/);
-assert.match(widgetSwift, /HStack\(spacing: 8\) \{\n\s+ActionChip\(\n\s+title: "Finish workout"[\s\S]*?title: "Undo set"/);
-assert.match(widgetSwift, /completedSets: 102,[\s\S]*?totalSets: 122,[\s\S]*?Single Arm Cable Triceps Pushdown · 8 reps · 25 lbs/);
-assert.match(widgetSwift, /Date\(timeIntervalSinceNow: -12 \* 60 \* 60\)/);
-assert.match(widgetSwift, /select Accessibility 3 in the Xcode preview canvas/);
-assert.match(widgetSwift, /overlay\(Circle\(\)\.strokeBorder\(colorPipRing, lineWidth: 2\)\)/);
-
-// Tracker pip — the one element that makes Android's Notification.ProgressStyle
-// recognizable, and the layout's one spend of boldness.
-assert.match(widgetSwift, /Capsule\(\)/);
-assert.match(widgetSwift, /trackerX/);
-assert.match(widgetSwift, /\.frame\(width: 10, height: 10\)/);
-
-// Action chips: r14, plain button style, and the three arrangements the domain
-// model emits (workout-notification-model.ts:96-104).
-assert.match(widgetSwift, /cornerRadius: 14/);
-assert.match(widgetSwift, /\.buttonStyle\(\.plain\)/);
-assert.match(widgetSwift, /actions == \["completeSet"\]/);
-assert.match(widgetSwift, /actions == \["completeSet", "uncompleteSet"\]/);
-assert.match(widgetSwift, /actions == \["finishWorkout", "uncompleteSet"\]/);
-
-// Minimal-presentation ring, not clipped text — permitted because sets have a real
-// target (totalSets), per docs/design-language.md's rule against rings on
-// unbounded metrics.
-assert.match(widgetSwift, /\.trim\(from: 0, to: progress\)/);
-
-assert.equal((widgetSwift.match(/#Preview\(/g) ?? []).length >= 11, true);
-assert.doesNotMatch(
-  widgetSwift,
-  /using:\s*\.(?:preview|longTitlePreview)/,
-  'ActivityKit preview macros need an explicit WorkoutActivityAttributes value for generic inference',
-);
-assert.equal(
-  (widgetSwift.match(/using:\s*WorkoutActivityAttributes\.(?:preview|longTitlePreview)/g) ?? []).length,
-  11,
-);
-
-const actionBridge = fs.readFileSync(
-  path.join(mobileRoot, 'src', 'lib', 'live-update-notification-actions.ios.ts'),
-  'utf8',
-);
-assert.match(actionBridge, /type ActionOwner = 'root' \| 'active-workout'/);
-assert.match(actionBridge, /deliveredOwners/);
-assert.match(actionBridge, /releasePendingAction/);
-assert.match(actionBridge, /setTimeout\(releasePendingAction, 10_000\)/);
-
-const localPreview = fs.readFileSync(path.join(mobileRoot, '..', '..', 'IOS_LOCAL_PREVIEW.md'), 'utf8');
-assert.match(localPreview, /restore the\s+private draft from AsyncStorage and validate the\s+queued action/);
-assert.doesNotMatch(localPreview, /pending action is delivered once to the in-memory session/);
-assert.match(localPreview, /backgrounded but alive/);
-assert.match(localPreview, /background-launch/);
-
+const widget = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivity.swift'), 'utf8');
+assert.doesNotMatch(widget, /GeometryReader\s*\{|let barWidth: CGFloat = 320/);
+assert.match(widget, /func path\(in rect: CGRect\)/);
+assert.match(widget, /\.frame\(minHeight: 44\)/);
+assert.match(widget, /timerInterval:/);
+assert.match(widget, /compactLeading:/);
+assert.match(widget, /compactTrailing:/);
+assert.match(widget, /minimal:/);
+assert.match(widget, /context\.state\.title \?\? context\.attributes\.title/);
 console.log('iOS Live Activity target contract tests passed');

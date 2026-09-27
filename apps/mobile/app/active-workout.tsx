@@ -6,7 +6,7 @@ import { FocusView } from "@/ui/workout/focus-view";
 import { FinishWorkoutCelebration } from "@/ui/workout/finish-workout-celebration";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
-import { triggerSyncAfterWrite } from "@/data/sync-trigger";
+import { finishActiveWorkout, subscribeWorkoutFinished } from "@/lib/finish-active-workout";
 import { isSplitOption } from "@/constants/split-options";
 import { SPLIT_WORKOUT_NAMES } from "@/constants/split-workout-names";
 import { useAuth } from "@/context/auth-context";
@@ -14,7 +14,7 @@ import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { useAIQuota } from "@/lib/use-ai-quota";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
-import { DraftExerciseRow, PerformedExercise, Workout } from "@/types/workout";
+import { DraftExerciseRow, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
 import { showAlert } from "@/lib/alert";
@@ -26,20 +26,17 @@ import {
   updateSession,
 } from "@/lib/active-workout-session";
 import { createPendingExercise } from "@/lib/create-pending-exercise";
-import { getOngoingInjuries, getOngoingInjuryIds } from "@/lib/injuries";
-import { describeUpNext } from "@/lib/up-next";
+import { getOngoingInjuries } from "@/lib/injuries";
 import { subscribeLiveUpdateNotificationActions } from "@/lib/live-update-notification-actions";
 import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from "@/lib/workout-action";
 import {
   applyWearAction,
-  buildWearIdleState,
   flattenSets,
   nextSetIndex,
   WearAction,
 } from "@/lib/wear-state";
-import { pushWearState, subscribeWearActions } from "@/lib/wear-sync";
+import { subscribeWearActions } from "@/lib/wear-sync";
 import {
-  buildPerformedExercise,
   collapseSetsToDraft,
   recentExercisesForDay,
 } from "@/lib/workout-conversion";
@@ -82,12 +79,6 @@ function formatElapsed(totalSeconds: number): string {
   return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
 }
 
-function workoutDurationSeconds(startedAt: Date | null, now = Date.now()): number | null {
-  const startedMs = startedAt?.getTime();
-  if (!Number.isFinite(startedMs) || startedMs! > now) return null;
-  return Math.floor((now - startedMs!) / 1000);
-}
-
 // Self-contained so its 1Hz tick re-renders only this text, not the whole
 // ActiveWorkout tree — a parent re-render mid-drag jars the reorderable list.
 function WorkoutTimer({ startedAt }: { startedAt: Date | null }) {
@@ -118,7 +109,6 @@ export default function ActiveWorkoutScreen() {
   // any Firestore document does. planId is only set when the session came from a planned
   // workout; that row is read once to seed state and is never touched again until Finish.
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [planId, setPlanId] = useState<string | null>(null);
   const [cameFromPlan, setCameFromPlan] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
@@ -200,7 +190,6 @@ export default function ActiveWorkoutScreen() {
             setHasEnteredFocus(true);
           }
           setCameFromPlan(existing.cameFromPlan);
-          setPlanId(existing.planId);
           setStartedAt(new Date(existing.startedAt));
           setSessionId(existing.id);
         } else if (id) {
@@ -229,7 +218,6 @@ export default function ActiveWorkoutScreen() {
             setHasEnteredFocus(true);
           }
           setCameFromPlan(cameFromPlanNow);
-          setPlanId(id);
           setStartedAt(new Date());
 
           const started = startSession({
@@ -246,7 +234,6 @@ export default function ActiveWorkoutScreen() {
           setWorkoutName(name);
           setExercises(rows);
           setCameFromPlan(false);
-          setPlanId(null);
           setStartedAt(new Date());
 
           const started = startSession({
@@ -428,6 +415,15 @@ export default function ActiveWorkoutScreen() {
     });
   }, [sessionId, setExercises]);
 
+  useEffect(() => {
+    if (Platform.OS !== 'ios' || !sessionId) return;
+    return subscribeWorkoutFinished((finishedSessionId) => {
+      if (finishedSessionId !== sessionId || terminalRef.current) return;
+      terminalRef.current = true;
+      setFinishSucceeded(true);
+    });
+  }, [sessionId]);
+
   const incompleteSetCount = () =>
     exercises
       .filter((ex) => ex.label.trim() !== "")
@@ -435,71 +431,21 @@ export default function ActiveWorkoutScreen() {
 
   const finishWorkout = async () => {
     if (!sessionId || terminalRef.current) return;
-    // Capture before any awaited injury/repository work so the value includes
-    // rest, background, and restored-session time up to the user's Finish tap.
-    const capturedDurationSeconds = workoutDurationSeconds(startedAt);
+    // The shared save captures elapsed time before awaiting injury/repository work.
     terminalRef.current = true;
     setSaving(true);
     try {
       if (!user) throw new Error('You must be signed in to finish a workout.');
-      const performedExercises: PerformedExercise[] = exercises
-        .filter((ex) => ex.label.trim() !== "")
-        .map((ex, order) =>
-          buildPerformedExercise(
-            { ...ex, sets: ex.sets.filter((s) => s.completed) },
-            order,
-          ),
-        )
-        .filter((pe) => pe.sets.length > 0)
-        .map((pe) => ({
-          ...pe,
-          sets: pe.sets.map(({ completed, ...rest }) => rest),
-        }));
-
-      const injuries = await getOngoingInjuryIds(user.uid);
-      const now = new Date().toISOString();
-      const sessionStartedAt = startedAt && Number.isFinite(startedAt.getTime())
-        ? startedAt.toISOString()
-        : new Date().toISOString();
-
-      // This is the only write this screen ever makes: a plan-sourced session
-      // completes the row it was seeded from, an ad-hoc one is created fresh here.
-      if (planId) {
-        const stored = await workoutRepository.getById(user.uid, planId);
-        if (!stored) throw new Error('Workout no longer exists.');
-        await workoutRepository.update(user.uid, planId, {
-          ...stored.data,
-          name: effectiveWorkoutName || "Workout",
-          date: now,
-          performedExercises,
-          status: "completed",
-          injuries,
-          startedAt: sessionStartedAt,
-          durationSeconds: capturedDurationSeconds,
-          updatedAt: now,
-        });
-      } else {
-        await workoutRepository.create(user.uid, {
-          name: effectiveWorkoutName || "Workout",
-          date: now,
-          performedExercises,
-          status: "completed",
-          injuries,
-          schemaVersion: 2,
-          startedAt: sessionStartedAt,
-          durationSeconds: capturedDurationSeconds,
-          createdAt: now,
-          updatedAt: now,
-        });
-      }
-      // The session is done — push it now rather than leaving it on the device
-      // until the next foreground.
-      triggerSyncAfterWrite();
+      const session = getSession();
+      if (!session || session.id !== sessionId) return;
+      const finished = await finishActiveWorkout(user.uid, {
+        ...session,
+        name: effectiveWorkoutName || "Workout",
+        rows: exercises,
+        startedAt: startedAt && Number.isFinite(startedAt.getTime()) ? startedAt.toISOString() : session.startedAt,
+      }, Platform.OS === 'ios');
+      if (!finished) return;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Clear the watch immediately; the Home screen pushes the real Up Next copy a
-      // moment later when it regains focus.
-      pushWearState(buildWearIdleState(describeUpNext({})));
-      endSession();
       setFinishSucceeded(true);
     } catch (err: any) {
       terminalRef.current = false;
@@ -574,8 +520,9 @@ export default function ActiveWorkoutScreen() {
   // Only a remote finishWorkout action is handled directly by this screen — completeSet/
   // uncompleteSet from the watch or notification are applied by app/_layout.tsx's
   // handler onto the session store (see the subscribeSession effect above), because
-  // finishing has to run this screen's own finishWorkout: it writes to the repository
-  // and navigates, neither of which belongs in the store-only fallback path
+  // Android/Wear finishing runs this screen's Finish flow. iOS intents use the
+  // same save operation without requiring a mounted screen; completion above
+  // keeps a mounted iOS screen in sync. Neither save belongs in the store-only path
   // (src/lib/wear-action-task.ts) that also has to work with this screen unmounted.
   const finishRef = useRef(finishWorkout);
   finishRef.current = finishWorkout;
@@ -592,7 +539,7 @@ export default function ActiveWorkoutScreen() {
         "expectedCompletedSets" in action &&
         !matchesExpectedCompletedSets(exercisesRef.current, action)
       ) return;
-      finishRef.current();
+      return finishRef.current();
     };
     const unsubscribeWear = subscribeWearActions(handleRemoteFinish);
     const unsubscribeNotification = subscribeLiveUpdateNotificationActions(handleRemoteFinish, 'active-workout');

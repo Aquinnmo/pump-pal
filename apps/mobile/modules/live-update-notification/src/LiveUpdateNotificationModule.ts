@@ -8,11 +8,11 @@ declare class LiveUpdateNotificationNativeModule extends NativeModule<{
   isSupported(): boolean;
   show(payload: LiveUpdateNotificationPayload): boolean;
   dismiss(): void;
-  // iOS-only: drains the App Group outbox an App Intent may have written while the
-  // host process was fully dead. Android doesn't implement this — its headless-JS
-  // fallback already reaches the JS handler directly, so only utils/live-update-
-  // notification-actions.ios.ts may call it.
-  drainPendingAction?(): string | null;
+  // iOS waits for ActivityKit and host acknowledgement before ending an intent.
+  showAsync?(payload: LiveUpdateNotificationPayload): Promise<boolean>;
+  dismissAsync?(): Promise<void>;
+  readPendingAction?(): string | null;
+  acknowledgeAction?(actionId: string, succeeded: boolean): Promise<void>;
 }
 
 // Android-only native module (see expo-module.config.json) that also won't
@@ -45,6 +45,19 @@ export function subscribeActions(onAction: (json: string) => void): () => void {
   return () => subscription.remove();
 }
 
-export function drainPendingAction(): string | null {
-  return nativeModule?.drainPendingAction?.() ?? null;
+export function readPendingAction(): string | null {
+  return nativeModule?.readPendingAction?.() ?? null;
+}
+
+export async function acknowledgeAction(actionId: string, succeeded: boolean): Promise<void> {
+  await nativeModule?.acknowledgeAction?.(actionId, succeeded);
+}
+
+export async function showAsync(payload: LiveUpdateNotificationPayload): Promise<boolean> {
+  return nativeModule?.showAsync ? nativeModule.showAsync(payload) : show(payload);
+}
+
+export async function dismissAsync(): Promise<void> {
+  if (nativeModule?.dismissAsync) await nativeModule.dismissAsync();
+  else dismiss();
 }

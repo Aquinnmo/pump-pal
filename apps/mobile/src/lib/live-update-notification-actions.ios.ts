@@ -1,110 +1,52 @@
-import { drainPendingAction, subscribeActions } from '@/modules/live-update-notification';
-import {
-  parseLiveUpdateNotificationAction,
-  type LiveUpdateNotificationAction,
-} from '@/lib/workout-action';
-import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
+import { acknowledgeAction, readPendingAction, subscribeActions } from '@/modules/live-update-notification';
+import { flushSessionPersistence } from '@/lib/active-workout-session';
+import { parseLiveUpdateNotificationAction, type LiveUpdateNotificationAction } from '@/lib/workout-action';
 
-type ActionOwner = 'root' | 'active-workout';
+type Listener = (action: LiveUpdateNotificationAction) => unknown;
+const roots = new Set<Listener>();
+const processing = new Set<string>();
+let unsubscribeNative: (() => void) | null = null;
 
-// The root layout and active-workout screen intentionally subscribe separately:
-// the former owns set mutations and the latter owns Finish's repository write. A
-// force-quit action is drained during the first subscription, then replayed once to
-// each ownership path that is currently mounting instead of being lost to ordering.
-const listeners = new Map<
-  (action: LiveUpdateNotificationAction) => void,
-  ActionOwner
->();
-const deliveredOwners = new Set<ActionOwner>();
-let nativeUnsubscribe: (() => void) | null = null;
-let pendingLoaded = false;
-let pendingJson: string | null = null;
-let pendingReleaseTimer: ReturnType<typeof setTimeout> | null = null;
-
-function releasePendingAction(): void {
-  pendingJson = null;
-  deliveredOwners.clear();
-  if (pendingReleaseTimer !== null) {
-    clearTimeout(pendingReleaseTimer);
-    pendingReleaseTimer = null;
-  }
-}
-
-function markPendingDelivered(owner: ActionOwner, json: string): void {
-  if (pendingJson !== json) return;
-  deliveredOwners.add(owner);
-  if (deliveredOwners.has('root') && deliveredOwners.has('active-workout')) {
-    releasePendingAction();
-  }
-}
-
-function deliver(json: string): void {
+async function deliver(json: string): Promise<void> {
   const action = parseLiveUpdateNotificationAction(json);
-  if (!action) return;
-  logLiveActivityLatency(action.latencyTrace, 'js.event');
-
-  const deliveredForOwner = new Set<ActionOwner>();
-  for (const [listener, owner] of listeners) {
-    if (deliveredForOwner.has(owner)) continue;
-    deliveredForOwner.add(owner);
+  const listener = roots.values().next().value;
+  if (!action || !listener) return;
+  const { actionId } = JSON.parse(json) as { actionId?: string };
+  if (typeof actionId !== 'string' || actionId === '' || processing.has(actionId)) return;
+  processing.add(actionId);
+  let succeeded = false;
+  try {
+    succeeded = (await listener(action)) !== false;
+    await flushSessionPersistence();
+  } catch (error) {
+    succeeded = false;
+    console.warn('[Live Activity] action failed', error);
+  } finally {
     try {
-      listener(action);
+      await acknowledgeAction(actionId, succeeded);
+    } catch (error) {
+      console.warn('[Live Activity] acknowledgement failed', error);
     } finally {
-      markPendingDelivered(owner, json);
+      processing.delete(actionId);
     }
   }
 }
 
 export function subscribeLiveUpdateNotificationActions(
-  onAction: (action: LiveUpdateNotificationAction) => void,
-  owner: ActionOwner = 'root',
+  onAction: Listener,
+  owner: 'root' | 'active-workout' = 'root',
 ): () => void {
-  listeners.set(onAction, owner);
-
-  // App Intents run in the widget-extension process; a tap while the host app was
-  // fully terminated only reaches us via this App Group outbox, not the Darwin
-  // notification below (which requires a live process to observe it).
-  if (!pendingLoaded) {
-    const candidate = drainPendingAction();
-    pendingJson = candidate && parseLiveUpdateNotificationAction(candidate) ? candidate : null;
-    pendingLoaded = true;
-    if (pendingJson) {
-      // If the active screen never mounts, do not retain a completed action for the
-      // lifetime of the process. A screen mounting within this window still receives
-      // its ownership replay and stale guards make any later duplicate harmless.
-      pendingReleaseTimer = setTimeout(releasePendingAction, 10_000);
-    }
-  }
-
-  if (!nativeUnsubscribe) {
-    nativeUnsubscribe = subscribeActions(deliver);
-  }
-
-  if (pendingJson && !deliveredOwners.has(owner)) {
-    const replay = pendingJson;
-    // Match native event delivery's asynchronous behavior and avoid re-entering a
-    // subscriber while it is still mounting.
-    queueMicrotask(() => {
-      if (!listeners.has(onAction) || deliveredOwners.has(owner)) return;
-      const action = parseLiveUpdateNotificationAction(replay);
-      if (!action) {
-        releasePendingAction();
-        return;
-      }
-      logLiveActivityLatency(action.latencyTrace, 'js.replay');
-      try {
-        onAction(action);
-      } finally {
-        markPendingDelivered(owner, replay);
-      }
-    });
-  }
-
+  // One host owner handles every iOS action, including Finish without a screen.
+  if (owner !== 'root') return () => {};
+  roots.add(onAction);
+  if (!unsubscribeNative) unsubscribeNative = subscribeActions(json => { void deliver(json); });
+  const pending = readPendingAction();
+  if (pending) queueMicrotask(() => { void deliver(pending); });
   return () => {
-    listeners.delete(onAction);
-    if (listeners.size === 0 && nativeUnsubscribe) {
-      nativeUnsubscribe();
-      nativeUnsubscribe = null;
+    roots.delete(onAction);
+    if (roots.size === 0) {
+      unsubscribeNative?.();
+      unsubscribeNative = null;
     }
   };
 }

@@ -8,7 +8,7 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "dev:ios": "APP_VARIANT=development bunx expo run:ios --device",
+    "dev:ios": "APP_VARIANT=development bunx expo prebuild --clean --platform ios && APP_VARIANT=development bunx expo run:ios --device",
     "web": "expo start --web",
     "lint": "expo lint",
     "build:web": "bunx expo export -p web",

@@ -3,293 +3,205 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-// Flat/numeric, no gradients/glass/glow — matches docs/design-language.md and the
-// existing Android AOD styling (Notification.ProgressStyle.Segment colors below).
-private let colorComplete = Color(red: 0xE5 / 255, green: 0x42 / 255, blue: 0x42 / 255) // also Timber's one accent
-private let colorInProgress = Color(red: 0xFB / 255, green: 0xBF / 255, blue: 0x24 / 255)
-// Canonical Timber tertiary/placeholder grey from design-language.md.
-private let colorPending = Color(red: 0x66 / 255, green: 0x66 / 255, blue: 0x66 / 255)
-// Canonical Timber secondary text grey from design-language.md.
-private let colorTextSecondary = Color(red: 0x88 / 255, green: 0x88 / 255, blue: 0x88 / 255)
-// Chip secondary surface from design-language.md.
-private let colorChipSecondary = Color.white.opacity(0.12)
-// Ring track grey and the tracker-pip ring, both from design-language.md.
-private let colorRingTrack = Color(red: 0x2A / 255, green: 0x2A / 255, blue: 0x2A / 255)
-private let colorPipRing = Color(red: 0x0F / 255, green: 0x0F / 255, blue: 0x0F / 255)
+private let accent = Color(red: 0xe5 / 255, green: 0x42 / 255, blue: 0x42 / 255)
+private let partial = Color(red: 0xfb / 255, green: 0xbf / 255, blue: 0x24 / 255)
+private let pending = Color(red: 0x66 / 255, green: 0x66 / 255, blue: 0x66 / 255)
+private let secondary = Color(red: 0x88 / 255, green: 0x88 / 255, blue: 0x88 / 255)
+private let surface = Color(red: 0x1c / 255, green: 0x1c / 255, blue: 0x1c / 255)
+private let outline = Color(red: 0x2a / 255, green: 0x2a / 255, blue: 0x2a / 255)
 
-private func segmentColor(_ segment: WorkoutActivityAttributes.SegmentState) -> Color {
-  if segment.completed { return colorComplete }
-  if segment.started { return colorInProgress }
-  return colorPending
+// Shapes receive a bounded rectangle from SwiftUI: no GeometryReader or fixed
+// screen width. Each exercise's share of the track is its share of total sets.
+private struct ExerciseSegment: Shape {
+  let segments: [WorkoutActivityAttributes.SegmentState]
+  let index: Int
+  func path(in rect: CGRect) -> Path {
+    let total = segments.reduce(0) { $0 + max($1.sets, 0) }
+    guard total > 0 else { return Path() }
+    let gap = min(4, rect.width / CGFloat(max(segments.count * 2, 1)))
+    let width = max(0, rect.width - gap * CGFloat(max(segments.count - 1, 0)))
+    let preceding = segments.prefix(index).reduce(0) { $0 + max($1.sets, 0) }
+    let x = rect.minX + width * CGFloat(preceding) / CGFloat(total) + gap * CGFloat(index)
+    let segmentWidth = width * CGFloat(max(segments[index].sets, 0)) / CGFloat(total)
+    return Path(roundedRect: CGRect(x: x, y: rect.midY - 3, width: segmentWidth, height: 6), cornerRadius: 3)
+  }
 }
 
-// Bounded/targeted progress indicator (each segment has a known total, per
-// docs/design-language.md's rule against rings/bars for untargeted metrics).
-// This is Android's Notification.ProgressStyle rebuilt: a capsule track plus the
-// tracker pip that makes the Pixel bar recognizable as a bar.
-private struct SegmentBar: View {
-  let segments: [WorkoutActivityAttributes.SegmentState]
-  let completedSets: Int
-  let totalSets: Int
+private struct SetTracker: Shape {
+  let completed: Int
+  let total: Int
+  func path(in rect: CGRect) -> Path {
+    guard total > 0 else { return Path() }
+    let progress = CGFloat(min(max(completed, 0), total)) / CGFloat(total)
+    let diameter = min(10, rect.width)
+    let x = min(max(rect.width * progress - diameter / 2, 0), max(rect.width - diameter, 0))
+    return Path(ellipseIn: CGRect(x: rect.minX + x, y: rect.midY - diameter / 2, width: diameter, height: diameter))
+  }
+}
 
+private struct ExerciseProgress: View {
+  let state: WorkoutActivityAttributes.ContentState
   var body: some View {
-    let barWidth: CGFloat = 320
-    let sumSets = max(segments.reduce(0) { $0 + max($1.sets, 0) }, 1)
-    let gap = CGFloat(max(segments.count - 1, 0) * 4)
-    let availableWidth = max(barWidth - gap, 0)
-    let trackerX = totalSets > 0
-      ? barWidth * CGFloat(min(max(completedSets, 0), totalSets)) / CGFloat(totalSets)
-      : 0
-    let trackerOffset = min(max(trackerX - 5, 0), max(barWidth - 10, 0))
-
-    ZStack(alignment: .leading) {
-      HStack(spacing: 4) {
-        ForEach(Array(segments.enumerated()), id: \.offset) { index, segment in
-          Capsule()
-            .fill(segmentColor(segment))
-            .frame(width: availableWidth * CGFloat(max(segment.sets, 0)) / CGFloat(sumSets), height: 6)
-        }
+    ZStack {
+      ForEach(Array(state.segments.enumerated()), id: \.offset) { index, segment in
+        ExerciseSegment(segments: state.segments, index: index)
+          .fill(segment.completed ? accent : segment.started ? partial : pending)
       }
-      if totalSets > 0 {
-        Circle()
-          .fill(Color.white)
-          .frame(width: 10, height: 10)
-          .overlay(Circle().strokeBorder(colorPipRing, lineWidth: 2))
-          .offset(x: trackerOffset)
-      }
+      SetTracker(completed: state.completedSets, total: state.totalSets).fill(.white)
     }
-    // ponytail: fixed 320pt bar avoids unbounded ActivityKit proposals; widen only with a bounded parent layout.
-    .frame(width: barWidth, height: 10, alignment: .leading)
+    .frame(height: 12)
     .accessibilityElement(children: .ignore)
     .accessibilityLabel("Workout exercise progress")
-    .accessibilityValue(
-      "\(segments.filter(\.completed).count) of \(segments.count) exercises complete"
-    )
+    .accessibilityValue("\(state.segments.filter(\.completed).count) of \(state.segments.count) exercises complete")
   }
 }
 
-// Minimal-presentation progress indicator. Sets have a real target (totalSets), so
-// docs/design-language.md's ring rule — which bans rings on unbounded metrics — permits it.
-private struct ProgressRing: View {
-  let completedSets: Int
-  let totalSets: Int
-
+private struct SetCount: View {
+  let state: WorkoutActivityAttributes.ContentState
   var body: some View {
-    let progress = totalSets > 0 ? CGFloat(completedSets) / CGFloat(totalSets) : 0
-    ZStack {
-      Circle()
-        .stroke(colorRingTrack, lineWidth: 2.5)
-      Circle()
-        .trim(from: 0, to: progress)
-        .stroke(colorComplete, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
-        .rotationEffect(.degrees(-90))
-    }
-    .frame(width: 16, height: 16)
+    Text("\(state.completedSets)/\(state.totalSets)")
+      .font(.subheadline.weight(.medium).monospacedDigit())
+      .lineLimit(1)
+      .fixedSize(horizontal: true, vertical: false)
+      .accessibilityLabel("\(state.completedSets) of \(state.totalSets) sets complete")
   }
 }
 
-private struct ActionChip<I: AppIntent>: View {
-  let title: String
-  let prominent: Bool
-  let intent: I
+private struct ElapsedTime: View {
+  let startedAt: Date
+  var body: some View {
+    Text(timerInterval: startedAt...startedAt.addingTimeInterval(24 * 60 * 60), countsDown: false, showsHours: true)
+      .font(.subheadline.weight(.medium).monospacedDigit())
+      .lineLimit(1)
+      .minimumScaleFactor(0.8)
+      .frame(width: 80, alignment: .trailing)
+      .accessibilityLabel("Workout elapsed time")
+  }
+}
 
+private struct WorkoutCopy: View {
+  let title: String
+  let detail: String?
+  var body: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      Text(title).font(.headline.weight(.bold)).foregroundStyle(.white)
+      if let detail {
+        Text(detail).font(.subheadline.weight(.medium)).foregroundStyle(secondary)
+      }
+    }
+    .lineLimit(1)
+    .truncationMode(.tail)
+    .minimumScaleFactor(0.8)
+    .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+private struct ActionControl<I: AppIntent>: View {
+  let title: String
+  let primary: Bool
+  let intent: I
   var body: some View {
     Button(intent: intent) {
       Text(title)
         .font(.subheadline.weight(.semibold))
         .lineLimit(1)
-        .minimumScaleFactor(0.85)
+        .minimumScaleFactor(0.8)
         .frame(maxWidth: .infinity)
-        .frame(height: 44)
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
-    .background(
-      prominent ? colorComplete : colorChipSecondary,
-      in: RoundedRectangle(cornerRadius: 14, style: .continuous)
-    )
     .foregroundStyle(.white)
+    .background(primary ? accent : outline, in: RoundedRectangle(cornerRadius: 14))
   }
 }
 
-// Arrangement is driven by context.state.actions, which the domain model emits as
-// exactly these combinations (workout-notification-model.ts:96-104). Labels are
-// byte-identical to the Android module (LiveUpdateNotificationModule.kt:155-159).
-private struct ActionButtons: View {
+private struct WorkoutControls: View {
   let workoutId: String
-  let expectedCompletedSets: Int
-  let actions: [String]
-
+  let state: WorkoutActivityAttributes.ContentState
   var body: some View {
-    if actions == ["completeSet"] {
-      ActionChip(
-        title: "Complete set",
-        prominent: true,
-        intent: CompleteSetIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
-      )
-    } else if actions == ["completeSet", "uncompleteSet"] {
+    if !state.actions.isEmpty {
       HStack(spacing: 8) {
-        ActionChip(
-          title: "Complete set",
-          prominent: true,
-          intent: CompleteSetIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
-        )
-        ActionChip(
-          title: "Undo set",
-          prominent: false,
-          intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
-        )
-      }
-    } else if actions == ["finishWorkout", "uncompleteSet"] {
-      HStack(spacing: 8) {
-        ActionChip(
-          title: "Finish workout",
-          prominent: true,
-          intent: FinishWorkoutIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
-        )
-        ActionChip(
-          title: "Undo set",
-          prominent: false,
-          intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
-        )
+        if state.actions.contains("completeSet") {
+          ActionControl(title: "Complete set", primary: true,
+            intent: CompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
+        }
+        if state.actions.contains("finishWorkout") {
+          ActionControl(title: "Finish workout", primary: true,
+            intent: FinishWorkoutIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
+        }
+        if state.actions.contains("uncompleteSet") {
+          ActionControl(title: "Undo set", primary: false,
+            intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
+        }
       }
     }
+  }
+}
+
+private struct ProgressRing: View {
+  let completedSets: Int
+  let totalSets: Int
+  var body: some View {
+    let progress = totalSets > 0 ? CGFloat(min(max(completedSets, 0), totalSets)) / CGFloat(totalSets) : 0
+    ZStack {
+      Circle().stroke(outline, lineWidth: 2.5)
+      Circle().trim(from: 0, to: progress)
+        .stroke(accent, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+        .rotationEffect(.degrees(-90))
+    }
+    .frame(width: 16, height: 16)
+    .accessibilityLabel("\(completedSets) of \(totalSets) sets complete")
   }
 }
 
 struct WorkoutLiveActivity: Widget {
   var body: some WidgetConfiguration {
     ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
-      // Lock Screen / banner presentation.
-      VStack(alignment: .leading, spacing: 4) {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-          Text(context.attributes.title)
-            .font(.headline.weight(.semibold))
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .minimumScaleFactor(0.8)
-          Spacer(minLength: 8)
-          Text(
-            timerInterval: context.attributes.startedAt...context.attributes.startedAt.addingTimeInterval(24 * 60 * 60),
-            countsDown: false,
-            showsHours: true
-          )
-            .font(.headline.monospacedDigit())
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .frame(width: 76, alignment: .trailing)
-        }
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-          if let detail = context.state.detail {
-            Text(detail)
-              .font(.subheadline)
-              .foregroundStyle(colorTextSecondary)
-              .lineLimit(1)
-              .truncationMode(.tail)
-              .minimumScaleFactor(0.8)
+      VStack(alignment: .leading, spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
+          WorkoutCopy(title: context.state.title ?? context.attributes.title, detail: context.state.detail)
+          VStack(alignment: .trailing, spacing: 4) {
+            ElapsedTime(startedAt: context.attributes.startedAt)
+            SetCount(state: context.state).foregroundStyle(secondary)
           }
-          Spacer(minLength: 8)
-          Text("\(context.state.completedSets)/\(context.state.totalSets)")
-            .font(.caption.monospacedDigit())
-            .foregroundStyle(colorTextSecondary)
-            .lineLimit(1)
-            .fixedSize(horizontal: true, vertical: false)
-            .layoutPriority(1)
-            .accessibilityLabel("Completed sets")
-            .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
+          .layoutPriority(1)
         }
-        SegmentBar(
-          segments: context.state.segments,
-          completedSets: context.state.completedSets,
-          totalSets: context.state.totalSets
-        )
-        ActionButtons(
-          workoutId: context.attributes.workoutId,
-          expectedCompletedSets: context.state.completedSets,
-          actions: context.state.actions
-        )
+        ExerciseProgress(state: context.state)
+        WorkoutControls(workoutId: context.attributes.workoutId, state: context.state)
       }
-      .frame(maxWidth: .infinity, alignment: .leading)
       .padding(.horizontal, 16)
       .padding(.vertical, 12)
-      .activityBackgroundTint(nil)
-      .activitySystemActionForegroundColor(.primary)
+      .foregroundStyle(.white)
+      .activityBackgroundTint(surface)
+      .activitySystemActionForegroundColor(.white)
     } dynamicIsland: { context in
       DynamicIsland {
         DynamicIslandExpandedRegion(.leading) {
-          Text("\(context.state.completedSets)/\(context.state.totalSets)")
-            .font(.caption.monospacedDigit())
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            // Centered, not edge-pinned: this band runs to the display's rounded
-            // corner, and `alignment: .leading` parks the glyphs under the mask
-            // (0/19 rendered as a clipped "9"). Center keeps clear of both the
-            // corner and the sensor cutout.
-            .frame(maxWidth: .infinity)
-            .accessibilityLabel("Completed sets")
-            .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
+          SetCount(state: context.state).frame(maxWidth: .infinity)
         }
         .contentMargins(.horizontal, 4)
         DynamicIslandExpandedRegion(.trailing) {
-          Text(timerInterval: context.attributes.startedAt...Date.distantFuture, countsDown: false)
-            .font(.caption.monospacedDigit())
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
-            .frame(maxWidth: .infinity)
+          ElapsedTime(startedAt: context.attributes.startedAt).frame(maxWidth: .infinity)
         }
         .contentMargins(.horizontal, 4)
-        // Copy belongs in bottom rather than leading/center: it gets the full
-        // width below the sensor, while the bar and actions stay together.
-        DynamicIslandExpandedRegion(.bottom, priority: 1) {
+        DynamicIslandExpandedRegion(.bottom) {
           VStack(alignment: .leading, spacing: 8) {
-            Text(context.attributes.title)
-              .font(.subheadline.weight(.semibold))
-              .lineLimit(1)
-              .truncationMode(.tail)
-              .minimumScaleFactor(0.8)
-              .layoutPriority(1)
-              .frame(maxWidth: .infinity, alignment: .leading)
-            if let detail = context.state.detail {
-              Text(detail)
-                .font(.caption)
-                .foregroundStyle(colorTextSecondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .minimumScaleFactor(0.8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            SegmentBar(
-              segments: context.state.segments,
-              completedSets: context.state.completedSets,
-              totalSets: context.state.totalSets
-            )
-            ActionButtons(
-              workoutId: context.attributes.workoutId,
-              expectedCompletedSets: context.state.completedSets,
-              actions: context.state.actions
-            )
+            WorkoutCopy(title: context.state.title ?? context.attributes.title, detail: context.state.detail)
+            ExerciseProgress(state: context.state)
+            WorkoutControls(workoutId: context.attributes.workoutId, state: context.state)
           }
-          .frame(maxWidth: .infinity, alignment: .leading)
         }
         .contentMargins(.horizontal, 4)
       } compactLeading: {
-        // Compact/minimal presentations can't host interactive buttons (Apple
-        // constraint) and can't afford a wide pill: no maxWidth here, or the
-        // Dynamic Island stretches to its full width with a dead centre gap.
-        // Content mirrors Android's setShortCriticalText chip — set count only.
         ProgressRing(completedSets: context.state.completedSets, totalSets: context.state.totalSets)
           .accessibilityHidden(true)
       } compactTrailing: {
-        Text("\(context.state.completedSets)/\(context.state.totalSets)")
-          .font(.caption.monospacedDigit())
-          .lineLimit(1)
-          .minimumScaleFactor(0.8)
-          .accessibilityLabel("Completed sets")
-          .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
+        SetCount(state: context.state)
       } minimal: {
         ProgressRing(completedSets: context.state.completedSets, totalSets: context.state.totalSets)
-          .accessibilityLabel("Completed sets")
-          .accessibilityValue("\(context.state.completedSets) of \(context.state.totalSets)")
       }
+      .keylineTint(accent)
     }
   }
 }
@@ -299,7 +211,7 @@ private extension WorkoutActivityAttributes {
   static let preview = WorkoutActivityAttributes(
     workoutId: "preview-workout",
     title: "Logging Push Workout",
-    startedAt: Date(timeIntervalSince1970: 1_700_000_000)
+    startedAt: Date(timeIntervalSinceNow: -5 * 60)
   )
 
   static let emptyPreviewState = ContentState(

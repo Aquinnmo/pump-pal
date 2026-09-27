@@ -1,4 +1,4 @@
-import { getSession, updateSession } from '@/lib/active-workout-session';
+import { flushSessionPersistence, getSession, updateSession } from '@/lib/active-workout-session';
 import { applyWearAction, buildWearActiveState, WearAction } from '@/lib/wear-state';
 import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from '@/lib/workout-action';
 import { pushWearState } from '@/lib/wear-sync';
@@ -22,6 +22,7 @@ import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 // would only spend ActivityKit's metered update budget.
 export async function handleWorkoutAction(
   action: WearAction | LiveUpdateNotificationAction,
+  durable = false,
 ): Promise<void> {
   const latencyTrace = 'expectedCompletedSets' in action ? action.latencyTrace : undefined;
   logLiveActivityLatency(latencyTrace, 'js.handler.start');
@@ -43,6 +44,14 @@ export async function handleWorkoutAction(
     return;
   }
   updateSession(next);
+  if (durable) {
+    try {
+      await flushSessionPersistence();
+    } catch (error) {
+      if (getSession()?.rows === next) updateSession(session.rows);
+      throw error;
+    }
+  }
 
   pushWearState(buildWearActiveState(session.id, session.name, next));
   // Awaited, not left to the store subscriber's debounce: on a cold process this

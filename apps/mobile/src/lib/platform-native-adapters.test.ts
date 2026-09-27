@@ -61,7 +61,13 @@ mock.module(new URL('../../modules/live-update-notification/index.ts', import.me
   },
   isSupported: () => liveNotificationCalls.supported,
   isNativeModuleAvailable: () => liveNotificationCalls.nativeModuleAvailable,
-  drainPendingAction: () => null,
+  readPendingAction: () => null,
+  acknowledgeAction: async () => {},
+  showAsync: async (payload: unknown) => {
+    liveNotificationCalls.show.push(payload);
+    return liveNotificationCalls.showResult;
+  },
+  dismissAsync: async () => { liveNotificationCalls.dismiss += 1; },
   show: (payload: unknown) => {
     liveNotificationCalls.show.push(payload);
     return liveNotificationCalls.showResult;
@@ -221,7 +227,7 @@ describe('native adapter helpers at their module seams', () => {
   it('delivers valid iOS live actions through the ownership subscription seam', () => {
     const actions: unknown[] = [];
     const unsubscribe = subscribeLiveUpdateNotificationActionsIos((action) => actions.push(action), 'root');
-    liveActions[0]?.(JSON.stringify({ action: 'completeSet', workoutId: 'w1', expectedCompletedSets: 1 }));
+    liveActions[0]?.(JSON.stringify({ actionId: 'ios-tap', action: 'completeSet', workoutId: 'w1', expectedCompletedSets: 1 }));
     liveActions[0]?.(JSON.stringify({ action: 'completeSet', workoutId: '', expectedCompletedSets: 1 }));
     unsubscribe();
 

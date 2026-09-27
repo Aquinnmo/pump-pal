@@ -1,124 +1,121 @@
 import Foundation
 
-// Duplicate of modules/live-update-notification/ios/LiveUpdateSharedStore.swift.
-// The widget-extension target (this file) and the Expo module target (CocoaPods) are
-// separate build units — see the note in WorkoutActivityAttributes.swift for why this
-// isn't a single shared file. Keep both copies in sync by hand.
+/// Durable, coordinated handoff between the host app and its Live Activity intent.
 public enum LiveUpdateSharedStore {
-  // Must match the App Group entitlement declared on both the host app target and the
-  // widget-extension target in app.json / the apple-targets config.
   public static let appGroupId = "group.com.aquinnmo.timber.lkpt5wjq99.liveactivity"
-
-  private static let stateKey = "com.aquinnmo.timber.liveupdate.state"
-  private static let pendingActionKey = "com.aquinnmo.timber.liveupdate.pendingAction"
   public static let actionPostedDarwinNotification = "com.aquinnmo.timber.liveupdate.actionPosted"
 
-  private static var defaults: UserDefaults? {
-    UserDefaults(suiteName: appGroupId)
-  }
-
-  // Last-known content state, kept alongside the fixed attributes so an App Intent can
-  // compute a next state without needing to look the Activity up first.
   public struct StoredState: Codable {
     public var workoutId: String
-    public var completedSets: Int
-    public var totalSets: Int
-    public var detail: String?
-    public var segments: [WorkoutActivityAttributes.SegmentState]
-    public var actions: [String]
-
-    public init(
-      workoutId: String,
-      completedSets: Int,
-      totalSets: Int,
-      detail: String?,
-      segments: [WorkoutActivityAttributes.SegmentState],
-      actions: [String]
-    ) {
-      self.workoutId = workoutId
-      self.completedSets = completedSets
-      self.totalSets = totalSets
-      self.detail = detail
-      self.segments = segments
-      self.actions = actions
-    }
-
-    public var asContentState: WorkoutActivityAttributes.ContentState {
-      WorkoutActivityAttributes.ContentState(
-        completedSets: completedSets,
-        totalSets: totalSets,
-        detail: detail,
-        segments: segments,
-        actions: actions
-      )
-    }
+    public var content: WorkoutActivityAttributes.ContentState
+    public var completedSets: Int { content.completedSets }
+    public var actions: [String] { content.actions }
   }
 
   public struct PendingAction: Codable {
-    public var action: String // 'completeSet' | 'uncompleteSet' | 'finishWorkout'
+    public var actionId: String
+    public var action: String
     public var workoutId: String
     public var expectedCompletedSets: Int
-    public var latencyTraceId: String?
-    public var latencyStartedAtMs: Double?
-
-    public init(
-      action: String,
-      workoutId: String,
-      expectedCompletedSets: Int,
-      latencyTraceId: String? = nil,
-      latencyStartedAtMs: Double? = nil
-    ) {
+    public var createdAt: Date
+    public init(actionId: String, action: String, workoutId: String, expectedCompletedSets: Int, createdAt: Date) {
+      self.actionId = actionId
       self.action = action
       self.workoutId = workoutId
       self.expectedCompletedSets = expectedCompletedSets
-      self.latencyTraceId = latencyTraceId
-      self.latencyStartedAtMs = latencyStartedAtMs
+      self.createdAt = createdAt
     }
   }
 
-  public static func saveState(_ state: StoredState) {
-    guard let data = try? JSONEncoder().encode(state) else { return }
-    defaults?.set(data, forKey: stateKey)
+  public struct ActionResult: Codable {
+    public var actionId: String
+    public var succeeded: Bool
+  }
+
+  // Coordinate the directory so checking/claiming the one slot is atomic across
+  // processes. Intents never write a speculative workout or ActivityKit state.
+  private static func access<T>(_ body: (URL) -> T) -> T? {
+    guard let directory = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else { return nil }
+    var result: T?
+    var error: NSError?
+    NSFileCoordinator().coordinate(writingItemAt: directory, options: [], error: &error) { url in
+      result = body(url)
+    }
+    if let error { NSLog("[Live Activity] App Group access failed: \(error)") }
+    return result
+  }
+
+  private static func read<T: Decodable>(_ name: String, at directory: URL) -> T? {
+    guard let data = try? Data(contentsOf: directory.appendingPathComponent(name)) else { return nil }
+    return try? JSONDecoder().decode(T.self, from: data)
+  }
+
+  private static func write<T: Encodable>(_ value: T, name: String, at directory: URL) -> Bool {
+    do {
+      try JSONEncoder().encode(value).write(to: directory.appendingPathComponent(name), options: .atomic)
+      return true
+    } catch {
+      NSLog("[Live Activity] App Group write failed: \(error)")
+      return false
+    }
+  }
+
+  public static func saveState(_ state: StoredState) -> Bool {
+    access { write(state, name: "workout-state.json", at: $0) } ?? false
   }
 
   public static func loadState() -> StoredState? {
-    guard let data = defaults?.data(forKey: stateKey) else { return nil }
-    return try? JSONDecoder().decode(StoredState.self, from: data)
+    access { read("workout-state.json", at: $0) as StoredState? } ?? nil
   }
 
   public static func clearState() {
-    defaults?.removeObject(forKey: stateKey)
-  }
-
-  public static func clearPendingAction() {
-    defaults?.removeObject(forKey: pendingActionKey)
-  }
-
-  // Single pending-action slot: only the latest tap matters for reconciliation, and
-  // action taps are inherently serialized by the user tapping one button at a time.
-  public static func writePendingAction(_ action: PendingAction) {
-    guard let data = try? JSONEncoder().encode(action) else { return }
-    defaults?.set(data, forKey: pendingActionKey)
-  }
-
-  public static func drainPendingAction() -> PendingAction? {
-    guard let data = defaults?.data(forKey: pendingActionKey) else { return nil }
-    defaults?.removeObject(forKey: pendingActionKey)
-    return try? JSONDecoder().decode(PendingAction.self, from: data)
+    _ = access { try? FileManager.default.removeItem(at: $0.appendingPathComponent("workout-state.json")) }
   }
 
   public static func loadPendingAction() -> PendingAction? {
-    guard let data = defaults?.data(forKey: pendingActionKey) else { return nil }
-    return try? JSONDecoder().decode(PendingAction.self, from: data)
+    access { read("workout-action.json", at: $0) as PendingAction? } ?? nil
+  }
+
+  public static func enqueue(_ action: PendingAction) -> Bool {
+    access { directory in
+      if let pending: PendingAction = read("workout-action.json", at: directory),
+         pending.workoutId == action.workoutId, Date().timeIntervalSince(pending.createdAt) < 30 {
+        return false
+      }
+      // Receipts are per tap so a subsequent tap cannot overwrite one an intent
+      // is still awaiting. Remove abandoned receipts beyond the intent's runtime.
+      for url in (try? FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: [.contentModificationDateKey])) ?? []
+        where url.lastPathComponent.hasPrefix("workout-result-") {
+        if let modified = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
+           Date().timeIntervalSince(modified) > 30 { try? FileManager.default.removeItem(at: url) }
+      }
+      return write(action, name: "workout-action.json", at: directory)
+    } ?? false
+  }
+
+  public static func acknowledge(_ actionId: String, succeeded: Bool) {
+    guard UUID(uuidString: actionId) != nil else { return }
+    _ = access { directory in
+      guard let pending: PendingAction = read("workout-action.json", at: directory), pending.actionId == actionId else { return }
+      if write(ActionResult(actionId: actionId, succeeded: succeeded), name: "workout-result-\(actionId).json", at: directory) {
+        try? FileManager.default.removeItem(at: directory.appendingPathComponent("workout-action.json"))
+      }
+    }
+  }
+
+  public static func result(for actionId: String) -> ActionResult? {
+    guard UUID(uuidString: actionId) != nil else { return nil }
+    let result: ActionResult? = access { read("workout-result-\(actionId).json", at: $0) as ActionResult? } ?? nil
+    return result?.actionId == actionId ? result : nil
+  }
+
+  public static func release(_ actionId: String) {
+    guard UUID(uuidString: actionId) != nil else { return }
+    _ = access { try? FileManager.default.removeItem(at: $0.appendingPathComponent("workout-result-\(actionId).json")) }
   }
 
   public static func postActionDarwinNotification() {
-    CFNotificationCenterPostNotification(
-      CFNotificationCenterGetDarwinNotifyCenter(),
-      CFNotificationName(actionPostedDarwinNotification as CFString),
-      nil,
-      nil,
-      true
-    )
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+      CFNotificationName(actionPostedDarwinNotification as CFString), nil, nil, true)
   }
 }

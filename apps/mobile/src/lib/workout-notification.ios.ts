@@ -77,7 +77,7 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
       : {}),
   };
 
-  const didShow = LiveUpdateNotification.show(payload);
+  const didShow = await LiveUpdateNotification.showAsync(payload);
   logLiveActivityLatency(data.latencyTrace, 'js.native-show.return');
 
   if (!didShow) {
@@ -92,5 +92,5 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
 }
 
 export async function dismissWorkoutNotification(): Promise<void> {
-  LiveUpdateNotification.dismiss();
+  await LiveUpdateNotification.dismissAsync();
 }

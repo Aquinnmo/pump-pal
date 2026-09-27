@@ -2,8 +2,6 @@ import ActivityKit
 import ExpoModulesCore
 import Foundation
 
-private let TAG = "LiveUpdateNotification"
-
 struct LiveUpdateSegmentRecord: Record {
   @Field var sets: Int = 0
   @Field var started: Bool = false
@@ -25,294 +23,149 @@ struct LiveUpdateNotificationPayloadRecord: Record {
 }
 
 public class LiveUpdateNotificationModule: Module {
-  private let activityGenerationLock = NSLock()
-  private var activityGeneration: UInt64 = 0
-  // Tracks whether JS currently has a subscriber on "onNotificationAction". Guards
-  // onActionPosted's drain below: draining destroys the single-slot App Group outbox
-  // record, so doing that with no one listening loses the tap for good instead of
-  // leaving it for the cold-start drainPendingAction() path.
-  private var hasListeners = false
-
   public func definition() -> ModuleDefinition {
     Name("LiveUpdateNotification")
-
     Events("onNotificationAction")
-
-    OnStartObserving("onNotificationAction") { self.hasListeners = true }
-    OnStopObserving("onNotificationAction") { self.hasListeners = false }
-
-    Function("isSupported") {
-      isSupported()
-    }
-
+    Function("isSupported") { Self.isSupported() }
+    // Keep the shared synchronous bridge compatible with Android and old callers.
     Function("show") { (payload: LiveUpdateNotificationPayloadRecord) -> Bool in
-      show(payload)
+      guard Self.isSupported() else { return false }
+      Task { @MainActor in
+        if #available(iOS 17.0, *) { _ = await WorkoutActivityLifecycle.shared.show(payload) }
+      }
+      return true
     }
-
+    AsyncFunction("showAsync") { (payload: LiveUpdateNotificationPayloadRecord) -> Bool in
+      guard #available(iOS 17.0, *), Self.isSupported() else { return false }
+      return await WorkoutActivityLifecycle.shared.show(payload)
+    }
     Function("dismiss") {
-      dismiss()
+      Task { @MainActor in
+        if #available(iOS 17.0, *) { await WorkoutActivityLifecycle.shared.dismiss() }
+      }
     }
-
-    Function("drainPendingAction") { () -> String? in
-      drainPendingAction()
+    AsyncFunction("dismissAsync") {
+      if #available(iOS 17.0, *) { await WorkoutActivityLifecycle.shared.dismiss() }
     }
-
-    OnCreate {
-      startObservingActions()
+    Function("readPendingAction") { Self.pendingJSON() }
+    AsyncFunction("acknowledgeAction") { (actionId: String, succeeded: Bool) in
+      guard #available(iOS 17.0, *) else { return }
+      let posted = await WorkoutActivityLifecycle.shared.settle()
+      LiveUpdateSharedStore.acknowledge(actionId, succeeded: succeeded && posted)
     }
-
-    OnDestroy {
-      stopObservingActions()
-    }
+    OnCreate { self.observe() }
+    OnDestroy { self.stopObserving() }
+    OnStartObserving("onNotificationAction") { self.publishPendingAction() }
   }
 
-  private func isSupported() -> Bool {
-    if #available(iOS 17.0, *) {
-      return ActivityAuthorizationInfo().areActivitiesEnabled
-    }
+  private static func isSupported() -> Bool {
+    if #available(iOS 17.0, *) { return ActivityAuthorizationInfo().areActivitiesEnabled }
     return false
   }
 
-  private func beginActivityOperation() -> UInt64 {
-    activityGenerationLock.lock()
-    defer { activityGenerationLock.unlock() }
-    activityGeneration &+= 1
-    return activityGeneration
+  private static func pendingJSON() -> String? {
+    guard let pending = LiveUpdateSharedStore.loadPendingAction(),
+          LiveUpdateSharedStore.result(for: pending.actionId) == nil,
+          let data = try? JSONEncoder().encode(pending) else { return nil }
+    return String(data: data, encoding: .utf8)
   }
 
-  private func isCurrentActivityOperation(_ generation: UInt64) -> Bool {
-    activityGenerationLock.lock()
-    defer { activityGenerationLock.unlock() }
-    return activityGeneration == generation
-  }
-
-  private func show(_ payload: LiveUpdateNotificationPayloadRecord) -> Bool {
-    guard #available(iOS 17.0, *), isSupported() else { return false }
-#if DEBUG
-    if let id = payload.latencyTraceId, let startedAt = payload.latencyStartedAtMs {
-      NSLog("[LiveActivityLatency] id=\(id) phase=native.show-entry elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - startedAt))")
+  private func publishPendingAction() {
+    Task { @MainActor [weak self] in
+      guard let json = Self.pendingJSON() else { return }
+      self?.sendEvent("onNotificationAction", ["json": json])
     }
-#endif
+  }
 
+  private func observe() {
+    CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+      Unmanaged.passUnretained(self).toOpaque(), { _, observer, _, _, _ in
+        guard let observer else { return }
+        Unmanaged<LiveUpdateNotificationModule>.fromOpaque(observer).takeUnretainedValue().publishPendingAction()
+      }, LiveUpdateSharedStore.actionPostedDarwinNotification as CFString, nil, .deliverImmediately)
+  }
+
+  private func stopObserving() {
+    CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(),
+      Unmanaged.passUnretained(self).toOpaque(),
+      CFNotificationName(LiveUpdateSharedStore.actionPostedDarwinNotification as CFString), nil)
+  }
+}
+
+@available(iOS 17.0, *)
+@MainActor
+private final class WorkoutActivityLifecycle {
+  static let shared = WorkoutActivityLifecycle()
+  private var generation = 0
+  private var tail: Task<Bool, Never>?
+
+  func show(_ payload: LiveUpdateNotificationPayloadRecord) async -> Bool {
+    guard !payload.workoutId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+          payload.startedAtMillis.isFinite, payload.startedAtMillis > 0,
+          payload.progress >= 0, payload.expectedCompletedSets == payload.progress,
+          payload.segments.allSatisfy({ $0.sets >= 0 }),
+          payload.actions.allSatisfy({ ["completeSet", "uncompleteSet", "finishWorkout"].contains($0) }) else { return false }
     let segments = payload.segments.map {
       WorkoutActivityAttributes.SegmentState(sets: $0.sets, started: $0.started, completed: $0.completed)
     }
-    let contentState = WorkoutActivityAttributes.ContentState(
-      completedSets: payload.progress,
-      totalSets: segments.reduce(0) { $0 + $1.sets },
-      detail: payload.text.isEmpty ? nil : payload.text,
-      segments: segments,
-      actions: payload.actions
-    )
-
-    let generation = beginActivityOperation()
-
-    LiveUpdateSharedStore.saveState(
-      LiveUpdateSharedStore.StoredState(
-        workoutId: payload.workoutId,
-        completedSets: contentState.completedSets,
-        totalSets: contentState.totalSets,
-        detail: contentState.detail,
-        segments: segments,
-        actions: payload.actions
-      )
-    )
-
-    let attributes = WorkoutActivityAttributes(
-      workoutId: payload.workoutId,
-      title: payload.title,
-      startedAt: Date(timeIntervalSince1970: payload.startedAtMillis / 1000)
-    )
-
-    // ActivityKit updates and endings are isolated to the main actor. Re-check after
-    // every suspension so an older redraw cannot resume and overwrite a newer one.
-    Task { @MainActor [weak self] in
-      await self?.synchronizeActivity(
-        attributes: attributes,
-        contentState: contentState,
-        generation: generation,
-        latencyTraceId: payload.latencyTraceId,
-        latencyStartedAtMs: payload.latencyStartedAtMs
-      )
-    }
-    return true
-  }
-
-  private func dismiss() {
-    guard #available(iOS 17.0, *) else { return }
-    let generation = beginActivityOperation()
-    LiveUpdateSharedStore.clearState()
-    LiveUpdateSharedStore.clearPendingAction()
-    Task { @MainActor in
-      await endActivities(generation: generation)
-    }
-  }
-
-  @available(iOS 17.0, *)
-  @MainActor
-  private func synchronizeActivity(
-    attributes: WorkoutActivityAttributes,
-    contentState: WorkoutActivityAttributes.ContentState,
-    generation: UInt64,
-    latencyTraceId: String?,
-    latencyStartedAtMs: Double?
-  ) async {
-    guard isCurrentActivityOperation(generation) else { return }
-#if DEBUG
-    if let id = latencyTraceId {
-      let elapsed = latencyStartedAtMs.map { Int(Date().timeIntervalSince1970 * 1000 - $0) } ?? -1
-      NSLog("[LiveActivityLatency] id=\(id) phase=activity.sync-start elapsedMs=\(elapsed)")
-    }
-#endif
-    let allActivities = Activity<WorkoutActivityAttributes>.activities
-    if let stored = LiveUpdateSharedStore.loadState(),
-       stored.workoutId == attributes.workoutId,
-       stored.asContentState == contentState,
-       allActivities.contains(where: {
-         $0.attributes.workoutId == attributes.workoutId && $0.content.state == contentState
-       }) {
-#if DEBUG
-      if let id = latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=native.show-deduped")
+    let total = segments.reduce(0) { $0 + $1.sets }
+    guard payload.progress <= total else { return false }
+    let state = WorkoutActivityAttributes.ContentState(completedSets: payload.progress, totalSets: total,
+      detail: payload.text.isEmpty ? nil : payload.text, segments: segments, actions: payload.actions, title: payload.title)
+    let attributes = WorkoutActivityAttributes(workoutId: payload.workoutId, title: payload.title,
+      startedAt: Date(timeIntervalSince1970: payload.startedAtMillis / 1000))
+    generation += 1
+    let version = generation
+    let previous = tail
+    let operation = Task { @MainActor in
+      _ = await previous?.value
+      // A newer snapshot supersedes this one; never post stale content or state.
+      guard version == self.generation else { return true }
+      let activities = Activity<WorkoutActivityAttributes>.activities
+      let matching = activities.first { $0.attributes.workoutId == attributes.workoutId && $0.attributes.startedAt == attributes.startedAt }
+      for activity in activities where activity.id != matching?.id {
+        await activity.end(nil, dismissalPolicy: .immediate)
+        guard version == self.generation else { return true }
       }
-#endif
-      return
-    }
-    for activity in allActivities where activity.attributes.workoutId != attributes.workoutId {
-      guard isCurrentActivityOperation(generation) else { return }
-      await activity.end(nil, dismissalPolicy: .immediate)
-      guard isCurrentActivityOperation(generation) else { return }
-    }
-
-    guard isCurrentActivityOperation(generation) else { return }
-    let matching = Activity<WorkoutActivityAttributes>.activities.filter {
-      $0.attributes.workoutId == attributes.workoutId
-    }
-    if let activity = matching.first {
-      for duplicate in matching.dropFirst() {
-        guard isCurrentActivityOperation(generation) else { return }
-        await duplicate.end(nil, dismissalPolicy: .immediate)
-        guard isCurrentActivityOperation(generation) else { return }
-      }
-      guard isCurrentActivityOperation(generation) else { return }
-#if DEBUG
-      if let id = latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=activity.update-start elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? 0)))")
-      }
-#endif
-      await activity.update(ActivityContent(state: contentState, staleDate: nil))
-#if DEBUG
-      if let id = latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=activity.update-complete elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? 0)))")
-      }
-#endif
-      return
-    }
-
-    guard isCurrentActivityOperation(generation) else { return }
-    do {
-#if DEBUG
-      if let id = latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=activity.request-start elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? Date().timeIntervalSince1970 * 1000)))")
-      }
-#endif
-      _ = try Activity<WorkoutActivityAttributes>.request(
-        attributes: attributes,
-        content: ActivityContent(state: contentState, staleDate: nil)
-      )
-#if DEBUG
-      if let id = latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=activity.request-return elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (latencyStartedAtMs ?? 0)))")
-      }
-#endif
-    } catch {
-#if DEBUG
-      if let id = latencyTraceId {
-        let elapsed = latencyStartedAtMs.map { Int(Date().timeIntervalSince1970 * 1000 - $0) } ?? -1
-        NSLog("[LiveActivityLatency] id=\(id) phase=activity.request-failed elapsedMs=\(elapsed)")
-      }
-#endif
-      NSLog("[\(TAG)] show() failed: \(error)")
-    }
-  }
-
-  @available(iOS 17.0, *)
-  @MainActor
-  private func endActivities(generation: UInt64) async {
-    for activity in Activity<WorkoutActivityAttributes>.activities {
-      guard isCurrentActivityOperation(generation) else { return }
-      await activity.end(nil, dismissalPolicy: .immediate)
-      guard isCurrentActivityOperation(generation) else { return }
-    }
-  }
-
-  private func drainPendingAction() -> String? {
-    guard let pending = LiveUpdateSharedStore.drainPendingAction() else { return nil }
-    return Self.jsonString(from: pending)
-  }
-
-  private func startObservingActions() {
-    CFNotificationCenterAddObserver(
-      CFNotificationCenterGetDarwinNotifyCenter(),
-      Unmanaged.passUnretained(self).toOpaque(),
-      { _, observer, _, _, _ in
-        guard let observer else { return }
-        let module = Unmanaged<LiveUpdateNotificationModule>.fromOpaque(observer).takeUnretainedValue()
-        module.onActionPosted()
-      },
-      LiveUpdateSharedStore.actionPostedDarwinNotification as CFString,
-      nil,
-      .deliverImmediately
-    )
-  }
-
-  private func stopObservingActions() {
-    CFNotificationCenterRemoveObserver(
-      CFNotificationCenterGetDarwinNotifyCenter(),
-      Unmanaged.passUnretained(self).toOpaque(),
-      CFNotificationName(LiveUpdateSharedStore.actionPostedDarwinNotification as CFString),
-      nil
-    )
-  }
-
-  private func onActionPosted() {
-    // Darwin notifications can arrive on a non-main thread. Expo event delivery
-    // must happen on the main actor, and draining there also keeps delivery ordered
-    // with the host's foreground lifecycle.
-    Task { @MainActor [weak self] in
-      guard let self else { return }
-      guard hasListeners else {
-#if DEBUG
-        if let pending = LiveUpdateSharedStore.loadPendingAction(), let id = pending.latencyTraceId {
-          NSLog("[LiveActivityLatency] id=\(id) phase=native.no-listener elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (pending.latencyStartedAtMs ?? 0)))")
+      do {
+        if let activity = matching {
+          if activity.content.state != state {
+            await activity.update(ActivityContent(state: state, staleDate: nil))
+            guard version == self.generation else { return true }
+          }
+        } else {
+          _ = try Activity<WorkoutActivityAttributes>.request(attributes: attributes,
+            content: ActivityContent(state: state, staleDate: nil))
         }
-#endif
-        return
+        return LiveUpdateSharedStore.saveState(.init(workoutId: attributes.workoutId, content: state))
+      } catch {
+        NSLog("[Live Activity] request failed: \(error)")
+        return false
       }
-      guard let pending = LiveUpdateSharedStore.drainPendingAction(),
-            let json = Self.jsonString(from: pending) else { return }
-#if DEBUG
-      if let id = pending.latencyTraceId {
-        NSLog("[LiveActivityLatency] id=\(id) phase=native.event-delivery elapsedMs=\(Int(Date().timeIntervalSince1970 * 1000 - (pending.latencyStartedAtMs ?? 0)))")
-      }
-#endif
-      self.sendEvent("onNotificationAction", ["json": json])
     }
+    tail = operation
+    return await operation.value
   }
 
-  private static func jsonString(from action: LiveUpdateSharedStore.PendingAction) -> String? {
-    var dict: [String: Any] = [
-      "action": action.action,
-      "workoutId": action.workoutId,
-      "expectedCompletedSets": action.expectedCompletedSets,
-    ]
-#if DEBUG
-    if let id = action.latencyTraceId, let startedAt = action.latencyStartedAtMs {
-      dict["latencyTraceId"] = id
-      dict["latencyStartedAtMs"] = startedAt
+  func settle() async -> Bool {
+    await tail?.value ?? true
+  }
+
+  func dismiss() async {
+    generation += 1
+    let version = generation
+    let previous = tail
+    let operation = Task { @MainActor in
+      _ = await previous?.value
+      guard version == self.generation else { return true }
+      LiveUpdateSharedStore.clearState()
+      for activity in Activity<WorkoutActivityAttributes>.activities {
+        await activity.end(nil, dismissalPolicy: .immediate)
+        guard version == self.generation else { return true }
+      }
+      return true
     }
-#endif
-    guard let data = try? JSONSerialization.data(withJSONObject: dict) else { return nil }
-    return String(data: data, encoding: .utf8)
+    tail = operation
+    _ = await operation.value
   }
 }
