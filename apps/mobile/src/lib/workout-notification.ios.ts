@@ -72,6 +72,8 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     progress: data.completedSets,
     segments: data.segments,
     actions: data.actions,
+    setDetails: data.setDetails,
+    setCompleted: data.setCompleted,
     ...(data.latencyTrace && __DEV__
       ? { latencyTraceId: data.latencyTrace.id, latencyStartedAtMs: data.latencyTrace.startedAtMs }
       : {}),

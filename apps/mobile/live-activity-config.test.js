@@ -78,21 +78,21 @@ assert.equal(widgetStore.match(/public static let appGroupId = "([^"]+)"/)?.[1],
 assert.equal(widgetStore, moduleStore, 'host and widget must use the same durable store');
 assert.match(moduleSwift, /AsyncFunction\("showAsync"\)/);
 assert.match(moduleSwift, /AsyncFunction\("dismissAsync"\)/);
-assert.match(moduleSwift, /Function\("acknowledgeAction"\)/);
-assert.match(moduleSwift, /loadPendingAction\(\)/);
-assert.doesNotMatch(moduleSwift, /drainPendingAction/);
+assert.match(moduleSwift, /Function\("readJournal"\)/);
+assert.match(moduleSwift, /AsyncFunction\("acknowledgeJournal"\)/);
+assert.match(moduleSwift, /case \.deferred: return true/, 'the app must not overwrite unreplayed native taps');
 assert.match(moduleStore, /NSFileCoordinator/);
 assert.match(moduleStore, /options: \.atomic/);
-assert.match(moduleStore, /pending\.actionId == actionId/);
 assert.match(moduleAttributes, /public var title: String\?/);
 
 const intentsSwift = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivityIntents.swift'), 'utf8');
-assert.equal((intentsSwift.match(/: LiveActivityIntent/g) ?? []).length, 3);
-assert.match(intentsSwift, /stored\.workoutId == workoutId/);
-assert.match(intentsSwift, /stored\.completedSets == expectedCompletedSets/);
-assert.match(intentsSwift, /stored\.actions\.contains\(action\)/);
-assert.match(intentsSwift, /result\(for: pending\.actionId\)/);
-assert.doesNotMatch(intentsSwift, /activity\.update|activity\.end|saveState\(/);
+// The widget extension cannot see Live Activities, so every intent must run in
+// the app process. None of them waits on JS to update the activity.
+assert.equal((intentsSwift.match(/: AppIntent \{/g) ?? []).length, 0);
+assert.equal((intentsSwift.match(/: LiveActivityIntent \{/g) ?? []).length, 3);
+assert.match(intentsSwift, /LiveUpdateSharedStore\.commit\(action/);
+assert.match(intentsSwift, /LiveUpdateSharedStore\.publishLatest\(workoutId:/);
+assert.doesNotMatch(intentsSwift, /enqueue|result\(for:|WorkoutIntentError/);
 assert.match(intentsSwift, /internal import LiveUpdateNotification/);
 assert.match(intentsSwift, /initializeReactHost\(launchOptions:/);
 assert.doesNotMatch(intentsSwift, /startReactNative\(|makeKeyAndVisible\(/);
@@ -111,6 +111,8 @@ const widget = fs.readFileSync(path.join(widgetRoot, 'WorkoutLiveActivity.swift'
 assert.doesNotMatch(widget, /GeometryReader\s*\{|let barWidth: CGFloat = 320/);
 assert.match(widget, /func path\(in rect: CGRect\)/);
 assert.match(widget, /\.frame\(minHeight: 44\)/);
+assert.match(widget, /Toggle\(isOn: false, intent: intent\)/, 'actions must redraw instantly while iOS wakes the app');
+assert.doesNotMatch(widget, /\.invalidatableContent\(|redactionReasons/, 'neither pending effect is visible or on-brand');
 assert.match(widget, /timerInterval:/);
 assert.match(widget, /compactLeading:/);
 assert.match(widget, /compactTrailing:/);

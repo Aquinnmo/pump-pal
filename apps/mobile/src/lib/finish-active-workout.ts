@@ -22,8 +22,13 @@ export function isFinishingWorkout(sessionId: string): boolean {
 }
 
 /** Saves the same confirmed workout from the screen or an iOS background intent. */
-export function finishActiveWorkout(uid: string, snapshot: ActiveSession, durableId = false): Promise<boolean> {
-  const finishedAt = Date.now();
+export function finishActiveWorkout(
+  uid: string,
+  snapshot: ActiveSession,
+  durableId = false,
+  // A Finish queued from the Live Activity records the tap, not the replay.
+  finishedAt = Date.now(),
+): Promise<boolean> {
   return finishing.run(snapshot.id, async () => {
     if (snapshot.uid !== uid) throw new Error('Workout belongs to another account.');
     const id = snapshot.planId ?? (durableId ? snapshot.id : null);
@@ -44,7 +49,7 @@ export function finishActiveWorkout(uid: string, snapshot: ActiveSession, durabl
       const data: Omit<Workout, 'id' | 'userId'> = {
         ...(snapshot.planId ? stored!.data : {}),
         schemaVersion: 2,
-        name: snapshot.name || 'Workout', date: now, performedExercises, status: 'completed' as const,
+        name: snapshot.name || 'Workout', date: new Date(finishedAt).toISOString(), performedExercises, status: 'completed' as const,
         injuries, startedAt: Number.isFinite(startedMs) ? snapshot.startedAt : now,
         durationSeconds: Number.isFinite(startedMs) && startedMs <= finishedAt
           ? Math.floor((finishedAt - startedMs) / 1000) : null,

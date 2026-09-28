@@ -7,44 +7,26 @@ import UIKit
 import AppIntents
 import Foundation
 
-private enum WorkoutIntentError: Error, LocalizedError {
-  case unavailable, busy, rejected, timedOut
-  var errorDescription: String? {
-    switch self {
-    case .unavailable: "This workout is no longer available."
-    case .busy: "The previous action is still processing."
-    case .rejected: "Could not update the workout. Try again."
-    case .timedOut: "Timber could not respond. Try again when it is available."
-    }
-  }
-}
-
-// LiveActivityIntent runs in the host APP's process, without opening its UI.
-// The intent grants runtime while JS restores and commits the authoritative draft.
+// Every tap commits to the App Group store and updates ActivityKit natively; JS
+// replays the journal later. A stale or rejected tap republishes the stored
+// truth instead of failing, and never applies twice.
+//
+// All three are LiveActivityIntents so they run in the app process: the widget
+// extension's Activity.activities is always empty (measured on iOS 27), so a
+// plain AppIntent there can commit but never update what the user sees.
 @available(iOS 17.0, *)
-private func performWorkoutAction(action: String, workoutId: String, expectedCompletedSets: Int) async throws {
-  guard let stored = LiveUpdateSharedStore.loadState(), stored.workoutId == workoutId,
-        expectedCompletedSets >= 0, stored.completedSets == expectedCompletedSets,
-        stored.actions.contains(action) else { throw WorkoutIntentError.unavailable }
-  let pending = LiveUpdateSharedStore.PendingAction(actionId: UUID().uuidString,
-    action: action, workoutId: workoutId, expectedCompletedSets: expectedCompletedSets, createdAt: Date())
-  guard LiveUpdateSharedStore.enqueue(pending) else { throw WorkoutIntentError.busy }
-#if canImport(LiveUpdateNotification)
-  await startWorkoutRuntime()
-#endif
-  LiveUpdateSharedStore.postActionDarwinNotification()
-  // Bounded to the intent's runtime; the durable record survives suspension.
-  // No speculative ActivityKit update and no detached fire-and-forget task.
-  let deadline = ContinuousClock.now.advanced(by: .seconds(15))
-  while ContinuousClock.now < deadline {
-    if let result = LiveUpdateSharedStore.result(for: pending.actionId) {
-      LiveUpdateSharedStore.release(pending.actionId)
-      guard result.succeeded else { throw WorkoutIntentError.rejected }
-      return
-    }
-    try await Task.sleep(for: .milliseconds(100))
-  }
-  throw WorkoutIntentError.timedOut
+@discardableResult
+private func performWorkoutAction(_ action: String, workoutId: String, expectedCompletedSets: Int) async
+  -> LiveUpdateSharedStore.JournalEntry? {
+  let startedAtMs = Date().timeIntervalSince1970 * 1000
+  let traceId = UUID().uuidString
+  LiveUpdateSharedStore.logLatency(traceId, phase: "intent.entry.\(action)", startedAtMs: startedAtMs)
+  let entry = LiveUpdateSharedStore.commit(action, workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
+  LiveUpdateSharedStore.logLatency(traceId, phase: entry == nil ? "intent.stale" : "intent.committed", startedAtMs: startedAtMs)
+  await LiveUpdateSharedStore.publishLatest(workoutId: workoutId)
+  LiveUpdateSharedStore.logLatency(traceId, phase: "intent.published", startedAtMs: startedAtMs)
+  if entry != nil { LiveUpdateSharedStore.postActionDarwinNotification() }
+  return entry
 }
 
 #if canImport(LiveUpdateNotification)
@@ -72,7 +54,7 @@ public struct CompleteSetIntent: LiveActivityIntent {
     self.expectedCompletedSets = expectedCompletedSets
   }
   public func perform() async throws -> some IntentResult {
-    try await performWorkoutAction(action: "completeSet", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
+    await performWorkoutAction("completeSet", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
     return .result()
   }
 }
@@ -89,11 +71,13 @@ public struct UncompleteSetIntent: LiveActivityIntent {
     self.expectedCompletedSets = expectedCompletedSets
   }
   public func perform() async throws -> some IntentResult {
-    try await performWorkoutAction(action: "uncompleteSet", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
+    await performWorkoutAction("uncompleteSet", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
     return .result()
   }
 }
 
+// Also starts JS so the workout is saved right away. The activity ends before JS
+// starts; the durable journal covers a save that outlives this.
 @available(iOS 17.0, *)
 public struct FinishWorkoutIntent: LiveActivityIntent {
   public static var title: LocalizedStringResource = "Finish Workout"
@@ -106,7 +90,17 @@ public struct FinishWorkoutIntent: LiveActivityIntent {
     self.expectedCompletedSets = expectedCompletedSets
   }
   public func perform() async throws -> some IntentResult {
-    try await performWorkoutAction(action: "finishWorkout", workoutId: workoutId, expectedCompletedSets: expectedCompletedSets)
+    guard let entry = await performWorkoutAction("finishWorkout", workoutId: workoutId,
+      expectedCompletedSets: expectedCompletedSets) else { return .result() }
+#if canImport(LiveUpdateNotification)
+    await startWorkoutRuntime()
+    let deadline = ContinuousClock.now.advanced(by: .seconds(20))
+    while ContinuousClock.now < deadline, LiveUpdateSharedStore.loadJournal().contains(where: { $0.id == entry.id }) {
+      try? await Task.sleep(for: .milliseconds(250))
+    }
+#else
+    _ = entry
+#endif
     return .result()
   }
 }

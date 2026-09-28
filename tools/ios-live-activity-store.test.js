@@ -16,49 +16,70 @@ try {
     .replace('FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId)',
       `Optional(URL(fileURLWithPath: ${JSON.stringify(directory)}))`);
   const checks = `
-let state = WorkoutActivityAttributes.ContentState(completedSets: 1, totalSets: 3,
-  detail: "Bench · 8 reps", segments: [.init(sets: 3, started: true, completed: false)],
-  actions: ["completeSet", "uncompleteSet"], title: "Logging Push Workout")
-assert(LiveUpdateSharedStore.saveState(.init(workoutId: "w1", content: state)))
-assert(LiveUpdateSharedStore.loadState()?.content == state)
-func tap(_ workoutId: String = "w1", age: Double = 0) -> LiveUpdateSharedStore.PendingAction {
-  .init(actionId: UUID().uuidString, action: "completeSet", workoutId: workoutId,
-    expectedCompletedSets: 1, createdAt: Date(timeIntervalSinceNow: -age))
+typealias Store = LiveUpdateSharedStore
+func workout(_ completed: [Bool], rows: [Int]? = nil, id: String = "w1") -> Store.StoredState {
+  Store.StoredState(workoutId: id, title: "Logging Push Workout", startedAt: Date(timeIntervalSince1970: 1),
+    rowSetCounts: rows ?? [completed.count], sets: completed.enumerated().map { .init(completed: $1, detail: "Set \\($0)") })!
 }
-let first = tap()
-assert(LiveUpdateSharedStore.enqueue(first))
-assert(!LiveUpdateSharedStore.enqueue(tap()), "a busy slot must never silently lose a tap")
-assert(LiveUpdateSharedStore.loadPendingAction()?.actionId == first.actionId)
-LiveUpdateSharedStore.acknowledge(UUID().uuidString, succeeded: true)
-assert(LiveUpdateSharedStore.loadPendingAction()?.actionId == first.actionId)
-LiveUpdateSharedStore.acknowledge(first.actionId, succeeded: true)
-assert(LiveUpdateSharedStore.loadPendingAction() == nil)
-let next = tap()
-assert(LiveUpdateSharedStore.enqueue(next))
-LiveUpdateSharedStore.acknowledge(next.actionId, succeeded: false)
-assert(LiveUpdateSharedStore.result(for: first.actionId)?.succeeded == true)
-assert(LiveUpdateSharedStore.result(for: next.actionId)?.succeeded == false)
-LiveUpdateSharedStore.release(first.actionId)
-assert(LiveUpdateSharedStore.result(for: first.actionId) == nil)
-assert(LiveUpdateSharedStore.result(for: next.actionId)?.succeeded == false)
-assert(LiveUpdateSharedStore.enqueue(tap(age: 60)))
-assert(LiveUpdateSharedStore.enqueue(tap()), "expired handoff must not wedge later actions")
-let other = tap("w2")
-assert(LiveUpdateSharedStore.enqueue(other), "a new workout must not be blocked by an ended session")
-LiveUpdateSharedStore.clearState()
-assert(LiveUpdateSharedStore.loadState() == nil)
-assert(LiveUpdateSharedStore.loadPendingAction()?.actionId == other.actionId,
-  "dismissal must not destroy an intent's unacknowledged action")
-LiveUpdateSharedStore.acknowledge(other.actionId, succeeded: false)
+assert(Store.StoredState(workoutId: "w1", title: "", startedAt: Date(), rowSetCounts: [2], sets: []) == nil,
+  "row counts must describe exactly the stored sets")
+
+// Presentation parity with buildWorkoutNotificationPresentation.
+assert(workout([]).content.actions == [])
+assert(workout([false, false]).content.actions == ["completeSet"])
+assert(workout([false, false]).content.detail == "Set 0")
+let gap = workout([true, false, true, false], rows: [2, 2, 0]).content
+assert(gap.completedSets == 2 && gap.totalSets == 4 && gap.detail == "Set 3", "the cursor follows the last completed set")
+assert(gap.actions == ["completeSet", "uncompleteSet"])
+assert(gap.segments == [.init(sets: 2, started: true, completed: false), .init(sets: 2, started: true, completed: false),
+  .init(sets: 0, started: false, completed: false)])
+let done = workout([true, true]).content
+assert(done.actions == ["finishWorkout", "uncompleteSet"] && done.detail == nil)
+
+// Native commits: validate, apply, journal. Stale taps never write.
+assert(Store.replace(with: workout([false, false])) == .saved)
+assert(Store.commit("uncompleteSet", workoutId: "w1", expectedCompletedSets: 0) == nil, "unavailable action")
+let first = Store.commit("completeSet", workoutId: "w1", expectedCompletedSets: 0)!
+assert(Store.commit("completeSet", workoutId: "w1", expectedCompletedSets: 0) == nil, "a stale tap must not apply twice")
+assert(Store.commit("completeSet", workoutId: "w2", expectedCompletedSets: 1) == nil, "another workout's tap")
+let second = Store.commit("completeSet", workoutId: "w1", expectedCompletedSets: 1)!
+assert(Store.loadState()!.content.actions == ["finishWorkout", "uncompleteSet"])
+let undo = Store.commit("uncompleteSet", workoutId: "w1", expectedCompletedSets: 2)!
+assert(Store.loadState()!.sets.map(\\.completed) == [true, false])
+assert(Store.loadJournal().map(\\.id) == [first.id, second.id, undo.id])
+assert(Store.loadJournal().map(\\.action) == ["completeSet", "completeSet", "uncompleteSet"])
+
+// The app's presentation must not overwrite native taps it has not replayed.
+assert(Store.replace(with: workout([false, false])) == .deferred)
+assert(Store.loadState()!.sets.map(\\.completed) == [true, false])
+assert(Store.replace(with: workout([false], id: "w2")) == .saved, "another workout is not blocked")
+assert(Store.acknowledge([first.id, second.id, undo.id]))
+assert(Store.loadJournal().isEmpty)
+assert(Store.replace(with: workout([true, true])) == .saved)
+let revision = Store.loadState()!.revision
+
+// Finish ends controls, survives dismissal, and blocks later taps.
+let finish = Store.commit("finishWorkout", workoutId: "w1", expectedCompletedSets: 2)!
+assert(Store.loadState()!.finished && Store.loadState()!.content.actions.isEmpty)
+assert(Store.loadState()!.revision == revision + 1)
+assert(Store.commit("uncompleteSet", workoutId: "w1", expectedCompletedSets: 2) == nil)
+Store.clearState()
+assert(Store.loadState() == nil)
+assert(Store.loadJournal() == [finish], "dismissal must not lose a queued Finish")
+assert(Store.commit("completeSet", workoutId: "w1", expectedCompletedSets: 0) == nil)
+
+// Concurrent taps from two processes serialize: exactly one applies.
+assert(Store.acknowledge([finish.id]))
+assert(Store.replace(with: workout([false, false, false])) == .saved)
 let lock = NSLock()
-var claims = 0
+var applied = 0
 DispatchQueue.concurrentPerform(iterations: 8) { _ in
-  if LiveUpdateSharedStore.enqueue(tap()) {
-    lock.lock(); claims += 1; lock.unlock()
+  if Store.commit("completeSet", workoutId: "w1", expectedCompletedSets: 0) != nil {
+    lock.lock(); applied += 1; lock.unlock()
   }
 }
-assert(claims == 1, "concurrent intent claims must serialize")
-print("iOS Live Activity durable handoff checks passed")
+assert(applied == 1 && Store.loadState()!.content.completedSets == 1, "concurrent taps must serialize")
+print("iOS Live Activity native commit checks passed")
 `;
   const harness = join(directory, 'check.swift');
   writeFileSync(harness, attributes + '\n' + store + '\n' + checks);

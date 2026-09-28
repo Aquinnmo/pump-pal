@@ -96,23 +96,43 @@ private struct WorkoutCopy: View {
   }
 }
 
+// iOS needs ~1.6s to wake the app for a Live Activity intent (measured), and only
+// the app can update the activity. A Toggle is the one control the system redraws
+// the moment it is tapped, before the intent runs, and flips back if it fails. So
+// each action is an always-off toggle whose "on" face shows the expected result
+// until the app's real update replaces it.
+private struct ActionStyle: ToggleStyle {
+  let primary: Bool
+  let doneTitle: String
+  func makeBody(configuration: Configuration) -> some View {
+    Group {
+      if configuration.isOn {
+        Label(doneTitle, systemImage: "checkmark")
+      } else {
+        configuration.label
+      }
+    }
+    .font(.subheadline.weight(.semibold))
+    .lineLimit(1)
+    .minimumScaleFactor(0.8)
+    .frame(maxWidth: .infinity)
+    .frame(minHeight: 44)
+    .contentShape(Rectangle())
+    .foregroundStyle(.white)
+    .background(primary ? accent : outline, in: RoundedRectangle(cornerRadius: 14))
+  }
+}
+
 private struct ActionControl<I: AppIntent>: View {
   let title: String
+  let doneTitle: String
   let primary: Bool
   let intent: I
   var body: some View {
-    Button(intent: intent) {
-      Text(title)
-        .font(.subheadline.weight(.semibold))
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: 44)
-        .contentShape(Rectangle())
-    }
-    .buttonStyle(.plain)
-    .foregroundStyle(.white)
-    .background(primary ? accent : outline, in: RoundedRectangle(cornerRadius: 14))
+    Toggle(isOn: false, intent: intent) { Text(title) }
+      .toggleStyle(ActionStyle(primary: primary, doneTitle: doneTitle))
+      .accessibilityRemoveTraits(.isToggle)
+      .accessibilityAddTraits(.isButton)
   }
 }
 
@@ -123,15 +143,15 @@ private struct WorkoutControls: View {
     if !state.actions.isEmpty {
       HStack(spacing: 8) {
         if state.actions.contains("completeSet") {
-          ActionControl(title: "Complete set", primary: true,
+          ActionControl(title: "Complete set", doneTitle: "Set \(state.completedSets + 1) done", primary: true,
             intent: CompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
         }
         if state.actions.contains("finishWorkout") {
-          ActionControl(title: "Finish workout", primary: true,
+          ActionControl(title: "Finish workout", doneTitle: "Workout logged", primary: true,
             intent: FinishWorkoutIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
         }
         if state.actions.contains("uncompleteSet") {
-          ActionControl(title: "Undo set", primary: false,
+          ActionControl(title: "Undo set", doneTitle: "Set \(state.completedSets) undone", primary: false,
             intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
         }
       }

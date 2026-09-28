@@ -4,8 +4,9 @@ export {
   show,
   dismiss,
   subscribeActions,
-  readPendingAction,
-  acknowledgeAction,
+  readJournal,
+  acknowledgeJournal,
+  subscribeJournal,
   showAsync,
   dismissAsync,
 } from './src/LiveUpdateNotificationModule';

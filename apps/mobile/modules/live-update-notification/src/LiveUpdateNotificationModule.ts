@@ -4,15 +4,16 @@ import type { LiveUpdateNotificationPayload } from './LiveUpdateNotification.typ
 
 declare class LiveUpdateNotificationNativeModule extends NativeModule<{
   onNotificationAction: (event: { json: string }) => void;
+  onJournalChanged: () => void;
 }> {
   isSupported(): boolean;
   show(payload: LiveUpdateNotificationPayload): boolean;
   dismiss(): void;
-  // iOS waits for ActivityKit and host acknowledgement before ending an intent.
+  // iOS only: awaits ActivityKit, and exposes the journal of taps applied natively.
   showAsync?(payload: LiveUpdateNotificationPayload): Promise<boolean>;
   dismissAsync?(): Promise<void>;
-  readPendingAction?(): string | null;
-  acknowledgeAction?(actionId: string, succeeded: boolean): Promise<void>;
+  readJournal?(): string;
+  acknowledgeJournal?(ids: string[]): Promise<boolean>;
 }
 
 // Android-only native module (see expo-module.config.json) that also won't
@@ -45,12 +46,18 @@ export function subscribeActions(onAction: (json: string) => void): () => void {
   return () => subscription.remove();
 }
 
-export function readPendingAction(): string | null {
-  return nativeModule?.readPendingAction?.() ?? null;
+export function readJournal(): string {
+  return nativeModule?.readJournal?.() ?? '[]';
 }
 
-export async function acknowledgeAction(actionId: string, succeeded: boolean): Promise<void> {
-  await nativeModule?.acknowledgeAction?.(actionId, succeeded);
+export async function acknowledgeJournal(ids: string[]): Promise<boolean> {
+  return (await nativeModule?.acknowledgeJournal?.(ids)) ?? false;
+}
+
+export function subscribeJournal(onChange: () => void): () => void {
+  if (!nativeModule?.readJournal) return () => {};
+  const subscription = nativeModule.addListener('onJournalChanged', onChange);
+  return () => subscription.remove();
 }
 
 export async function showAsync(payload: LiveUpdateNotificationPayload): Promise<boolean> {
