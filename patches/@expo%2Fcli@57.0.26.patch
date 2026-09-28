@@ -1,8 +1,8 @@
 diff --git a/build/src/start/platforms/ios/simctlLogging.js b/build/src/start/platforms/ios/simctlLogging.js
-index 3006aa5204388e12df26f2fb0b078555003b1d35..5a7f2a7020c8999e0c2e06c78cf1f19a6211cc38 100644
+index 3006aa5204388e12df26f2fb0b078555003b1d35..021ee6efdaf6bd71ab3dfebf12db2b63310d07d1 100644
 --- a/build/src/start/platforms/ios/simctlLogging.js
 +++ b/build/src/start/platforms/ios/simctlLogging.js
-@@ -230,6 +230,12 @@ function formatMessage(simLog) {
+@@ -230,6 +230,18 @@ function formatMessage(simLog) {
      return (0, _wrapansi().default)(category + ' ' + message, process.stdout.columns || 80);
  }
  function onMessage(simLog) {
@@ -10,6 +10,12 @@ index 3006aa5204388e12df26f2fb0b078555003b1d35..5a7f2a7020c8999e0c2e06c78cf1f19a
 +        return;
 +    }
 +    if (simLog.subsystem === 'com.apple.BoardServices' && simLog.eventMessage?.includes('com.apple.PointerUI')) {
++        return;
++    }
++    if (simLog.subsystem === 'com.apple.CFNetwork' && /^TCP Conn \S+ Failed : error 0:61 \[61\]$/.test(simLog.eventMessage ?? '')) {
++        return;
++    }
++    if (simLog.subsystem === 'com.apple.UIKit' && simLog.eventMessage?.includes('implements focusItemsInRect:')) {
 +        return;
 +    }
      let hasLogged = false;
