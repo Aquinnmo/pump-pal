@@ -61,11 +61,13 @@ bun start
 For native dependency, app-config, entitlement, or extension changes, rerun the build command:
 
 ```bash
-bunx expo run:ios --device --configuration Release
+bun run install:ios
 ```
 
-`bun run install:apple` rebuilds the current checkout without changing branches or
-pulling. For a separate iOS development install, use `bun run dev:apple`; it sets
+`bun run install:apple` regenerates the iOS project with `APP_VARIANT=production`
+and builds Timber in Release configuration, even after a development build.
+It uses the current checkout without changing branches or pulling.
+For a separate iOS development install, use `bun run dev:apple`; it sets
 `APP_VARIANT=development` and uses the development bundle identifier so it can
 coexist with the release-shaped app.
 

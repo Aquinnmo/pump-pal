@@ -52,7 +52,14 @@ assert.equal(
 assert.equal(published.android.googleServicesFile, './google-services-preview.json');
 
 const production = evaluateConfig({ bundleId: undefined, iosClientId: IOS_CLIENT_ID, variant: 'production' });
+assert.equal(production.name, 'Timber');
+assert.equal(production.ios.bundleIdentifier, 'com.aquinnmo.timber');
 assert.equal(production.android.googleServicesFile, './google-services.json');
+assert.match(
+  require('./package.json').scripts['install:ios'],
+  /^APP_VARIANT=production bunx expo prebuild --clean --platform ios && APP_VARIANT=production PATH=\.\.\/\.\.\/tools\/xcodebuild-auto-provision:\$PATH bunx expo run:ios --device --configuration Release$/,
+  'Release installs must regenerate production native identity before building',
+);
 
 const development = evaluateConfig({ bundleId: undefined, iosClientId: IOS_CLIENT_ID, variant: 'development' });
 assert.equal(development.android.package, 'com.aquinnmo.timber_dev');
