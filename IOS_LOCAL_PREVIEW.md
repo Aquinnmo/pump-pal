@@ -26,7 +26,7 @@ Build and install Timber directly from this checkout on a connected iPhone. This
   }
   ```
 
-  For a local-only override, set `TIMBER_IOS_TEAM_ID` in the repository-root `.env`, then run `bun run install:apple` from the repository root. Bun loads that file before invoking Expo. The dynamic app config validates this value and forwards it to `@bacons/apple-targets`; it has no default and must never be guessed. Do not use an Apple Account email address or the `YOUR_TEAM_ID` placeholder.
+  For a local-only override, set `TIMBER_IOS_TEAM_ID` in `apps/mobile/.env` (gitignored; `.env.example.eas` has the placeholder). Expo loads that file before evaluating `app.config.js`; the repository-root `.env` is not read. The dynamic app config validates this value and forwards it to `@bacons/apple-targets`; it has no default and must never be guessed. Do not use an Apple Account email address or the `YOUR_TEAM_ID` placeholder.
 
   In Xcode, find it under **Signing & Capabilities → Team** after signing in. Do not guess this value or use an Apple Account email address.
 
@@ -64,7 +64,7 @@ For native dependency, app-config, entitlement, or extension changes, rerun the 
 bun run install:ios
 ```
 
-`bun run install:apple` regenerates the iOS project with `APP_VARIANT=production`
+`bun run install:ios` regenerates the iOS project with `APP_VARIANT=production`
 and builds Timber in Release configuration, even after a development build.
 It uses the current checkout without changing branches or pulling.
 For a separate iOS development install, use `bun run dev:apple`; it sets

@@ -59,6 +59,7 @@
       "@react-native-firebase/app-check",
       "@react-native-firebase/crashlytics",
       "./plugins/with-ios27-status-bar",
+      "./plugins/with-always-run-script-phases",
       [
         "expo-build-properties",
         {
