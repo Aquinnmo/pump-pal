@@ -9,5 +9,7 @@ export {
   subscribeJournal,
   showAsync,
   dismissAsync,
+  setUpNextWidget,
+  clearUpNextWidget,
 } from './src/LiveUpdateNotificationModule';
 export type { LiveUpdateNotificationPayload, LiveUpdateSegment } from './src/LiveUpdateNotification.types';

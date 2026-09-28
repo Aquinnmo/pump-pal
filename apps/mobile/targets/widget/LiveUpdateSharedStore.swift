@@ -182,6 +182,51 @@ public enum LiveUpdateSharedStore {
     } ?? false
   }
 
+  /// What the home-screen Up next widget renders. Mirrors WidgetUpNext
+  /// (src/lib/widget-up-next.tsx), including its per-field fallback.
+  public struct UpNext: Codable, Equatable {
+    public var label: String
+    public var name: String
+    public var action: String
+    public var source: String
+
+    public static let fallback = UpNext(label: "Up next", name: "Start a workout",
+      action: "Choose your workout", source: "New session")
+
+    public init(label: String, name: String, action: String, source: String) {
+      self.label = label
+      self.name = name
+      self.action = action
+      self.source = source
+    }
+
+    public init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      func field(_ key: CodingKeys, _ fallback: String) -> String {
+        let value = (try? container.decodeIfPresent(String.self, forKey: key)) ?? nil
+        return value.flatMap { $0.isEmpty ? nil : $0 } ?? fallback
+      }
+      label = field(.label, Self.fallback.label)
+      name = field(.name, Self.fallback.name)
+      action = field(.action, Self.fallback.action)
+      source = field(.source, Self.fallback.source)
+    }
+  }
+
+  private static let upNextFile = "up-next.json"
+
+  public static func saveUpNext(_ upNext: UpNext) -> Bool {
+    access { write(upNext, name: upNextFile, at: $0) } ?? false
+  }
+
+  public static func loadUpNext() -> UpNext {
+    (access { read(upNextFile, at: $0) as UpNext? } ?? nil) ?? .fallback
+  }
+
+  public static func clearUpNext() {
+    _ = access { try? FileManager.default.removeItem(at: $0.appendingPathComponent(upNextFile)) }
+  }
+
   public static func postActionDarwinNotification() {
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
       CFNotificationName(actionPostedDarwinNotification as CFString), nil, nil, true)

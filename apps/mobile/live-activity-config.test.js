@@ -118,4 +118,18 @@ assert.match(widget, /compactLeading:/);
 assert.match(widget, /compactTrailing:/);
 assert.match(widget, /minimal:/);
 assert.match(widget, /context\.state\.title \?\? context\.attributes\.title/);
+
+const widgetBundle = fs.readFileSync(path.join(widgetRoot, 'WidgetBundle.swift'), 'utf8');
+assert.match(widgetBundle, /UpNextWidget\(\)/, 'the home-screen Up next widget ships in the extension bundle');
+const upNextWidget = fs.readFileSync(path.join(widgetRoot, 'UpNextWidget.swift'), 'utf8');
+assert.match(upNextWidget, /kind: "UpNext"/, 'JS reloads the widget by this kind');
+assert.match(upNextWidget, /pumppal:\/\/up-next/);
+// The iOS widget must pick layouts with Android's breakpoints.
+const sizeTs = fs.readFileSync(path.join(mobileRoot, 'widgets', 'up-next-widget-size.ts'), 'utf8');
+for (const test of ['width < 180 || height < 64', 'width < 260 || height < 112']) {
+  assert.ok(sizeTs.includes(test), `Android breakpoint ${test}`);
+  assert.ok(upNextWidget.includes(test.replace(/width/g, 'size.width').replace(/height/g, 'size.height')),
+    `iOS widget must keep Android breakpoint ${test}`);
+}
+assert.match(moduleSwift, /reloadTimelines\(ofKind: "UpNext"\)/);
 console.log('iOS Live Activity target contract tests passed');

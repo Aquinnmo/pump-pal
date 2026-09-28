@@ -14,6 +14,9 @@ declare class LiveUpdateNotificationNativeModule extends NativeModule<{
   dismissAsync?(): Promise<void>;
   readJournal?(): string;
   acknowledgeJournal?(ids: string[]): Promise<boolean>;
+  // iOS only: hands the home-screen Up next widget its copy (a JSON string).
+  setUpNextWidget?(json: string): boolean;
+  clearUpNextWidget?(): void;
 }
 
 // Android-only native module (see expo-module.config.json) that also won't
@@ -67,4 +70,12 @@ export async function showAsync(payload: LiveUpdateNotificationPayload): Promise
 export async function dismissAsync(): Promise<void> {
   if (nativeModule?.dismissAsync) await nativeModule.dismissAsync();
   else dismiss();
+}
+
+export function setUpNextWidget(json: string): boolean {
+  return nativeModule?.setUpNextWidget?.(json) ?? false;
+}
+
+export function clearUpNextWidget(): void {
+  nativeModule?.clearUpNextWidget?.();
 }

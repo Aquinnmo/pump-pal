@@ -1,6 +1,7 @@
 import ActivityKit
 import ExpoModulesCore
 import Foundation
+import WidgetKit
 
 struct LiveUpdateSegmentRecord: Record {
   @Field var sets: Int = 0
@@ -55,6 +56,17 @@ public class LiveUpdateNotificationModule: Module {
     }
     AsyncFunction("acknowledgeJournal") { (ids: [String]) -> Bool in
       LiveUpdateSharedStore.acknowledge(ids)
+    }
+    // Home-screen Up next widget: JS owns the copy, the extension only reads the file.
+    Function("setUpNextWidget") { (json: String) -> Bool in
+      guard let upNext = try? JSONDecoder().decode(LiveUpdateSharedStore.UpNext.self, from: Data(json.utf8)),
+            LiveUpdateSharedStore.saveUpNext(upNext) else { return false }
+      WidgetCenter.shared.reloadTimelines(ofKind: "UpNext")
+      return true
+    }
+    Function("clearUpNextWidget") {
+      LiveUpdateSharedStore.clearUpNext()
+      WidgetCenter.shared.reloadTimelines(ofKind: "UpNext")
     }
     OnCreate { self.observe() }
     OnDestroy { self.stopObserving() }

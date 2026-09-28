@@ -79,6 +79,16 @@ DispatchQueue.concurrentPerform(iterations: 8) { _ in
   }
 }
 assert(applied == 1 && Store.loadState()!.content.completedSets == 1, "concurrent taps must serialize")
+// Up next widget file: absent means fallback; empty or missing fields fall back per field.
+Store.clearUpNext()
+assert(Store.loadUpNext() == .fallback)
+assert(Store.saveUpNext(.init(label: "Resume", name: "Push", action: "Resume workout", source: "In progress")))
+assert(Store.loadUpNext().name == "Push" && Store.loadUpNext().source == "In progress")
+let partialUpNext = try! JSONDecoder().decode(Store.UpNext.self, from: Data(#"{"label":"","name":"Legs"}"#.utf8))
+assert(partialUpNext.label == Store.UpNext.fallback.label && partialUpNext.name == "Legs"
+  && partialUpNext.action == Store.UpNext.fallback.action)
+Store.clearUpNext()
+assert(Store.loadUpNext() == .fallback)
 print("iOS Live Activity native commit checks passed")
 `;
   const harness = join(directory, 'check.swift');

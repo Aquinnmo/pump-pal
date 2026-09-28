@@ -1,3 +1,4 @@
+import { clearUpNextWidgetNative } from '@/lib/up-next-widget-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDb, purgeUidData } from './client';
 import { listAll } from './outbox';
@@ -33,10 +34,11 @@ export async function syncBeforeSignOut(uid: string): Promise<void> {
  */
 export async function purgeLocalAccountData(uid: string): Promise<void> {
   await purgeUidData(uid);
+  clearUpNextWidgetNative();
   const keys = await AsyncStorage.getAllKeys();
   const uidKeys = keys.filter((key) => key.includes(uid));
   const sharedAccountProjections = [
-    'pumppal_up_next_widget_v1',
+    'pumppal_widget_up_next',
     'pumppal_catalog_v2',
     'pumppal_catalog_version_v2',
   ];

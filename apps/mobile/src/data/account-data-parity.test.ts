@@ -73,7 +73,7 @@ await seedProfile('native-user-a');
 await seedProfile('native-user-b');
 await AsyncStorage.setItem('cache_native-user-a', 'remove');
 await AsyncStorage.setItem('cache_native-user-b', 'keep');
-await AsyncStorage.setItem('pumppal_up_next_widget_v1', 'remove shared projection');
+await AsyncStorage.setItem('pumppal_widget_up_next', 'remove shared projection');
 await AsyncStorage.setItem('unrelated-cache', 'keep');
 await purgeNative('native-user-a');
 assert.equal(await countPendingSync('native-user-a'), 0, 'native: purge removes the uid outbox');
@@ -82,7 +82,7 @@ assert.equal(await countPendingSync('native-user-b'), 1, 'native: purge preserve
 assert.ok(await native.db.getFirstAsync('SELECT uid FROM profile WHERE uid = ?', ['native-user-b']), 'native: purge preserves another uid profile');
 const remainingKeys = await AsyncStorage.getAllKeys();
 assert.ok(!remainingKeys.includes('cache_native-user-a'), 'native: purge removes uid cache keys');
-assert.ok(!remainingKeys.includes('pumppal_up_next_widget_v1'), 'native: purge removes shared projection keys');
+assert.ok(!remainingKeys.includes('pumppal_widget_up_next'), 'native: purge removes shared projection keys');
 assert.ok(remainingKeys.includes('cache_native-user-b'), 'native: purge preserves another uid cache keys');
 assert.ok(remainingKeys.includes('unrelated-cache'), 'native: purge preserves unrelated cache keys');
 

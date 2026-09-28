@@ -44,6 +44,7 @@ const liveNotificationCalls = {
   show: [] as unknown[],
   dismiss: 0,
 };
+const upNextWidgetCalls: string[] = [];
 const streakNotificationCalls = {
   cancelTrigger: [] as unknown[],
   requestPermission: 0,
@@ -71,6 +72,8 @@ mock.module(new URL('../../modules/live-update-notification/index.ts', import.me
     return liveNotificationCalls.showResult;
   },
   dismiss: () => { liveNotificationCalls.dismiss += 1; },
+  setUpNextWidget: (json: string) => { upNextWidgetCalls.push(`set:${json}`); return true; },
+  clearUpNextWidget: () => { upNextWidgetCalls.push('clear'); },
 }));
 type Build = {
   module(path: string, callback: () => { exports: Record<string, unknown>; loader: 'object' }): void;
@@ -108,6 +111,7 @@ plugin({
 
 const { pushWearState, subscribeWearActions } = await import('./wear-sync.android');
 const { subscribeLiveUpdateNotificationActions } = await import('./live-update-notification-actions.android');
+const { setUpNextWidgetNative, clearUpNextWidgetNative } = await import('./up-next-widget-native.ios');
 const {
   ensureWorkoutChannel,
   requestNotificationPermission,
@@ -356,3 +360,8 @@ describe('native adapter helpers at their module seams', () => {
     assert.equal(liveNotificationCalls.show.length, 2);
   });
 });
+
+// iOS hands the Up next widget to the native module; the default adapter is inert.
+setUpNextWidgetNative('{"name":"Push"}');
+clearUpNextWidgetNative();
+assert.deepEqual(upNextWidgetCalls, ['set:{"name":"Push"}', 'clear']);
