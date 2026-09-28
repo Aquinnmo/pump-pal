@@ -6,7 +6,7 @@ const PERSONAL_BUNDLE_ID = 'com.aquinnmo.timber.personal.0123abcdef45';
 
 const baseConfig = {
   name: 'Timber',
-  ios: { bundleIdentifier: 'com.aquinnmo.timber' },
+  ios: { bundleIdentifier: 'com.aquinnmo.timber', googleServicesFile: './GoogleService-Info.plist' },
   android: { package: 'com.aquinnmo.timber' },
   plugins: ['expo-router'],
 };
@@ -64,6 +64,14 @@ assert.match(
 const development = evaluateConfig({ bundleId: undefined, iosClientId: IOS_CLIENT_ID, variant: 'development' });
 assert.equal(development.android.package, 'com.aquinnmo.timber_dev');
 assert.equal(development.android.googleServicesFile, './google-services-preview.json');
+
+assert.equal(development.ios.googleServicesFile, './GoogleService-Info-dev.plist');
+assert.equal(production.ios.googleServicesFile, './GoogleService-Info.plist');
+const readPlist = (file) => require('node:fs').readFileSync(require('node:path').join(__dirname, file), 'utf8');
+const bundleIdRe = /(<key>BUNDLE_ID<\/key>\s*<string>)([^<]*)(<\/string>)/;
+const devPlist = readPlist('GoogleService-Info-dev.plist');
+assert.equal(devPlist.match(bundleIdRe)[2], 'com.aquinnmo.timber-dev');
+assert.equal(devPlist.replace(bundleIdRe, '$1com.aquinnmo.timber$3'), readPlist('GoogleService-Info.plist'), 'dev plist may differ from prod only in BUNDLE_ID');
 
 const previousTeamId = process.env.TIMBER_IOS_TEAM_ID;
 process.env.TIMBER_IOS_TEAM_ID = 'A1B2C3D4E5';

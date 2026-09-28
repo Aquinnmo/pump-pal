@@ -48,6 +48,7 @@ module.exports = ({ config }) => {
     android,
     ios: {
       ...ios,
+      googleServicesFile: IS_DEV ? './GoogleService-Info-dev.plist' : ios.googleServicesFile,
       bundleIdentifier:
         LOCAL_IOS_BUNDLE_ID ||
         (IS_DEV ? 'com.aquinnmo.timber-dev' : config.ios.bundleIdentifier),
