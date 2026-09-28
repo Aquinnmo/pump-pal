@@ -1,6 +1,4 @@
-// Custom entry point (package.json "main"). Its only job is to register the Android
-// headless tasks — the home-screen widget's, and the Wear OS action handler that runs
-// when a watch tap arrives with the app process dead.
+// Register native background handlers before mounting the router.
 // Guarded: react-native-web's AppRegistry has no registerHeadlessTask.
 import { AppRegistry, Platform } from 'react-native';
 
@@ -16,6 +14,10 @@ if (Platform.OS === 'android') {
   // Must match TASK_NAME in LiveUpdateNotificationActionTaskService.kt.
   const { liveUpdateNotificationActionTask } = require('./src/lib/live-update-notification-action-task');
   AppRegistry.registerHeadlessTask('TimberLiveUpdateAction', () => liveUpdateNotificationActionTask);
+}
+
+if (Platform.OS === 'ios') {
+  require('./src/lib/live-activity-runtime.ios');
 }
 
 require('expo-router/entry');

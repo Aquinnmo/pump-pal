@@ -11,7 +11,6 @@ import '@/lib/workout-surface-sync';
 import { subscribeWearActions } from '@/lib/wear-sync';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, router, useSegments } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -172,7 +171,7 @@ function RootLayoutNav() {
 
   return (
     <>
-      <Stack>
+      <Stack screenOptions={{ statusBarStyle: 'light' }}>
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="set-username" options={{ headerShown: false }} />
@@ -211,7 +210,6 @@ function RootLayoutNav() {
           </View>
         </View>
       )}
-      <StatusBar style="light" />
     </>
   );
 }

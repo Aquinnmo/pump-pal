@@ -1,8 +1,9 @@
-import { getSession, updateSession } from '@/lib/active-workout-session';
+import { flushSessionPersistence, getSession, updateSession } from '@/lib/active-workout-session';
 import { applyWearAction, buildWearActiveState, WearAction } from '@/lib/wear-state';
 import { matchesExpectedCompletedSets, type LiveUpdateNotificationAction } from '@/lib/workout-action';
 import { pushWearState } from '@/lib/wear-sync';
 import { flushWorkoutNotification } from '@/lib/workout-surface-sync';
+import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
 // Fallback path for a completeSet/uncompleteSet action arriving while the
 // active-workout screen isn't mounted (including a cold process — the caller loads
@@ -21,19 +22,41 @@ import { flushWorkoutNotification } from '@/lib/workout-surface-sync';
 // would only spend ActivityKit's metered update budget.
 export async function handleWorkoutAction(
   action: WearAction | LiveUpdateNotificationAction,
+  durable = false,
 ): Promise<void> {
+  const latencyTrace = 'expectedCompletedSets' in action ? action.latencyTrace : undefined;
+  logLiveActivityLatency(latencyTrace, 'js.handler.start');
   if (action.action !== 'completeSet' && action.action !== 'uncompleteSet') return;
 
   const session = getSession();
-  if (!session || action.workoutId !== session.id) return;
-  if ('expectedCompletedSets' in action && !matchesExpectedCompletedSets(session.rows, action)) return;
+  if (!session || action.workoutId !== session.id) {
+    logLiveActivityLatency(latencyTrace, 'js.handler.rejected-session');
+    return;
+  }
+  if ('expectedCompletedSets' in action && !matchesExpectedCompletedSets(session.rows, action)) {
+    logLiveActivityLatency(latencyTrace, 'js.handler.rejected-stale');
+    return;
+  }
 
   const next = applyWearAction(session.rows, action);
-  if (next === session.rows) return;
+  if (next === session.rows) {
+    logLiveActivityLatency(latencyTrace, 'js.handler.noop');
+    return;
+  }
   updateSession(next);
+  if (durable) {
+    try {
+      await flushSessionPersistence();
+    } catch (error) {
+      if (getSession()?.rows === next) updateSession(session.rows);
+      throw error;
+    }
+  }
 
   pushWearState(buildWearActiveState(session.id, session.name, next));
   // Awaited, not left to the store subscriber's debounce: on a cold process this
   // runs in a headless task that ends as soon as this promise resolves.
-  await flushWorkoutNotification();
+  logLiveActivityLatency(latencyTrace, 'js.handler.flush-start');
+  await flushWorkoutNotification(latencyTrace);
+  logLiveActivityLatency(latencyTrace, 'js.handler.flush-return');
 }

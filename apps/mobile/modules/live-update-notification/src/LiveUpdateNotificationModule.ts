@@ -4,15 +4,16 @@ import type { LiveUpdateNotificationPayload } from './LiveUpdateNotification.typ
 
 declare class LiveUpdateNotificationNativeModule extends NativeModule<{
   onNotificationAction: (event: { json: string }) => void;
+  onJournalChanged: () => void;
 }> {
   isSupported(): boolean;
   show(payload: LiveUpdateNotificationPayload): boolean;
   dismiss(): void;
-  // iOS-only: drains the App Group outbox an App Intent may have written while the
-  // host process was fully dead. Android doesn't implement this — its headless-JS
-  // fallback already reaches the JS handler directly, so only utils/live-update-
-  // notification-actions.ios.ts may call it.
-  drainPendingAction?(): string | null;
+  // iOS only: awaits ActivityKit, and exposes the journal of taps applied natively.
+  showAsync?(payload: LiveUpdateNotificationPayload): Promise<boolean>;
+  dismissAsync?(): Promise<void>;
+  readJournal?(): string;
+  acknowledgeJournal?(ids: string[]): Promise<boolean>;
 }
 
 // Android-only native module (see expo-module.config.json) that also won't
@@ -45,6 +46,25 @@ export function subscribeActions(onAction: (json: string) => void): () => void {
   return () => subscription.remove();
 }
 
-export function drainPendingAction(): string | null {
-  return nativeModule?.drainPendingAction?.() ?? null;
+export function readJournal(): string {
+  return nativeModule?.readJournal?.() ?? '[]';
+}
+
+export async function acknowledgeJournal(ids: string[]): Promise<boolean> {
+  return (await nativeModule?.acknowledgeJournal?.(ids)) ?? false;
+}
+
+export function subscribeJournal(onChange: () => void): () => void {
+  if (!nativeModule?.readJournal) return () => {};
+  const subscription = nativeModule.addListener('onJournalChanged', onChange);
+  return () => subscription.remove();
+}
+
+export async function showAsync(payload: LiveUpdateNotificationPayload): Promise<boolean> {
+  return nativeModule?.showAsync ? nativeModule.showAsync(payload) : show(payload);
+}
+
+export async function dismissAsync(): Promise<void> {
+  if (nativeModule?.dismissAsync) await nativeModule.dismissAsync();
+  else dismiss();
 }

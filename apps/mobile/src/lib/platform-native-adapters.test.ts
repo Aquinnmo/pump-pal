@@ -61,7 +61,11 @@ mock.module(new URL('../../modules/live-update-notification/index.ts', import.me
   },
   isSupported: () => liveNotificationCalls.supported,
   isNativeModuleAvailable: () => liveNotificationCalls.nativeModuleAvailable,
-  drainPendingAction: () => null,
+  showAsync: async (payload: unknown) => {
+    liveNotificationCalls.show.push(payload);
+    return liveNotificationCalls.showResult;
+  },
+  dismissAsync: async () => { liveNotificationCalls.dismiss += 1; },
   show: (payload: unknown) => {
     liveNotificationCalls.show.push(payload);
     return liveNotificationCalls.showResult;
@@ -104,8 +108,6 @@ plugin({
 
 const { pushWearState, subscribeWearActions } = await import('./wear-sync.android');
 const { subscribeLiveUpdateNotificationActions } = await import('./live-update-notification-actions.android');
-const { subscribeLiveUpdateNotificationActions: subscribeLiveUpdateNotificationActionsIos } =
-  await import('./live-update-notification-actions.ios');
 const {
   ensureWorkoutChannel,
   requestNotificationPermission,
@@ -154,6 +156,8 @@ const workoutData = {
   title: 'Push Day',
   detail: 'Bench press',
   actions: [],
+  setDetails: ['Bench press · 10 reps', 'Bench press · 8 reps'],
+  setCompleted: [true, false],
 };
 
 describe('native adapter helpers at their module seams', () => {
@@ -215,17 +219,6 @@ describe('native adapter helpers at their module seams', () => {
     unsubscribe();
 
     assert.deepEqual(actions, [{ action: 'uncompleteSet', workoutId: 'w1', expectedCompletedSets: 0 }]);
-    assert.equal(liveUnsubscribeCalls, 1);
-  });
-
-  it('delivers valid iOS live actions through the ownership subscription seam', () => {
-    const actions: unknown[] = [];
-    const unsubscribe = subscribeLiveUpdateNotificationActionsIos((action) => actions.push(action), 'root');
-    liveActions[0]?.(JSON.stringify({ action: 'completeSet', workoutId: 'w1', expectedCompletedSets: 1 }));
-    liveActions[0]?.(JSON.stringify({ action: 'completeSet', workoutId: '', expectedCompletedSets: 1 }));
-    unsubscribe();
-
-    assert.deepEqual(actions, [{ action: 'completeSet', workoutId: 'w1', expectedCompletedSets: 1 }]);
     assert.equal(liveUnsubscribeCalls, 1);
   });
 
@@ -352,6 +345,8 @@ describe('native adapter helpers at their module seams', () => {
       progress: 1,
       segments: [],
       actions: [],
+      setDetails: ['Bench press · 10 reps', 'Bench press · 8 reps'],
+      setCompleted: [true, false],
     }]);
     await dismissIosWorkoutNotification();
     assert.equal(liveNotificationCalls.dismiss, 1);

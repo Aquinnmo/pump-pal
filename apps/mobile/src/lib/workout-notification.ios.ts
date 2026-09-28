@@ -5,9 +5,13 @@
 
 import * as LiveUpdateNotification from '@/modules/live-update-notification';
 import type { WorkoutNotificationPresentation } from '@/lib/workout-notification-model';
+import type { LiveActivityLatencyTrace } from '@/lib/live-activity-latency-debug';
+import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
 export type WorkoutSegment = WorkoutNotificationPresentation['segments'][number];
-export type WorkoutNotificationData = WorkoutNotificationPresentation;
+export type WorkoutNotificationData = WorkoutNotificationPresentation & {
+  latencyTrace?: LiveActivityLatencyTrace;
+};
 
 let warnedAboutMissingModule = false;
 let warnedAboutDisabledActivities = false;
@@ -41,6 +45,7 @@ export async function requestNotificationPermission(): Promise<void> {
 
 export async function showWorkoutNotification(data: WorkoutNotificationData): Promise<void> {
   if (!LiveUpdateNotification.isNativeModuleAvailable()) {
+    logLiveActivityLatency(data.latencyTrace, 'js.native-module-missing');
     warnOnce(
       'missing-module',
       'The LiveUpdateNotification native module is unavailable. Rebuild the iOS development client with the local module before testing Live Activities.',
@@ -49,6 +54,7 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
   }
 
   if (!LiveUpdateNotification.isSupported()) {
+    logLiveActivityLatency(data.latencyTrace, 'js.activities-disabled');
     warnOnce(
       'disabled',
       'Live Activities are unavailable. Use iOS 17+ and enable Live Activities for Timber in Settings; no iOS notification fallback is provided.',
@@ -66,11 +72,18 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     progress: data.completedSets,
     segments: data.segments,
     actions: data.actions,
+    setDetails: data.setDetails,
+    setCompleted: data.setCompleted,
+    ...(data.latencyTrace && __DEV__
+      ? { latencyTraceId: data.latencyTrace.id, latencyStartedAtMs: data.latencyTrace.startedAtMs }
+      : {}),
   };
 
-  const didShow = LiveUpdateNotification.show(payload);
+  const didShow = await LiveUpdateNotification.showAsync(payload);
+  logLiveActivityLatency(data.latencyTrace, 'js.native-show.return');
 
   if (!didShow) {
+    logLiveActivityLatency(data.latencyTrace, 'js.native-show-rejected');
     warnOnce(
       'show-failed',
       'The Live Activity could not be started. Check that Live Activities are enabled for Timber and that the app has an iOS 17+ ActivityKit-capable host.',
@@ -81,5 +94,5 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
 }
 
 export async function dismissWorkoutNotification(): Promise<void> {
-  LiveUpdateNotification.dismiss();
+  await LiveUpdateNotification.dismissAsync();
 }

@@ -26,7 +26,7 @@ Build and install Timber directly from this checkout on a connected iPhone. This
   }
   ```
 
-  For a local-only override, set `TIMBER_IOS_TEAM_ID` in the repository-root `.env`, then run `bun run install:apple` from the repository root. Bun loads that file before invoking Expo. The dynamic app config validates this value and forwards it to `@bacons/apple-targets`; it has no default and must never be guessed. Do not use an Apple Account email address or the `YOUR_TEAM_ID` placeholder.
+  For a local-only override, set `TIMBER_IOS_TEAM_ID` in `apps/mobile/.env` (gitignored; `.env.example.eas` has the placeholder). Expo loads that file before evaluating `app.config.js`; the repository-root `.env` is not read. The dynamic app config validates this value and forwards it to `@bacons/apple-targets`; it has no default and must never be guessed. Do not use an Apple Account email address or the `YOUR_TEAM_ID` placeholder.
 
   In Xcode, find it under **Signing & Capabilities → Team** after signing in. Do not guess this value or use an Apple Account email address.
 
@@ -61,11 +61,13 @@ bun start
 For native dependency, app-config, entitlement, or extension changes, rerun the build command:
 
 ```bash
-bunx expo run:ios --device --configuration Release
+bun run install:ios
 ```
 
-`bun run install:apple` rebuilds the current checkout without changing branches or
-pulling. For a separate iOS development install, use `bun run dev:apple`; it sets
+`bun run install:ios` regenerates the iOS project with `APP_VARIANT=production`
+and builds Timber in Release configuration, even after a development build.
+It uses the current checkout without changing branches or pulling.
+For a separate iOS development install, use `bun run dev:apple`; it sets
 `APP_VARIANT=development` and uses the development bundle identifier so it can
 coexist with the release-shaped app.
 
@@ -90,8 +92,8 @@ there is no iOS notification fallback when Activities are disabled or unsupporte
    set is cleared. Complete every set and confirm controls become **Finish
    workout** and **Undo set**; Finish writes the workout and then dismisses the
    Activity.
-3. Discard a workout from the phone and confirm the Activity and pending action
-   state disappear. Start a different workout immediately and confirm it never
+3. Discard a workout from the phone and confirm the Activity disappears and any
+   pending action is rejected against the ended session. Start a different workout immediately and confirm it never
    inherits the previous title, count, segments, or actions. Trigger rapid taps
    and verify stale `workoutId`/expected-count actions are ignored and duplicate
    activities are not created.
@@ -104,11 +106,15 @@ there is no iOS notification fallback when Activities are disabled or unsupporte
      count, detail, segments, and action labels — the same result as a
      foregrounded tap.
    - **Force-quit**: swipe the app away, then tap a Live Activity action. The
-     visual state must not advance or dismiss Finish; the Activity stays frozen.
-     On relaunch, the in-memory session is gone by design, so the
-     queued action is rejected and cleared and the stale Activity is
-     reconciled; the app must not pretend to resume that workout or claim that
-     its data was saved.
+     intent should launch the host process without opening a window. The iOS
+     entry handler restores Firebase authentication and the private draft from
+     AsyncStorage without mounting a screen, validates the session/count/action,
+     commits it, and acknowledges it before the intent returns. Complete/Undo
+     persist only the private draft; Finish commits the completed local workout
+     and dismisses the Activity. Repeat with the workout screen unmounted.
+     If iOS declines runtime or the host cannot load, nothing should advance
+     without confirmation; the pending action is validated on the next launch.
+     Verify retry after a committed Finish does not create another workout.
 5. Test an empty workout (no nonblank exercise rows), a duration set such as
    `Plank · 0:45`, and a very long workout title/detail. Empty workouts show no
    controls; duration copy omits irrelevant weight/reps; long text truncates
@@ -116,6 +122,23 @@ there is no iOS notification fallback when Activities are disabled or unsupporte
 6. Turn off Live Activities for Timber in iOS Settings (or test below iOS 17).
    Starting/logging a workout must continue normally with no crash and no
    alternate iOS notification. Re-enable Activities and repeat step 1.
+
+### Temporary tap-latency capture
+
+This diagnostic exists only in a Debug native build and a development JS bundle.
+After rebuilding, start a fresh Live Activity, then tap Complete or Undo once.
+Filter Xcode's device console for `LiveActivityLatency` or
+`live-activity-latency`; each line carries the same trace id. Compare
+`intent.entry`/`intent.return`, `native.event-delivery`, `js.event`,
+`js.handler.start`/`js.handler.flush-return`, `native.show-entry`, and
+`activity.update-start`/`activity.update-complete` (or `activity.request-return`).
+The native show return is synchronous acceptance; ActivityKit completion and the
+visible redraw are separate later boundaries. A `native.show-deduped` line means
+there was no ActivityKit update for that tap. Rejected/no-op logs identify taps
+that never reach a redraw. Record taps one at a time on the same fresh activity,
+waiting for the trace and redraw to settle before the next tap. Repeat after
+background suspension and capture a separate cold-start case. These timings are diagnostic evidence only;
+they do not identify the cause without a device capture.
 
 ## Signing issues
 

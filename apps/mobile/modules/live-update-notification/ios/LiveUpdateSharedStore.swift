@@ -1,112 +1,217 @@
+#if os(iOS)
+import ActivityKit
+#endif
 import Foundation
 
-// App Group bridge between the host-app Expo module and the widget-extension's App
-// Intents, which run in a separate process and can't reach the RN app's in-memory
-// active-workout-session.ts singleton directly (see plan doc for why this exists —
-// there is no iOS analog of Android's same-process headless-JS fallback).
-//
-// NOTE: duplicated byte-for-byte at targets/widget/LiveUpdateSharedStore.swift for the
-// same cross-target reason documented in WorkoutActivityAttributes.swift.
+/// Durable workout state shared by the host app and its Live Activity intents.
+/// A tap commits here and publishes natively; JS later replays the journal into
+/// its draft, so no button ever waits for the React runtime.
 public enum LiveUpdateSharedStore {
-  // Must match the App Group entitlement declared on both the host app target and the
-  // widget-extension target in app.json / the apple-targets config.
   public static let appGroupId = "group.com.aquinnmo.timber.lkpt5wjq99.liveactivity"
-
-  private static let stateKey = "com.aquinnmo.timber.liveupdate.state"
-  private static let pendingActionKey = "com.aquinnmo.timber.liveupdate.pendingAction"
   public static let actionPostedDarwinNotification = "com.aquinnmo.timber.liveupdate.actionPosted"
+  private static let stateFile = "workout-state-v2.json"
+  private static let journalFile = "workout-journal.json"
 
-  private static var defaults: UserDefaults? {
-    UserDefaults(suiteName: appGroupId)
-  }
-
-  // Last-known content state, kept alongside the fixed attributes so an App Intent can
-  // compute a next state without needing to look the Activity up first.
-  public struct StoredState: Codable {
-    public var workoutId: String
-    public var completedSets: Int
-    public var totalSets: Int
-    public var detail: String?
-    public var segments: [WorkoutActivityAttributes.SegmentState]
-    public var actions: [String]
-
-    public init(
-      workoutId: String,
-      completedSets: Int,
-      totalSets: Int,
-      detail: String?,
-      segments: [WorkoutActivityAttributes.SegmentState],
-      actions: [String]
-    ) {
-      self.workoutId = workoutId
-      self.completedSets = completedSets
-      self.totalSets = totalSets
+  public struct StoredSet: Codable, Equatable {
+    public var completed: Bool
+    public var detail: String
+    public init(completed: Bool, detail: String) {
+      self.completed = completed
       self.detail = detail
-      self.segments = segments
-      self.actions = actions
-    }
-
-    public var asContentState: WorkoutActivityAttributes.ContentState {
-      WorkoutActivityAttributes.ContentState(
-        completedSets: completedSets,
-        totalSets: totalSets,
-        detail: detail,
-        segments: segments,
-        actions: actions
-      )
     }
   }
 
-  public struct PendingAction: Codable {
-    public var action: String // 'completeSet' | 'uncompleteSet' | 'finishWorkout'
+  public struct JournalEntry: Codable, Equatable {
+    public var id: String
+    public var action: String
     public var workoutId: String
     public var expectedCompletedSets: Int
+    public var atMs: Double
+  }
 
-    public init(action: String, workoutId: String, expectedCompletedSets: Int) {
-      self.action = action
+  public struct StoredState: Codable, Equatable {
+    public var workoutId: String
+    public var title: String
+    public var startedAt: Date
+    // Nonblank editor rows in order; sets is their flattened sets.
+    public var rowSetCounts: [Int]
+    public var sets: [StoredSet]
+    public var finished = false
+    public var revision = 0
+
+    public init?(workoutId: String, title: String, startedAt: Date, rowSetCounts: [Int], sets: [StoredSet]) {
+      guard !workoutId.isEmpty, rowSetCounts.allSatisfy({ $0 >= 0 }),
+            rowSetCounts.reduce(0, +) == sets.count else { return nil }
       self.workoutId = workoutId
-      self.expectedCompletedSets = expectedCompletedSets
+      self.title = title
+      self.startedAt = startedAt
+      self.rowSetCounts = rowSetCounts
+      self.sets = sets
+    }
+
+    private var lastCompleted: Int? { sets.lastIndex { $0.completed } }
+
+    /// Mirrors buildWorkoutNotificationPresentation (src/lib/workout-notification-model.ts).
+    public var content: WorkoutActivityAttributes.ContentState {
+      let completed = sets.filter(\.completed).count
+      let next = (lastCompleted ?? -1) + 1
+      var actions: [String] = []
+      if !finished && !sets.isEmpty {
+        if next >= sets.count { actions = ["finishWorkout", "uncompleteSet"] }
+        else if completed == 0 { actions = ["completeSet"] }
+        else { actions = ["completeSet", "uncompleteSet"] }
+      }
+      var offset = 0
+      let segments = rowSetCounts.map { count -> WorkoutActivityAttributes.SegmentState in
+        let row = sets[min(offset, sets.count)..<min(offset + count, sets.count)]
+        offset += count
+        return .init(sets: count, started: row.contains { $0.completed },
+          completed: count > 0 && row.allSatisfy { $0.completed })
+      }
+      let detail = next < sets.count ? sets[next].detail : ""
+      return .init(completedSets: completed, totalSets: sets.count, detail: detail.isEmpty ? nil : detail,
+        segments: segments, actions: actions, title: title)
+    }
+
+    /// The same cursor as applyWearAction (src/lib/wear-state.ts).
+    mutating func apply(_ action: String) -> Bool {
+      switch action {
+      case "completeSet":
+        let next = (lastCompleted ?? -1) + 1
+        guard next < sets.count else { return false }
+        sets[next].completed = true
+      case "uncompleteSet":
+        guard let last = lastCompleted else { return false }
+        sets[last].completed = false
+      case "finishWorkout":
+        finished = true
+      default:
+        return false
+      }
+      return true
     }
   }
 
-  public static func saveState(_ state: StoredState) {
-    guard let data = try? JSONEncoder().encode(state) else { return }
-    defaults?.set(data, forKey: stateKey)
+  public static func logLatency(_ id: String?, phase: String, startedAtMs: Double?) {
+    guard let id, let startedAtMs else { return }
+    NSLog("[live-activity-latency] id=%@ phase=%@ elapsedMs=%.0f", id, phase,
+      Date().timeIntervalSince1970 * 1000 - startedAtMs)
+  }
+
+  // Coordinating the directory makes each read-modify-write atomic across the
+  // app and extension processes.
+  private static func access<T>(_ body: (URL) -> T) -> T? {
+    guard let directory = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupId) else { return nil }
+    var result: T?
+    var error: NSError?
+    NSFileCoordinator().coordinate(writingItemAt: directory, options: [], error: &error) { url in
+      result = body(url)
+    }
+    if let error { NSLog("[Live Activity] App Group access failed: \(error)") }
+    return result
+  }
+
+  private static func read<T: Decodable>(_ name: String, at directory: URL) -> T? {
+    guard let data = try? Data(contentsOf: directory.appendingPathComponent(name)) else { return nil }
+    return try? JSONDecoder().decode(T.self, from: data)
+  }
+
+  private static func write<T: Encodable>(_ value: T, name: String, at directory: URL) -> Bool {
+    do {
+      try JSONEncoder().encode(value).write(to: directory.appendingPathComponent(name), options: .atomic)
+      return true
+    } catch {
+      NSLog("[Live Activity] App Group write failed: \(error)")
+      return false
+    }
   }
 
   public static func loadState() -> StoredState? {
-    guard let data = defaults?.data(forKey: stateKey) else { return nil }
-    return try? JSONDecoder().decode(StoredState.self, from: data)
+    access { read(stateFile, at: $0) as StoredState? } ?? nil
   }
 
+  public enum ReplaceOutcome { case saved, deferred, failed }
+
+  /// The app's presentation replaces the stored one, except while native taps on
+  /// the same workout still await JS replay: overwriting would undo them.
+  public static func replace(with state: StoredState) -> ReplaceOutcome {
+    access { directory -> ReplaceOutcome in
+      let journal: [JournalEntry] = read(journalFile, at: directory) ?? []
+      if journal.contains(where: { $0.workoutId == state.workoutId }) { return .deferred }
+      var next = state
+      next.revision = ((read(stateFile, at: directory) as StoredState?)?.revision ?? 0) + 1
+      return write(next, name: stateFile, at: directory) ? .saved : .failed
+    } ?? .failed
+  }
+
+  /// Leaves the journal: a queued Finish must survive dismissal until JS saves it.
   public static func clearState() {
-    defaults?.removeObject(forKey: stateKey)
+    _ = access { try? FileManager.default.removeItem(at: $0.appendingPathComponent(stateFile)) }
   }
 
-  public static func clearPendingAction() {
-    defaults?.removeObject(forKey: pendingActionKey)
+  /// Validates the tap against the stored state and applies it. The journal is
+  /// written first so a crash between the two writes replays rather than loses it.
+  public static func commit(_ action: String, workoutId: String, expectedCompletedSets: Int) -> JournalEntry? {
+    access { directory -> JournalEntry? in
+      guard var state: StoredState = read(stateFile, at: directory), state.workoutId == workoutId, !state.finished else { return nil }
+      let content = state.content
+      guard content.completedSets == expectedCompletedSets, content.actions.contains(action),
+            state.apply(action) else { return nil }
+      state.revision += 1
+      let journal: [JournalEntry] = read(journalFile, at: directory) ?? []
+      let entry = JournalEntry(id: UUID().uuidString, action: action, workoutId: workoutId,
+        expectedCompletedSets: expectedCompletedSets, atMs: Date().timeIntervalSince1970 * 1000)
+      guard write(journal + [entry], name: journalFile, at: directory) else { return nil }
+      guard write(state, name: stateFile, at: directory) else {
+        _ = write(journal, name: journalFile, at: directory)
+        return nil
+      }
+      return entry
+    } ?? nil
   }
 
-  // Single pending-action slot: only the latest tap matters for reconciliation, and
-  // action taps are inherently serialized by the user tapping one button at a time.
-  public static func writePendingAction(_ action: PendingAction) {
-    guard let data = try? JSONEncoder().encode(action) else { return }
-    defaults?.set(data, forKey: pendingActionKey)
+  public static func loadJournal() -> [JournalEntry] {
+    (access { read(journalFile, at: $0) as [JournalEntry]? } ?? nil) ?? []
   }
 
-  public static func drainPendingAction() -> PendingAction? {
-    guard let data = defaults?.data(forKey: pendingActionKey) else { return nil }
-    defaults?.removeObject(forKey: pendingActionKey)
-    return try? JSONDecoder().decode(PendingAction.self, from: data)
+  public static func acknowledge(_ ids: [String]) -> Bool {
+    access { directory -> Bool in
+      let journal: [JournalEntry] = read(journalFile, at: directory) ?? []
+      let remaining = journal.filter { !ids.contains($0.id) }
+      return remaining.count == journal.count || write(remaining, name: journalFile, at: directory)
+    } ?? false
   }
 
   public static func postActionDarwinNotification() {
-    CFNotificationCenterPostNotification(
-      CFNotificationCenterGetDarwinNotifyCenter(),
-      CFNotificationName(actionPostedDarwinNotification as CFString),
-      nil,
-      nil,
-      true
-    )
+    CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+      CFNotificationName(actionPostedDarwinNotification as CFString), nil, nil, true)
   }
 }
+
+#if os(iOS)
+@available(iOS 17.0, *)
+extension LiveUpdateSharedStore {
+  /// Shows the latest stored state on this workout's activity. Every publisher
+  /// re-reads the store, so a slower process can't leave an older revision visible.
+  /// Always updates rather than trusting the process's cached activity content:
+  /// if a display ever diverged, a stale tap would otherwise never repair it.
+  public static func publishLatest(workoutId: String) async {
+    var published: Int?
+    for _ in 0..<3 {
+      let state = loadState()
+      let activities = Activity<WorkoutActivityAttributes>.activities.filter { $0.attributes.workoutId == workoutId }
+      NSLog("[Live Activity] publish workout=%@ activities=%d revision=%d", workoutId, activities.count, state?.revision ?? -1)
+      guard let state, state.workoutId == workoutId, !state.finished else {
+        for activity in activities { await activity.end(nil, dismissalPolicy: .immediate) }
+        return
+      }
+      if state.revision == published { return }
+      let content = state.content
+      for activity in activities {
+        await activity.update(ActivityContent(state: content, staleDate: nil))
+      }
+      published = state.revision
+    }
+  }
+}
+#endif

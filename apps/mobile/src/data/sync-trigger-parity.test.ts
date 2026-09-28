@@ -53,6 +53,7 @@ let backgroundTaskName = '';
 let backgroundTaskHandler: (() => Promise<string>) | null = null;
 let backgroundRegistered = 0;
 let backgroundUnregistered = 0;
+let backgroundStatus: 'available' | 'restricted' = 'available';
 const taskManagerMock = () => ({
   defineTask: (name: string, handler: () => Promise<string>) => {
     backgroundTaskName = name;
@@ -62,7 +63,9 @@ const taskManagerMock = () => ({
 mock.module('expo-task-manager', taskManagerMock);
 mock.module(new URL('../../../../node_modules/expo-task-manager/build/TaskManager.js', import.meta.url).pathname, taskManagerMock);
 const backgroundTaskMock = () => ({
+  BackgroundTaskStatus: { Available: 'available', Restricted: 'restricted' },
   BackgroundTaskResult: { Success: 'success', Failed: 'failed' },
+  getStatusAsync: async () => backgroundStatus,
   registerTaskAsync: async () => { backgroundRegistered += 1; },
   unregisterTaskAsync: async () => { backgroundUnregistered += 1; },
 });
@@ -99,6 +102,12 @@ if (netInfoModule.default) netInfoModule.default.addEventListener = (listener) =
 // Use explicit platform files so the web-first Bun preload resolver does not
 // silently turn the native half of this contract into the web implementation.
 const native = await import(new URL('./sync-trigger.ts', import.meta.url).pathname);
+const syncLogs: string[] = [];
+const originalLog = console.log;
+console.log = (...args: unknown[]) => {
+  if (args[0] === '[sync]') syncLogs.push(String(args[1]));
+  else originalLog(...args);
+};
 
 async function flush(): Promise<void> {
   await Promise.resolve();
@@ -127,6 +136,7 @@ assert.equal(backgroundUnregistered, 1, 'native: stop unregisters background syn
 native.startSyncTriggers();
 await flush();
 assert.equal(syncCalls.length, 1, 'native: valid start runs initial sync');
+assert.deepEqual(syncLogs, [], 'native: empty successful startup sync is quiet');
 native.startSyncTriggers();
 await flush();
 assert.equal(syncCalls.length, 1, 'native: repeated start is idempotent');
@@ -157,6 +167,7 @@ syncOutcome = { status: 'ok', pushed: 0, pulled: 1, remoteDeletions: 0 };
 native.triggerSyncAfterWrite();
 await flush();
 assert.equal(dataVersionBumps, 1, 'native: pulled data announces a local data change');
+assert.equal(syncLogs.length, 1, 'native: a sync that changes data stays visible');
 syncOutcome = { status: 'ok', pushed: 0, pulled: 0, remoteDeletions: 0 };
 
 uidState.currentUid = 'different-user';
@@ -192,6 +203,13 @@ assert.equal(networkUnsubscribed, 2);
 assert.equal(backgroundUnregistered, 2);
 assert.deepEqual(await native.waitForInitialSync('user-a'), { kind: 'auth-transition', uid: 'user-a' }, 'native: stopped lifecycle has no initial result');
 
+backgroundStatus = 'restricted';
+native.startSyncTriggers();
+await flush();
+assert.equal(backgroundRegistered, 2, 'native: unsupported iOS background tasks are not registered');
+native.stopSyncTriggers();
+backgroundStatus = 'available';
+
 const web = await import(new URL('./sync-trigger.web.ts', import.meta.url).pathname);
 const webProvider = () => ({ uid: 'web-user', currentUid: 'web-user' });
 web.configureSyncTrigger(webProvider);
@@ -200,6 +218,7 @@ web.triggerSyncAfterWrite();
 web.stopSyncTriggers();
 assert.deepEqual(await web.waitForInitialSync('web-user'), { kind: 'success', uid: 'web-user' }, 'web: reads are immediately ready');
 assert.deepEqual(await web.retryInitialSync('web-user'), { kind: 'success', uid: 'web-user' }, 'web: retry is an immediate success');
-assert.equal(syncCalls.length, 8, 'web: no-op lifecycle never calls native sync');
+assert.equal(syncCalls.length, 9, 'web: no-op lifecycle never calls native sync');
 
+console.log = originalLog;
 console.log('sync-trigger parity: all assertions passed');

@@ -25,6 +25,10 @@ export type WorkoutNotificationPresentation = {
   totalSets: number;
   segments: WorkoutNotificationSegment[];
   actions: WorkoutNotificationAction[];
+  // Every flat set's detail and completion, so iOS can apply a tap natively and
+  // derive the next presentation without JS (LiveUpdateSharedStore.swift).
+  setDetails: string[];
+  setCompleted: boolean[];
 };
 
 type FlatSet = {
@@ -120,5 +124,7 @@ export function buildWorkoutNotificationPresentation({
       completed: row.sets.length > 0 && row.sets.every((set) => set.completed),
     })),
     actions,
+    setDetails: flat.map((set) => currentSetDetail(set) ?? ''),
+    setCompleted: flat.map(({ set }) => set.completed === true),
   };
 }

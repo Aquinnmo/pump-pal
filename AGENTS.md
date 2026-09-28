@@ -46,8 +46,10 @@ These rules override the generated Beads session-completion protocol below unles
 - Never run `git merge`, merge a PR, or otherwise merge a branch into `main` (or any branch) on the user's behalf.
 - Do not run `git pull`, `git pull --rebase`, or other history-rewriting/sync commands unless the user explicitly asks.
 - If work happens on `main` (or a detached/unclear branch), stop and ask the user to create/checkout a feature branch before committing.
-- Do not run build/export commands as verification, including `bun run build:web`, `bunx expo export`, or equivalent Expo/Metro production builds.
-- Prefer lightweight checks such as focused source inspection, `rg`, or lint/type checks when the user asks for verification. Ask first before running heavier commands.
+- Mobile development builds (`bun run dev:ios` and `bun run dev:android`) are allowed without asking for approval, including for verification.
+- Do not run preview/release builds or installs (`bun run install:ios`, `bun run install:android`), `bun run build:web`, `bunx expo export`, or equivalent production builds.
+- Never build the API. Mobile dev-build permission does not authorize API commands, including `bun run dev:api` or `bun run install:api` (both deploy the API).
+- Prefer focused source inspection, `rg`, lint/type checks, and relevant mobile dev builds for verification. Ask first before other heavier commands.
 - After finishing all changes and pushing the branch, open a **draft** PR (`gh pr create --draft`) — never a real/ready PR.
 - Before opening the PR, search GitHub Issues (Timber project) for the issue(s) the changes belong to. If none exists, create one — a PR may link more than one issue.
 - Issues follow an epic/child structure. Never create an epic. Only ever create a **child** issue, under an existing epic.

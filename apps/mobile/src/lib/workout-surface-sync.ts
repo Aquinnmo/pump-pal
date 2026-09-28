@@ -1,4 +1,6 @@
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
+import type { LiveActivityLatencyTrace } from '@/lib/live-activity-latency-debug';
+import { logLiveActivityLatency } from '@/lib/live-activity-latency-debug';
 
 import { getSession, subscribe as subscribeSession } from '@/lib/active-workout-session';
 import { buildWorkoutNotificationPresentation } from '@/lib/workout-notification-model';
@@ -16,6 +18,7 @@ import {
 // so it's live whether or not any screen is mounted, cold headless runtime included.
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let observedSessionId: string | null = null;
 
 function clearPending(): void {
   if (debounceTimer) {
@@ -26,19 +29,22 @@ function clearPending(): void {
 
 // Re-reads getSession() at call time rather than closing over a snapshot, so a
 // debounced fire always reflects the latest edits, not whatever triggered it.
-async function postNow(): Promise<void> {
+async function postNow(latencyTrace?: LiveActivityLatencyTrace): Promise<void> {
   const session = getSession();
   if (!session) return;
   try {
-    await ensureWorkoutChannel();
-    await showWorkoutNotification(
-      buildWorkoutNotificationPresentation({
+    logLiveActivityLatency(latencyTrace, 'js.show.start');
+    if (Platform.OS === 'android') await ensureWorkoutChannel();
+    await showWorkoutNotification({
+      ...buildWorkoutNotificationPresentation({
         workoutId: session.id,
         workoutName: session.name,
         startedAt: new Date(session.startedAt),
         rows: session.rows,
       }),
-    );
+      ...(latencyTrace && __DEV__ ? { latencyTrace } : {}),
+    });
+    logLiveActivityLatency(latencyTrace, 'js.show.return');
   } catch (e) {
     console.warn('[workout-notification] show failed', e);
   }
@@ -46,10 +52,21 @@ async function postNow(): Promise<void> {
 
 subscribeSession(() => {
   clearPending();
-  if (!getSession()) {
+  const session = getSession();
+  if (!session) {
+    observedSessionId = null;
     // Ending a session (Finish/Discard, or a stale action landing after either)
     // dismisses it here — no caller has to remember to.
     dismissWorkoutNotification().catch(() => {});
+    return;
+  }
+  if (Platform.OS === 'ios' && session.id !== observedSessionId) {
+    observedSessionId = session.id;
+    const latencyTrace = __DEV__ ? { id: `startup-${session.id}`, startedAtMs: Date.now() } : undefined;
+    logLiveActivityLatency(latencyTrace, 'session.observed');
+    // Create the Activity while the app is still active. Waiting for the
+    // background callback can lose the first request when iOS suspends JS.
+    void postNow(latencyTrace);
     return;
   }
   // The notification is a live control surface, not a save artifact. While the app
@@ -77,7 +94,7 @@ AppState.addEventListener('change', (nextState) => {
 // timer is torn down before it fires. One update per deliberate tap is what the
 // ActivityKit budget was always sized for; it's draft keystrokes that must not
 // spend it.
-export async function flushWorkoutNotification(): Promise<void> {
+export async function flushWorkoutNotification(latencyTrace?: LiveActivityLatencyTrace): Promise<void> {
   clearPending();
-  await postNow();
+  await postNow(latencyTrace);
 }

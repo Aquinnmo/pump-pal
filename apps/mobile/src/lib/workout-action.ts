@@ -10,6 +10,7 @@ export type WorkoutMutationAction = Extract<
 // Wear messages intentionally remain payload-compatible with the existing protocol.
 export type LiveUpdateNotificationAction = WorkoutMutationAction & {
   expectedCompletedSets: number;
+  latencyTrace?: { id: string; startedAtMs: number };
 };
 
 const MUTATION_ACTIONS: WorkoutMutationAction['action'][] = [
@@ -24,6 +25,8 @@ export function parseLiveUpdateNotificationAction(json: string): LiveUpdateNotif
       action?: unknown;
       workoutId?: unknown;
       expectedCompletedSets?: unknown;
+      latencyTraceId?: unknown;
+      latencyStartedAtMs?: unknown;
     };
     if (
       typeof value?.action !== 'string' ||
@@ -35,11 +38,19 @@ export function parseLiveUpdateNotificationAction(json: string): LiveUpdateNotif
     ) {
       return null;
     }
-    return {
+    const action: LiveUpdateNotificationAction = {
       action: value.action as WorkoutMutationAction['action'],
       workoutId: value.workoutId,
       expectedCompletedSets: value.expectedCompletedSets as number,
     };
+    if (
+      typeof value.latencyTraceId === 'string' &&
+      typeof value.latencyStartedAtMs === 'number' &&
+      Number.isFinite(value.latencyStartedAtMs)
+    ) {
+      action.latencyTrace = { id: value.latencyTraceId, startedAtMs: value.latencyStartedAtMs };
+    }
+    return action;
   } catch {
     return null;
   }

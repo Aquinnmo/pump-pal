@@ -54,6 +54,11 @@ const clients = [
   ['native', native.firestoreRestClient],
   ['web', web.firestoreRestClient],
 ] as const;
+const requestLogs: string[] = [];
+const originalLog = console.log;
+const originalWarn = console.warn;
+console.log = (...args: unknown[]) => { requestLogs.push(args.map(String).join(' ')); };
+console.warn = (...args: unknown[]) => { requestLogs.push(args.map(String).join(' ')); };
 
 try {
   // Both platform wrappers create the same shared REST client contract and
@@ -76,6 +81,7 @@ try {
       'X-Firebase-AppCheck': 'app-check-token',
     }, `${platform}: sends the shared credential headers`);
     assert.equal(requests[0]?.init.method, 'GET');
+    if (platform === 'native') assert.deepEqual(requestLogs, [], 'native: successful Firestore request is quiet');
   }
 
   // A missing document is an ordinary undefined result for both wrappers.
@@ -95,6 +101,7 @@ try {
     assert.equal((await makeClient().getDocument('workouts/w1'))?.version, `${platform}-v2`, `${platform}: retries a stale token once`);
   }
   assert.deepEqual(authState.forceRefresh, [false, true, false, true], 'both wrappers force-refresh after a 401');
+  assert.ok(requestLogs.some((line) => line.includes('tokenRefreshed=true')), 'native: token retry remains visible');
 
   // Missing auth fails before transport for both platform wrappers.
   authState.token = null;
@@ -104,9 +111,11 @@ try {
     assert.equal(requests.length, requestCount, `${platform}: missing auth does not call fetch`);
   }
 
-  console.log('firestore-rest-client parity: all assertions passed');
+  originalLog('firestore-rest-client parity: all assertions passed');
 } finally {
   authState.token = 'id-token';
   setAppCheckTokenProvider(undefined);
   globalThis.fetch = originalFetch;
+  console.log = originalLog;
+  console.warn = originalWarn;
 }

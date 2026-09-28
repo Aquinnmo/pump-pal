@@ -40,6 +40,14 @@ assert.deepEqual([weighted.completedSets, weighted.totalSets], [3, 21]);
 assert.equal(weighted.title, 'Logging Push Workout');
 assert.equal(weighted.detail, 'Incline Press · 10 reps · 135 lbs');
 assert.deepEqual(weighted.actions, ['completeSet', 'uncompleteSet']);
+// iOS applies taps natively from these, so they must cover exactly the counted sets.
+const native = present([
+  row('Squat', [set({ completed: true, reps: 5, weight: '225' }), set({ reps: 1, weight: '0' })]),
+  row('Plank', [set({ durationMinutes: 1, durationSeconds: 5 })], { exerciseType: 'Sets of Duration' }),
+  row('', [set()]),
+]);
+assert.deepEqual(native.setCompleted, [true, false, false]);
+assert.deepEqual(native.setDetails, ['Squat · 5 reps · 225 lbs', 'Squat · 1 rep', 'Plank · 1:05']);
 assert.deepEqual(weighted.segments, [
   { sets: 3, started: true, completed: true },
   { sets: 18, started: false, completed: false },

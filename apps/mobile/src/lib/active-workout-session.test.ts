@@ -7,9 +7,10 @@ import { applyWearAction } from '@/lib/wear-state';
 // stays a plain module-scope Map (not React state) so it also plays the part of
 // "disk" surviving the module resets below.
 const store = new Map<string, string>();
+let delayedRead: ((key: string) => Promise<string | null>) | null = null;
 const mockModule = {
   default: {
-    getItem: async (k: string) => store.get(k) ?? null,
+    getItem: async (k: string) => delayedRead ? delayedRead(k) : store.get(k) ?? null,
     setItem: async (k: string, v: string) => void store.set(k, v),
     removeItem: async (k: string) => void store.delete(k),
   },
@@ -29,7 +30,7 @@ await import('bun').then(({ plugin }) =>
 
 const STORAGE_KEY = 'pumppal_active_session_v1';
 
-const { endSession, getSession, startSession, subscribe, updateSession, loadSession } =
+const { endSession, getSession, startSession, subscribe, updateSession, loadSession, flushSessionPersistence } =
   await import('./active-workout-session');
 
 // A query-string-suffixed specifier gets its own entry in Bun's module cache, so
@@ -80,7 +81,7 @@ async function main() {
   // startSession/updateSession write through fire-and-forget (no debounce — see
   // the ponytail comment in active-workout-session.ts) — give the write a turn
   // to land in the stub store before simulating a restart off of it.
-  await Promise.resolve();
+  await flushSessionPersistence();
 
   // 1. A fresh module instance (simulating a process restart) has no in-memory
   // session, so loadSession() must read the same rows and id back off disk.
@@ -92,7 +93,7 @@ async function main() {
 
   endSession();
   assert.equal(getSession(), null, 'session cleared after endSession');
-  await Promise.resolve();
+  await flushSessionPersistence();
 
   // 2. endSession clears the storage key, so a later restart finds nothing.
   assert.equal(store.has(STORAGE_KEY), false, 'endSession clears the storage key');
@@ -121,6 +122,23 @@ async function main() {
   const stale = await reimport('stale');
   assert.equal(await stale.loadSession(), null, 'a 25h-old stored session is dropped');
   assert.equal(store.has(STORAGE_KEY), false, 'the stale key is cleared');
+
+  // The scene can connect during a cold intent: two readers may have captured
+  // the same draft before one of them finishes and clears it.
+  const serialized = JSON.stringify(started);
+  const reads: ((value: string | null) => void)[] = [];
+  delayedRead = () => new Promise(resolve => { reads.push(resolve); });
+  const racing = await reimport('late-restore-after-finish');
+  const first = racing.loadSession();
+  const late = racing.loadSession();
+  reads[0](serialized);
+  assert.equal((await first)?.id, started.id);
+  racing.endSession();
+  await racing.flushSessionPersistence();
+  reads[1](serialized);
+  assert.equal(await late, null, 'a delayed restore cannot resurrect a finished draft');
+  assert.equal(racing.getSession(), null);
+  delayedRead = null;
 
   console.log('src/lib/active-workout-session.test.ts: all assertions passed');
 }
