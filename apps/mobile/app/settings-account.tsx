@@ -6,6 +6,8 @@ import { profileRepository } from "@/data/profile-repository";
 import { useDataVersion } from "@/hooks/use-data-version";
 import { endSession } from "@/lib/active-workout-session";
 import { deleteAccountData } from "@/data/remote/account";
+import { hasAppleProvider } from "@/lib/apple-account-link";
+import { revokeAppleAccess } from "@/lib/apple-sign-in";
 import { getFriendlyAuthError } from "@/lib/firebase-errors";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -14,6 +16,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -27,7 +30,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const IS_PERSONAL_IOS_BUILD = process.env.EXPO_PUBLIC_PERSONAL_IOS_BUILD === "1";
 
 export default function SettingsAccountScreen() {
-  const { user, logOut, googleConnection, connectGoogleAccount } = useAuth();
+  const {
+    user,
+    logOut,
+    googleConnection,
+    connectGoogleAccount,
+    appleConnection,
+    connectAppleAccount,
+  } = useAuth();
   const insets = useSafeAreaInsets();
   const dataVersion = useDataVersion();
   const [username, setUsername] = useState<string | null>(null);
@@ -43,6 +53,7 @@ export default function SettingsAccountScreen() {
   const [deleteModalError, setDeleteModalError] = useState("");
   const [changePasswordError, setChangePasswordError] = useState("");
   const [googleLinkError, setGoogleLinkError] = useState("");
+  const [appleLinkError, setAppleLinkError] = useState("");
   const [toast, setToast] = useState<{
     visible: boolean;
     message: string;
@@ -94,6 +105,21 @@ export default function SettingsAccountScreen() {
     }
   };
 
+  const handleConnectApple = async () => {
+    setAppleLinkError("");
+    try {
+      const connected = await connectAppleAccount();
+      if (connected)
+        setToast({
+          visible: true,
+          message: "Apple connected",
+          type: "success",
+        });
+    } catch (error) {
+      setAppleLinkError(getFriendlyAuthError(error));
+    }
+  };
+
   const isPasswordAccount =
     user?.providerData.some((provider) => provider.providerId === "password") ??
     false;
@@ -128,6 +154,12 @@ export default function SettingsAccountScreen() {
     if (!user || deleteConfirmName !== username) return;
     setDeletingAccount(true);
     try {
+      // Apple requires its token be revoked when the account is deleted. Do it
+      // first: a dismissed Apple sheet then aborts before anything is erased.
+      if (hasAppleProvider(user.providerData) && !(await revokeAppleAccess())) {
+        setDeleteModalError("Confirm with Apple to finish deleting your account.");
+        return;
+      }
       await deleteAccountData();
       await purgeLocalAccountData(user.uid);
       await deleteUser(auth.currentUser!);
@@ -402,6 +434,78 @@ export default function SettingsAccountScreen() {
             {googleLinkError ? (
               <Text selectable style={styles.googleError}>
                 {googleLinkError}
+              </Text>
+            ) : null}
+          </View>
+        )}
+
+        {isPasswordAccount && !IS_PERSONAL_IOS_BUILD && Platform.OS === "ios" && (
+          <View style={styles.googleConnection}>
+            {appleConnection === "connected" ? (
+              <View
+                accessibilityLabel="Apple sign-in connected"
+                accessibilityRole="text"
+                style={styles.googleConnectedRow}
+              >
+                <Ionicons
+                  name="logo-apple"
+                  size={20}
+                  color="#fff"
+                  style={styles.rowIcon}
+                />
+                <View style={styles.googleCopy}>
+                  <Text style={styles.googleTitle}>Apple</Text>
+                  <Text selectable style={styles.googleConnectedText}>
+                    Connected
+                  </Text>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={
+                  appleConnection === "connecting"
+                    ? "Connecting Apple"
+                    : "Connect Apple"
+                }
+                activeOpacity={0.8}
+                disabled={appleConnection === "connecting"}
+                onPress={handleConnectApple}
+                style={[
+                  styles.googleConnectButton,
+                  appleConnection === "connecting" &&
+                    styles.modalButtonDisabled,
+                ]}
+              >
+                {appleConnection === "connecting" ? (
+                  <ActivityIndicator
+                    size="small"
+                    color="#fff"
+                    style={styles.rowIcon}
+                  />
+                ) : (
+                  <Ionicons
+                    name="logo-apple"
+                    size={20}
+                    color="#fff"
+                    style={styles.rowIcon}
+                  />
+                )}
+                <View style={styles.googleCopy}>
+                  <Text style={styles.googleTitle}>
+                    {appleConnection === "connecting"
+                      ? "Connecting Apple"
+                      : "Connect Apple"}
+                  </Text>
+                  <Text style={styles.googleHint}>
+                    Sign in with your Apple ID next time.
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+            {appleLinkError ? (
+              <Text selectable style={styles.googleError}>
+                {appleLinkError}
               </Text>
             ) : null}
           </View>

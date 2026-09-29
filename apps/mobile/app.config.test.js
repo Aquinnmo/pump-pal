@@ -43,12 +43,19 @@ assert.equal(
   'personal iPhone builds must not include an OAuth URL scheme for another bundle ID',
 );
 
+assert.equal(
+  personal.plugins.includes('expo-apple-authentication'),
+  false,
+  'personal iPhone builds cannot hold the Sign in with Apple entitlement',
+);
+
 const published = evaluateConfig({ bundleId: undefined, iosClientId: IOS_CLIENT_ID, variant: 'preview' });
 assert.equal(
   published.plugins.some((plugin) => Array.isArray(plugin) && plugin[0] === '@react-native-google-signin/google-signin'),
   true,
   'published builds retain their configured Google Sign-In plugin',
 );
+assert.equal(published.plugins.includes('expo-apple-authentication'), true, 'published builds enable Sign in with Apple');
 assert.equal(published.android.googleServicesFile, './google-services-preview.json');
 
 const production = evaluateConfig({ bundleId: undefined, iosClientId: IOS_CLIENT_ID, variant: 'production' });

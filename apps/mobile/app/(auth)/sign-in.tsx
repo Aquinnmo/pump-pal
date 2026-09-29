@@ -1,3 +1,4 @@
+import { AppleSignInButton } from "@/ui/apple-sign-in-button";
 import { GoogleSignInButton } from "@/ui/google-sign-in-button";
 import {
   TimberAuthShell,
@@ -117,6 +118,9 @@ export default function SignInScreen() {
 
             {!IS_PERSONAL_IOS_BUILD && (
               <GoogleSignInButton onError={setError} disabled={loading} />
+            )}
+            {!IS_PERSONAL_IOS_BUILD && (
+              <AppleSignInButton onError={setError} disabled={loading} />
             )}
 
             <Link href="/(auth)/sign-up" asChild>

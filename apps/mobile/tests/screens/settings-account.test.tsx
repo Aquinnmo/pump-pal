@@ -77,6 +77,13 @@ mock.module(new URL('../../src/config/firebase.web.ts', import.meta.url).pathnam
   auth: { currentUser: user },
 }));
 
+// Apple is iOS-only; the web test environment never renders its row, so the
+// native adapter stays behind this seam (deleting a non-Apple account never
+// calls it).
+mock.module(new URL('../../src/lib/apple-sign-in.ts', import.meta.url).pathname, () => ({
+  revokeAppleAccess: async () => true,
+}));
+
 mock.module('firebase/auth', () => ({
   deleteUser: async () => {
     events.push('delete-auth-user');

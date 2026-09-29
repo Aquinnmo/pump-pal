@@ -3,6 +3,8 @@ import { configureSyncTrigger, startSyncTriggers, stopSyncTriggers } from '@/dat
 import { clearAIQuotaCache } from '@/lib/ai-quota-cache';
 import { connectGoogleAccount as linkGoogleAccount, signInWithGoogle as googleSignIn, signOutGoogle } from '@/lib/google-sign-in';
 import { hasGoogleProvider } from '@/lib/google-account-link';
+import { connectAppleAccount as linkAppleAccount, signInWithApple as appleSignIn } from '@/lib/apple-sign-in';
+import { hasAppleProvider } from '@/lib/apple-account-link';
 import { loadCatalog } from '@/lib/exercise-catalog';
 import {
     User,
@@ -24,6 +26,11 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<boolean>;
   /** Resolves false when the Google picker or popup was dismissed. */
   connectGoogleAccount: () => Promise<boolean>;
+  appleConnection: 'connected' | 'disconnected' | 'connecting';
+  /** Resolves false when the user dismissed the Apple sheet. */
+  signInWithApple: () => Promise<boolean>;
+  /** Resolves false when the user dismissed the Apple sheet. */
+  connectAppleAccount: () => Promise<boolean>;
   logOut: () => Promise<void>;
 }
 
@@ -33,6 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [googleConnection, setGoogleConnection] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
+  const [appleConnection, setAppleConnection] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
 
   useEffect(() => {
     // Sign-in/bootstrap and sign-out triggers for the native sync engine
@@ -46,6 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setGoogleConnection(firebaseUser && hasGoogleProvider(firebaseUser.providerData) ? 'connected' : 'disconnected');
+      setAppleConnection(firebaseUser && hasAppleProvider(firebaseUser.providerData) ? 'connected' : 'disconnected');
       setLoading(false);
       if (firebaseUser) {
         startSyncTriggers();
@@ -96,6 +105,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithApple = () => appleSignIn();
+
+  const connectAppleAccount = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) throw new Error('You must be signed in to connect Apple.');
+    if (hasAppleProvider(currentUser.providerData)) {
+      setAppleConnection('connected');
+      return true;
+    }
+
+    setAppleConnection('connecting');
+    try {
+      const connected = await linkAppleAccount(currentUser);
+      setAppleConnection(
+        connected && hasAppleProvider(auth.currentUser?.providerData ?? []) ? 'connected' : 'disconnected'
+      );
+      return connected;
+    } catch (error) {
+      setAppleConnection(hasAppleProvider(auth.currentUser?.providerData ?? []) ? 'connected' : 'disconnected');
+      throw error;
+    }
+  };
+
   const logOut = async () => {
     // Clears the cached Google account first, so the next Google sign-in shows
     // the picker instead of silently reusing the last one.
@@ -106,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, googleConnection, signIn, signUp, signInWithGoogle, connectGoogleAccount, logOut }}>
+    <AuthContext.Provider value={{ user, loading, googleConnection, signIn, signUp, signInWithGoogle, connectGoogleAccount, appleConnection, signInWithApple, connectAppleAccount, logOut }}>
       {children}
     </AuthContext.Provider>
   );
