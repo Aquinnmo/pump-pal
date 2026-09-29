@@ -418,7 +418,9 @@ function BuddyRow({
       ) : remaining > 0 ? (
         <Text style={styles.stateLabel}>{formatCountdown(remaining)}</Text>
       ) : (
-        <ActionButton label="Chop" busy={busy} onPress={onChop} />
+        // Disabled until push delivery is fixed (#78): chops currently record
+        // without reaching the buddy. Drop `disabled` to turn them back on.
+        <ActionButton label="Chop" busy={busy} onPress={onChop} disabled />
       )}
     </View>
   );
@@ -428,24 +430,27 @@ function ActionButton({
   label,
   busy,
   onPress,
+  disabled = false,
 }: {
   label: string;
   busy: boolean;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <TouchableOpacity
-      style={styles.action}
+      style={[styles.action, disabled && styles.actionDisabled]}
       activeOpacity={0.8}
       onPress={onPress}
-      disabled={busy}
+      disabled={busy || disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: busy || disabled }}
     >
       {busy ? (
         <ActivityIndicator color="#fff" size="small" />
       ) : (
-        <Text style={styles.actionText}>{label}</Text>
+        <Text style={[styles.actionText, disabled && styles.actionTextDisabled]}>{label}</Text>
       )}
     </TouchableOpacity>
   );
@@ -534,6 +539,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "800",
+  },
+  actionDisabled: {
+    backgroundColor: "#1c1c1c",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+  },
+  actionTextDisabled: {
+    color: "#444",
   },
   stateLabel: {
     color: "#666",

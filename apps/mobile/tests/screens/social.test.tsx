@@ -261,15 +261,13 @@ describe('SocialScreen', () => {
     assert.ok(screen.getByText('Requested', { exact: true }));
   });
 
-  it('chops with the current local date, shows the delivered toast, and enters cooldown', async () => {
+  it('shows Chop greyed out and inert while push delivery is broken (#78)', async () => {
     buddiesResponse = { requests: [], buddies: [buddy()] };
     render(<SocialScreen />);
     await waitFor(() => assert.ok(screen.getByRole('button', { name: 'Chop' })));
 
     fireEvent.click(screen.getByRole('button', { name: 'Chop' }));
-    await waitFor(() => assert.ok(screen.getByRole('alert')));
-    assert.deepEqual(chopCalls, [{ uid: 'buddy-1', today: toDateKey(new Date()) }]);
-    assert.ok(screen.getByText('Chop landed 🪓', { exact: true }));
+    assert.deepEqual(chopCalls, []);
   });
 
   it('preserves the malformed cooldown timestamp bypass as a known behavior', async () => {
