@@ -94,9 +94,12 @@ To actually pass enforcement, each client needs a real App Check credential:
   reuse) a reCAPTCHA Enterprise site key in the Firebase Console under
   **App Check → Apps → (web app)**, add `localhost` to that key's allowed
   domains, and set the env var in `apps/mobile/.env`.
-- **Point the client at the local Worker.** `apps/mobile/.env` normally has
-  `EXPO_PUBLIC_API_BASE_URL=https://timber-api-preview.adam-montgomery.ca`;
-  change it to `http://localhost:8787` to hit `wrangler dev` instead. Both
+- **Point the client at the local Worker.** `bun run dev:android` and
+  `bun run dev:ios` export
+  `EXPO_PUBLIC_API_BASE_URL=https://timber-api-preview.adam-montgomery.ca`,
+  which overrides `apps/mobile/.env`. To hit `wrangler dev` instead, change
+  that URL to `http://localhost:8787` in the script (or run Metro yourself with
+  the variable set inline). Both
   `apps/mobile/src/lib/api-client-core.ts` and `apps/mobile/src/lib/ai-client.ts`
   read that var at module scope, so restart Metro after changing it — a Fast
   Refresh will not pick it up. A physical device cannot resolve `localhost` as
