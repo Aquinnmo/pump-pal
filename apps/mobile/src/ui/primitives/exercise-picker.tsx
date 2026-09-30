@@ -65,7 +65,7 @@ interface SheetProps {
 // Shared chrome (header with title + X, slide/fade animation, pan-to-dismiss
 // for the sheet variant) so the recents popup and the search popup can be two
 // independent <Modal>s without duplicating the animation/gesture wiring.
-const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
+export const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
   { visible, title, onDismiss, headerExtra, children, variant = 'sheet' },
   ref
 ) {
@@ -138,7 +138,7 @@ const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
   const header = (
     <View style={styles.modalHeaderRow}>
       <Text style={styles.modalTitle}>{title}</Text>
-      <TouchableOpacity onPress={() => close()} hitSlop={8}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel="Close" onPress={() => close()} hitSlop={8}>
         <Ionicons name="close" size={24} color="#888" />
       </TouchableOpacity>
     </View>

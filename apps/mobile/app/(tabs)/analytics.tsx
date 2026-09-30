@@ -12,6 +12,7 @@ import { DevelopmentProgressSummary } from "@/ui/development-progress-summary";
 import { MuscleInsightCards } from "@/ui/muscle-insight-cards";
 import { MuscleLoadSummary } from "@/ui/muscle-load-summary";
 import { Dropdown } from "@/ui/primitives/dropdown";
+import { StatHelp, StatHelpFormula, StatHelpText } from "@/ui/primitives/stat-help";
 import { SetConsistencySummary } from "@/ui/set-consistency-summary";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -499,8 +500,22 @@ export default function AnalyticsScreen() {
           )}
 
           <View style={styles.section}>
-            <View style={styles.sectionHeading}>
+            <View style={[styles.sectionHeading, styles.sectionHeadingRow]}>
               <Text style={styles.sectionTitle}>Estimated 1RM</Text>
+              <StatHelp title="Estimated 1RM">
+                <StatHelpText>
+                  The most weight you could likely lift one time on this
+                  exercise.
+                </StatHelpText>
+                <StatHelpText>
+                  We take your best set each day and work it out from the
+                  weight and reps. No need to actually try a max.
+                </StatHelpText>
+                <StatHelpFormula>Weight × (1 + reps ÷ 30)</StatHelpFormula>
+                <StatHelpText>
+                  Example: 100 lbs for 10 reps ≈ 133 lbs
+                </StatHelpText>
+              </StatHelp>
             </View>
             <View style={styles.featurePanel}>
               {strengthSummary && strengthChartData ? (
@@ -1017,6 +1032,11 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     gap: 2,
+  },
+  sectionHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   sectionTitle: {
     color: "#f5f5f5",
