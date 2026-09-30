@@ -18,6 +18,7 @@
     "install:android": "eas build --platform android --profile preview --local --output ./build-preview.apk",
     "test": "bun test --isolate --path-ignore-patterns '**/*.test.js'",
     "test:personal-ios-config": "node app.config.test.js",
+    "test:android-release-manifest": "node android-release-manifest.test.js",
     "test:live-activity-config": "node live-activity-config.test.js",
     "test:live-activity-autolinking": "node live-activity-autolinking.test.js",
     "test:oauth-config": "node src/config/google-oauth.test.js"

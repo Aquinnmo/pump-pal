@@ -38,6 +38,13 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.FOREGROUND_SERVICE"
       ]
     },
     "web": {
@@ -90,6 +97,7 @@
       "expo-sqlite",
       "expo-background-task",
       "./plugins/with-notifee-maven",
+      "./plugins/with-android-release-manifest",
       "@bacons/apple-targets",
       "./plugins/with-live-activity-intents",
       [

@@ -167,3 +167,89 @@ Account deletion URL: `https://aquinnmo.github.io/pump-pal/delete-account.html`
 Do not submit the URLs until public access is verified. The activity/fitness
 declaration and final store wording must be checked under #90 using the
 [Health Content and Services requirements](https://support.google.com/googleplay/android-developer/answer/16679511).
+
+## Production AAB and Play Console (#90)
+
+Tracks [#90](https://github.com/Aquinnmo/pump-pal/issues/90) /
+`pump-pal-5bje.4.1`, `5.1`. Phone release only; the Wear OS release stays out
+of scope. Agents cannot build the production bundle (`CLAUDE.md` forbids
+release builds), so the checks below are run by the user against the real AAB.
+
+### Inspect the production AAB
+
+1. `eas build -p android --profile production`, then download the `.aab`.
+2. `bundletool dump manifest --bundle=<file>.aab` for the merged manifest.
+   Narrow with `--xpath`, for example
+   `--xpath /manifest/uses-sdk/@android:targetSdkVersion` and
+   `--xpath /manifest/uses-permission/@android:name`.
+3. List every component with `android:exported="true"` and match it against the
+   retained table below. Anything not listed is a finding.
+4. After upload, read the SDK list under Play Console → **App bundle explorer**
+   and resolve any pre-launch or SDK warnings.
+
+`targetSdkVersion` is currently 36, from Expo 57 defaults; record the value
+`bundletool` reports rather than assuming it.
+
+### Removed from the manifest
+
+Source: `android.blockedPermissions` in `apps/mobile/app.json` (emits
+`tools:node="remove"`) and `apps/mobile/plugins/with-android-release-manifest.js`.
+Guarded by `apps/mobile/android-release-manifest.test.js`.
+
+| Item | Origin | Why unused |
+|---|---|---|
+| `SYSTEM_ALERT_WINDOW` | Expo prebuild template | No overlay UI |
+| `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE` | Expo prebuild template | CSV export uses the cache dir and `expo-sharing` |
+| `SCHEDULE_EXACT_ALARM` | `@notifee/react-native` | Streak reminders use inexact triggers (`src/lib/streak-notification.native.ts`) |
+| `FOREGROUND_SERVICE` | `@notifee/react-native` | Nothing calls `asForegroundService`; workout notification is plain ongoing |
+| service `app.notifee.core.ForegroundService` | `@notifee/react-native` | Same; would need a Play foreground-service-type declaration |
+| receiver `app.notifee.core.AlarmPermissionBroadcastReceiver` (exported) | `@notifee/react-native` | Only reacts to exact-alarm permission changes |
+
+Undo the notifee removals only if the app adopts notifee foreground services or
+exact alarms, and then add the matching Play declaration first.
+
+### Retained items
+
+| Item | Justification |
+|---|---|
+| `RECEIVE_BOOT_COMPLETED`, `WAKE_LOCK`, notifee reboot receivers | Re-arm streak reminders after a reboot |
+| `com.reactnativeandroidwidget.RNWidgetImageProvider` (`exported=true`) | Read-only; path-traversal checked; the launcher process reads widget images |
+| `.widget.UpNext` receiver | `exported=false` |
+| `com.aquinnmo.timber.wearsync.WearMessageService` (`exported=true`) | Phone side of the watch bridge, invoked by Google Play services Wearable |
+| `POST_NOTIFICATIONS`, `POST_PROMOTED_NOTIFICATIONS`, launcher badge permissions, `c2dm.permission.RECEIVE`, install referrer | Normal or SDK permissions; no Play declaration |
+
+Confirm these are **absent** from the production AAB (debug/dev-client only):
+
+- expo-dev-client `DevLauncherActivity` and its auth activity
+- androidx compose `PreviewActivity`
+- `com.google.mlkit.vision.DEPENDENCIES` meta-data
+- the `timber_dev` package name
+
+### Play Console checklist
+
+Capture a screenshot of each final value for `pump-pal-5bje.5.2`.
+
+| Item | Value to set | Evidence |
+|---|---|---|
+| Data Safety | Answers from [Data Safety inventory](#data-safety-inventory) | Submitted form summary |
+| Health apps declaration | Activity and Fitness | Declaration page |
+| Privacy policy URL | `https://aquinnmo.github.io/pump-pal/privacy.html` | Signed-out HTTP 200 plus field |
+| Account deletion URL | `https://aquinnmo.github.io/pump-pal/delete-account.html` | Signed-out HTTP 200 plus field |
+| Target audience | Adults only; not Families | Audience page |
+| Content rating | Questionnaire incl. user interaction/social (buddies, searchable usernames) | Rating certificate |
+| Ads | None | App content page |
+| SDK and pre-launch warnings | All resolved | App bundle explorer, pre-launch report |
+| App access | Reviewer account with credentials and steps | App access page |
+| Store listing | Description below, incl. disclaimer | Listing preview |
+
+### Store description disclaimer
+
+Include in the full description, alongside the [store disclosure copy](#store-disclosure-copy):
+
+> Timber is a workout log and training aid. It is not a medical device and does
+> not provide medical advice. Consult a healthcare professional before starting
+> or changing an exercise program, especially if you have an injury or health
+> condition.
+
+Bead `pump-pal-5bje.5.2` (user) closes the loop with the AAB manifest output
+and Console screenshots.

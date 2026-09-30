@@ -23,8 +23,8 @@ bun run test                   # contract + api + mobile + tools; each TypeScrip
 
 To work inside one package, use `bun --cwd=<path> run <script>` (`apps/mobile`, `apps/api`, `packages/contract`) or `cd` into it.
 
-TypeScript tests use Bun's built-in `bun test` discovery. The nine JavaScript
-holdouts run explicitly under plain Node: four mobile `.test.js` files and five
+TypeScript tests use Bun's built-in `bun test` discovery. The ten JavaScript
+holdouts run explicitly under plain Node: five mobile `.test.js` files and five
 tool `.test.js` files. `app.config.test.js` is the one
 that relies on `require.cache` invalidation, `live-activity-autolinking.test.js`
 shells out to `expo-modules-autolinking`, and the remaining CommonJS tests stay
