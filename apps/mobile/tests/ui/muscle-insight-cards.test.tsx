@@ -4,6 +4,14 @@ import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import { makeCatalogExercise, makeWorkout } from '../factories';
 import { clearAIQuotaCache } from '../../src/lib/ai-quota-cache';
 
+// stat-help pulls in the native sheet stack (gesture-handler, reanimated); these
+// tests only care about the stat content around it.
+mock.module('@/ui/primitives/stat-help', () => ({
+  StatHelp: () => null,
+  StatHelpText: ({ children }: { children?: unknown }) => <>{children}</>,
+  StatHelpFormula: ({ children }: { children?: unknown }) => <>{children}</>,
+}));
+
 let currentUid = 'muscle-insight-test-0';
 let uidSequence = 0;
 let aiEnabled = false;

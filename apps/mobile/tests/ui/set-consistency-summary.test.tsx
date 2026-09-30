@@ -1,8 +1,16 @@
 import assert from 'node:assert/strict';
 import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, it } from 'bun:test';
+import { afterEach, describe, it, mock } from 'bun:test';
 import { makePerformedExercise, makeWorkout } from '../factories';
-import { SetConsistencySummary } from '../../src/ui/set-consistency-summary';
+// stat-help pulls in the native sheet stack (gesture-handler, reanimated); these
+// tests only care about the stat content around it.
+mock.module('@/ui/primitives/stat-help', () => ({
+  StatHelp: () => null,
+  StatHelpText: ({ children }: { children?: unknown }) => <>{children}</>,
+  StatHelpFormula: ({ children }: { children?: unknown }) => <>{children}</>,
+}));
+
+const { SetConsistencySummary } = await import('../../src/ui/set-consistency-summary');
 
 afterEach(() => {
   cleanup();
@@ -35,7 +43,8 @@ describe('SetConsistencySummary', () => {
     const summary = screen.getByLabelText(
       'Set consistency. Not enough data. Log more multi-set exercises to reveal how your weight and reps change.',
     );
-    assert.equal(summary.textContent, 'Set consistencyNot enough dataLog more multi-set exercises to reveal how your weight and reps change.');
+    assert.equal(summary.textContent, 'Set consistencyNot enough data');
+    assert.ok(screen.getByText('Log more multi-set exercises to reveal how your weight and reps change.'));
   });
 
   it('treats undated workouts as unavailable data and preserves the empty guidance', () => {

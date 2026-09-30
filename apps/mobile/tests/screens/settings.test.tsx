@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import type { ReactNode } from 'react';
+import { AI_DATA_DISCLOSURE } from '../../src/constants/policies';
 import type { UserDoc } from '../../src/types/user';
 
 type Build = {
@@ -14,7 +15,7 @@ let profileError: Error | null = null;
 const pushes: string[] = [];
 const openedUrls: string[] = [];
 let backCalls = 0;
-const aiDisclosure = 'When AI features are on, Timber sends training summaries and injury details, including notes, to OpenAI for suggestions and insights.';
+const aiDisclosure = AI_DATA_DISCLOSURE;
 const healthDisclaimer = 'Timber is not a medical device and does not provide medical advice, diagnosis, or treatment. Consult a healthcare professional for medical advice, diagnosis, or treatment.';
 
 mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathname, () => ({
