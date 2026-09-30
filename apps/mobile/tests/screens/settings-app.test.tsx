@@ -185,6 +185,8 @@ describe('SettingsAppScreen', () => {
 
     assert.ok(screen.getByText('App'));
     assert.ok(screen.getByText('AI Features'));
+    assert.ok(screen.getByText('When AI features are on, Timber sends training summaries and injury details, including notes, to OpenAI for suggestions and insights.', { exact: true }));
+    assert.ok(screen.getByText('AI is off by default. You can turn it off at any time.', { exact: true }));
     assert.ok(screen.getByText('Social Features'));
     assert.ok(screen.getByText('SEND FEEDBACK'));
     assert.ok(screen.getByText('Update App'));
