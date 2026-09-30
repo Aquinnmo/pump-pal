@@ -307,6 +307,9 @@ Include in the full description, alongside the [store disclosure copy](#store-di
   every removed item and debug-only entry absent. **Rejected for upload:** JS
   bundle had no Firebase project ID or API origin (production EAS environment
   missing `EXPO_PUBLIC_*`). Rebuild and re-run steps 2–4.
+- **2026-09-30, versionCode 3, targetSdk 36:** manifest unchanged from the
+  tables; bundle contains `pumppal-c9199` and the API origin, no App Check
+  debug token. Cleared for upload.
 
 Bead `pump-pal-5bje.5.2` (user) closes the loop with the AAB manifest output
 and Console screenshots.
