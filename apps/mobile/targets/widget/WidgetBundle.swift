@@ -5,5 +5,6 @@ import SwiftUI
 struct TimberWidgetBundle: WidgetBundle {
   var body: some Widget {
     WorkoutLiveActivity()
+    UpNextWidget()
   }
 }

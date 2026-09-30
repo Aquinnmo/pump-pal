@@ -14,12 +14,14 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "UIViewControllerBasedStatusBarAppearance": true,
         "NSSupportsLiveActivities": true,
         "NSSupportsLiveActivitiesFrequentUpdates": true
       },
       "entitlements": {
+        "com.apple.developer.devicecheck.appattest-environment": "development",
         "com.apple.security.application-groups": [
-          "group.com.aquinnmo.timber.liveactivity"
+          "group.com.aquinnmo.timber.lkpt5wjq99.liveactivity"
         ]
       }
     },
@@ -36,6 +38,13 @@
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.FOREGROUND_SERVICE"
       ]
     },
     "web": {
@@ -55,10 +64,15 @@
         }
       ],
       "@react-native-firebase/app-check",
+      "@react-native-firebase/crashlytics",
+      "./plugins/with-ios27-status-bar",
+      "./plugins/with-always-run-script-phases",
       [
         "expo-build-properties",
         {
           "ios": {
+            "enableSceneSupport": true,
+            "usePrecompiledModules": false,
             "useFrameworks": "static"
           }
         }
@@ -76,11 +90,14 @@
         }
       ],
       "@react-native-community/datetimepicker",
+      "expo-image",
       "expo-localization",
+      "expo-sharing",
       "expo-web-browser",
       "expo-sqlite",
       "expo-background-task",
       "./plugins/with-notifee-maven",
+      "./plugins/with-android-release-manifest",
       "@bacons/apple-targets",
       "./plugins/with-live-activity-intents",
       [

@@ -12,6 +12,10 @@ const user = { uid: 'settings-test-user', email: 'adam@example.com' };
 let profileData: UserDoc | null = { username: 'Adam', aiEnabled: false };
 let profileError: Error | null = null;
 const pushes: string[] = [];
+const openedUrls: string[] = [];
+let backCalls = 0;
+const aiDisclosure = 'When AI features are on, Timber sends training summaries and injury details, including notes, to OpenAI for suggestions and insights.';
+const healthDisclaimer = 'Timber is not a medical device and does not provide medical advice, diagnosis, or treatment. Consult a healthcare professional for medical advice, diagnosis, or treatment.';
 
 mock.module(new URL('../../src/context/auth-context.tsx', import.meta.url).pathname, () => ({
   useAuth: () => ({
@@ -50,6 +54,11 @@ mock.module('expo-linear-gradient', () => ({
 
 mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
+  MaterialCommunityIcons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
+}));
+
+mock.module('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
 // Render navigation rows as ordinary buttons so the test drives the same
@@ -64,6 +73,9 @@ plugin({
     build.module('react-native', () => ({
       exports: {
         ...reactNativeWeb,
+        Linking: {
+          openURL: async (url: string) => { openedUrls.push(url); },
+        },
         TouchableOpacity: ({
           accessibilityLabel,
           children,
@@ -84,7 +96,7 @@ plugin({
 });
 
 const { router: testRouter } = await import('expo-router') as unknown as {
-  router: { push: (href: string) => void };
+  router: { push: (href: string) => void; back: () => void };
 };
 
 async function settle(): Promise<void> {
@@ -97,7 +109,10 @@ beforeEach(() => {
   profileData = { username: 'Adam', aiEnabled: false };
   profileError = null;
   pushes.length = 0;
+  openedUrls.length = 0;
+  backCalls = 0;
   testRouter.push = (href) => pushes.push(href);
+  testRouter.back = () => { backCalls += 1; };
 });
 
 afterEach(() => {
@@ -116,24 +131,20 @@ describe('SettingsScreen', () => {
     assert.ok(screen.getByText('Injuries', { exact: true }));
     assert.ok(screen.getByText('Account', { exact: true }));
     assert.ok(screen.getByText('App', { exact: true }));
-    assert.ok(screen.getByText('This app is currently in development. Features may change and data may be used to improve the app.', { exact: true }));
+    assert.equal(screen.queryByText(/Features may change/), null);
     assert.ok(screen.getByText('App developed by', { exact: false }));
     assert.ok(screen.getByText('Montgomery Software Foundry Inc.', { exact: true }));
-    assert.equal(screen.queryByText('Your workout history may be sent to 3rd parties to power AI features.', { exact: true }), null);
+    assert.equal(screen.queryByText(aiDisclosure, { exact: true }), null);
   });
 
-  it('shows the AI disclosure only when the profile feature flag is enabled', async () => {
+  it('keeps the legal notices off About even when AI is enabled', async () => {
     const { default: SettingsScreen } = await import('../../app/(tabs)/settings');
     profileData = { username: 'Adam', aiEnabled: true };
     render(<SettingsScreen />);
 
-    await waitFor(() => assert.ok(screen.getByText('Your workout history may be sent to 3rd parties to power AI features.', { exact: true })));
-
-    cleanup();
-    profileData = { username: 'Adam' };
-    render(<SettingsScreen />);
     await settle();
-    assert.equal(screen.queryByText('Your workout history may be sent to 3rd parties to power AI features.', { exact: true }), null);
+    assert.equal(screen.queryByText(aiDisclosure, { exact: true }), null);
+    assert.equal(screen.queryByText(healthDisclaimer, { exact: true }), null);
   });
 
   it('keeps a usable identity baseline when the profile read fails', async () => {
@@ -144,7 +155,21 @@ describe('SettingsScreen', () => {
 
     assert.ok(screen.getByText('Athlete', { exact: true }));
     assert.ok(screen.getByText('adam@example.com', { exact: true }));
-    assert.equal(screen.queryByText('Your workout history may be sent to 3rd parties to power AI features.', { exact: true }), null);
+    assert.equal(screen.queryByText(aiDisclosure, { exact: true }), null);
+  });
+
+  it('navigates to the separate Legal page rather than expanding links on About', async () => {
+    const { default: SettingsScreen } = await import('../../app/(tabs)/settings');
+    render(<SettingsScreen />);
+    await settle();
+
+    assert.equal(screen.queryByRole('button', { name: 'Privacy Policy' }), null);
+    assert.equal(screen.queryByRole('button', { name: 'Account Deletion Policy' }), null);
+    fireEvent.click(screen.getByRole('button', { name: 'Legal' }));
+    assert.deepEqual(pushes, ['/settings-legal']);
+    assert.deepEqual(openedUrls, []);
+    assert.equal(screen.queryByRole('button', { name: 'Privacy Policy' }), null);
+    assert.equal(screen.queryByRole('button', { name: 'Account Deletion Policy' }), null);
   });
 
   it('navigates through each visible settings row exactly once', async () => {
@@ -157,6 +182,7 @@ describe('SettingsScreen', () => {
       ['Injuries', '/settings-injuries'],
       ['Account', '/settings-account'],
       ['App', '/settings-app'],
+      ['Legal', '/settings-legal'],
     ] as const) {
       fireEvent.click(screen.getByText(label, { exact: true }));
       assert.equal(pushes.at(-1), route);
@@ -167,6 +193,33 @@ describe('SettingsScreen', () => {
       '/settings-injuries',
       '/settings-account',
       '/settings-app',
+      '/settings-legal',
     ]);
+  });
+});
+
+describe('SettingsLegalScreen', () => {
+  it('shows both notices and opens each policy with AI off', async () => {
+    const { default: SettingsLegalScreen } = await import('../../app/settings-legal');
+    render(<SettingsLegalScreen />);
+
+    assert.ok(screen.getByText('Legal', { exact: true }));
+    assert.ok(screen.getByText(aiDisclosure, { exact: true }));
+    assert.ok(screen.getByText(healthDisclaimer, { exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Privacy Policy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Account Deletion Policy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Community Terms' }));
+    assert.deepEqual(openedUrls, [
+      'https://aquinnmo.github.io/pump-pal/privacy.html',
+      'https://aquinnmo.github.io/pump-pal/delete-account.html',
+      'https://aquinnmo.github.io/pump-pal/terms.html',
+    ]);
+  });
+
+  it('returns through the normal settings back control', async () => {
+    const { default: SettingsLegalScreen } = await import('../../app/settings-legal');
+    render(<SettingsLegalScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    assert.equal(backCalls, 1);
   });
 });

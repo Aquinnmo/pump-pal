@@ -44,6 +44,13 @@ Firestore shapes these routes read/write, see
 | POST | `/api/injuries/:id/apply-to-history` | yes | stamp this injury onto every workout in its onset/resolved window; idempotent |
 | POST | `/api/injuries/:id/remove-from-history` | yes | unstamp from every workout that carries it; idempotent, works even after the injury record is deleted |
 | POST | `/api/catalog/pending` | yes | "can't find my exercise" submission; `createdBy`/`status` are server-stamped, never accepted from the body |
+| GET | `/api/buddies/search`, `/api/buddies` | yes | search users; buddy list plus pending requests. `termsRequired: true` with empty lists until the caller accepts the terms |
+| POST | `/api/buddies`, `/api/buddies/:uid`, `/api/buddies/:uid/chop` | yes | request, accept, chop. Blocked or terms-less users answer 404 `user_not_found`; the caller without terms gets 403 `terms_required` |
+| DELETE | `/api/buddies/:uid` | yes | decline, cancel or remove; idempotent, never gated |
+| POST | `/api/social/terms` | yes | accept the current terms; body `{ version }` must equal `SOCIAL_TERMS_VERSION`, else 400 |
+| GET, POST | `/api/blocks` | yes | list the caller's blocks; block `{ uid }` and delete any friendship atomically |
+| DELETE | `/api/blocks/:uid` | yes | unblock |
+| POST | `/api/reports` | yes | report `{ uid, reason, note? }`; one per reporter, target and day |
 | DELETE | `/api/account/data` | yes | purges every per-user Firestore collection/doc (see below); does **not** delete the Firebase Auth account |
 | POST | `/api/ai` | yes | AI proxy — see `packages/contract/src/ai-contract.ts`; unchanged by this epic except its provider/model/effort are now fully env-driven, see below |
 

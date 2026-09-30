@@ -12,12 +12,15 @@ const FIREBASE_ERROR_MAP: Record<string, string> = {
   'auth/popup-closed-by-user': 'Sign-in was cancelled.',
   'auth/operation-not-allowed': 'This sign-in method is not enabled.',
   'auth/account-exists-with-different-credential':
-    'This email already has a Timber password. Sign in with your password, then connect Google from Account Settings.',
+    'This email already has a Timber password. Sign in with your password, then connect Google or Apple from Account Settings.',
   'auth/credential-already-in-use':
-    'This Google account is already linked to a different Timber account. Sign in to that account instead.',
-  'auth/provider-already-linked': 'Google is already connected to this account.',
+    'This Google or Apple account is already linked to a different Timber account. Sign in to that account instead.',
+  'auth/provider-already-linked': 'This sign-in method is already connected to this account.',
   'auth/google-email-mismatch': 'The selected Google email does not match this Timber account.',
   'auth/google-link-user-changed': 'Your signed-in account changed while Google was connecting. Try again.',
+  'auth/apple-link-user-changed': 'Your signed-in account changed while Apple was connecting. Try again.',
+  // expo-apple-authentication rejects with this when the user dismisses the sheet.
+  ERR_REQUEST_CANCELED: 'Sign-in was cancelled.',
   // @react-native-google-signin status codes — same `code` field, so they map here.
   // Android rejects with the *numeric* GMS status code stringified
   // (RNGoogleSigninModule.java: `String.valueOf(CommonStatusCodes.DEVELOPER_ERROR)`),

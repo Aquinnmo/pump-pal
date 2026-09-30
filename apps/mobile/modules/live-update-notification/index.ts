@@ -4,6 +4,12 @@ export {
   show,
   dismiss,
   subscribeActions,
-  drainPendingAction,
+  readJournal,
+  acknowledgeJournal,
+  subscribeJournal,
+  showAsync,
+  dismissAsync,
+  setUpNextWidget,
+  clearUpNextWidget,
 } from './src/LiveUpdateNotificationModule';
 export type { LiveUpdateNotificationPayload, LiveUpdateSegment } from './src/LiveUpdateNotification.types';

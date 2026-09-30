@@ -1,9 +1,7 @@
 import {
   analyzeSetConsistency,
   SET_CHANGE_BUCKET_ORDER,
-  SET_CONSISTENCY_MIN_ENTRIES,
   type SetChangeBucket,
-  type SetConsistencyCategory,
 } from "@/lib/set-consistency";
 import type { Workout } from "@/types/workout";
 import { useMemo } from "react";
@@ -13,53 +11,41 @@ type SetConsistencySummaryProps = {
   workouts: Workout[];
 };
 
-const CATEGORY_COPY: Record<
-  SetConsistencyCategory,
+const BUCKET_COPY: Record<
+  SetChangeBucket,
   { title: string; pattern: string }
 > = {
-  consistent: {
+  bigDrop: {
+    title: "Overconfident",
+    pattern: "you often overreached and dropped the weight hard",
+  },
+  minorDrop: {
+    title: "Hitting Failure",
+    pattern: "you often hit failure and eased off",
+  },
+  held: {
     title: "Consistent",
     pattern: "you stayed consistent",
   },
-  overconfident: {
-    title: "Overconfident",
-    pattern: "your weight or reps often fell",
+  minorSpike: {
+    title: "Holding Back",
+    pattern: "you often had a bit more in the tank",
   },
-  underconfident: {
+  bigSpike: {
     title: "Underconfident",
-    pattern: "your weight or reps often climbed",
+    pattern: "you often had far more in the tank",
   },
-  erratic: {
-    title: "Erratic",
-    pattern: "you can't decide on weight and reps",
-  },
-};
-
-const BUCKET_COPY: Record<
-  SetChangeBucket,
-  { caption: string; spoken: string }
-> = {
-  bigDrop: { caption: "Big Drop", spoken: "big drops" },
-  minorDrop: { caption: "Eased Off", spoken: "eased off" },
-  held: { caption: "Held", spoken: "held steady" },
-  minorSpike: { caption: "Crept Up", spoken: "crept up" },
-  bigSpike: { caption: "Big Jump", spoken: "big jumps" },
-  // Off the signed axis: shown as a note under the bars, not as a sixth bar.
-  erratic: { caption: "Both Ways", spoken: "went both ways" },
 };
 
 export function SetConsistencySummary({
   workouts,
 }: SetConsistencySummaryProps) {
   const result = useMemo(() => analyzeSetConsistency(workouts), [workouts]);
-  const copy = result.category ? CATEGORY_COPY[result.category] : null;
+  const copy = result.category ? BUCKET_COPY[result.category] : null;
 
   if (!copy) {
-    const remaining = Math.max(
-      0,
-      SET_CONSISTENCY_MIN_ENTRIES - result.eligibleEntries,
-    );
-    const detail = `Log ${remaining} more multi-set ${remaining === 1 ? "exercise" : "exercises"} to reveal how your weight and reps change.`;
+    const detail =
+      "Log more multi-set exercises to reveal how your weight and reps change.";
     return (
       <View
         style={styles.panel}
@@ -82,25 +68,21 @@ export function SetConsistencySummary({
     );
   }
 
-  const detail = `Across ${result.eligibleEntries} multi-set ${result.eligibleEntries === 1 ? "exercise" : "exercises"} in your last ${result.analyzedWorkouts} ${result.analyzedWorkouts === 1 ? "workout" : "workouts"}, ${copy.pattern}.`;
+  const detail = `Across ${result.eligibleEntries} set-to-set ${result.eligibleEntries === 1 ? "change" : "changes"} in your last ${result.analyzedWorkouts} ${result.analyzedWorkouts === 1 ? "workout" : "workouts"}, ${copy.pattern}.`;
 
   const peak = Math.max(
     ...SET_CHANGE_BUCKET_ORDER.map((bucket) => result.distribution[bucket]),
   );
   const spokenDistribution = SET_CHANGE_BUCKET_ORDER.map(
-    (bucket) => `${result.distribution[bucket]} ${BUCKET_COPY[bucket].spoken}`,
+    (bucket) =>
+      `${result.distribution[bucket]} ${BUCKET_COPY[bucket].title.toLowerCase()}`,
   ).join(", ");
-
-  const erratic = result.distribution.erratic;
-  const erraticNote = erratic
-    ? `${erratic} ${erratic === 1 ? "exercise" : "exercises"} went both ways.`
-    : null;
 
   return (
     <View
       style={styles.panel}
       accessible
-      accessibilityLabel={`Set consistency. ${copy.title}. ${detail} By exercise: ${spokenDistribution}${erratic ? `, ${erratic} ${BUCKET_COPY.erratic.spoken}` : ""}.`}
+      accessibilityLabel={`Set consistency. ${copy.title}. ${detail} By set change: ${spokenDistribution}.`}
     >
       <View style={styles.header}>
         <Text style={styles.label} selectable>
@@ -115,28 +97,23 @@ export function SetConsistencySummary({
         {SET_CHANGE_BUCKET_ORDER.map((bucket) => {
           const count = result.distribution[bucket];
           return (
-            <View key={bucket} style={styles.column}>
-              <View style={styles.barTrack}>
-                <View
-                  style={[
-                    styles.bar,
-                    count === 0 && styles.barEmpty,
-                    { height: `${peak > 0 ? (count / peak) * 100 : 0}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.barCaption} numberOfLines={1}>
-                {BUCKET_COPY[bucket].caption}
-              </Text>
+            <View key={bucket} style={styles.barTrack}>
+              <View
+                style={[
+                  styles.bar,
+                  count === 0 && styles.barEmpty,
+                  { height: `${peak > 0 ? (count / peak) * 100 : 0}%` },
+                ]}
+              />
             </View>
           );
         })}
       </View>
-      {erraticNote && (
-        <Text style={styles.detail} selectable>
-          {erraticNote}
-        </Text>
-      )}
+      <View style={styles.axis}>
+        <Text style={styles.axisLabel}>Dropping volume</Text>
+        <View style={styles.axisLine} />
+        <Text style={styles.axisLabel}>Adding volume</Text>
+      </View>
     </View>
   );
 }
@@ -180,13 +157,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 6,
   },
-  column: {
-    flex: 1,
-    alignItems: "center",
-    gap: 4,
-  },
   barTrack: {
-    width: "100%",
+    flex: 1,
     height: 76,
     justifyContent: "flex-end",
   },
@@ -199,7 +171,17 @@ const styles = StyleSheet.create({
   barEmpty: {
     backgroundColor: "#2a2a2a",
   },
-  barCaption: {
+  axis: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  axisLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#2a2a2a",
+  },
+  axisLabel: {
     color: "#888",
     fontSize: 11,
     lineHeight: 11 * 1.3,

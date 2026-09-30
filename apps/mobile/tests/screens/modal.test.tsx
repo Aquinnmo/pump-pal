@@ -120,6 +120,15 @@ mock.module('@/ui/workout/exercise-card', () => ({
     </button>
   ),
 }));
+// Headless picker behind "Add Exercise": shows its choice only while open, then closes.
+mock.module('@/ui/primitives/exercise-picker', () => ({
+  ExercisePicker: ({ open, onSelect, onClose }: { open?: boolean; onSelect: (selection: unknown) => void; onClose?: () => void }) =>
+    open ? (
+      <button onClick={() => { onSelect({ exerciseId: 'bench-press', variationId: null, label: 'Bench Press' }); onClose?.(); }}>
+        Pick Bench Press
+      </button>
+    ) : null,
+}));
 mock.module('@react-native-community/datetimepicker', () => ({ default: () => null }));
 
 const { default: AddWorkoutModal } = await import('../../app/modal');
@@ -218,8 +227,11 @@ describe('AddWorkoutModal', () => {
     await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
 
     fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
-    fireEvent.click(screen.getByText('Choose Bench Press', { exact: true }));
+    assert.equal(screen.queryByText('Choose Bench Press', { exact: true }), null, 'no empty exercise card before a pick');
+    fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+    fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
     await settle();
+    assert.ok(screen.getByText('Choose Bench Press', { exact: true }), 'the card appears once an exercise is picked');
     fireEvent.click(screen.getByText('Save Workout', { exact: true }));
 
     await waitFor(() => assert.equal(created.length, 1));

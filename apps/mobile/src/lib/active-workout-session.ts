@@ -32,6 +32,7 @@ const STORAGE_KEY = 'pumppal_active_session_v1';
 const MAX_RESTORE_AGE_MS = 24 * 60 * 60 * 1000;
 
 let session: ActiveSession | null = null;
+let sessionGeneration = 0;
 const listeners = new Set<() => void>();
 
 function notify(): void {
@@ -40,12 +41,18 @@ function notify(): void {
 
 // Fire-and-forget write-through. ponytail: no debounce — the draft is a few KB
 // and AsyncStorage writes are async and off-thread; add one if it measurably janks.
+let persistence: Promise<void> = Promise.resolve();
 function persist(): void {
-  if (session) {
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(session)).catch(console.warn);
-  } else {
-    AsyncStorage.removeItem(STORAGE_KEY).catch(console.warn);
-  }
+  const value = session ? JSON.stringify(session) : null;
+  persistence = persistence.catch(() => {}).then(() => value
+    ? AsyncStorage.setItem(STORAGE_KEY, value)
+    : AsyncStorage.removeItem(STORAGE_KEY));
+  void persistence.catch(console.warn);
+}
+
+/** Background intents must keep their runtime until the private draft is durable. */
+export function flushSessionPersistence(): Promise<void> {
+  return persistence;
 }
 
 export function getSession(): ActiveSession | null {
@@ -59,6 +66,7 @@ export function startSession(init: {
   rows: DraftExerciseRow[];
   cameFromPlan: boolean;
 }): ActiveSession {
+  sessionGeneration++;
   session = {
     id: randomId('session'),
     startedAt: new Date().toISOString(),
@@ -74,6 +82,7 @@ export function startSession(init: {
 // Discard must not resurrect it.
 export function updateSession(rows: DraftExerciseRow[], name?: string): void {
   if (!session) return;
+  sessionGeneration++;
   session = { ...session, rows, ...(name !== undefined ? { name } : {}) };
   notify();
   persist();
@@ -81,9 +90,18 @@ export function updateSession(rows: DraftExerciseRow[], name?: string): void {
 
 export function endSession(): void {
   if (!session) return;
+  sessionGeneration++;
   session = null;
   notify();
   persist();
+}
+
+// Account wipe: drop the live session and its disk snapshot, including one that
+// was never loaded into memory (endSession alone is a no-op then).
+export async function clearSession(): Promise<void> {
+  endSession();
+  await flushSessionPersistence();
+  await AsyncStorage.removeItem(STORAGE_KEY);
 }
 
 export function subscribe(listener: () => void): () => void {
@@ -96,7 +114,9 @@ export function subscribe(listener: () => void): () => void {
 // old to be a live workout rather than resurrecting a forgotten one.
 export async function loadSession(): Promise<ActiveSession | null> {
   if (session) return session;
+  const generation = sessionGeneration;
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  if (generation !== sessionGeneration) return session;
   if (!raw) return null;
   let stored: ActiveSession;
   try {
@@ -110,6 +130,7 @@ export async function loadSession(): Promise<ActiveSession | null> {
     await AsyncStorage.removeItem(STORAGE_KEY).catch(console.warn);
     return null;
   }
+  sessionGeneration++;
   session = stored;
   notify();
   return session;

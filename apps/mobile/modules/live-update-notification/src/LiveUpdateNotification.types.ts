@@ -14,4 +14,9 @@ export type LiveUpdateNotificationPayload = {
   progress: number;
   segments: LiveUpdateSegment[];
   actions: Array<'completeSet' | 'uncompleteSet' | 'finishWorkout'>;
+  // iOS only: lets a Live Activity tap be applied natively (see the store).
+  setDetails?: string[];
+  setCompleted?: boolean[];
+  latencyTraceId?: string;
+  latencyStartedAtMs?: number;
 };

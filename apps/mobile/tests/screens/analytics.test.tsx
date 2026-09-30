@@ -235,8 +235,11 @@ describe('AnalyticsScreen', () => {
     await waitFor(() => assert.ok(screen.getAllByText('Push Ups', { exact: true }).length > 0));
 
     assert.ok(screen.getByText('Build your Strength-O-Meter', { exact: true }));
-    assert.ok(screen.getAllByText('20 reps', { exact: true }).length > 0);
-    assert.ok(screen.getAllByText('1m 30s', { exact: true }).length > 0);
+    // Record values render one pass later, once the screen's effect picks the selected exercise.
+    await waitFor(() => {
+      assert.ok(screen.getAllByText('20 reps', { exact: true }).length > 0);
+      assert.ok(screen.getAllByText('1m 30s', { exact: true }).length > 0);
+    });
     assert.equal(screen.queryByText('Personal record', { exact: true }), null);
   });
 

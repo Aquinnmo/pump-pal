@@ -1,3 +1,4 @@
+import { AppleSignInButton } from "@/ui/apple-sign-in-button";
 import { GoogleSignInButton } from "@/ui/google-sign-in-button";
 import {
   TimberAuthShell,
@@ -159,6 +160,13 @@ export default function SignUpScreen() {
                 onError={setError}
                 disabled={loading}
                 label="Sign up with Google"
+              />
+            )}
+            {!IS_PERSONAL_IOS_BUILD && (
+              <AppleSignInButton
+                onError={setError}
+                disabled={loading}
+                type="sign-up"
               />
             )}
 

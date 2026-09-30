@@ -11,7 +11,7 @@ import Foundation
 // units that can't easily share a single Swift source file across two different native
 // build systems, so both copies must be kept in sync by hand when this shape changes.
 public struct WorkoutActivityAttributes: ActivityAttributes {
-  public struct SegmentState: Codable, Hashable {
+  public struct SegmentState: Codable, Hashable, Sendable {
     public var sets: Int
     public var started: Bool
     public var completed: Bool
@@ -23,14 +23,16 @@ public struct WorkoutActivityAttributes: ActivityAttributes {
     }
   }
 
-  public struct ContentState: Codable, Hashable {
+  public struct ContentState: Codable, Hashable, Sendable {
+    public var title: String?
     public var completedSets: Int
     public var totalSets: Int
     public var detail: String?
     public var segments: [SegmentState]
     public var actions: [String] // 'completeSet' | 'uncompleteSet' | 'finishWorkout'
 
-    public init(completedSets: Int, totalSets: Int, detail: String?, segments: [SegmentState], actions: [String]) {
+    public init(completedSets: Int, totalSets: Int, detail: String?, segments: [SegmentState], actions: [String], title: String? = nil) {
+      self.title = title
       self.completedSets = completedSets
       self.totalSets = totalSets
       self.detail = detail

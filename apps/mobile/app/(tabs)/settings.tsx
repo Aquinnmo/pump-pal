@@ -1,8 +1,7 @@
 import { useAuth } from '@/context/auth-context';
 import { profileRepository } from '@/data/profile-repository';
 import { useDataVersion } from '@/hooks/use-data-version';
-import { useAIEnabled } from '@/lib/use-ai-enabled';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -11,7 +10,6 @@ import { Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'r
 export default function SettingsScreen() {
   const { user } = useAuth();
   const dataVersion = useDataVersion();
-  const aiEnabled = useAIEnabled();
   const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,14 +59,6 @@ export default function SettingsScreen() {
         <Text style={styles.email}>{user?.email}</Text>
       </View>
 
-      <View style={styles.attributionCard}>
-        <Text style={styles.attributionText}>
-          This app is currently in development. Features may change and data may be used to improve the app.
-        </Text>
-      </View>
-
-      <View style={{ height: 16 }} />
-
       <TouchableOpacity style={styles.navRow} onPress={() => router.push('/settings-split')} activeOpacity={0.8}>
         <Ionicons name="barbell-outline" size={20} color="#fff" style={styles.rowIcon} />
         <Text style={styles.navRowText}>Split</Text>
@@ -93,13 +83,16 @@ export default function SettingsScreen() {
         <Ionicons name="chevron-forward" size={20} color="#888" />
       </TouchableOpacity>
 
-      {aiEnabled && (
-        <View style={styles.attributionCard}>
-          <Text style={styles.attributionText}>
-            Your workout history may be sent to 3rd parties to power AI features.
-          </Text>
-        </View>
-      )}
+      <TouchableOpacity
+        style={styles.navRow}
+        accessibilityRole="button"
+        accessibilityLabel="Legal"
+        onPress={() => router.push('/settings-legal')}
+        activeOpacity={0.8}>
+        <MaterialCommunityIcons name="scale-balance" size={20} color="#fff" style={styles.rowIcon} />
+        <Text style={styles.navRowText}>Legal</Text>
+        <Ionicons name="chevron-forward" size={20} color="#888" />
+      </TouchableOpacity>
 
       <View style={styles.attributionCard}>
         <Text style={styles.attributionText}>
@@ -213,8 +206,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   attributionText: {
-    fontSize: 12,
-    color: '#555',
+    fontSize: 14,
+    lineHeight: 21,
+    color: '#888',
     textAlign: 'center',
   },
   attributionLink: {

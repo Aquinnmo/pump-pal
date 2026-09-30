@@ -46,6 +46,12 @@ mock.module(new URL('../../src/ui/google-sign-in-button.tsx', import.meta.url).p
   ),
 }));
 
+mock.module(new URL('../../src/ui/apple-sign-in-button.tsx', import.meta.url).pathname, () => ({
+  AppleSignInButton: ({ disabled }: { disabled?: boolean }) => (
+    <button aria-label="Sign in with Apple" disabled={disabled}>Sign in with Apple</button>
+  ),
+}));
+
 mock.module('@expo/vector-icons', () => ({
   Ionicons: ({ name }: { name: string }) => <span aria-label={`${name} icon`} />,
 }));
@@ -100,6 +106,7 @@ describe('SignInScreen', () => {
     assert.ok(screen.getByPlaceholderText('Password'));
     assert.ok(screen.getByLabelText('Sign in to Timber'));
     assert.ok(screen.getByRole('button', { name: 'Continue with Google' }));
+    assert.ok(screen.getByRole('button', { name: 'Sign in with Apple' }));
     assert.ok(screen.getByText('Create Account', { exact: true }));
     assert.equal(screen.queryByText('Please fill in all fields.', { exact: true }), null);
 

@@ -19,6 +19,10 @@ type UserDoc = {
   usernameLower?: string; // lowercase, matches the usernames/{id} reservation doc key
   aiEnabled?: boolean; // AI opt-in — see "AI opt-in" below
   socialEnabled?: boolean; // social participation — absent means enabled
+  // Worker-written only (never client-writable): see "Social participation"
+  socialTermsVersion?: string; // last social terms version accepted
+  socialTermsAcceptedAt?: Timestamp;
+  socialSuspended?: boolean; // developer moderation flag; true removes the account from social
 };
 ```
 
@@ -94,6 +98,12 @@ Push-up Challenge data are unchanged.
 It is owner-writable through the same offline-first profile path as
 `workoutSplit` and `aiEnabled`. The toggle is Settings → App, directly below AI
 Features. The Worker enforces the preference at every buddy boundary.
+
+Visibility also needs `socialTermsVersion` to equal the current
+`SOCIAL_TERMS_VERSION` and `socialSuspended` to be absent or false. Those three
+fields are written only by the Worker (`POST /api/social/terms` and the
+moderation script), and `firestore.rules` rejects any client write to them. See
+[buddies.md](./buddies.md).
 
 ## Private documents
 

@@ -44,6 +44,7 @@ const liveNotificationCalls = {
   show: [] as unknown[],
   dismiss: 0,
 };
+const upNextWidgetCalls: string[] = [];
 const streakNotificationCalls = {
   cancelTrigger: [] as unknown[],
   requestPermission: 0,
@@ -61,12 +62,18 @@ mock.module(new URL('../../modules/live-update-notification/index.ts', import.me
   },
   isSupported: () => liveNotificationCalls.supported,
   isNativeModuleAvailable: () => liveNotificationCalls.nativeModuleAvailable,
-  drainPendingAction: () => null,
+  showAsync: async (payload: unknown) => {
+    liveNotificationCalls.show.push(payload);
+    return liveNotificationCalls.showResult;
+  },
+  dismissAsync: async () => { liveNotificationCalls.dismiss += 1; },
   show: (payload: unknown) => {
     liveNotificationCalls.show.push(payload);
     return liveNotificationCalls.showResult;
   },
   dismiss: () => { liveNotificationCalls.dismiss += 1; },
+  setUpNextWidget: (json: string) => { upNextWidgetCalls.push(`set:${json}`); return true; },
+  clearUpNextWidget: () => { upNextWidgetCalls.push('clear'); },
 }));
 type Build = {
   module(path: string, callback: () => { exports: Record<string, unknown>; loader: 'object' }): void;
@@ -104,8 +111,7 @@ plugin({
 
 const { pushWearState, subscribeWearActions } = await import('./wear-sync.android');
 const { subscribeLiveUpdateNotificationActions } = await import('./live-update-notification-actions.android');
-const { subscribeLiveUpdateNotificationActions: subscribeLiveUpdateNotificationActionsIos } =
-  await import('./live-update-notification-actions.ios');
+const { setUpNextWidgetNative, clearUpNextWidgetNative } = await import('./up-next-widget-native.ios');
 const {
   ensureWorkoutChannel,
   requestNotificationPermission,
@@ -154,6 +160,8 @@ const workoutData = {
   title: 'Push Day',
   detail: 'Bench press',
   actions: [],
+  setDetails: ['Bench press · 10 reps', 'Bench press · 8 reps'],
+  setCompleted: [true, false],
 };
 
 describe('native adapter helpers at their module seams', () => {
@@ -215,17 +223,6 @@ describe('native adapter helpers at their module seams', () => {
     unsubscribe();
 
     assert.deepEqual(actions, [{ action: 'uncompleteSet', workoutId: 'w1', expectedCompletedSets: 0 }]);
-    assert.equal(liveUnsubscribeCalls, 1);
-  });
-
-  it('delivers valid iOS live actions through the ownership subscription seam', () => {
-    const actions: unknown[] = [];
-    const unsubscribe = subscribeLiveUpdateNotificationActionsIos((action) => actions.push(action), 'root');
-    liveActions[0]?.(JSON.stringify({ action: 'completeSet', workoutId: 'w1', expectedCompletedSets: 1 }));
-    liveActions[0]?.(JSON.stringify({ action: 'completeSet', workoutId: '', expectedCompletedSets: 1 }));
-    unsubscribe();
-
-    assert.deepEqual(actions, [{ action: 'completeSet', workoutId: 'w1', expectedCompletedSets: 1 }]);
     assert.equal(liveUnsubscribeCalls, 1);
   });
 
@@ -352,6 +349,8 @@ describe('native adapter helpers at their module seams', () => {
       progress: 1,
       segments: [],
       actions: [],
+      setDetails: ['Bench press · 10 reps', 'Bench press · 8 reps'],
+      setCompleted: [true, false],
     }]);
     await dismissIosWorkoutNotification();
     assert.equal(liveNotificationCalls.dismiss, 1);
@@ -361,3 +360,8 @@ describe('native adapter helpers at their module seams', () => {
     assert.equal(liveNotificationCalls.show.length, 2);
   });
 });
+
+// iOS hands the Up next widget to the native module; the default adapter is inert.
+setUpNextWidgetNative('{"name":"Push"}');
+clearUpNextWidgetNative();
+assert.deepEqual(upNextWidgetCalls, ['set:{"name":"Push"}', 'clear']);

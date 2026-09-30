@@ -14,6 +14,7 @@ const projectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
 
 function devLog(entry: Parameters<NonNullable<FirestoreClientDeps['log']>>[0]): void {
   if (!__DEV__) return;
+  if (!entry.error && !entry.retried && entry.status !== undefined && entry.status >= 200 && entry.status < 300) return;
   const suffix = [entry.error, entry.retried ? 'tokenRefreshed=true' : undefined].filter(Boolean).join(' ');
   const line = `[firestore] ${entry.method} ${entry.url} -> ${entry.status ?? '(no response)'}`;
   if (suffix) console.warn(`${line} ${suffix}`);

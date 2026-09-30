@@ -3,10 +3,11 @@ import {
   UpNextWidget,
 } from '@/widgets/up-next-widget';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setUpNextWidgetNative } from '@/lib/up-next-widget-native';
 import { Platform } from 'react-native';
 import { requestWidgetUpdate } from 'react-native-android-widget';
 
-// What the Android home-screen widget renders. Written by the Home screen every
+// What the home-screen widget renders (Android and iOS). Written by the Home screen every
 // time it resolves the Up Next card, read by the widget's headless task handler
 // (which has no auth or Firestore access of its own).
 export type WidgetUpNext = {
@@ -42,8 +43,9 @@ export async function readWidgetUpNext(): Promise<WidgetUpNext> {
 }
 
 // Caches the copy and redraws any widgets already on the home screen.
-// No-op off Android; requestWidgetUpdate is also a no-op when none are added.
+// requestWidgetUpdate / reloadTimelines are no-ops when none are added.
 export async function syncUpNextWidget(next: WidgetUpNext): Promise<void> {
+  setUpNextWidgetNative(JSON.stringify(next));
   if (Platform.OS !== 'android') return;
   try {
     await AsyncStorage.setItem(KEY, JSON.stringify(next));

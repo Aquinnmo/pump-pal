@@ -1,0 +1,21 @@
+diff --git a/ios/EXConstantsService.m b/ios/EXConstantsService.m
+index f79eaae77b93b49bed5ded8498b64db71f3dd7dc..c1dc597fa2ac7714cf0930a708bfe5efdfb74669 100644
+--- a/ios/EXConstantsService.m
++++ b/ios/EXConstantsService.m
+@@ -62,9 +62,14 @@ - (NSString *)buildVersion
+ - (CGFloat)statusBarHeight
+ {
+ #if TARGET_OS_IOS
+-  __block CGSize statusBarSize;
++  __block CGSize statusBarSize = CGSizeZero;
+   [EXUtilities performSynchronouslyOnMainThread:^{
+-    statusBarSize = [UIApplication sharedApplication].statusBarFrame.size;
++    for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
++      if ([scene isKindOfClass:[UIWindowScene class]]) {
++        statusBarSize = ((UIWindowScene *)scene).statusBarManager.statusBarFrame.size;
++        if (scene.activationState == UISceneActivationStateForegroundActive) break;
++      }
++    }
+   }];
+   return MIN(statusBarSize.width, statusBarSize.height);
+ #elif TARGET_OS_OSX || TARGET_OS_TV

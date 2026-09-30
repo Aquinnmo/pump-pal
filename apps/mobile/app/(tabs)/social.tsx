@@ -1,7 +1,12 @@
+import { SOCIAL_CONDUCT_SUMMARY, TERMS_URL } from "@/constants/policies";
 import {
   acceptBuddyRequest,
+  acceptSocialTerms,
+  blockUser,
   chopBuddy,
   getBuddies,
+  removeBuddy,
+  reportUser,
   searchUsers,
   sendBuddyRequest,
 } from "@/data/remote/buddies";
@@ -9,16 +14,19 @@ import { toDateKey } from "@/lib/date-key";
 import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
 import { Toast } from "@/ui/primitives/toast";
+import { UserActionsModal, type UserActionTarget } from "@/ui/user-actions-modal";
 import { Ionicons } from "@expo/vector-icons";
 import type {
   BuddyDTO,
   BuddyRequestDTO,
   BuddySearchResult,
+  ReportReason,
 } from "@timber/contract/api";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Linking,
   StyleSheet,
   Text,
   TextInput,
@@ -59,6 +67,9 @@ export default function SocialScreen() {
   const [buddies, setBuddies] = useState<BuddyDTO[]>([]);
   const [requests, setRequests] = useState<BuddyRequestDTO[]>([]);
   const [loading, setLoading] = useState(true);
+  // The server hides everything until the caller accepts the current terms.
+  const [termsRequired, setTermsRequired] = useState(false);
+  const [actionTarget, setActionTarget] = useState<UserActionTarget | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busyUid, setBusyUid] = useState<string | null>(null);
   const [toast, setToast] = useState<{
@@ -83,6 +94,7 @@ export default function SocialScreen() {
       const data = await getBuddies(toDateKey(new Date()));
       setBuddies(data.buddies);
       setRequests(data.requests);
+      setTermsRequired(data.termsRequired);
       setError(null);
     } catch {
       setError("Could not load your buddies. Tap to retry.");
@@ -109,7 +121,7 @@ export default function SocialScreen() {
 
   const searchSeq = useRef(0);
   useEffect(() => {
-    if (!socialEnabled || !trimmed) {
+    if (!socialEnabled || termsRequired || !trimmed) {
       setResults([]);
       setSearching(false);
       return;
@@ -128,7 +140,7 @@ export default function SocialScreen() {
       }
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [socialEnabled, trimmed]);
+  }, [socialEnabled, termsRequired, trimmed]);
 
   async function onBuddyUp(uid: string) {
     setBusyUid(uid);
@@ -157,6 +169,40 @@ export default function SocialScreen() {
     } finally {
       setBusyUid(null);
     }
+  }
+
+  async function onAcceptTerms() {
+    setBusyUid("terms");
+    try {
+      await acceptSocialTerms();
+      setTermsRequired(false);
+      await load();
+    } catch {
+      setError("Could not save your agreement. Tap to retry.");
+    } finally {
+      setBusyUid(null);
+    }
+  }
+
+  // The modal awaits each of these and shows its own error, so they throw.
+  async function onDecline(uid: string) {
+    await removeBuddy(uid);
+    await load();
+  }
+  async function onRemove(uid: string) {
+    await removeBuddy(uid);
+    setResults((rs) => rs.map((r) => (r.uid === uid ? { ...r, state: "none" } : r)));
+    await load();
+  }
+  async function onBlock(uid: string) {
+    await blockUser(uid);
+    setResults((rs) => rs.filter((r) => r.uid !== uid));
+    await load();
+    setToast({ visible: true, message: "Blocked. You can unblock in Settings.", type: "info" });
+  }
+  async function onReport(uid: string, reason: ReportReason, note: string) {
+    await reportUser(uid, reason, note);
+    setToast({ visible: true, message: "Report sent.", type: "success" });
   }
 
   async function onChop(uid: string) {
@@ -211,7 +257,7 @@ export default function SocialScreen() {
       >
         <View style={styles.headerContent}>
           <Text style={styles.pageTitle}>Social</Text>
-          {socialEnabled && (
+          {socialEnabled && !termsRequired && (
             <TextInput
               style={styles.search}
               value={query}
@@ -242,19 +288,42 @@ export default function SocialScreen() {
           <TouchableOpacity
             style={styles.errorRow}
             activeOpacity={0.7}
-            onPress={load}
+            onPress={termsRequired ? onAcceptTerms : load}
           >
             <Text style={styles.errorText}>{error}</Text>
           </TouchableOpacity>
         )}
 
-        {socialEnabled && (isSearching ? (
+        {socialEnabled && termsRequired && (
+          <View style={styles.termsCard}>
+            <Text style={styles.cardTitle}>Before you connect</Text>
+            <Text style={styles.cardSubtitle}>{SOCIAL_CONDUCT_SUMMARY}</Text>
+            <TouchableOpacity
+              style={styles.termsLink}
+              onPress={() => Linking.openURL(TERMS_URL)}
+              accessibilityRole="link"
+              accessibilityLabel="Read the community terms"
+              activeOpacity={0.8}
+            >
+              <Text style={styles.termsLinkText}>Read the community terms</Text>
+              <Ionicons name="chevron-forward" size={16} color="#888" />
+            </TouchableOpacity>
+            <ActionButton
+              label="I agree"
+              busy={busyUid === "terms"}
+              onPress={onAcceptTerms}
+            />
+          </View>
+        )}
+
+        {socialEnabled && !termsRequired && (isSearching ? (
           <SearchResults
             results={results}
             searching={searching}
             busyUid={busyUid}
             onBuddyUp={onBuddyUp}
             onAccept={onAccept}
+            onMore={(r) => setActionTarget({ uid: r.uid, username: r.username, kind: "search" })}
           />
         ) : (
           <>
@@ -273,6 +342,10 @@ export default function SocialScreen() {
                     label="Accept"
                     busy={busyUid === r.uid}
                     onPress={() => onAccept(r.uid)}
+                  />
+                  <MoreButton
+                    username={r.username}
+                    onPress={() => setActionTarget({ uid: r.uid, username: r.username, kind: "request" })}
                   />
                 </View>
               ))}
@@ -298,12 +371,22 @@ export default function SocialScreen() {
                   now={now}
                   busy={busyUid === b.uid}
                   onChop={() => onChop(b.uid)}
+                  onMore={() => setActionTarget({ uid: b.uid, username: b.username, kind: "buddy" })}
                 />
               ))
             )}
           </>
         ))}
       </FadingScrollView>
+
+      <UserActionsModal
+        target={actionTarget}
+        onClose={() => setActionTarget(null)}
+        onDecline={onDecline}
+        onRemove={onRemove}
+        onBlock={onBlock}
+        onReport={onReport}
+      />
 
       <View style={styles.footer}>
         <TouchableOpacity
@@ -328,12 +411,14 @@ function SearchResults({
   busyUid,
   onBuddyUp,
   onAccept,
+  onMore,
 }: {
   results: BuddySearchResult[];
   searching: boolean;
   busyUid: string | null;
   onBuddyUp: (uid: string) => void;
   onAccept: (uid: string) => void;
+  onMore: (result: BuddySearchResult) => void;
 }) {
   if (searching && results.length === 0) {
     return <ActivityIndicator color="#e54242" style={styles.loader} />;
@@ -379,6 +464,7 @@ function SearchResults({
           {r.state === "buddies" && (
             <Text style={styles.stateLabel}>Buddies</Text>
           )}
+          <MoreButton username={r.username} onPress={() => onMore(r)} />
         </View>
       ))}
     </>
@@ -390,11 +476,13 @@ function BuddyRow({
   now,
   busy,
   onChop,
+  onMore,
 }: {
   buddy: BuddyDTO;
   now: number;
   busy: boolean;
   onChop: () => void;
+  onMore: () => void;
 }) {
   const remaining = cooldownRemaining(buddy.lastChoppedAt, now);
 
@@ -418,9 +506,26 @@ function BuddyRow({
       ) : remaining > 0 ? (
         <Text style={styles.stateLabel}>{formatCountdown(remaining)}</Text>
       ) : (
-        <ActionButton label="Chop" busy={busy} onPress={onChop} />
+        // Disabled until push delivery is fixed (#78): chops currently record
+        // without reaching the buddy. Drop `disabled` to turn them back on.
+        <ActionButton label="Chop" busy={busy} onPress={onChop} disabled />
       )}
+      <MoreButton username={buddy.username} onPress={onMore} />
     </View>
+  );
+}
+
+function MoreButton({ username, onPress }: { username: string; onPress: () => void }) {
+  return (
+    <TouchableOpacity
+      style={styles.more}
+      onPress={onPress}
+      activeOpacity={0.8}
+      accessibilityRole="button"
+      accessibilityLabel={`More actions for ${username}`}
+    >
+      <Ionicons name="ellipsis-horizontal" size={20} color="#888" />
+    </TouchableOpacity>
   );
 }
 
@@ -428,24 +533,27 @@ function ActionButton({
   label,
   busy,
   onPress,
+  disabled = false,
 }: {
   label: string;
   busy: boolean;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <TouchableOpacity
-      style={styles.action}
+      style={[styles.action, disabled && styles.actionDisabled]}
       activeOpacity={0.8}
       onPress={onPress}
-      disabled={busy}
+      disabled={busy || disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled: busy || disabled }}
     >
       {busy ? (
         <ActivityIndicator color="#fff" size="small" />
       ) : (
-        <Text style={styles.actionText}>{label}</Text>
+        <Text style={[styles.actionText, disabled && styles.actionTextDisabled]}>{label}</Text>
       )}
     </TouchableOpacity>
   );
@@ -510,6 +618,33 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
+  termsCard: {
+    gap: 12,
+    backgroundColor: "#1c1c1c",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+    borderRadius: 14,
+    borderCurve: "continuous",
+    padding: 16,
+  },
+  termsLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 44,
+  },
+  termsLinkText: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  more: {
+    width: 44,
+    height: 44,
+    marginRight: -8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   cardTitle: {
     color: "#fff",
     fontSize: 16,
@@ -534,6 +669,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "800",
+  },
+  actionDisabled: {
+    backgroundColor: "#1c1c1c",
+    borderWidth: 1,
+    borderColor: "#2a2a2a",
+  },
+  actionTextDisabled: {
+    color: "#444",
   },
   stateLabel: {
     color: "#666",

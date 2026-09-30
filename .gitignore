@@ -71,6 +71,7 @@ temp/
 /apps/mobile/modules/*/android/local.properties
 
 *.apk
+*.aab
 
 **/.dev.vars**
 !**/.dev.vars.example

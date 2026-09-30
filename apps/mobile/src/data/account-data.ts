@@ -1,3 +1,5 @@
+import { clearSession } from '@/lib/active-workout-session';
+import { clearUpNextWidgetNative } from '@/lib/up-next-widget-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getDb, purgeUidData } from './client';
 import { listAll } from './outbox';
@@ -33,12 +35,16 @@ export async function syncBeforeSignOut(uid: string): Promise<void> {
  */
 export async function purgeLocalAccountData(uid: string): Promise<void> {
   await purgeUidData(uid);
+  clearUpNextWidgetNative();
+  await clearSession();
   const keys = await AsyncStorage.getAllKeys();
-  const uidKeys = keys.filter((key) => key.includes(uid));
+  // Daily names are date-keyed, not uid-keyed, but derive from the account's workouts.
+  const uidKeys = keys.filter((key) => key.includes(uid) || key.startsWith('pumppal_daily_name_v1_'));
   const sharedAccountProjections = [
-    'pumppal_up_next_widget_v1',
+    'pumppal_widget_up_next',
     'pumppal_catalog_v2',
     'pumppal_catalog_version_v2',
+    'pumppal_ai_quota_v1',
   ];
   await AsyncStorage.multiRemove([...new Set([...uidKeys, ...sharedAccountProjections])]);
 }

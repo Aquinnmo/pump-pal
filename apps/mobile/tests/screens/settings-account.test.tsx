@@ -77,6 +77,13 @@ mock.module(new URL('../../src/config/firebase.web.ts', import.meta.url).pathnam
   auth: { currentUser: user },
 }));
 
+// Apple is iOS-only; the web test environment never renders its row, so the
+// native adapter stays behind this seam (deleting a non-Apple account never
+// calls it).
+mock.module(new URL('../../src/lib/apple-sign-in.ts', import.meta.url).pathname, () => ({
+  revokeAppleAccess: async () => true,
+}));
+
 mock.module('firebase/auth', () => ({
   deleteUser: async () => {
     events.push('delete-auth-user');
@@ -239,7 +246,7 @@ describe('SettingsAccountScreen', () => {
     assert.deepEqual(events, ['delete-account-data', 'purge-local', 'delete-auth-user']);
   });
 
-  it('preserves the current partial-server-response behavior', async () => {
+  it('keeps local state and Auth on a partial server response, then completes on retry', async () => {
     accountDataResult = { ...accountDataResult, partial: true };
     await renderLoaded();
     openDeleteModal();
@@ -249,12 +256,18 @@ describe('SettingsAccountScreen', () => {
       fireEvent.click(screen.getByText('Delete').parentElement!);
       await Promise.resolve();
     });
-    await waitFor(() => assert.deepEqual(replacements, ['/(auth)/sign-in']));
+    await waitFor(() => assert.ok(screen.getByText(/Some of your data couldn't be deleted yet/)));
+    assert.deepEqual(events, ['delete-account-data']);
+    assert.deepEqual(replacements, []);
+    assert.ok(screen.getByText(/Type your username/));
 
-    // BUG: the server's partial=true response means cleanup failed and is safe
-    // to retry, but this screen ignores the envelope and deletes Auth anyway.
-    assert.equal(accountDataResult.partial, true);
-    assert.deepEqual(events, ['delete-account-data', 'purge-local', 'delete-auth-user']);
+    accountDataResult = { ...accountDataResult, partial: false };
+    await act(async () => {
+      fireEvent.click(screen.getByText('Delete').parentElement!);
+      await Promise.resolve();
+    });
+    await waitFor(() => assert.deepEqual(replacements, ['/(auth)/sign-in']));
+    assert.deepEqual(events, ['delete-account-data', 'delete-account-data', 'purge-local', 'delete-auth-user']);
   });
 
   it('keeps the delete modal open and reports a server failure without purging later data', async () => {

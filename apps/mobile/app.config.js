@@ -27,8 +27,13 @@ const googleSignInPlugin = IOS_CLIENT_ID && !LOCAL_IOS_BUNDLE_ID
     ]
   : null;
 
+// Sign in with Apple adds the com.apple.developer.applesignin entitlement. A
+// personal-team build cannot hold that capability, so it is omitted there for the
+// same reason as Google above (the sign-in UI is hidden in those builds too).
+const appleSignInPlugin = LOCAL_IOS_BUNDLE_ID ? null : 'expo-apple-authentication';
+
 module.exports = ({ config }) => {
-  const plugins = googleSignInPlugin ? [...(config.plugins ?? []), googleSignInPlugin] : config.plugins;
+  const plugins = [...(config.plugins ?? []), googleSignInPlugin, appleSignInPlugin].filter(Boolean);
   const android = {
     ...config.android,
     googleServicesFile:
@@ -48,6 +53,7 @@ module.exports = ({ config }) => {
     android,
     ios: {
       ...ios,
+      googleServicesFile: IS_DEV ? './GoogleService-Info-dev.plist' : ios.googleServicesFile,
       bundleIdentifier:
         LOCAL_IOS_BUNDLE_ID ||
         (IS_DEV ? 'com.aquinnmo.timber-dev' : config.ios.bundleIdentifier),

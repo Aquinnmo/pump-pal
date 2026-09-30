@@ -1,4 +1,5 @@
 import { useAuth } from "@/context/auth-context";
+import { AI_DATA_DISCLOSURE } from "@/constants/policies";
 import { bumpDataVersion } from "@/data/data-version";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
@@ -343,7 +344,10 @@ export default function SettingsAppScreen() {
             {/* The consent sits on the control, not on a screen the user has to
                 go find — turning this on is what sends the data. */}
             <Text style={styles.toggleSubtitle}>
-              Your data may be sent to 3rd parties.
+              {AI_DATA_DISCLOSURE}
+            </Text>
+            <Text style={styles.toggleSubtitle}>
+              AI is off by default. You can turn it off at any time.
             </Text>
           </View>
           {savingPreference === "aiEnabled" ? (
@@ -381,6 +385,21 @@ export default function SettingsAppScreen() {
             />
           )}
         </View>
+
+        <TouchableOpacity
+          style={styles.toggleRow}
+          onPress={() => router.push("/settings-blocked")}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Blocked users"
+        >
+          <Ionicons name="ban-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <View style={styles.toggleLabels}>
+            <Text style={styles.updateButtonText}>Blocked Users</Text>
+            <Text style={styles.toggleSubtitle}>People you have blocked from Social.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#888" />
+        </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.feedbackButton}
@@ -539,7 +558,8 @@ const styles = StyleSheet.create({
     borderColor: "#e54242",
   },
   toggleSubtitle: {
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 21,
     color: "#888",
     marginTop: 4,
   },
