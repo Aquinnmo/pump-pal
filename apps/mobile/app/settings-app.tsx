@@ -407,7 +407,7 @@ export default function SettingsAppScreen() {
           <View style={styles.toggleLabels}>
             <Text style={styles.updateButtonText}>Normalize Auto-Fill</Text>
             <Text style={styles.toggleSubtitle}>
-              Fill each exercise with your most common set from last time instead of copying every set.
+              Make set data consistent for exercises when planning them.
             </Text>
           </View>
           <Switch

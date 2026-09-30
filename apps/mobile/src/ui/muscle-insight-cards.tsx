@@ -131,7 +131,7 @@ export function MuscleInsightCards({ workouts }: Props) {
                 Main muscle = 1 set · Helper muscles = ½ set
               </StatHelpFormula>
               <StatHelpText>
-                Healthy range: about 10–20 sets per muscle each week.
+                Healthy range: about 10 to 20 sets per muscle each week.
               </StatHelpText>
             </StatHelp>
           </View>

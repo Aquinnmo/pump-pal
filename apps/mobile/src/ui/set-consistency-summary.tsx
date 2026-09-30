@@ -15,7 +15,7 @@ import {
 const HELP = (
   <>
     <StatHelpText>
-      How your weight and reps change from one set to the next, over your last
+      How your weight and reps change from one set to the next as you are doing an exercise. Tracked over your last
       30 workouts.
     </StatHelpText>
     <StatHelpFormula>
@@ -25,8 +25,7 @@ const HELP = (
       Weight counts first. If the weight stays the same, reps decide.
     </StatHelpText>
     <StatHelpText>
-      If 8 in 10 sets stay about the same, you are Consistent. If not, the most
-      common change sets your label.
+      If 8 in 10 sets stay about the same, you are consistent.
     </StatHelpText>
   </>
 );

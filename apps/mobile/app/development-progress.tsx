@@ -86,17 +86,17 @@ export default function DevelopmentProgressScreen() {
               <Text style={styles.headerTitleText}>Development Progress</Text>
               <StatHelp title='Development Progress'>
                 <StatHelpText>
-                  How much stronger each muscle has gotten.
+                  How much stronger each muscle has gotten over the long term.
                 </StatHelpText>
                 <StatHelpText>
-                  We compare your best sets from the last 90 days with the 90
-                  days before, on the same exercises.
+                  We compare your best sets from the last 90 days with the previous 90
+                  days, on the same exercises.
                 </StatHelpText>
                 <StatHelpFormula>
-                  Change = (new best − old best) ÷ old best
+                  Percentage Change = (new best − old best) ÷ old best
                 </StatHelpFormula>
                 <StatHelpText>
-                  Your most improved muscle gets an A+. No change is a C.
+                  Your most improved muscle gets an A+. No change is a C. Anything lower and you have regressed.
                 </StatHelpText>
               </StatHelp>
             </View>
