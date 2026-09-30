@@ -33,9 +33,9 @@ describe('SetConsistencySummary', () => {
     render(<SetConsistencySummary workouts={[]} />);
 
     const summary = screen.getByLabelText(
-      'Set consistency. Not enough data. Log 3 more multi-set exercises to reveal how your weight and reps change.',
+      'Set consistency. Not enough data. Log more multi-set exercises to reveal how your weight and reps change.',
     );
-    assert.equal(summary.textContent, 'Set consistencyNot enough dataLog 3 more multi-set exercises to reveal how your weight and reps change.');
+    assert.equal(summary.textContent, 'Set consistencyNot enough dataLog more multi-set exercises to reveal how your weight and reps change.');
   });
 
   it('treats undated workouts as unavailable data and preserves the empty guidance', () => {
@@ -49,7 +49,7 @@ describe('SetConsistencySummary', () => {
 
     assert.ok(
       screen.getByText(
-        'Log 3 more multi-set exercises to reveal how your weight and reps change.',
+        'Log more multi-set exercises to reveal how your weight and reps change.',
       ),
     );
     assert.equal(screen.queryByText('Loading'), null);
@@ -63,12 +63,18 @@ describe('SetConsistencySummary', () => {
           multiSetWorkout('workout-1', '2025-01-03T00:00:00.000Z', [
             { reps: 8, weight: 20 },
             { reps: 8, weight: 20 },
+            { reps: 8, weight: 20 },
+            { reps: 8, weight: 20 },
           ]),
           multiSetWorkout('workout-2', '2025-01-02T00:00:00.000Z', [
             { reps: 8, weight: 20 },
             { reps: 8, weight: 20 },
+            { reps: 8, weight: 20 },
+            { reps: 8, weight: 20 },
           ]),
           multiSetWorkout('workout-3', '2025-01-01T00:00:00.000Z', [
+            { reps: 8, weight: 20 },
+            { reps: 8, weight: 20 },
             { reps: 8, weight: 20 },
             { reps: 8, weight: 20 },
           ]),
@@ -77,40 +83,36 @@ describe('SetConsistencySummary', () => {
     );
 
     const summary = screen.getByLabelText(
-      'Set consistency. Consistent. Across 3 multi-set exercises in your last 3 workouts, you stayed consistent. By exercise: 0 big drops, 0 eased off, 3 held steady, 0 crept up, 0 big jumps.',
+      'Set consistency. Consistent. Across 9 set-to-set changes in your last 3 workouts, you stayed consistent. By set change: 0 overconfident, 0 hitting failure, 9 consistent, 0 holding back, 0 underconfident.',
     );
     assert.ok(screen.getByText('Consistent'));
     assert.match(
       summary.getAttribute('aria-label') ?? '',
-      /Across 3 multi-set exercises in your last 3 workouts, you stayed consistent\./,
+      /Across 9 set-to-set changes in your last 3 workouts, you stayed consistent\./,
     );
-    assert.match(summary.textContent ?? '', /Held/);
   });
 
-  it('renders the erratic category and its both-ways note', () => {
+  it('names the dominant kind of change when sets are not steady', () => {
     render(
       <SetConsistencySummary
         workouts={[
-          multiSetWorkout('workout-1', '2025-01-03T00:00:00.000Z', [
-            { reps: 8, weight: 20 },
-            { reps: 8, weight: 40 },
-            { reps: 8, weight: 20 },
+          multiSetWorkout('workout-1', '2025-01-02T00:00:00.000Z', [
+            { reps: 8, weight: 100 },
+            { reps: 8, weight: 70 },
+            { reps: 8, weight: 45 },
+            { reps: 8, weight: 25 },
           ]),
-          multiSetWorkout('workout-2', '2025-01-02T00:00:00.000Z', [
-            { reps: 8, weight: 20 },
-            { reps: 8, weight: 40 },
-            { reps: 8, weight: 20 },
-          ]),
-          multiSetWorkout('workout-3', '2025-01-01T00:00:00.000Z', [
-            { reps: 8, weight: 20 },
-            { reps: 8, weight: 40 },
-            { reps: 8, weight: 20 },
+          multiSetWorkout('workout-2', '2025-01-01T00:00:00.000Z', [
+            { reps: 8, weight: 100 },
+            { reps: 8, weight: 70 },
+            { reps: 8, weight: 45 },
+            { reps: 8, weight: 25 },
           ]),
         ]}
       />,
     );
 
-    assert.ok(screen.getByText('Erratic'));
-    assert.ok(screen.getByText('3 exercises went both ways.'));
+    assert.ok(screen.getByText('Overconfident'));
+    assert.equal(screen.queryByText(/went both ways/), null);
   });
 });
