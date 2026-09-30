@@ -6,6 +6,30 @@ import {
 import type { Workout } from "@/types/workout";
 import { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import {
+  StatHelp,
+  StatHelpFormula,
+  StatHelpText,
+} from "@/ui/primitives/stat-help";
+
+const HELP = (
+  <>
+    <StatHelpText>
+      How your weight and reps change from one set to the next, over your last
+      30 workouts.
+    </StatHelpText>
+    <StatHelpFormula>
+      Change = (this set − last set) ÷ the smaller of the two
+    </StatHelpFormula>
+    <StatHelpText>
+      Weight counts first. If the weight stays the same, reps decide.
+    </StatHelpText>
+    <StatHelpText>
+      If 8 in 10 sets stay about the same, you are Consistent. If not, the most
+      common change sets your label.
+    </StatHelpText>
+  </>
+);
 
 type SetConsistencySummaryProps = {
   workouts: Workout[];
@@ -37,6 +61,7 @@ const BUCKET_COPY: Record<
   },
 };
 
+
 export function SetConsistencySummary({
   workouts,
 }: SetConsistencySummaryProps) {
@@ -47,21 +72,29 @@ export function SetConsistencySummary({
     const detail =
       "Log more multi-set exercises to reveal how your weight and reps change.";
     return (
-      <View
-        style={styles.panel}
-        accessible
-        accessibilityLabel={`Set consistency. Not enough data. ${detail}`}
-      >
+      <View style={styles.panel}>
         <View style={styles.header}>
-          <Text style={styles.label} selectable>
-            Set consistency
-          </Text>
-          <Text style={styles.value} selectable>
-            Not enough data
-          </Text>
+          <View
+            style={styles.headerMain}
+            accessible
+            accessibilityLabel={`Set consistency. Not enough data. ${detail}`}
+          >
+            <Text style={styles.label} selectable>
+              Set consistency
+            </Text>
+            <Text style={styles.value} selectable>
+              Not enough data
+            </Text>
+          </View>
+          <StatHelp title="Set consistency">{HELP}</StatHelp>
         </View>
         <View style={styles.divider} />
-        <Text style={styles.detail} selectable>
+        <Text
+          style={styles.detail}
+          selectable
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           {detail}
         </Text>
       </View>
@@ -79,40 +112,49 @@ export function SetConsistencySummary({
   ).join(", ");
 
   return (
-    <View
-      style={styles.panel}
-      accessible
-      accessibilityLabel={`Set consistency. ${copy.title}. ${detail} By set change: ${spokenDistribution}.`}
-    >
+    <View style={styles.panel}>
       <View style={styles.header}>
-        <Text style={styles.label} selectable>
-          Set consistency
-        </Text>
-        <Text style={styles.value} selectable>
-          {copy.title}
-        </Text>
+        <View
+          style={styles.headerMain}
+          accessible
+          accessibilityLabel={`Set consistency. ${copy.title}. ${detail} By set change: ${spokenDistribution}.`}
+        >
+          <Text style={styles.label} selectable>
+            Set consistency
+          </Text>
+          <Text style={styles.value} selectable>
+            {copy.title}
+          </Text>
+        </View>
+        <StatHelp title="Set consistency">{HELP}</StatHelp>
       </View>
       <View style={styles.divider} />
-      <View style={styles.chart}>
-        {SET_CHANGE_BUCKET_ORDER.map((bucket) => {
-          const count = result.distribution[bucket];
-          return (
-            <View key={bucket} style={styles.barTrack}>
-              <View
-                style={[
-                  styles.bar,
-                  count === 0 && styles.barEmpty,
-                  { height: `${peak > 0 ? (count / peak) * 100 : 0}%` },
-                ]}
-              />
-            </View>
-          );
-        })}
-      </View>
-      <View style={styles.axis}>
-        <Text style={styles.axisLabel}>Dropping volume</Text>
-        <View style={styles.axisLine} />
-        <Text style={styles.axisLabel}>Adding volume</Text>
+      <View
+        style={styles.graph}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        <View style={styles.chart}>
+          {SET_CHANGE_BUCKET_ORDER.map((bucket) => {
+            const count = result.distribution[bucket];
+            return (
+              <View key={bucket} style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.bar,
+                    count === 0 && styles.barEmpty,
+                    { height: `${peak > 0 ? (count / peak) * 100 : 0}%` },
+                  ]}
+                />
+              </View>
+            );
+          })}
+        </View>
+        <View style={styles.axis}>
+          <Text style={styles.axisLabel}>Dropping volume</Text>
+          <View style={styles.axisLine} />
+          <Text style={styles.axisLabel}>Adding volume</Text>
+        </View>
       </View>
     </View>
   );
@@ -132,8 +174,17 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+  },
+  headerMain: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: 16,
+  },
+  graph: {
+    gap: 12,
   },
   label: {
     flex: 1,

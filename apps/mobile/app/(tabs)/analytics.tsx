@@ -669,8 +669,7 @@ export default function AnalyticsScreen() {
                 value={favoriteWorkoutType || "Not available"}
                 help={
                   <StatHelpText>
-                    The workout you have logged most often. If two are tied,
-                    the one you did most recently wins.
+                    The workout type you have logged most often.
                   </StatHelpText>
                 }
               />
@@ -682,13 +681,7 @@ export default function AnalyticsScreen() {
                 help={
                   <>
                     <StatHelpText>
-                      How long your workouts usually last.
-                    </StatHelpText>
-                    <StatHelpFormula>
-                      Total workout time ÷ number of workouts
-                    </StatHelpFormula>
-                    <StatHelpText>
-                      Only workouts that were timed are counted.
+                      An average of how long your workouts typically last. Only timed workouts are counted.
                     </StatHelpText>
                   </>
                 }
@@ -699,7 +692,7 @@ export default function AnalyticsScreen() {
                 value={favoriteExercise || "Not available"}
                 help={
                   <StatHelpText>
-                    The exercise that shows up in the most of your workouts.
+                    The exercise that shows up the most in your workouts.
                   </StatHelpText>
                 }
               />
@@ -747,6 +740,12 @@ export default function AnalyticsScreen() {
                     : null
                 }
                 emptyMessage="No weighted exercises logged yet."
+                help={
+                  <StatHelpText>
+                    The heaviest weight you have logged in one set of this
+                    exercise.
+                  </StatHelpText>
+                }
               />
 
               {bodyweightExerciseList.length > 0 && (
@@ -764,6 +763,12 @@ export default function AnalyticsScreen() {
                         : null
                     }
                     emptyMessage="No bodyweight records yet."
+                    help={
+                      <StatHelpText>
+                        The most reps you have done in one set of this
+                        bodyweight exercise.
+                      </StatHelpText>
+                    }
                   />
                 </>
               )}
@@ -785,6 +790,12 @@ export default function AnalyticsScreen() {
                         : null
                     }
                     emptyMessage="No duration records yet."
+                    help={
+                      <StatHelpText>
+                        The longest you have held or done one set of this
+                        exercise.
+                      </StatHelpText>
+                    }
                   />
                 </>
               )}
@@ -793,6 +804,12 @@ export default function AnalyticsScreen() {
                 label="Longest Workout"
                 value={longestWorkoutDuration === null ? "—" : formatDuration(longestWorkoutDuration)}
                 numeric
+                help={
+                  <StatHelpText>
+                    Your longest workout from start to finish. Only timed
+                    workouts are counted.
+                  </StatHelpText>
+                }
               />
             </View>
           </View>
@@ -954,6 +971,7 @@ function PersonalBestRow({
   onSelect,
   value,
   emptyMessage,
+  help,
 }: {
   label: string;
   options: string[];
@@ -961,6 +979,7 @@ function PersonalBestRow({
   onSelect: (value: string) => void;
   value: string | null;
   emptyMessage: string;
+  help?: ReactNode;
 }) {
   return (
     <View style={styles.personalBestRow}>
@@ -968,11 +987,14 @@ function PersonalBestRow({
         <View style={styles.personalBestCopy}>
           <Text style={styles.metricLabel}>{label}</Text>
         </View>
-        {value && (
-          <Text style={[styles.personalBestValue, styles.numeric]} selectable>
-            {value}
-          </Text>
-        )}
+        <View style={styles.personalBestTrailing}>
+          {value && (
+            <Text style={[styles.personalBestValue, styles.numeric]} selectable>
+              {value}
+            </Text>
+          )}
+          {help && <StatHelp title={label}>{help}</StatHelp>}
+        </View>
       </View>
       {options.length > 0 ? (
         <Dropdown
@@ -1271,6 +1293,11 @@ const styles = StyleSheet.create({
   personalBestCopy: {
     flex: 1,
     gap: 3,
+  },
+  personalBestTrailing: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   personalBestValue: {
     flexShrink: 0,
