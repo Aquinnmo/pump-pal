@@ -10,7 +10,7 @@ const router = { push: (path: unknown) => pushed.push(path) };
 const pushed: unknown[] = [];
 
 let profileData: { socialEnabled?: boolean } | null = null;
-let buddiesResponse: { buddies: BuddyDTO[]; requests: BuddyRequestDTO[] } = {
+let buddiesResponse: { buddies: BuddyDTO[]; requests: BuddyRequestDTO[]; termsRequired?: boolean } = {
   buddies: [],
   requests: [],
 };
@@ -25,6 +25,10 @@ const searchCalls: string[] = [];
 const buddyUpCalls: string[] = [];
 const acceptCalls: string[] = [];
 const chopCalls: Array<{ uid: string; today: string }> = [];
+const removeCalls: string[] = [];
+const blockCalls: string[] = [];
+const reportCalls: Array<{ uid: string; reason: string; note?: string }> = [];
+let termsAccepted = 0;
 
 mock.module('@/context/auth-context', () => ({
   useAuth: () => ({ user, loading: false }),
@@ -41,7 +45,7 @@ mock.module(new URL('../../src/data/remote/buddies.ts', import.meta.url).pathnam
       await new Promise<void>((resolve) => { releaseLoad = resolve; });
     }
     if (loadError) throw loadError;
-    return buddiesResponse;
+    return { termsRequired: false, ...buddiesResponse };
   },
   searchUsers: async (query: string) => {
     searchCalls.push(query);
@@ -54,6 +58,14 @@ mock.module(new URL('../../src/data/remote/buddies.ts', import.meta.url).pathnam
     buddyUpCalls.push(uid);
   },
   acceptBuddyRequest: async (uid: string) => { acceptCalls.push(uid); },
+  removeBuddy: async (uid: string) => { removeCalls.push(uid); return { state: 'none' }; },
+  blockUser: async (uid: string) => { blockCalls.push(uid); },
+  reportUser: async (uid: string, reason: string, note?: string) => { reportCalls.push({ uid, reason, note }); },
+  acceptSocialTerms: async () => {
+    termsAccepted += 1;
+    buddiesResponse = { ...buddiesResponse, termsRequired: false };
+    return { version: 'test' };
+  },
   chopBuddy: async (uid: string, today: string) => {
     chopCalls.push({ uid, today });
     return { delivered: true };
@@ -133,6 +145,10 @@ beforeEach(() => {
   buddyUpCalls.length = 0;
   acceptCalls.length = 0;
   chopCalls.length = 0;
+  removeCalls.length = 0;
+  blockCalls.length = 0;
+  reportCalls.length = 0;
+  termsAccepted = 0;
   pushed.length = 0;
 });
 
@@ -268,6 +284,78 @@ describe('SocialScreen', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Chop' }));
     assert.deepEqual(chopCalls, []);
+  });
+
+  it('shows the terms gate instead of search and lists until the caller agrees', async () => {
+    buddiesResponse = { requests: [], buddies: [], termsRequired: true };
+    render(<SocialScreen />);
+    await waitFor(() => assert.ok(screen.getByText('Before you connect', { exact: true })));
+
+    assert.equal(screen.queryByRole('textbox', { name: 'Search for people by username' }), null);
+    assert.equal(screen.queryByText('No buddies yet', { exact: true }), null);
+    assert.ok(screen.getByRole('link', { name: 'Read the community terms' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'I agree' }));
+    await waitFor(() => assert.ok(screen.getByText('No buddies yet', { exact: true })));
+    assert.equal(termsAccepted, 1);
+    assert.equal(screen.queryByText('Before you connect', { exact: true }), null);
+    assert.ok(screen.getByRole('textbox', { name: 'Search for people by username' }));
+  });
+
+  it('declines an incoming request from the row menu without a confirmation step', async () => {
+    buddiesResponse = { requests: [request()], buddies: [] };
+    render(<SocialScreen />);
+    await waitFor(() => assert.ok(screen.getByRole('button', { name: 'More actions for casey' })));
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for casey' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decline request' }));
+    await waitFor(() => assert.deepEqual(removeCalls, ['request-1']));
+    await waitFor(() => assert.equal(screen.queryByRole('button', { name: 'Decline request' }), null));
+  });
+
+  it('removes a buddy only after confirming', async () => {
+    buddiesResponse = { requests: [], buddies: [buddy()] };
+    render(<SocialScreen />);
+    await waitFor(() => assert.ok(screen.getByRole('button', { name: 'More actions for alex' })));
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for alex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove buddy' }));
+    assert.deepEqual(removeCalls, []);
+    assert.ok(screen.getByText('Remove alex?', { exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
+    await waitFor(() => assert.deepEqual(removeCalls, ['buddy-1']));
+  });
+
+  it('blocks a search result after confirming and drops it from the results', async () => {
+    searchResponse = [{ uid: 'search-1', username: 'sam', state: 'none' }];
+    render(<SocialScreen />);
+    await waitFor(() => assert.ok(screen.getByText('No buddies yet', { exact: true })));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search for people by username' }), { target: { value: 'sam' } });
+    await waitFor(() => assert.ok(screen.getByRole('button', { name: 'More actions for sam' })), { timeout: 1000 });
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for sam' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Block' }));
+    assert.deepEqual(blockCalls, []);
+    assert.ok(screen.getByText('Block sam?', { exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Block' }));
+    await waitFor(() => assert.deepEqual(blockCalls, ['search-1']));
+    await waitFor(() => assert.equal(screen.queryByText('sam', { exact: true }), null));
+  });
+
+  it('reports a user with a reason and an optional note, and needs a reason first', async () => {
+    buddiesResponse = { requests: [], buddies: [buddy()] };
+    render(<SocialScreen />);
+    await waitFor(() => assert.ok(screen.getByRole('button', { name: 'More actions for alex' })));
+
+    fireEvent.click(screen.getByRole('button', { name: 'More actions for alex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Report' }));
+    assert.equal((screen.getByRole('button', { name: 'Send Report' }) as HTMLButtonElement).disabled, true);
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Harassment or abuse' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Report details' }), { target: { value: 'kept messaging me' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send Report' }));
+    await waitFor(() => assert.deepEqual(reportCalls, [{ uid: 'buddy-1', reason: 'harassment', note: 'kept messaging me' }]));
+    await waitFor(() => assert.ok(screen.getByText('Report sent.', { exact: true })));
   });
 
   it('preserves the malformed cooldown timestamp bypass as a known behavior', async () => {

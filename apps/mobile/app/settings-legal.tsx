@@ -1,4 +1,4 @@
-import { ACCOUNT_DELETION_URL, AI_DATA_DISCLOSURE, HEALTH_DISCLAIMER, PRIVACY_POLICY_URL } from '@/constants/policies';
+import { ACCOUNT_DELETION_URL, AI_DATA_DISCLOSURE, HEALTH_DISCLAIMER, PRIVACY_POLICY_URL, TERMS_URL } from '@/constants/policies';
 import { FadingScrollView } from '@/ui/primitives/fading-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -42,6 +42,17 @@ export default function SettingsLegalScreen() {
           activeOpacity={0.8}>
           <Ionicons name="trash-outline" size={20} color="#fff" style={styles.rowIcon} />
           <Text style={styles.navRowText}>Account Deletion Policy</Text>
+          <Ionicons name="chevron-forward" size={20} color="#888" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.navRow}
+          accessibilityRole="link"
+          accessibilityLabel="Community Terms"
+          onPress={() => Linking.openURL(TERMS_URL)}
+          activeOpacity={0.8}>
+          <Ionicons name="people-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <Text style={styles.navRowText}>Community Terms</Text>
           <Ionicons name="chevron-forward" size={20} color="#888" />
         </TouchableOpacity>
 

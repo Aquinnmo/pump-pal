@@ -9,6 +9,7 @@ const okPhases = {
   deletePrivateDocs: async () => {},
   deletePushupChallenge: async () => {},
   deleteFriendships: async () => 2,
+  deleteBlocks: async () => {},
   deleteUsernameReservation: async () => {},
   deleteUserDoc: async () => {},
 };
@@ -22,6 +23,7 @@ const phaseOrder: PhaseName[] = [
   'deletePrivateDocs',
   'deletePushupChallenge',
   'deleteFriendships',
+  'deleteBlocks',
   'deleteUserDoc',
 ];
 
@@ -42,6 +44,7 @@ function makePhases(failing?: PhaseName): { phases: AccountDeletionPhases; calls
       deletePrivateDocs: run('deletePrivateDocs', undefined),
       deletePushupChallenge: run('deletePushupChallenge', undefined),
       deleteFriendships: run('deleteFriendships', 2),
+      deleteBlocks: run('deleteBlocks', undefined),
       deleteUsernameReservation: run('deleteUsernameReservation', undefined),
       deleteUserDoc: run('deleteUserDoc', undefined),
     },

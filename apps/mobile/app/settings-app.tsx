@@ -387,6 +387,21 @@ export default function SettingsAppScreen() {
         </View>
 
         <TouchableOpacity
+          style={styles.toggleRow}
+          onPress={() => router.push("/settings-blocked")}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Blocked users"
+        >
+          <Ionicons name="ban-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <View style={styles.toggleLabels}>
+            <Text style={styles.updateButtonText}>Blocked Users</Text>
+            <Text style={styles.toggleSubtitle}>People you have blocked from Social.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#888" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.feedbackButton}
           onPress={() =>
             Linking.openURL(

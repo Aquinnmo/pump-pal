@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { SOCIAL_TERMS_VERSION } from '@timber/contract/api';
 import { encodeFirestoreFields } from '@timber/contract/firestore';
 import { exportPKCS8, generateKeyPair } from 'jose';
 import { createWorkerApp, type WorkerBindings } from './worker.js';
@@ -259,22 +260,25 @@ async function main() {
       async () => ({ verified: true })
     );
     const routeRequest = (path: string, init?: RequestInit) => routeApp.request(`https://worker.example${path}`, init, routeEnv);
-    const callerEnabled = document('users/caller', { socialEnabled: true });
-    const targetEnabled = document('users/target', { username: 'Target', socialEnabled: true });
+    const callerEnabled = document('users/caller', { socialEnabled: true, socialTermsVersion: SOCIAL_TERMS_VERSION });
+    const targetEnabled = document('users/target', { username: 'Target', socialEnabled: true, socialTermsVersion: SOCIAL_TERMS_VERSION });
     const friendship = (status: 'pending' | 'accepted', requestedBy = 'target') => document('friendships/caller_target', {
       users: ['caller', 'target'], status, requestedBy, lastChop: {},
     });
     const runQueryBody = (init?: RequestInit) => JSON.parse(String(init?.body ?? '{}')) as {
       structuredQuery?: { from?: { collectionId?: string }[] };
     };
+    const queryCollection = (init?: RequestInit) => runQueryBody(init).structuredQuery?.from?.[0]?.collectionId;
+    const noBlock = (url: string) => url.startsWith(`${documentsUrl}/blocks/`) ? new Response('', { status: 404 }) : undefined;
 
     try {
       // Search has an intentional empty-query success path and returns the
       // relationship state alongside each matching username.
-      firestoreHandler = async (url) => {
+      firestoreHandler = async (url, init) => {
         if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerEnabled);
+        if (url.endsWith(':runQuery') && queryCollection(init) === 'blocks') return jsonResponse([]);
         if (url.endsWith(':runQuery')) {
-          return jsonResponse([{ document: document('users/target', { username: 'Target', usernameLower: 'ta', socialEnabled: true }) }]);
+          return jsonResponse([{ document: document('users/target', { username: 'Target', usernameLower: 'ta', socialEnabled: true, socialTermsVersion: SOCIAL_TERMS_VERSION }) }]);
         }
         if (url.startsWith(`${documentsUrl}/friendships/caller_target`)) return jsonResponse(friendship('pending'));
         throw new Error(`Unexpected search fixture request: ${url}`);
@@ -297,6 +301,8 @@ async function main() {
       firestoreHandler = async (url, init) => {
         if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerEnabled);
         if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
+        const missingBlock = noBlock(url);
+        if (missingBlock) return missingBlock;
         if (url.endsWith(':commit')) return jsonResponse({ writeResults: [{}] });
         throw new Error(`Unexpected send fixture request: ${url} ${String(init?.body ?? '')}`);
       };
@@ -322,6 +328,8 @@ async function main() {
         if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerEnabled);
         if (url.startsWith(`${documentsUrl}/friendships/caller_target`)) return jsonResponse(friendship('pending'));
         if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
+        const missingBlock = noBlock(url);
+        if (missingBlock) return missingBlock;
         if (url.endsWith(':commit')) return jsonResponse({ writeResults: [{}] });
         throw new Error(`Unexpected accept fixture request: ${url} ${String(init?.body ?? '')}`);
       };
@@ -347,6 +355,8 @@ async function main() {
         if (url.startsWith(`${documentsUrl}/users/caller?`)) return jsonResponse(callerEnabled);
         if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(document('users/caller', { username: 'Caller' }));
         if (url.startsWith(`${documentsUrl}/friendships/caller_target`)) return jsonResponse(friendship('accepted'));
+        const missingBlock = noBlock(url);
+        if (missingBlock) return missingBlock;
         if (url.endsWith(':runQuery')) return jsonResponse([]);
         if (url.endsWith(':commit')) return jsonResponse({ writeResults: [{}] });
         if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
@@ -358,6 +368,161 @@ async function main() {
       });
       assert.equal(chopped.status, 200);
       assert.deepEqual(await chopped.json(), { chopped: true, delivered: false });
+
+      const auth = { Authorization: 'Bearer route-test' };
+      const json = { ...auth, 'Content-Type': 'application/json' };
+      const commitWrites = (init?: RequestInit) => (JSON.parse(String(init?.body ?? '{}')) as { writes: Record<string, unknown>[] }).writes;
+
+      // Terms: a stale client version is refused before any write; the current
+      // one stamps only the two Worker-owned fields on an existing profile.
+      const staleTerms = await routeRequest('/api/social/terms', { method: 'POST', headers: json, body: JSON.stringify({ version: '1999-01-01' }) });
+      assert.equal(staleTerms.status, 400);
+      let termsWrites: Record<string, unknown>[] = [];
+      firestoreHandler = async (url, init) => {
+        if (url.endsWith(':commit')) { termsWrites = commitWrites(init); return jsonResponse({ writeResults: [{}] }); }
+        throw new Error(`Unexpected terms fixture request: ${url}`);
+      };
+      const termsOk = await routeRequest('/api/social/terms', { method: 'POST', headers: json, body: JSON.stringify({ version: SOCIAL_TERMS_VERSION }) });
+      assert.equal(termsOk.status, 200);
+      assert.deepEqual(await termsOk.json(), { version: SOCIAL_TERMS_VERSION });
+      assert.deepEqual((termsWrites[0].updateMask as { fieldPaths: string[] }).fieldPaths, ['socialTermsVersion', 'socialTermsAcceptedAt']);
+      assert.deepEqual(termsWrites[0].currentDocument, { exists: true });
+
+      // Without accepted terms the caller is invisible and inert: no search
+      // hits, an empty buddy list flagged termsRequired, and 403 on actions.
+      const callerNoTerms = document('users/caller', { socialEnabled: true });
+      firestoreHandler = async (url) => {
+        if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerNoTerms);
+        throw new Error(`Unexpected no-terms fixture request: ${url}`);
+      };
+      assert.deepEqual(await (await routeRequest('/api/buddies/search?q=ta', { headers: auth })).json(), { results: [] });
+      assert.deepEqual(await (await routeRequest('/api/buddies?today=2026-08-27', { headers: auth })).json(), { buddies: [], requests: [], termsRequired: true });
+      const noTermsSend = await routeRequest('/api/buddies', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target' }) });
+      assert.equal(noTermsSend.status, 403);
+      assert.equal(((await noTermsSend.json()) as { code: string }).code, 'terms_required');
+
+      // A suspended caller gets a distinct code and an empty, non-gated list.
+      const callerSuspended = document('users/caller', { socialEnabled: true, socialSuspended: true, socialTermsVersion: SOCIAL_TERMS_VERSION });
+      firestoreHandler = async (url) => {
+        if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerSuspended);
+        throw new Error(`Unexpected suspended fixture request: ${url}`);
+      };
+      const suspendedSend = await routeRequest('/api/buddies', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target' }) });
+      assert.equal(suspendedSend.status, 403);
+      assert.equal(((await suspendedSend.json()) as { code: string }).code, 'social_suspended');
+      assert.deepEqual(await (await routeRequest('/api/buddies?today=2026-08-27', { headers: auth })).json(), { buddies: [], requests: [], termsRequired: false });
+
+      // A target who has not accepted the terms can't be requested.
+      firestoreHandler = async (url) => {
+        if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerEnabled);
+        if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(document('users/target', { username: 'Target', socialEnabled: true }));
+        throw new Error(`Unexpected target-no-terms fixture request: ${url}`);
+      };
+      const toNoTerms = await routeRequest('/api/buddies', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target' }) });
+      assert.equal(toNoTerms.status, 404);
+
+      // Blocks hide a user in either direction: search drops them, and a
+      // request/accept/chop looks exactly like a missing user.
+      const blockDoc = (blocker: string, blocked: string) => document(`blocks/${blocker}_${blocked}`, { blocker, blocked });
+      firestoreHandler = async (url, init) => {
+        if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerEnabled);
+        if (url.endsWith(':runQuery') && queryCollection(init) === 'blocks') {
+          // The target blocked the caller: only the "blocked = caller" query has a row.
+          const filter = JSON.stringify(runQueryBody(init));
+          return jsonResponse(filter.includes('"blocked"') ? [{ document: blockDoc('target', 'caller') }] : []);
+        }
+        if (url.endsWith(':runQuery')) {
+          return jsonResponse([{ document: document('users/target', { username: 'Target', usernameLower: 'ta', socialEnabled: true, socialTermsVersion: SOCIAL_TERMS_VERSION }) }]);
+        }
+        throw new Error(`Unexpected blocked-search fixture request: ${url}`);
+      };
+      assert.deepEqual(await (await routeRequest('/api/buddies/search?q=ta', { headers: auth })).json(), { results: [] });
+      firestoreHandler = async (url) => {
+        if (url.startsWith(`${documentsUrl}/users/caller`)) return jsonResponse(callerEnabled);
+        if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
+        if (url.startsWith(`${documentsUrl}/blocks/caller_target`)) return new Response('', { status: 404 });
+        if (url.startsWith(`${documentsUrl}/blocks/target_caller`)) return jsonResponse(blockDoc('target', 'caller'));
+        throw new Error(`Unexpected blocked-send fixture request: ${url}`);
+      };
+      const blockedSend = await routeRequest('/api/buddies', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target' }) });
+      assert.equal(blockedSend.status, 404);
+      assert.equal(((await blockedSend.json()) as { code: string }).code, 'user_not_found');
+
+      // Blocking writes the directed block and deletes the friendship in one commit.
+      let blockWrites: Record<string, unknown>[] = [];
+      firestoreHandler = async (url, init) => {
+        if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
+        if (url.endsWith(':commit')) { blockWrites = commitWrites(init); return jsonResponse({ writeResults: [{}, {}] }); }
+        throw new Error(`Unexpected block fixture request: ${url}`);
+      };
+      assert.equal((await routeRequest('/api/blocks', { method: 'POST', headers: json, body: '{}' })).status, 400);
+      assert.equal((await routeRequest('/api/blocks', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'caller' }) })).status, 400);
+      const blocked = await routeRequest('/api/blocks', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target' }) });
+      assert.equal(blocked.status, 200);
+      assert.equal(blockWrites.length, 2);
+      assert.match((blockWrites[0].update as { name: string }).name, /\/blocks\/caller_target$/);
+      assert.match(blockWrites[1].delete as string, /\/friendships\/caller_target$/);
+
+      // Listing blocks names each blocked user; unblocking deletes only the caller's own doc.
+      firestoreHandler = async (url, init) => {
+        if (url.endsWith(':runQuery')) return jsonResponse([{ document: blockDoc('caller', 'target') }]);
+        if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
+        throw new Error(`Unexpected list-blocks fixture request: ${url}`);
+      };
+      assert.deepEqual(await (await routeRequest('/api/blocks', { headers: auth })).json(), { blocks: [{ uid: 'target', username: 'Target' }] });
+      const unblockedPaths: string[] = [];
+      firestoreHandler = async (url, init) => {
+        if (init?.method === 'DELETE') { unblockedPaths.push(url); return new Response('', { status: 200 }); }
+        throw new Error(`Unexpected unblock fixture request: ${url}`);
+      };
+      const unblocked = await routeRequest('/api/blocks/target', { method: 'DELETE', headers: auth });
+      assert.equal(unblocked.status, 200);
+      assert.deepEqual(unblockedPaths.map((u) => u.replace(documentsUrl, '')), ['/blocks/caller_target']);
+      assert.equal((await routeRequest('/api/blocks/bad_uid', { method: 'DELETE', headers: auth })).status, 400);
+
+      // Decline / cancel / remove: one DELETE, even when social is off, and
+      // idempotent when there is nothing to delete.
+      const friendshipDeletes: string[] = [];
+      firestoreHandler = async (url, init) => {
+        if (init?.method === 'DELETE') { friendshipDeletes.push(url); return new Response('', { status: 200 }); }
+        if (url.startsWith(`${documentsUrl}/friendships/caller_target`)) return jsonResponse(friendship('pending'));
+        throw new Error(`Unexpected remove fixture request: ${url}`);
+      };
+      const declined = await routeRequest('/api/buddies/target', { method: 'DELETE', headers: auth });
+      assert.equal(declined.status, 200);
+      assert.deepEqual(await declined.json(), { state: 'none' });
+      assert.deepEqual(friendshipDeletes.map((u) => u.replace(documentsUrl, '')), ['/friendships/caller_target']);
+      firestoreHandler = async (url) => {
+        if (url.startsWith(`${documentsUrl}/friendships/caller_target`)) return new Response('', { status: 404 });
+        throw new Error(`Unexpected empty remove fixture request: ${url}`);
+      };
+      assert.deepEqual(await (await routeRequest('/api/buddies/target', { method: 'DELETE', headers: auth })).json(), { state: 'none' });
+      assert.equal((await routeRequest('/api/buddies/bad_uid', { method: 'DELETE', headers: auth })).status, 400);
+
+      // Reports: validated, stored open with a username snapshot, and a same-day repeat is accepted quietly.
+      assert.equal((await routeRequest('/api/reports', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target', reason: 'bogus' }) })).status, 400);
+      assert.equal((await routeRequest('/api/reports', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'caller', reason: 'spam' }) })).status, 400);
+      let reportWrites: Record<string, unknown>[] = [];
+      let reportCommitStatus = 200;
+      firestoreHandler = async (url, init) => {
+        if (url.startsWith(`${documentsUrl}/users/target`)) return jsonResponse(targetEnabled);
+        if (url.endsWith(':commit')) {
+          reportWrites = commitWrites(init);
+          return reportCommitStatus === 200 ? jsonResponse({ writeResults: [{}] }) : new Response('', { status: reportCommitStatus });
+        }
+        throw new Error(`Unexpected report fixture request: ${url}`);
+      };
+      const reported = await routeRequest('/api/reports', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target', reason: 'harassment', note: '  rude  ' }) });
+      assert.equal(reported.status, 200);
+      assert.deepEqual(await reported.json(), { reported: true });
+      const reportDoc = reportWrites[0].update as { name: string; fields: Record<string, { stringValue?: string }> };
+      assert.match(reportDoc.name, /\/reports\/caller_target_\d{4}-\d{2}-\d{2}$/);
+      assert.equal(reportDoc.fields.status.stringValue, 'open');
+      assert.equal(reportDoc.fields.reportedUsername.stringValue, 'Target');
+      assert.equal(reportDoc.fields.note.stringValue, 'rude');
+      assert.deepEqual(reportWrites[0].currentDocument, { exists: false });
+      reportCommitStatus = 409;
+      assert.equal((await routeRequest('/api/reports', { method: 'POST', headers: json, body: JSON.stringify({ uid: 'target', reason: 'spam' }) })).status, 200);
 
       // Applying an injury first resolves the injury by id, then stamps only
       // workouts inside its date window and returns their ids.
@@ -508,12 +673,15 @@ async function main() {
             { document: document('friendships/caller_b', { users: ['caller', 'b'] }) },
           ];
         }
+        if (collection === 'blocks') return [{ document: document('blocks/caller_x', { blocker: 'caller', blocked: 'x' }) }];
         throw new Error(`Unexpected account query: ${url} ${String(init?.body ?? '')}`);
       };
+      const deletedPaths: string[] = [];
       let accountFailurePath: string | undefined;
       firestoreHandler = async (url, init) => {
         const method = init?.method ?? 'GET';
         if (method === 'DELETE') {
+          deletedPaths.push(url);
           if (accountFailurePath && url.endsWith(accountFailurePath)) return new Response('delete failed', { status: 500 });
           return new Response('', { status: 200 });
         }
@@ -529,6 +697,7 @@ async function main() {
         deleted: { workouts: 2, legacyWorkouts: 1, pushupChallenge: true, friendships: 2, userDoc: true },
         partial: false,
       });
+      assert.ok(deletedPaths.some((u) => u.endsWith('/blocks/caller_x')), 'account deletion removes the user\'s blocks');
 
       // A failed cleanup phase is best-effort: the route remains 200 but
       // reports partial=true and leaves only that phase's count at zero.
@@ -779,4 +948,4 @@ async function main() {
   console.log('worker: auth, CORS, and route validation assertions passed');
 }
 
-void main();
+await main();

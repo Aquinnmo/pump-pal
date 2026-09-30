@@ -1,5 +1,6 @@
 import type { DeleteAccountDataResponse } from '@timber/contract/api';
 import { firestorePaths } from '@timber/contract/firestore';
+import { deleteBlocksFor } from './blocks.js';
 import { deleteDoc, getDoc, runQuery } from './rest.js';
 
 /**
@@ -7,7 +8,8 @@ import { deleteDoc, getDoc, runQuery } from './rest.js';
  * Firestore cleanup, same order: canonical `workouts` (by `userId`), the
  * legacy `users/{uid}/workouts/*` subcollection, `users/{uid}/pushup-
  * challenge/data`, the `usernames/{usernameLower}` reservation, every
- * `friendships` doc the user belongs to, then `users/{uid}` itself. Does NOT delete the Firebase Auth user -- that
+ * `friendships` doc the user belongs to, every `blocks` doc they made or
+ * received (reports stay, for moderation), then `users/{uid}` itself. Does NOT delete the Firebase Auth user -- that
  * stays a client `deleteUser(auth.currentUser)` call, invoked only after
  * this succeeds.
  *
@@ -26,6 +28,7 @@ export interface AccountDeletionPhases {
   deletePrivateDocs(uid: string): Promise<void>;
   deletePushupChallenge(uid: string): Promise<void>;
   deleteFriendships(uid: string): Promise<number>;
+  deleteBlocks(uid: string): Promise<void>;
   deleteUsernameReservation(uid: string): Promise<void>;
   deleteUserDoc(uid: string): Promise<void>;
 }
@@ -64,6 +67,7 @@ const realPhases: AccountDeletionPhases = {
     await Promise.all(docs.map((d) => deleteDoc(d.path)));
     return docs.length;
   },
+  deleteBlocks: deleteBlocksFor,
   async deleteUsernameReservation(uid) {
     const doc = await getDoc(`users/${uid}`);
     const usernameLower = doc?.fields.usernameLower as string | undefined;
@@ -126,6 +130,13 @@ export async function deleteAccountDataWith(uid: string, phases: AccountDeletion
   } catch (e) {
     partial = true;
     console.error(`deleteAccountData(${uid}): failed deleting friendships`, e);
+  }
+
+  try {
+    await phases.deleteBlocks(uid);
+  } catch (e) {
+    partial = true;
+    console.error(`deleteAccountData(${uid}): failed deleting blocks`, e);
   }
 
   try {

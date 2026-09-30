@@ -6,7 +6,10 @@ process.env.FIREBASE_PROJECT_ID = 'test-project';
 process.env.FIREBASE_CLIENT_EMAIL = 'test@example.com';
 process.env.FIREBASE_PRIVATE_KEY = 'test-key';
 
-const { buddyChallenge, CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, isSocialEnabledField, pairId } = await import('./buddies.js');
+const { buddyChallenge, CHOP_COOLDOWN_MS, chopCooldownRemainingMs, currentStreak, isSocialEnabledField, isSocialParticipant, pairId } = await import('./buddies.js');
+const { blockId } = await import('./blocks.js');
+const { reportId } = await import('./reports.js');
+const { SOCIAL_TERMS_VERSION } = await import('@timber/contract/api');
 
 // Existing accounts remain social until they explicitly opt out.
 assert.equal(isSocialEnabledField(undefined), true);
@@ -87,5 +90,28 @@ assert.equal(chopCooldownRemainingMs(new Date(t0 - CHOP_COOLDOWN_MS / 2).toISOSt
 // Exactly expired, and well past -- never negative.
 assert.equal(chopCooldownRemainingMs(new Date(t0 - CHOP_COOLDOWN_MS).toISOString(), t0), 0);
 assert.equal(chopCooldownRemainingMs(new Date(t0 - CHOP_COOLDOWN_MS * 10).toISOString(), t0), 0);
+
+// --- visibility: opted in, not suspended, current terms --------------------
+
+const accepted = { socialTermsVersion: SOCIAL_TERMS_VERSION };
+assert.equal(isSocialParticipant(accepted), true);
+assert.equal(isSocialParticipant({ ...accepted, socialEnabled: true }), true);
+assert.equal(isSocialParticipant({ ...accepted, socialEnabled: false }), false);
+assert.equal(isSocialParticipant({ ...accepted, socialSuspended: true }), false);
+// No terms, or an old version, is invisible even for an existing, opted-in account.
+assert.equal(isSocialParticipant({}), false);
+assert.equal(isSocialParticipant(undefined), false);
+assert.equal(isSocialParticipant({ socialTermsVersion: '1999-01-01' }), false);
+
+// --- blocks and reports ids ------------------------------------------------
+
+// Blocks are directed: A blocking B is not B blocking A.
+assert.notEqual(blockId('aaa', 'bbb'), blockId('bbb', 'aaa'));
+assert.equal(blockId('a_b', 'c'), 'a__b_c');
+assert.notEqual(blockId('a_b', 'c'), blockId('a', 'b_c'));
+// One report per reporter, target and day; a new day is a new report.
+assert.equal(reportId('aaa', 'bbb', '2026-09-30'), 'aaa_bbb_2026-09-30');
+assert.notEqual(reportId('aaa', 'bbb', '2026-09-30'), reportId('aaa', 'bbb', '2026-10-01'));
+assert.notEqual(reportId('aaa', 'bbb', '2026-09-30'), reportId('bbb', 'aaa', '2026-09-30'));
 
 console.log('buddies: all assertions passed');

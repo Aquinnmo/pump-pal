@@ -1,16 +1,18 @@
 import { Hono, type Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { buddyActionInput, buddyUid, chopInput, createPendingExerciseInput, localDate, profilePatchInput, sendBuddyRequestInput } from '@timber/contract/api';
+import { acceptSocialTermsInput, blockUserInput, buddyActionInput, buddyUid, chopInput, createPendingExerciseInput, localDate, profilePatchInput, reportUserInput, sendBuddyRequestInput } from '@timber/contract/api';
 import { isAIOp, AI_OPS, type AIOp, type AIOpInput } from '@timber/contract/ai';
 import { requireUid } from './auth.js';
 import { verifyAppCheckToken } from './app-check.js';
 import { ApiError } from './errors.js';
 import { configureRuntimeEnv } from './runtime-env.js';
 import { deleteAccountData } from './store/account.js';
-import { acceptBuddyRequest, chopBuddy, listBuddies, searchUsers, sendBuddyRequest } from './store/buddies.js';
+import { blockUser, listBlocks, unblockUser } from './store/blocks.js';
+import { acceptBuddyRequest, acceptSocialTerms, chopBuddy, listBuddies, removeBuddy, searchUsers, sendBuddyRequest } from './store/buddies.js';
 import { createPendingExercise } from './store/catalog.js';
 import { applyInjuryToHistory, listInjuries, removeInjuryFromHistory } from './store/injuries.js';
 import { updateProfile } from './store/profile.js';
+import { reportUser } from './store/reports.js';
 import { consumeQuota, peekQuota, readAIEnabled, refundQuota } from './store/quota.js';
 import { getCachedDailyName, setCachedDailyName } from './store/daily-name.js';
 
@@ -168,12 +170,42 @@ export function createWorkerApp(verifyUid: VerifyUid = requireUid, verifyAppChec
     if (!parsed.success) throw new ApiError(400, 'Invalid buddy action');
     return context.json(await acceptBuddyRequest(context.get('uid'), targetUid.data));
   });
+  app.delete('/api/buddies/:uid', async (context) => {
+    const targetUid = buddyUid.safeParse(context.req.param('uid'));
+    if (!targetUid.success) throw new ApiError(400, 'Invalid buddy');
+    return context.json(await removeBuddy(context.get('uid'), targetUid.data));
+  });
   app.post('/api/buddies/:uid/chop', async (context) => {
     const targetUid = buddyUid.safeParse(context.req.param('uid'));
     if (!targetUid.success) throw new ApiError(400, 'Invalid chop');
     const parsed = chopInput.safeParse(await context.req.json());
     if (!parsed.success) throw new ApiError(400, 'Invalid chop');
     return context.json(await chopBuddy(context.get('uid'), targetUid.data, parsed.data.today));
+  });
+
+  app.post('/api/social/terms', async (context) => {
+    const parsed = acceptSocialTermsInput.safeParse(await context.req.json());
+    if (!parsed.success) throw new ApiError(400, 'Invalid terms version', 'terms_version_mismatch');
+    return context.json(await acceptSocialTerms(context.get('uid')));
+  });
+  app.get('/api/blocks', async (context) => context.json({ blocks: await listBlocks(context.get('uid')) }));
+  app.post('/api/blocks', async (context) => {
+    const parsed = blockUserInput.safeParse(await context.req.json());
+    if (!parsed.success) throw new ApiError(400, 'Invalid block');
+    await blockUser(context.get('uid'), parsed.data.uid);
+    return context.json({ blocked: true });
+  });
+  app.delete('/api/blocks/:uid', async (context) => {
+    const targetUid = buddyUid.safeParse(context.req.param('uid'));
+    if (!targetUid.success) throw new ApiError(400, 'Invalid block');
+    await unblockUser(context.get('uid'), targetUid.data);
+    return context.json({ blocked: false });
+  });
+  app.post('/api/reports', async (context) => {
+    const parsed = reportUserInput.safeParse(await context.req.json());
+    if (!parsed.success) throw new ApiError(400, 'Invalid report');
+    await reportUser(context.get('uid'), parsed.data);
+    return context.json({ reported: true });
   });
 
   app.post('/api/injuries/:id/apply-to-history', async (context) => {

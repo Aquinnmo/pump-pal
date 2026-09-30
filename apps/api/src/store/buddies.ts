@@ -1,8 +1,10 @@
 import { z } from 'zod';
-import { localDate, type BuddiesResponse, type BuddyDTO, type BuddyRequestDTO, type BuddySearchResult, type BuddyState, type ChopResponse } from '@timber/contract/api';
+import { SOCIAL_TERMS_VERSION, localDate, type AcceptSocialTermsResponse, type BuddiesResponse, type BuddyDTO, type BuddyRequestDTO, type BuddySearchResult, type BuddyState, type BuddyStateResponse, type ChopResponse } from '@timber/contract/api';
 import { ApiError } from '../errors.js';
 import { sendPush } from './push.js';
-import { commit, getDoc, runQuery, ts, type FirestoreDoc } from './rest.js';
+import { blockedEitherWay, isBlockedBetween } from './blocks.js';
+import { pairId } from './pair-id.js';
+import { commit, deleteDoc, getDoc, runQuery, ts, type FirestoreDoc } from './rest.js';
 
 /**
  * The social graph, in one top-level `friendships` collection (see
@@ -33,20 +35,7 @@ export const buddyChallenge = z.object({
   longestStreak: z.number().int().min(0).catch(0),
 });
 
-/**
- * Deterministic doc id for a pair, so the same two users always collide on
- * one document no matter who asks first. That collision IS the uniqueness
- * guarantee — a request create uses `{ exists: false }` against this id.
- *
- * Each uid is escaped (`_` -> `__`) before joining on a single `_`, so the
- * join is injective: every underscore run inside an escaped token is
- * even-length, so the lone odd-length run is unambiguously the separator.
- * Without the escaping, `pairId('a_b', 'c')` and `pairId('a', 'b_c')` would
- * both produce `a_b_c`.
- */
-export function pairId(a: string, b: string): string {
-  return [a, b].sort().map((u) => u.replaceAll('_', '__')).join('_');
-}
+export { pairId };
 
 interface Friendship {
   users: string[];
@@ -88,15 +77,67 @@ export function isSocialEnabledField(value: unknown): boolean {
   return value !== false;
 }
 
-async function socialEnabled(uid: string): Promise<boolean> {
-  const user = await getDoc(`${USERS}/${uid}`, ['socialEnabled']);
-  return isSocialEnabledField(user?.fields.socialEnabled);
+const SOCIAL_FIELDS = ['username', 'socialEnabled', 'socialSuspended', 'socialTermsVersion'];
+
+/**
+ * Whether another user may see and interact with this account: opted in, not
+ * suspended by the developer, and on the current terms. `socialSuspended` and
+ * `socialTermsVersion` are Worker-written (firestore.rules never lets a client
+ * write them), so this is safe to trust off a stored doc. Exported for tests.
+ */
+export function isSocialParticipant(fields: Record<string, unknown> | undefined): boolean {
+  return (
+    isSocialEnabledField(fields?.socialEnabled) &&
+    fields?.socialSuspended !== true &&
+    fields?.socialTermsVersion === SOCIAL_TERMS_VERSION
+  );
+}
+
+type CallerSocial = 'ok' | 'disabled' | 'suspended' | 'terms_required';
+
+async function callerSocial(uid: string): Promise<CallerSocial> {
+  const fields = (await getDoc(`${USERS}/${uid}`, SOCIAL_FIELDS))?.fields;
+  if (!isSocialEnabledField(fields?.socialEnabled)) return 'disabled';
+  if (fields?.socialSuspended === true) return 'suspended';
+  return fields?.socialTermsVersion === SOCIAL_TERMS_VERSION ? 'ok' : 'terms_required';
 }
 
 async function requireSocialEnabled(uid: string): Promise<void> {
-  if (!(await socialEnabled(uid))) {
-    throw new ApiError(403, 'Social features are off for this account.', 'social_disabled');
-  }
+  const state = await callerSocial(uid);
+  if (state === 'disabled') throw new ApiError(403, 'Social features are off for this account.', 'social_disabled');
+  if (state === 'suspended') throw new ApiError(403, 'Social features are unavailable for this account.', 'social_suspended');
+  if (state === 'terms_required') throw new ApiError(403, 'Accept the social terms to continue.', 'terms_required');
+}
+
+/** Is `uid` a visible, current participant — the check for the OTHER side of any interaction. */
+async function isParticipant(uid: string): Promise<boolean> {
+  return isSocialParticipant((await getDoc(`${USERS}/${uid}`, SOCIAL_FIELDS))?.fields);
+}
+
+/** The one 404 every blocked interaction gets, so a block can't be told apart from a missing user. */
+function userNotFound(): ApiError {
+  return new ApiError(404, 'No such user.', 'user_not_found');
+}
+
+// ---------------------------------------------------------------------- terms
+
+/**
+ * Records that the caller accepted the current social terms. The fields are
+ * Worker-written on purpose: the client can't grant itself visibility, and
+ * every buddy boundary here re-reads them. `exists: true` because the profile
+ * doc is created client-side at set-split and a server-created stub would make
+ * that create 409.
+ */
+export async function acceptSocialTerms(uid: string): Promise<AcceptSocialTermsResponse> {
+  await commit([
+    {
+      path: `${USERS}/${uid}`,
+      fields: { socialTermsVersion: SOCIAL_TERMS_VERSION, socialTermsAcceptedAt: ts(new Date().toISOString()) },
+      updateMask: ['socialTermsVersion', 'socialTermsAcceptedAt'],
+      currentDocument: { exists: true },
+    },
+  ]);
+  return { version: SOCIAL_TERMS_VERSION };
 }
 
 // --------------------------------------------------------------------- search
@@ -111,7 +152,7 @@ const PREFIX_END = '';
 export async function searchUsers(uid: string, query: string): Promise<BuddySearchResult[]> {
   const prefix = query.trim().toLowerCase();
   if (!prefix) return [];
-  if (!(await socialEnabled(uid))) return [];
+  if ((await callerSocial(uid)) !== 'ok') return [];
 
   const docs = await runQuery({
     collectionId: USERS,
@@ -125,10 +166,11 @@ export async function searchUsers(uid: string, query: string): Promise<BuddySear
     limit: 50,
   });
 
+  const blocked = await blockedEitherWay(uid);
   const hits = docs
     .flatMap((doc) => {
       const hit = { uid: doc.path.split('/')[1], username: doc.fields.username as string | undefined };
-      return hit.username && hit.uid !== uid && isSocialEnabledField(doc.fields.socialEnabled) ? [{ ...hit, username: hit.username }] : [];
+      return hit.username && hit.uid !== uid && !blocked.has(hit.uid) && isSocialParticipant(doc.fields) ? [{ ...hit, username: hit.username }] : [];
     })
     .slice(0, 10);
 
@@ -198,7 +240,7 @@ async function workedOutOn(uid: string, today: string): Promise<boolean> {
 
 async function buddyDetail(uid: string, buddyUid: string, today: string, lastChoppedAt: string | null): Promise<BuddyDTO | null> {
   const [user, challenge, workedOutToday] = await Promise.all([
-    getDoc(`${USERS}/${buddyUid}`, ['username', 'socialEnabled']),
+    getDoc(`${USERS}/${buddyUid}`, SOCIAL_FIELDS),
     getDoc(`${USERS}/${buddyUid}/pushup-challenge/data`),
     workedOutOn(buddyUid, today),
   ]);
@@ -206,7 +248,7 @@ async function buddyDetail(uid: string, buddyUid: string, today: string, lastCho
   const username = user?.fields.username as string | undefined;
   // A buddy with no username can't be rendered or searched for; skip rather
   // than invent a placeholder.
-  if (!username || !isSocialEnabledField(user?.fields.socialEnabled)) return null;
+  if (!username || !isSocialParticipant(user?.fields)) return null;
 
   const { startDate, days, longestStreak } = buddyChallenge.parse(challenge?.fields ?? {});
 
@@ -225,15 +267,16 @@ async function buddyDetail(uid: string, buddyUid: string, today: string, lastCho
  * and chop availability, plus pending requests in both directions.
  */
 export async function listBuddies(uid: string, today: string): Promise<BuddiesResponse> {
-  if (!(await socialEnabled(uid))) return { buddies: [], requests: [] };
-  const docs = await runQuery({
+  const caller = await callerSocial(uid);
+  if (caller !== 'ok') return { buddies: [], requests: [], termsRequired: caller === 'terms_required' };
+  const [blocked, docs] = await Promise.all([blockedEitherWay(uid), runQuery({
     collectionId: FRIENDSHIPS,
     where: [{ field: 'users', op: 'ARRAY_CONTAINS', value: uid }],
     // ponytail: no pagination — one page of 200 friendships, and the detail
     // fan-out below is 3 reads per accepted buddy. Fine for a friends list;
     // page it if anyone ever gets there.
     limit: 200,
-  });
+  })]);
 
   const friendships = docs.map(toFriendship);
   const requests: BuddyRequestDTO[] = [];
@@ -241,7 +284,8 @@ export async function listBuddies(uid: string, today: string): Promise<BuddiesRe
 
   for (const f of friendships) {
     const other = f.users.find((u) => u !== uid);
-    if (!other) continue;
+    // A block deletes the friendship, so this only catches a doc that raced it.
+    if (!other || blocked.has(other)) continue;
     if (f.status === 'accepted') {
       accepted.push({ uid: other, lastChoppedAt: f.lastChop[uid] ?? null });
     } else {
@@ -253,8 +297,8 @@ export async function listBuddies(uid: string, today: string): Promise<BuddiesRe
     Promise.all(accepted.map((a) => buddyDetail(uid, a.uid, today, a.lastChoppedAt))),
     Promise.all(
       requests.map(async (r) => {
-        const doc = await getDoc(`${USERS}/${r.uid}`, ['username', 'socialEnabled']);
-        return { ...r, username: isSocialEnabledField(doc?.fields.socialEnabled) ? (doc?.fields.username as string | undefined) ?? '' : '' };
+        const doc = await getDoc(`${USERS}/${r.uid}`, SOCIAL_FIELDS);
+        return { ...r, username: isSocialParticipant(doc?.fields) ? (doc?.fields.username as string | undefined) ?? '' : '' };
       })
     ),
   ]);
@@ -262,6 +306,7 @@ export async function listBuddies(uid: string, today: string): Promise<BuddiesRe
   return {
     buddies: buddies.filter((b): b is BuddyDTO => b !== null).sort((a, b) => a.username.localeCompare(b.username)),
     requests: namedRequests.filter((r) => r.username),
+    termsRequired: false,
   };
 }
 
@@ -277,8 +322,9 @@ export async function sendBuddyRequest(uid: string, targetUid: string): Promise<
   await requireSocialEnabled(uid);
   if (uid === targetUid) throw new ApiError(400, 'You are already your own best buddy.', 'self_buddy');
 
-  const target = await getDoc(`${USERS}/${targetUid}`, ['username', 'socialEnabled']);
-  if (!target?.fields.username || !isSocialEnabledField(target.fields.socialEnabled)) throw new ApiError(404, 'No such user.', 'user_not_found');
+  const target = await getDoc(`${USERS}/${targetUid}`, SOCIAL_FIELDS);
+  if (!target?.fields.username || !isSocialParticipant(target.fields)) throw userNotFound();
+  if (await isBlockedBetween(uid, targetUid)) throw userNotFound();
 
   try {
     await commit([
@@ -309,7 +355,9 @@ export async function acceptBuddyRequest(uid: string, targetUid: string): Promis
   if (!friendship) throw new ApiError(404, 'No pending request from that user.', 'request_not_found');
   if (friendship.status === 'accepted') return { state: 'buddies' };
   if (friendship.requestedBy === uid) throw new ApiError(403, 'You can\'t accept your own request.', 'not_recipient');
-  if (!(await socialEnabled(targetUid))) throw new ApiError(404, 'No pending request from that user.', 'request_not_found');
+  if (!(await isParticipant(targetUid)) || (await isBlockedBetween(uid, targetUid))) {
+    throw new ApiError(404, 'No pending request from that user.', 'request_not_found');
+  }
 
   await commit([
     {
@@ -320,6 +368,19 @@ export async function acceptBuddyRequest(uid: string, targetUid: string): Promis
     },
   ]);
   return { state: 'buddies' };
+}
+
+// --------------------------------------------------------------------- remove
+
+/**
+ * Deletes the friendship in any state: decline an incoming request, cancel an
+ * outgoing one, or remove an accepted buddy. Deliberately not gated on social
+ * being on or terms accepted — leaving a relationship must always work.
+ * Idempotent: no friendship is already the outcome the caller wanted.
+ */
+export async function removeBuddy(uid: string, targetUid: string): Promise<BuddyStateResponse> {
+  if (await loadFriendship(uid, targetUid)) await deleteDoc(`${FRIENDSHIPS}/${pairId(uid, targetUid)}`);
+  return { state: 'none' };
 }
 
 // ----------------------------------------------------------------------- chop
@@ -345,7 +406,9 @@ export async function chopBuddy(uid: string, targetUid: string, today: string): 
   if (!friendship || friendship.status !== 'accepted') {
     throw new ApiError(404, 'You can only chop your buddies.', 'not_buddies');
   }
-  if (!(await socialEnabled(targetUid))) throw new ApiError(404, 'You can only chop your buddies.', 'not_buddies');
+  if (!(await isParticipant(targetUid)) || (await isBlockedBetween(uid, targetUid))) {
+    throw new ApiError(404, 'You can only chop your buddies.', 'not_buddies');
+  }
 
   const remaining = chopCooldownRemainingMs(friendship.lastChop[uid], Date.now());
   if (remaining > 0) {

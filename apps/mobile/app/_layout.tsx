@@ -186,6 +186,7 @@ function RootLayoutNav() {
         <Stack.Screen name="settings-account" options={{ headerShown: false }} />
         <Stack.Screen name="settings-app" options={{ headerShown: false }} />
         <Stack.Screen name="settings-legal" options={{ headerShown: false }} />
+        <Stack.Screen name="settings-blocked" options={{ headerShown: false }} />
         <Stack.Screen name="muscle-load" options={{ title: 'Muscle load' }} />
       </Stack>
       {gateUndecided && (

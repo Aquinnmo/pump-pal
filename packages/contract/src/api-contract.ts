@@ -450,6 +450,12 @@ export type BuddyRequestDTO = z.infer<typeof buddyRequestDTO>;
 export const buddiesResponse = z.object({
   buddies: z.array(buddyDTO),
   requests: z.array(buddyRequestDTO),
+  /**
+   * The caller has not accepted the current social terms, so the lists above
+   * are empty by design. The client shows the terms gate instead. Defaults to
+   * false so a response from a server that predates the field still parses.
+   */
+  termsRequired: z.boolean().default(false),
 });
 export type BuddiesResponse = z.infer<typeof buddiesResponse>;
 
@@ -482,6 +488,14 @@ export const buddyActionInput = z.object({ action: z.literal('accept') });
 export type BuddyActionInput = z.infer<typeof buddyActionInput>;
 
 /**
+ * DELETE /api/buddies/:uid — decline an incoming request, cancel an outgoing
+ * one, or remove an accepted buddy. All three delete the one friendship doc,
+ * so the response is just the resulting state (always `none`).
+ */
+export const buddyStateResponse = z.object({ state: buddyState });
+export type BuddyStateResponse = z.infer<typeof buddyStateResponse>;
+
+/**
  * POST /api/buddies/:uid/chop — the notification route. The caller names a
  * buddy and their local date, never a title or body, so there is no path from
  * the client to an arbitrary push.
@@ -492,6 +506,51 @@ export type ChopInput = z.infer<typeof chopInput>;
 /** `delivered: false` means the chop was recorded but no push went out (no token, or Expo rejected it). */
 export const chopResponse = z.object({ chopped: z.boolean(), delivered: z.boolean() });
 export type ChopResponse = z.infer<typeof chopResponse>;
+
+// ------------------------------------------- social terms, blocks, and reports
+
+/**
+ * Version of the social terms (docs/policies/terms.html). Bumping it hides
+ * every account from search and buddy lists until it accepts again, so change
+ * it only when the terms materially change.
+ */
+export const SOCIAL_TERMS_VERSION = '2026-09-30';
+
+/** POST /api/social/terms — the caller accepts the current terms. A stale client sends a stale version and is refused. */
+export const acceptSocialTermsInput = z.object({ version: z.literal(SOCIAL_TERMS_VERSION) });
+export type AcceptSocialTermsInput = z.infer<typeof acceptSocialTermsInput>;
+export const acceptSocialTermsResponse = z.object({ version: z.string() });
+export type AcceptSocialTermsResponse = z.infer<typeof acceptSocialTermsResponse>;
+
+/** POST /api/blocks — block `uid`. Also deletes any friendship between the two. */
+export const blockUserInput = z.object({ uid: buddyUid });
+export type BlockUserInput = z.infer<typeof blockUserInput>;
+
+/** `username` is empty when the blocked account no longer has one. */
+export const blockedUserDTO = z.object({ uid: z.string(), username: z.string() });
+export type BlockedUserDTO = z.infer<typeof blockedUserDTO>;
+export const blocksResponse = z.object({ blocks: z.array(blockedUserDTO) });
+export type BlocksResponse = z.infer<typeof blocksResponse>;
+
+export const REPORT_REASONS = ['harassment', 'inappropriate_username', 'spam', 'other'] as const;
+export const reportReason = z.enum(REPORT_REASONS);
+export type ReportReason = z.infer<typeof reportReason>;
+
+/** Moderation state of a stored report. Only the developer moves it off `open`. */
+export const reportStatus = z.enum(['open', 'actioned', 'dismissed']);
+export type ReportStatus = z.infer<typeof reportStatus>;
+
+export const REPORT_NOTE_MAX = 500;
+
+/** POST /api/reports — report `uid`. One report per reporter, target and day; repeats are accepted and dropped. */
+export const reportUserInput = z.object({
+  uid: buddyUid,
+  reason: reportReason,
+  note: z.string().trim().max(REPORT_NOTE_MAX).optional(),
+});
+export type ReportUserInput = z.infer<typeof reportUserInput>;
+export const reportUserResponse = z.object({ reported: z.literal(true) });
+export type ReportUserResponse = z.infer<typeof reportUserResponse>;
 
 // ----------------------------------------------------------------- account
 

@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  SOCIAL_TERMS_VERSION,
+  REPORT_NOTE_MAX,
+  acceptSocialTermsInput,
+  blockUserInput,
+  buddyStateResponse,
+  reportUserInput,
   buddyUid,
   buddyActionInput,
   buddyDTO,
@@ -414,3 +420,18 @@ const rulesAllowlist = rulesText.match(/affectedKeys\(\)\.hasOnly\(\[([^\]]+)\]\
 assert.deepEqual(rulesAllowlist, ownerFields);
 for (const field of ownerFields) assert.match(remoteText, new RegExp(`\\b${field}\\b`));
 assert.match(remoteText, /const updateMask = Object\.keys\(fields\)/);
+
+// --- social terms, blocks, reports -----------------------------------------
+
+assert.equal(acceptSocialTermsInput.safeParse({ version: SOCIAL_TERMS_VERSION }).success, true);
+assert.equal(acceptSocialTermsInput.safeParse({ version: '1999-01-01' }).success, false);
+assert.equal(blockUserInput.safeParse({ uid: 'abc123' }).success, true);
+assert.equal(blockUserInput.safeParse({ uid: 'a/b' }).success, false);
+assert.deepEqual(buddyStateResponse.parse({ state: 'none' }), { state: 'none' });
+assert.equal(reportUserInput.safeParse({ uid: 'abc123', reason: 'spam' }).success, true);
+assert.equal(reportUserInput.safeParse({ uid: 'abc123', reason: 'nope' }).success, false);
+assert.equal(reportUserInput.safeParse({ uid: 'a/b', reason: 'spam' }).success, false);
+assert.equal(reportUserInput.safeParse({ uid: 'abc123', reason: 'other', note: 'x'.repeat(REPORT_NOTE_MAX) }).success, true);
+assert.equal(reportUserInput.safeParse({ uid: 'abc123', reason: 'other', note: 'x'.repeat(REPORT_NOTE_MAX + 1) }).success, false);
+// A server that predates `termsRequired` still parses.
+assert.equal(buddiesResponse.parse({ buddies: [], requests: [] }).termsRequired, false);

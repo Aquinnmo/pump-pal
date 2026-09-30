@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, getDocs, limit, query, setDoc, Timestamp, where, collection } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, getDocs, limit, query, setDoc, Timestamp, updateDoc, where, collection } from 'firebase/firestore';
 import fs from 'node:fs';
 
 const rules = fs.readFileSync('firestore.rules', 'utf8');
@@ -107,6 +107,14 @@ async function main() {
   await assertFails(setDoc(doc(owner, 'random/2026-08-12'), { name: 'Overwrite attempt' }));
   await assertFails(getDoc(doc(owner, 'usernames/server-only')));
   await assertFails(getDoc(doc(owner, 'friendships/owner_other')));
+  // Worker-only collections and fields: a client can neither read nor write them,
+  // nor grant itself social terms or lift a moderation suspension.
+  await assertFails(getDoc(doc(owner, 'blocks/owner_other')));
+  await assertFails(setDoc(doc(owner, 'blocks/owner_other'), { blocker: 'owner', blocked: 'other' }));
+  await assertFails(getDoc(doc(owner, 'reports/owner_other_2026-09-30')));
+  await assertFails(setDoc(doc(owner, 'reports/owner_other_2026-09-30'), { reporter: 'owner', reported: 'other', status: 'dismissed' }));
+  await assertFails(updateDoc(doc(owner, 'users/owner'), { socialTermsVersion: '2026-09-30' }));
+  await assertFails(updateDoc(doc(owner, 'users/owner'), { socialSuspended: false }));
   await assertFails(getDoc(doc(owner, 'users/owner/workouts/legacy')));
 
   await env.cleanup();

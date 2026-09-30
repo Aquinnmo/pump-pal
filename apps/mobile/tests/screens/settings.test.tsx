@@ -208,9 +208,11 @@ describe('SettingsLegalScreen', () => {
     assert.ok(screen.getByText(healthDisclaimer, { exact: true }));
     fireEvent.click(screen.getByRole('button', { name: 'Privacy Policy' }));
     fireEvent.click(screen.getByRole('button', { name: 'Account Deletion Policy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Community Terms' }));
     assert.deepEqual(openedUrls, [
       'https://aquinnmo.github.io/pump-pal/privacy.html',
       'https://aquinnmo.github.io/pump-pal/delete-account.html',
+      'https://aquinnmo.github.io/pump-pal/terms.html',
     ]);
   });
 

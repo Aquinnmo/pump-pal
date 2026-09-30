@@ -40,6 +40,8 @@ needs an entry there first — without one Firestore answers
 | `usernames/{usernameLower}` | Username uniqueness reservation, server-only | [users.md](./users.md#usernames) |
 | `users/{uid}/pushup-challenge/data` | Pushup Challenge (TPC tab) progress | [pushup-challenge.md](./pushup-challenge.md) |
 | `friendships/{pairId}` | Timber Buddies social graph + chop cooldowns, server-only | [buddies.md](./buddies.md) |
+| `blocks/{blockerUid_blockedUid}` | User blocks, directed, server-only | [buddies.md](./buddies.md#blocks--blocksblockeruid_blockeduid) |
+| `reports/{reporter_target_day}` | User reports awaiting developer review, server-only | [buddies.md](./buddies.md#reports--reportsreporter_target_day) |
 | `users/{uid}/workouts/{oldWorkoutId}` | **Legacy**, pre-migration workout rows | [legacy.md](./legacy.md) |
 
 ## Native offline-first behavior

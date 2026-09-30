@@ -50,7 +50,7 @@ transfers need their own assessment. See the [Data Safety form guidance](https:/
 | Email, phone — Personal info: Email address, Phone number | Collected depending on sign-in method; email/phone credentials required for the selected method, other methods optional | Authentication/account management and abuse prevention; Firebase, Google/Apple when their sign-in method is used | Firebase Auth deletion; support messages separately below | `apps/mobile/app/(auth)/phone-auth.tsx`, `apps/mobile/src/lib/google-sign-in.ts`, `apps/mobile/src/lib/apple-sign-in.ts`, `apps/mobile/src/config/firebase.ts` |
 | Workouts, sets, weights, reps, timing, splits, push-up progress — Health and fitness: Fitness info | Collected when logged/synced; primary workout data supports core functionality; extra records/notes chosen by user | Functionality and training insights; Firebase; Cloudflare for privileged operations; relevant summaries to OpenAI only with AI opt-in | Edit/delete records or delete account; native cache/draft limits below | `docs/data-model/workouts.md`, `docs/data-model/pushup-challenge.md`, `apps/mobile/src/types/workout.ts`, `apps/mobile/src/lib/workout-suggestions.ts` |
 | Injury body parts, severity, dates, avoid-list, notes — Health and fitness: Health info | Collected only when entered; optional | Functionality/personalization; Firebase; Cloudflare for history operations; active details and notes to OpenAI with AI opt-in | Remove injury records or account; earlier AI requests subject to provider retention | `docs/data-model/users.md`, `apps/mobile/src/types/user.ts`, `apps/mobile/src/lib/workout-suggestions.ts` |
-| Buddies, requests, Chop timestamps, trained-today/streak indicators — App activity: Other actions; Fitness info for training indicators | Collected during social use; social can be disabled, existing relationships remain stored | Functionality; Firebase, Cloudflare; usernames/activity indicators visible to other users as the feature allows | Delete friendships on account deletion; disabling social hides participation without deleting relationships | `docs/data-model/buddies.md`, `apps/api/src/store/buddies.ts` |
+| Buddies, requests, Chop timestamps, blocks, user reports (reporter, reported account, reason, note), terms acceptance, trained-today/streak indicators — App activity: Other actions; Fitness info for training indicators | Collected during social use; social can be disabled, existing relationships remain stored | Functionality; Firebase, Cloudflare; usernames/activity indicators visible to other users as the feature allows | Delete friendships on account deletion; disabling social hides participation without deleting relationships | `docs/data-model/buddies.md`, `apps/api/src/store/buddies.ts` |
 | Submitted exercise names/custom split text/notes — App activity: Other user-generated content (also fitness/health where applicable) | Collected if submitted/synced; optional; custom split text included in relevant AI operations | Functionality/catalog maintenance; Firebase, Cloudflare; OpenAI for opted-in split/workout context; approved exercise names enter shared catalog | Delete personal records; manually remove `createdBy` attribution from retained catalog entries | `apps/api/src/store/catalog.ts`, `apps/mobile/src/lib/workout-suggestions.ts`, `apps/api/src/ai/prompts.ts` |
 | Expo push tokens, installation/device identifiers — Device or other IDs | Push token optional with notification permission; automatic SDK identifiers required where collection is enabled | Functionality, fraud prevention/security; Firebase/App Check and attestation providers; Cloudflare, Expo, Apple/Google push delivery | Delete private notification document and account caches; SDK identifiers follow provider rules | `apps/mobile/src/hooks/use-push-token.native.ts`, `apps/api/src/store/push.ts`, `apps/mobile/src/config/firebase.ts` |
 | Crash traces, app/device version, identifiers — App info and performance: Crash logs, Diagnostics; Device or other IDs | Native Crashlytics collection enabled automatically; no user opt-out in current app | Analytics for reliability, security; Firebase Crashlytics, Cloudflare service logs | Provider retention; do not promise account deletion erases unlinked crash logs immediately | `apps/mobile/firebase.json`, `apps/mobile/app.json`, `apps/mobile/package.json`, `apps/api/wrangler.toml`, `apps/api/src/worker.ts` |
@@ -121,7 +121,8 @@ email content in public GitHub issues or commit them to this repository.
    short-lived ID tokens can still be valid. Allow issued sessions to expire
    and recheck for new records before closing the request. Disabled alone is
    not deletion; retain the UID privately so failures can be retried.
-4. Delete all canonical `workouts` where `userId == uid`, legacy
+4. Delete all `blocks` where `blocker == uid` or `blocked == uid`. Keep `reports`
+   the user filed or that name them; they are retained for moderation. Then delete all canonical `workouts` where `userId == uid`, legacy
    `users/{uid}/workouts`, `users/{uid}/injuries`, `users/{uid}/private`
    (including AI usage and notifications), push-up challenge data, and any other
    documents under `users/{uid}`. Query `friendships` where `users` contains UID
@@ -147,8 +148,44 @@ The in-app flow still ignores the server's `partial: true`, and the fixed active
 workout/push-token caches need cleanup under [#88](https://github.com/Aquinnmo/pump-pal/issues/88).
 The existing server cleanup also does not remove catalog `createdBy` fields.
 These are known limits, not fixes made by this policy change. Keep #88 open;
-use the manual path to verify email-request cleanup. Social moderation/terms
-remain [#87](https://github.com/Aquinnmo/pump-pal/issues/87).
+use the manual path to verify email-request cleanup. Social terms,
+reporting and blocking are [#87](https://github.com/Aquinnmo/pump-pal/issues/87);
+see the next section.
+
+## Moderate user reports
+
+Tracks [#87](https://github.com/Aquinnmo/pump-pal/issues/87). Users file reports
+in-app (a "more" button beside any username on the Social tab). Each becomes a
+`reports/{reporter_target_day}` document with status `open`; see
+[buddies.md](./data-model/buddies.md#reports--reportsreporter_target_day). The
+public rules are `docs/policies/terms.html`.
+
+Review at least weekly, and at once for anything threatening. Use a service
+account with Firestore write access. Never a customer token, and keep the JSON
+out of the repo (`db-agent-write-perms.json` is already gitignored).
+
+```bash
+bun run moderation:review -- --dry-run     # list open reports, writes nothing
+bun run moderation:review -- --apply       # walk them and write your decisions
+```
+
+For each report choose **dismiss** (no violation), **action**, or **skip**.
+Actioning marks it `actioned` and can also suspend the reported user by setting
+`users/{uid}.socialSuspended = true`. A suspended account disappears from
+search and buddy lists, its buddy actions return 403 `social_suspended`, and it
+is not told why. Its workouts and sign-in are untouched. To lift a suspension,
+remove the field in Firebase Console; the script does not unsuspend.
+
+For a serious violation, also consider deleting the account with the manual
+procedure above. Do not put reporter or reported identifiers in public GitHub
+issues. Reports outlive the reporter's account deletion on purpose, and the
+privacy policy says so. Bumping `SOCIAL_TERMS_VERSION` requires a reviewed
+`terms.html` change first, and republishing the Pages site.
+
+Publishing `terms.html`: it ships with the other pages through the **Publish
+Timber policies** workflow above. Verify
+`https://aquinnmo.github.io/pump-pal/terms.html` returns HTTP 200 signed out
+before releasing an app version that links to it.
 
 ## Store disclosure copy
 
