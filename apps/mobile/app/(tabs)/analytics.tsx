@@ -504,12 +504,12 @@ export default function AnalyticsScreen() {
               <Text style={styles.sectionTitle}>Estimated 1RM</Text>
               <StatHelp title="Estimated 1RM">
                 <StatHelpText>
-                  The most weight you could likely lift one time on this
+                  An estimate for the most weight you could lift for one rep on this
                   exercise.
                 </StatHelpText>
                 <StatHelpText>
                   We take your best set each day and work it out from the
-                  weight and reps. No need to actually try a max.
+                  weight and reps.
                 </StatHelpText>
                 <StatHelpFormula>Weight × (1 + reps ÷ 30)</StatHelpFormula>
                 <StatHelpText>
@@ -667,17 +667,41 @@ export default function AnalyticsScreen() {
               <HighlightRow
                 label="Favorite Workout Type"
                 value={favoriteWorkoutType || "Not available"}
+                help={
+                  <StatHelpText>
+                    The workout you have logged most often. If two are tied,
+                    the one you did most recently wins.
+                  </StatHelpText>
+                }
               />
               <View style={styles.divider} />
               <HighlightRow
                 label="Average Workout Time"
                 value={averageWorkoutDuration === null ? "—" : formatDuration(averageWorkoutDuration)}
                 numeric
+                help={
+                  <>
+                    <StatHelpText>
+                      How long your workouts usually last.
+                    </StatHelpText>
+                    <StatHelpFormula>
+                      Total workout time ÷ number of workouts
+                    </StatHelpFormula>
+                    <StatHelpText>
+                      Only workouts that were timed are counted.
+                    </StatHelpText>
+                  </>
+                }
               />
               <View style={styles.divider} />
               <HighlightRow
                 label="Favorite Exercise"
                 value={favoriteExercise || "Not available"}
+                help={
+                  <StatHelpText>
+                    The exercise that shows up in the most of your workouts.
+                  </StatHelpText>
+                }
               />
               {heaviestLift && (
                 <>
@@ -687,6 +711,12 @@ export default function AnalyticsScreen() {
                     detail={heaviestLift.exercise}
                     value={`${heaviestLift.weight} lbs`}
                     numeric
+                    help={
+                      <StatHelpText>
+                        The most weight you have ever logged for a single set,
+                        on any exercise. Bodyweight sets are not counted.
+                      </StatHelpText>
+                    }
                   />
                 </>
               )}
@@ -882,32 +912,37 @@ function HighlightRow({
   detail,
   value,
   numeric = false,
+  help,
 }: {
   label: string;
   detail?: string;
   value: string;
   numeric?: boolean;
+  help?: ReactNode;
 }) {
   return (
-    <View
-      style={styles.highlightRow}
-      accessible
-      accessibilityLabel={`${label}. ${detail ? `${detail}. ` : ""}${value}`}
-    >
-      <View style={styles.highlightCopy}>
-        <Text style={styles.metricLabel}>{label}</Text>
-        {detail && (
-          <Text style={styles.metricDetail} selectable>
-            {detail}
-          </Text>
-        )}
-      </View>
-      <Text
-        style={[styles.highlightValue, numeric && styles.numeric]}
-        selectable
+    <View style={styles.highlightRow}>
+      <View
+        style={styles.highlightMain}
+        accessible
+        accessibilityLabel={`${label}. ${detail ? `${detail}. ` : ""}${value}`}
       >
-        {value}
-      </Text>
+        <View style={styles.highlightCopy}>
+          <Text style={styles.metricLabel}>{label}</Text>
+          {detail && (
+            <Text style={styles.metricDetail} selectable>
+              {detail}
+            </Text>
+          )}
+        </View>
+        <Text
+          style={[styles.highlightValue, numeric && styles.numeric]}
+          selectable
+        >
+          {value}
+        </Text>
+      </View>
+      {help && <StatHelp title={label}>{help}</StatHelp>}
     </View>
   );
 }
@@ -1184,6 +1219,12 @@ const styles = StyleSheet.create({
     minHeight: 88,
     paddingHorizontal: 18,
     paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  highlightMain: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
