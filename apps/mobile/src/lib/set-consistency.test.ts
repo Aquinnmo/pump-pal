@@ -64,149 +64,178 @@ function entryWorkout(
   );
 }
 
-/** Classify a single exercise by reading back which bucket it landed in. */
-function bucketOf(sets: PerformedSet[]): SetChangeBucket | null {
-  const result = analyzeSetConsistency([
+/** One exercise at a constant 10 reps, one entry per weight. */
+function weightsWorkout(id: string, day: number, weights: number[]): Workout {
+  return entryWorkout(
+    id,
+    day,
+    weights.map((weight): [number, number] => [weight, 10]),
+  );
+}
+
+/** A full distribution with zeros filled in, so cases only name what they hit. */
+function counts(
+  partial: Partial<Record<SetChangeBucket, number>>,
+): Record<SetChangeBucket, number> {
+  return {
+    bigDrop: 0,
+    minorDrop: 0,
+    held: 0,
+    minorSpike: 0,
+    bigSpike: 0,
+    ...partial,
+  };
+}
+
+/** The set-to-set changes a single exercise contributes. */
+function deltasOf(sets: PerformedSet[]): Record<SetChangeBucket, number> {
+  return analyzeSetConsistency([
     workout("probe", "2026-07-01T12:00:00.000Z", [exercise("probe", sets)]),
-  ]);
-  const hit = Object.entries(result.distribution).find(([, count]) => count > 0);
-  return (hit?.[0] as SetChangeBucket) ?? null;
+  ]).distribution;
 }
 
 // Weight and reps are negatively coupled — a heavier set buys fewer reps — so a
-// textbook pyramid must NOT read as erratic just because reps fell while the
-// weight climbed. This is the regression that made the verdict disagree with
-// the graph.
+// textbook pyramid must NOT read as drops just because reps fell while the
+// weight climbed. Each delta is judged on weight when it moved, reps otherwise.
 function testSetSchemes(): void {
-  const cases: [string, PerformedSet[], SetChangeBucket][] = [
-    ["straight sets", weighted([[100, 10], [100, 10], [100, 10]]), "held"],
-    ["straight + rep fade", weighted([[100, 10], [100, 9], [100, 8]]), "held"],
-    ["straight + rep crash", weighted([[100, 10], [100, 9], [100, 4]]), "bigDrop"],
+  const cases: [
+    string,
+    PerformedSet[],
+    Partial<Record<SetChangeBucket, number>>,
+  ][] = [
+    ["straight sets", weighted([[100, 10], [100, 10], [100, 10]]), { held: 2 }],
+    [
+      "straight + rep fade",
+      weighted([[100, 10], [100, 9], [100, 8]]),
+      { held: 2 },
+    ],
+    [
+      "straight + rep crash",
+      weighted([[100, 10], [100, 9], [100, 4]]),
+      { held: 1, bigDrop: 1 },
+    ],
     [
       "ascending pyramid",
-      weighted([[60, 12], [80, 10], [100, 8], [110, 6]]),
-      "bigSpike",
+      weighted([[60, 12], [80, 10], [100, 8], [115, 6]]),
+      { bigSpike: 2, minorSpike: 1 },
     ],
-    ["reverse pyramid", weighted([[110, 6], [100, 8], [80, 10]]), "bigDrop"],
-    ["drop set", weighted([[100, 10], [80, 8], [60, 6]]), "bigDrop"],
+    [
+      "reverse pyramid",
+      weighted([[120, 6], [100, 8], [75, 10]]),
+      { minorDrop: 1, bigDrop: 1 },
+    ],
+    ["drop set", weighted([[100, 10], [80, 8], [60, 6]]), { bigDrop: 2 }],
     [
       "top set + backoff",
       weighted([[120, 5], [100, 8], [100, 8]]),
-      "minorDrop",
+      { minorDrop: 1, held: 1 },
     ],
-    // No single step clears 10%, but the net climb is 20%.
+    // No single step clears 10%: every delta reads as held, unlike a net view.
     [
       "gradual ramp",
       weighted([[100, 10], [105, 10], [115, 10], [120, 10]]),
-      "minorSpike",
+      { held: 3 },
     ],
     [
       "pyramid up then down",
       weighted([[60, 10], [80, 10], [100, 10], [80, 10], [60, 10]]),
-      "erratic",
+      { bigSpike: 2, bigDrop: 2 },
     ],
-    ["wandering", weighted([[100, 10], [60, 10], [100, 10]]), "erratic"],
-    ["bodyweight rep fade", bodyweight([12, 11, 10, 10]), "held"],
-    ["bodyweight collapse", bodyweight([20, 14, 9, 6]), "bigDrop"],
+    [
+      "wandering",
+      weighted([[100, 10], [60, 10], [100, 10]]),
+      { bigDrop: 1, bigSpike: 1 },
+    ],
+    ["bodyweight rep fade", bodyweight([12, 11, 10, 10]), { held: 3 }],
+    ["bodyweight collapse", bodyweight([20, 14, 9, 6]), { minorDrop: 3 }],
   ];
 
   cases.forEach(([name, sets, expected]) => {
-    assert.equal(bucketOf(sets), expected, `${name} should be ${expected}`);
+    assert.deepEqual(deltasOf(sets), counts(expected), name);
   });
 }
 
 function testIneligibleExercises(): void {
-  assert.equal(bucketOf(weighted([[100, 10]])), null, "single set");
-  assert.equal(bucketOf([]), null, "no sets");
-  assert.equal(
-    bucketOf([
+  assert.deepEqual(deltasOf(weighted([[100, 10]])), counts({}), "single set");
+  assert.deepEqual(deltasOf([]), counts({}), "no sets");
+  assert.deepEqual(
+    deltasOf([
       { setNumber: 1, durationSeconds: 60 },
       { setNumber: 2, durationSeconds: 90 },
     ]),
-    null,
+    counts({}),
     "neither weight nor reps logged",
   );
   // Weight logged and perfectly flat, no reps to fall back on.
-  assert.equal(
-    bucketOf([
+  assert.deepEqual(
+    deltasOf([
       { setNumber: 1, weight: 100 },
       { setNumber: 2, weight: 100 },
     ]),
-    "held",
+    counts({ held: 1 }),
   );
 }
 
 function testSetsAreOrderedBySetNumber(): void {
-  assert.equal(
-    bucketOf([
+  assert.deepEqual(
+    deltasOf([
       { setNumber: 3, weight: 60, reps: 10 },
       { setNumber: 1, weight: 100, reps: 10 },
       { setNumber: 2, weight: 80, reps: 10 },
     ]),
-    "bigDrop",
+    counts({ bigDrop: 2 }),
     "out-of-order sets should sort before classifying",
   );
 }
 
 function testMinimumEvidence(): void {
-  const result = analyzeSetConsistency([
-    entryWorkout("one", 1, [[100, 10], [100, 10]]),
-    entryWorkout("two", 2, [[100, 10], [80, 10]]),
+  // Five deltas from one long exercise: still short of the six needed.
+  const thin = analyzeSetConsistency([
+    weightsWorkout("thin", 1, [100, 100, 100, 100, 100, 100]),
   ]);
-  assert.equal(result.category, null);
-  assert.equal(result.eligibleEntries, 2);
+  assert.equal(thin.category, null);
+  assert.equal(thin.eligibleEntries, 5);
+
+  const enough = analyzeSetConsistency([
+    weightsWorkout("a", 1, [100, 100, 100, 100]),
+    weightsWorkout("b", 2, [100, 100, 100, 100]),
+  ]);
+  assert.equal(enough.eligibleEntries, 6);
+  assert.equal(enough.category, "held");
 }
 
-function testFourCategories(): void {
+// Verdict is the most common kind of move once held drops under 80%.
+function testVerdict(): void {
   const steady = (id: string, day: number) =>
-    entryWorkout(id, day, [[100, 10], [100, 10]]);
+    weightsWorkout(id, day, [100, 100, 100, 100]);
+  const verdict = (...workouts: Workout[]) =>
+    analyzeSetConsistency(workouts).category;
 
   assert.equal(
-    analyzeSetConsistency([steady("s1", 1), steady("s2", 2), steady("s3", 3)])
-      .category,
-    "consistent",
+    verdict(weightsWorkout("bd", 1, [100, 70, 45, 25]), steady("s", 2)),
+    "bigDrop",
   );
-
   assert.equal(
-    analyzeSetConsistency([
-      entryWorkout("o1", 1, [[100, 10], [80, 10]]),
-      entryWorkout("o2", 2, [[100, 10], [85, 10]]),
-      steady("o3", 3),
-    ]).category,
-    "overconfident",
+    verdict(weightsWorkout("md", 1, [100, 85, 70, 55]), steady("s", 2)),
+    "minorDrop",
   );
-
   assert.equal(
-    analyzeSetConsistency([
-      entryWorkout("u1", 1, [[100, 10], [120, 10]]),
-      entryWorkout("u2", 2, [[100, 10], [115, 10]]),
-      steady("u3", 3),
-    ]).category,
-    "underconfident",
+    verdict(weightsWorkout("ms", 1, [100, 115, 130, 150]), steady("s", 2)),
+    "minorSpike",
   );
-
   assert.equal(
-    analyzeSetConsistency([
-      entryWorkout("up", 1, [[100, 10], [120, 10]]),
-      entryWorkout("down", 2, [[100, 10], [80, 10]]),
-      steady("steady", 3),
-    ]).category,
-    "erratic",
+    verdict(weightsWorkout("bs", 1, [50, 80, 120, 180]), steady("s", 2)),
+    "bigSpike",
   );
-}
-
-// An exercise that went both ways is evidence on both sides, so a roster of
-// pure pyramids-up-then-down reads erratic rather than picking a direction.
-function testErraticCountsBothWays(): void {
-  const swing = (id: string, day: number) =>
-    entryWorkout(id, day, [[60, 10], [100, 10], [60, 10]]);
-  const result = analyzeSetConsistency([
-    swing("e1", 1),
-    swing("e2", 2),
-    swing("e3", 3),
-  ]);
-  assert.equal(result.distribution.erratic, 3);
-  assert.equal(result.category, "erratic");
+  // A tie goes to the earlier bucket in graph order.
+  assert.equal(
+    verdict(
+      weightsWorkout("t1", 1, [100, 70, 100]),
+      weightsWorkout("t2", 2, [100, 70, 100]),
+      weightsWorkout("t3", 3, [100, 70, 100]),
+    ),
+    "bigDrop",
+  );
 }
 
 function testDistributionTally(): void {
@@ -215,21 +244,15 @@ function testDistributionTally(): void {
       exercise("flat", weighted([[100, 10], [100, 10]])),
       exercise("backoff", weighted([[120, 5], [100, 8], [100, 8]])),
       exercise("dropset", weighted([[100, 10], [80, 8], [60, 6]])),
-      exercise("ramp", weighted([[100, 10], [105, 10], [115, 10], [120, 10]])),
-      exercise("pyramid", weighted([[60, 12], [80, 10], [100, 8], [110, 6]])),
-      exercise("swing", weighted([[60, 10], [100, 10], [60, 10]])),
+      exercise("pyramid", weighted([[60, 12], [80, 10], [100, 8], [115, 6]])),
     ]),
   ]);
 
-  assert.deepEqual(result.distribution, {
-    bigDrop: 1,
-    minorDrop: 1,
-    held: 1,
-    minorSpike: 1,
-    bigSpike: 1,
-    erratic: 1,
-  });
-  assert.equal(result.eligibleEntries, 6);
+  assert.deepEqual(
+    result.distribution,
+    counts({ bigDrop: 2, minorDrop: 1, held: 2, minorSpike: 1, bigSpike: 2 }),
+  );
+  assert.equal(result.eligibleEntries, 8);
 }
 
 function testLatestThirtyByWorkoutDate(): void {
@@ -251,15 +274,14 @@ function testLatestThirtyByWorkoutDate(): void {
   assert.equal(result.analyzedWorkouts, 30);
   assert.equal(result.eligibleEntries, 30);
   assert.equal(result.distribution.bigDrop, 0);
-  assert.equal(result.category, "consistent");
+  assert.equal(result.category, "held");
 }
 
 testSetSchemes();
 testIneligibleExercises();
 testSetsAreOrderedBySetNumber();
 testMinimumEvidence();
-testFourCategories();
-testErraticCountsBothWays();
+testVerdict();
 testDistributionTally();
 testLatestThirtyByWorkoutDate();
 
