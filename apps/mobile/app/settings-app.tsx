@@ -4,6 +4,7 @@ import { bumpDataVersion } from "@/data/data-version";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
+import { setNormalizeAutoFill, useNormalizeAutoFill } from "@/lib/use-normalize-autofill";
 import { useSocialEnabled } from "@/lib/use-social-enabled";
 import { toDateObj } from "@/lib/workout-conversion";
 import { Toast } from "@/ui/primitives/toast";
@@ -104,6 +105,7 @@ export default function SettingsAppScreen() {
   const insets = useSafeAreaInsets();
   const aiEnabled = useAIEnabled();
   const socialEnabled = useSocialEnabled();
+  const normalizeAutoFill = useNormalizeAutoFill();
   const [savingPreference, setSavingPreference] = useState<"aiEnabled" | "socialEnabled" | null>(null);
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -147,6 +149,20 @@ export default function SettingsAppScreen() {
       const remaining = MIN_PULSE_MS - (Date.now() - startedAt);
       if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
       setSavingPreference(null);
+    }
+  };
+
+  // Device-local AsyncStorage write, so no pulse — it lands before the switch finishes animating.
+  const handleToggleNormalize = async (next: boolean) => {
+    try {
+      await setNormalizeAutoFill(next);
+    } catch (err) {
+      console.error(err);
+      setToast({
+        visible: true,
+        message: "Could not save that setting",
+        type: "error",
+      });
     }
   };
 
@@ -384,6 +400,23 @@ export default function SettingsAppScreen() {
               accessibilityLabel="Social features"
             />
           )}
+        </View>
+
+        <View style={styles.toggleRow}>
+          <Ionicons name="reorder-four-outline" size={20} color="#fff" style={styles.rowIcon} />
+          <View style={styles.toggleLabels}>
+            <Text style={styles.updateButtonText}>Normalize Auto-Fill</Text>
+            <Text style={styles.toggleSubtitle}>
+              Fill each exercise with your most common set from last time instead of copying every set.
+            </Text>
+          </View>
+          <Switch
+            value={normalizeAutoFill}
+            onValueChange={handleToggleNormalize}
+            trackColor={{ false: "#2a2a2a", true: "#e54242" }}
+            thumbColor="#fff"
+            accessibilityLabel="Normalize auto-fill"
+          />
         </View>
 
         <TouchableOpacity

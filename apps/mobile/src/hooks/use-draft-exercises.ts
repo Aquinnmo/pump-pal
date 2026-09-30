@@ -21,6 +21,9 @@ type DraftExerciseOptions = {
   trackCompletion?: boolean;
   workoutHistory?: Workout[];
   workoutName?: string;
+  // Repeat one representative set instead of copying history verbatim; see
+  // normalizeDraftSets in src/lib/workout-conversion.ts.
+  normalize?: boolean;
 };
 
 function findLastPerformed(
@@ -48,6 +51,7 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
   const trackCompletion = opts?.trackCompletion ?? false;
   const workoutHistory = opts?.workoutHistory ?? [];
   const workoutName = opts?.workoutName ?? '';
+  const normalize = opts?.normalize ?? false;
 
   const blankSet = useMemo(
     () => (): DraftSet => ({
@@ -87,7 +91,7 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
     };
     if (!lastPerformed) return { ...row, ...identity };
 
-    const selected = { ...collapseSetsToDraft(lastPerformed), ...identity };
+    const selected = { ...collapseSetsToDraft(lastPerformed, normalize), ...identity };
     if (!trackCompletion) return selected;
     return { ...selected, sets: selected.sets.map((set) => ({ ...set, completed: false })) };
   };

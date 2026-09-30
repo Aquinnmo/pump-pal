@@ -15,6 +15,7 @@ import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { useAIQuota } from "@/lib/use-ai-quota";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
+import { useNormalizeAutoFill } from "@/lib/use-normalize-autofill";
 import { DraftExerciseRow, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
@@ -129,6 +130,7 @@ export default function ActiveWorkoutScreen() {
   const effectiveWorkoutName = isCustomWorkoutName
     ? customWorkoutName.trim()
     : workoutName.trim();
+  const normalizeAutoFill = useNormalizeAutoFill();
   const {
     exercises,
     setExercises,
@@ -148,6 +150,7 @@ export default function ActiveWorkoutScreen() {
     trackCompletion: true,
     workoutHistory,
     workoutName: effectiveWorkoutName,
+    normalize: normalizeAutoFill,
   });
   exercisesRef.current = exercises;
   // "Add Exercise" opens the picker; the row is only appended once an exercise is picked
@@ -205,7 +208,7 @@ export default function ActiveWorkoutScreen() {
             return;
           }
           const data = stored.data;
-          const rows = (data.performedExercises ?? []).map(collapseSetsToDraft);
+          const rows = (data.performedExercises ?? []).map((pe) => collapseSetsToDraft(pe));
           const hasExercises = rows.length > 0;
           const name = data.name || "";
           // queueOrder is only ever set on docs that passed through the planned queue.

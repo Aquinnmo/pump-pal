@@ -61,7 +61,34 @@ export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
   });
 }
 
-export function collapseSetsToDraft(pe: PerformedExercise): DraftExerciseRow {
+// Auto-fill normalization: repeat one representative set across every slot. The
+// representative is the most frequent (reps, weight, duration) set; when several tie —
+// including "none repeats", where every set ties at one — it is the median of the tied
+// sets ordered by weight, then reps, then duration. An even count takes the upper
+// (heavier) middle, so the pick is always a set that was actually performed.
+export function normalizeDraftSets(sets: DraftSet[]): DraftSet[] {
+  if (sets.length < 2) return sets;
+  const weightOf = (s: DraftSet) => Number(s.weight) || 0;
+  const secondsOf = (s: DraftSet) => s.durationMinutes * 60 + s.durationSeconds;
+  const keyOf = (s: DraftSet) => `${s.reps}|${weightOf(s)}|${secondsOf(s)}`;
+
+  const counts = new Map<string, number>();
+  for (const s of sets) counts.set(keyOf(s), (counts.get(keyOf(s)) ?? 0) + 1);
+  const top = Math.max(...counts.values());
+
+  const seen = new Set<string>();
+  const candidates = sets.filter((s) => {
+    const key = keyOf(s);
+    if (counts.get(key) !== top || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  candidates.sort((a, b) => weightOf(a) - weightOf(b) || a.reps - b.reps || secondsOf(a) - secondsOf(b));
+  const pick = candidates[Math.floor(candidates.length / 2)];
+  return sets.map((s) => ({ ...pick, completed: s.completed }));
+}
+
+export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): DraftExerciseRow {
   const first = pe.sets[0];
   const duration = first?.durationSeconds !== undefined && first?.reps === undefined;
   const sourceSets = pe.sets.length > 0 ? pe.sets : [first];
@@ -84,7 +111,7 @@ export function collapseSetsToDraft(pe: PerformedExercise): DraftExerciseRow {
     label: pe.variationNameSnapshot ?? pe.exerciseNameSnapshot,
     exerciseType: duration ? 'Sets of Duration' : 'Sets of Reps',
     bodyweight: Boolean(first?.bodyweight),
-    sets,
+    sets: normalize ? normalizeDraftSets(sets) : sets,
     holdSeconds: first?.holdSeconds,
     peNotes: pe.notes,
     legacy: pe.legacy,

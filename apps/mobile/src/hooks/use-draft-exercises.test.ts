@@ -66,6 +66,22 @@ withDraft({
   );
 });
 
+// normalize repeats the most frequent history set across every slot; without it
+// the history is copied verbatim.
+const unevenHistory = [historyWorkout('Push Day', [
+  { setNumber: 1, reps: 10, weight: 100 },
+  { setNumber: 2, reps: 10, weight: 100 },
+  { setNumber: 3, reps: 6, weight: 100 },
+])];
+withDraft({ workoutName: 'Push Day', workoutHistory: unevenHistory, normalize: true }, (result) => {
+  act(() => result.current.addExercise(selection()));
+  assert.deepEqual(result.current.exercises[0]!.sets.map((s) => [s.reps, s.weight]), [[10, '100'], [10, '100'], [10, '100']]);
+});
+withDraft({ workoutName: 'Push Day', workoutHistory: unevenHistory }, (result) => {
+  act(() => result.current.addExercise(selection()));
+  assert.deepEqual(result.current.exercises[0]!.sets.map((s) => [s.reps, s.weight]), [[10, '100'], [10, '100'], [6, '100']]);
+});
+
 // Same-name history wins over a different-name match, even when it appears
 // later in the supplied history. Matching also includes null variation ids.
 withDraft({
