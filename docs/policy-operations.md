@@ -215,13 +215,20 @@ release builds), so the checks below are run by the user against the real AAB.
 ### Inspect the production AAB
 
 1. `eas build -p android --profile production`, then download the `.aab`.
-2. `bundletool dump manifest --bundle=<file>.aab` for the merged manifest.
+2. `bundletool dump manifest --bundle=timber-prod.aab` for the merged manifest
+   (use the real filename; a literal `<file>` is a zsh input redirect).
    Narrow with `--xpath`, for example
    `--xpath /manifest/uses-sdk/@android:targetSdkVersion` and
    `--xpath /manifest/uses-permission/@android:name`.
 3. List every component with `android:exported="true"` and match it against the
    retained table below. Anything not listed is a finding.
-4. After upload, read the SDK list under Play Console → **App bundle explorer**
+4. Confirm the build-time config was inlined. `EXPO_PUBLIC_*` values live in the
+   EAS `production` environment, not the gitignored local `.env`; an empty one
+   ships an app that cannot sign in. Extract `base/assets/index.android.bundle`
+   and `LC_ALL=C grep -a -c` for `pumppal-c9199` and the
+   `EXPO_PUBLIC_API_BASE_URL` host (both must be ≥1), and for the App Check
+   debug token (must be 0).
+5. After upload, read the SDK list under Play Console → **App bundle explorer**
    and resolve any pre-launch or SDK warnings.
 
 `targetSdkVersion` is currently 36, from Expo 57 defaults; record the value
@@ -254,6 +261,12 @@ exact alarms, and then add the matching Play declaration first.
 | `.widget.UpNext` receiver | `exported=false` |
 | `com.aquinnmo.timber.wearsync.WearMessageService` (`exported=true`) | Phone side of the watch bridge, invoked by Google Play services Wearable |
 | `POST_NOTIFICATIONS`, `POST_PROMOTED_NOTIFICATIONS`, launcher badge permissions, `c2dm.permission.RECEIVE`, install referrer | Normal or SDK permissions; no Play declaration |
+| `ACCESS_NOTIFICATION_POLICY`, `BROADCAST_CLOSE_SYSTEM_DIALOGS` (`maxSdkVersion=30`) | `@notifee/react-native`; normal permissions, no Play declaration |
+| `app.notifee.core.NotificationReceiverActivity` (`exported=true`, unguarded) | Notifee's notification-tap trampoline: translucent, `noHistory`, only reopens the app. Setting `exported=false` should still work via PendingIntent but is untested; revisit if a scanner flags it |
+| `RevocationBoundService`, `FirebaseInstanceIdReceiver`, WorkManager `SystemJobService`, `DiagnosticsReceiver`, `ProfileInstallReceiver` (`exported=true`) | Each guarded by a system/signature permission (`REVOCATION_NOTIFICATION`, `c2dm.permission.SEND`, `BIND_JOB_SERVICE`, `DUMP`) |
+| `<queries>` for `org.chromium.intent.action.PAY` and related | Package-visibility entries from WebView/Custom Tabs dependencies; no payments feature, no payments declaration |
+| `firebase_crashlytics_collection_enabled=false` meta-data | React Native Firebase default; `apps/mobile/firebase.json` enables collection at runtime, so Data Safety still declares Crashlytics |
+| `FirebaseAppCheckDebugRegistrar` | Class ships with the App Check library; production selects `playIntegrity` (`src/config/firebase.ts`) and no debug token is set for production |
 
 Confirm these are **absent** from the production AAB (debug/dev-client only):
 
@@ -287,6 +300,13 @@ Include in the full description, alongside the [store disclosure copy](#store-di
 > not provide medical advice. Consult a healthcare professional before starting
 > or changing an exercise program, especially if you have an injury or health
 > condition.
+
+### Inspection log
+
+- **2026-09-30, versionCode 2, targetSdk 36:** manifest matches both tables;
+  every removed item and debug-only entry absent. **Rejected for upload:** JS
+  bundle had no Firebase project ID or API origin (production EAS environment
+  missing `EXPO_PUBLIC_*`). Rebuild and re-run steps 2–4.
 
 Bead `pump-pal-5bje.5.2` (user) closes the loop with the AAB manifest output
 and Console screenshots.
