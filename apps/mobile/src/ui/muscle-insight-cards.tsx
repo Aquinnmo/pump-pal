@@ -7,6 +7,7 @@ import {
 } from "@/lib/muscle-analysis";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
 import { useAIQuota } from "@/lib/use-ai-quota";
+import { StatHelp, StatHelpFormula, StatHelpText } from "@/ui/primitives/stat-help";
 import { Workout } from "@/types/workout";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -115,7 +116,25 @@ export function MuscleInsightCards({ workouts }: Props) {
       <View style={styles.sectionHeader}>
         <View style={styles.headingCopy}>
           <Text style={styles.eyebrow}>AI INSIGHTS</Text>
-          <Text style={styles.sectionTitle}>Muscle Fatigue</Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.sectionTitle}>Muscle Fatigue</Text>
+            <StatHelp title="Muscle Fatigue">
+              <StatHelpText>
+                Which muscles you are working too much, and which ones you are
+                skipping.
+              </StatHelpText>
+              <StatHelpText>
+                We count your sets for each muscle over the past 30 days. AI
+                then compares them to find what stands out.
+              </StatHelpText>
+              <StatHelpFormula>
+                Main muscle = 1 set · Helper muscles = ½ set
+              </StatHelpFormula>
+              <StatHelpText>
+                Healthy range: about 10–20 sets per muscle each week.
+              </StatHelpText>
+            </StatHelp>
+          </View>
           <Text style={styles.sectionSubtitle} selectable>
             Past 30 days
           </Text>
@@ -357,6 +376,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: 12,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   headingCopy: {
     flexGrow: 1,
