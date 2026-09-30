@@ -196,8 +196,10 @@ interface ExercisePickerProps {
   onCreateNew?: (name: string) => Promise<ExercisePickerSelection | null>;
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
-  // Opens the picker without a tap on the trigger row (e.g. right after "Add Exercise").
-  autoOpen?: boolean;
+  // Headless mode (e.g. "Add Exercise"): no trigger row; the parent opens the picker by
+  // setting `open` and hears `onClose` once it is fully dismissed, picked or cancelled.
+  open?: boolean;
+  onClose?: () => void;
 }
 
 export function ExercisePicker({
@@ -208,7 +210,8 @@ export function ExercisePicker({
   onCreateNew,
   placeholder = 'Select exercise',
   style,
-  autoOpen = false,
+  open,
+  onClose,
 }: ExercisePickerProps) {
   const [recentsVisible, setRecentsVisible] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
@@ -228,9 +231,9 @@ export function ExercisePicker({
   }, [recentExercises.length]);
 
   useEffect(() => {
-    if (autoOpen) handleOpen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire only when autoOpen flips on
-  }, [autoOpen]);
+    if (open) handleOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire only when `open` flips on
+  }, [open]);
 
   const openSearch = useCallback(() => {
     setQuery('');
@@ -294,18 +297,20 @@ export function ExercisePicker({
 
   return (
     <>
-      <TouchableOpacity style={[styles.pickerRow, style]} onPress={handleOpen}>
-        <Text style={value ? styles.pickerText : styles.placeholderText} numberOfLines={1}>
-          {value || placeholder}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#888" />
-      </TouchableOpacity>
+      {open === undefined && (
+        <TouchableOpacity style={[styles.pickerRow, style]} onPress={handleOpen}>
+          <Text style={value ? styles.pickerText : styles.placeholderText} numberOfLines={1}>
+            {value || placeholder}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color="#888" />
+        </TouchableOpacity>
+      )}
 
       <Sheet
         ref={recentsSheetRef}
         visible={recentsVisible}
         title={placeholder}
-        onDismiss={() => setRecentsVisible(false)}>
+        onDismiss={() => { setRecentsVisible(false); onClose?.(); }}>
         <FlatList
           style={styles.optionsList}
           data={alphabeticalRecents}
@@ -335,7 +340,7 @@ export function ExercisePicker({
         visible={searchVisible}
         title={placeholder}
         variant="dialog"
-        onDismiss={() => { setSearchVisible(false); setQuery(''); setCreating(false); }}
+        onDismiss={() => { setSearchVisible(false); setQuery(''); setCreating(false); onClose?.(); }}
         headerExtra={
           <TextInput
             style={styles.searchInput}

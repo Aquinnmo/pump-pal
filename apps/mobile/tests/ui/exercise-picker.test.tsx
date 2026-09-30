@@ -105,10 +105,24 @@ describe('ExercisePicker', () => {
     assert.ok(screen.getByPlaceholderText('Search exercises'));
   });
 
-  it('opens straight to the search dialog without a tap when autoOpen is set', () => {
-    render(<ExercisePicker options={[option()]} onSelect={() => undefined} value={null} autoOpen />);
+  it('headless mode has no trigger row, opens from `open`, and reports close after a pick', () => {
+    const selections: ExerciseRef[] = [];
+    let closed = 0;
+    const props = {
+      options: [option()],
+      onSelect: (value: ExerciseRef) => selections.push(value),
+      onClose: () => { closed += 1; },
+      value: null,
+    };
+    const { rerender } = render(<ExercisePicker {...props} open={false} />);
+    assert.equal(screen.queryByText('Select exercise', { exact: true }), null);
+    assert.equal(screen.queryByPlaceholderText('Search exercises'), null);
 
-    assert.ok(screen.getByPlaceholderText('Search exercises'));
+    rerender(<ExercisePicker {...props} open />);
+    fireEvent.click(screen.getByText('Bench Press', { exact: true }));
+
+    assert.deepEqual(selections, [{ exerciseId: 'bench-press', variationId: null, label: 'Bench Press' }]);
+    assert.equal(closed, 1);
   });
 
   it('selects a recent exercise exactly once with its full reference', () => {

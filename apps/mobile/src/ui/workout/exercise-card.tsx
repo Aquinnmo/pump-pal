@@ -26,10 +26,6 @@ type ExerciseCardProps = {
   onToggleSetComplete?: (index: number, setIdx: number) => void;
   // active-workout only: per-set completion checkbox + completed styling
   showCompletion?: boolean;
-  // whether the trash button shows (screen passes exercises.length > 1)
-  canRemove: boolean;
-  // open the exercise picker on mount — set for the row "Add Exercise" just appended
-  autoOpenPicker?: boolean;
 };
 
 // One editable exercise card — the shared renderItem body for both the plan/log editor
@@ -53,11 +49,8 @@ export function ExerciseCard({
   onRemoveSet,
   onToggleSetComplete,
   showCompletion = false,
-  canRemove,
-  autoOpenPicker = false,
 }: ExerciseCardProps) {
   const allSetsComplete = showCompletion && ex.sets.length > 0 && ex.sets.every((s) => s.completed);
-  const showFooter = ex.exerciseType === 'Sets of Reps' || canRemove;
 
   return (
     <View style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
@@ -70,7 +63,6 @@ export function ExerciseCard({
           onCreateNew={onCreateNew}
           placeholder="Select exercise"
           style={styles.exerciseNameDropdownFlex}
-          autoOpen={autoOpenPicker}
         />
         <DragHandle />
       </View>
@@ -125,26 +117,22 @@ export function ExerciseCard({
         <Text style={styles.addSetText}>Add Set</Text>
       </TouchableOpacity>
 
-      {showFooter && (
-        <View style={styles.exerciseFooter}>
-          {ex.exerciseType === 'Sets of Reps' ? (
-            <TouchableOpacity style={styles.bodyweightRow} onPress={() => onToggleBodyweight(i)} activeOpacity={0.7}>
-              <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-                {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-              </View>
-              <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.exerciseFooterSpacer} />
-          )}
+      <View style={styles.exerciseFooter}>
+        {ex.exerciseType === 'Sets of Reps' ? (
+          <TouchableOpacity style={styles.bodyweightRow} onPress={() => onToggleBodyweight(i)} activeOpacity={0.7}>
+            <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
+              {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+            </View>
+            <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.exerciseFooterSpacer} />
+        )}
 
-          {canRemove && (
-            <TouchableOpacity style={styles.removeExerciseButton} onPress={() => onRemoveExercise(i)} hitSlop={8}>
-              <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
+        <TouchableOpacity style={styles.removeExerciseButton} onPress={() => onRemoveExercise(i)} hitSlop={8}>
+          <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

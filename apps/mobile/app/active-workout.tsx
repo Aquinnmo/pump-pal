@@ -2,6 +2,7 @@ import { Dropdown } from "@/ui/primitives/dropdown";
 import { PlateCalculator } from "@/ui/primitives/plate-calculator";
 import { Toast } from "@/ui/primitives/toast";
 import { ExerciseCard } from "@/ui/workout/exercise-card";
+import { ExercisePicker } from "@/ui/primitives/exercise-picker";
 import { FocusView } from "@/ui/workout/focus-view";
 import { FinishWorkoutCelebration } from "@/ui/workout/finish-workout-celebration";
 import { profileRepository } from "@/data/profile-repository";
@@ -131,9 +132,7 @@ export default function ActiveWorkoutScreen() {
   const {
     exercises,
     setExercises,
-    blankRow,
     addExercise,
-    pickerUid,
     selectExercise,
     toggleBodyweight,
     removeExercise,
@@ -151,6 +150,8 @@ export default function ActiveWorkoutScreen() {
     workoutName: effectiveWorkoutName,
   });
   exercisesRef.current = exercises;
+  // "Add Exercise" opens the picker; the row is only appended once an exercise is picked
+  const [pickingExercise, setPickingExercise] = useState(false);
   const [saving, setSaving] = useState(false);
   const [finishSucceeded, setFinishSucceeded] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
@@ -185,7 +186,8 @@ export default function ActiveWorkoutScreen() {
         if (existing && existing.uid === user.uid) {
           const hasExercises = existing.rows.some((r) => r.label.trim() !== "");
           setWorkoutName(existing.name);
-          setExercises(existing.rows.length > 0 ? existing.rows : [blankRow()]);
+          // drop empty rows a session saved by an older build may still hold
+          setExercises(existing.rows.filter((r) => r.label.trim() !== ""));
           if (hasExercises) {
             setMode("focus");
             setHasEnteredFocus(true);
@@ -203,11 +205,8 @@ export default function ActiveWorkoutScreen() {
             return;
           }
           const data = stored.data;
-          const hasExercises =
-            !!data.performedExercises && data.performedExercises.length > 0;
-          const rows = hasExercises
-            ? data.performedExercises.map(collapseSetsToDraft)
-            : [blankRow()];
+          const rows = (data.performedExercises ?? []).map(collapseSetsToDraft);
+          const hasExercises = rows.length > 0;
           const name = data.name || "";
           // queueOrder is only ever set on docs that passed through the planned queue.
           const cameFromPlanNow = data.queueOrder !== undefined;
@@ -231,7 +230,7 @@ export default function ActiveWorkoutScreen() {
           setSessionId(started.id);
         } else {
           const name = suggestion || "";
-          const rows = [blankRow()];
+          const rows: DraftExerciseRow[] = [];
           setWorkoutName(name);
           setExercises(rows);
           setCameFromPlan(false);
@@ -253,7 +252,7 @@ export default function ActiveWorkoutScreen() {
         setInitializing(false);
       }
     })();
-  }, [user, id, suggestion, blankRow, setExercises]);
+  }, [user, id, suggestion, setExercises]);
 
   // Build the workout-name dropdown: the user's split day names first, then any
   // other names they've actually used. Mirrors the same list the add/plan modal shows.
@@ -704,16 +703,25 @@ export default function ActiveWorkoutScreen() {
             onRemoveSet={removeSet}
             onToggleSetComplete={toggleSetComplete}
             showCompletion
-            canRemove={exercises.length > 1}
-            autoOpenPicker={ex.uid === pickerUid}
           />
         )}
         ListFooterComponent={
           <>
-            <TouchableOpacity style={styles.addExButton} onPress={addExercise}>
+            <TouchableOpacity style={styles.addExButton} onPress={() => setPickingExercise(true)}>
               <Ionicons name="add-circle-outline" size={18} color="#e54242" />
               <Text style={styles.addExText}>Add Exercise</Text>
             </TouchableOpacity>
+            <ExercisePicker
+              options={catalogOptions}
+              value={null}
+              recentExercises={recentExercises}
+              onSelect={addExercise}
+              onCreateNew={
+                user ? (name) => createPendingExercise(name, user.uid) : undefined
+              }
+              open={pickingExercise}
+              onClose={() => setPickingExercise(false)}
+            />
 
             {aiEnabled && (
             <TouchableOpacity

@@ -2,6 +2,7 @@ import { Dropdown } from "@/ui/primitives/dropdown";
 import { Toast } from "@/ui/primitives/toast";
 import { WorkoutPrefillLoader } from "@/ui/primitives/workout-prefill-loader";
 import { ExerciseCard } from "@/ui/workout/exercise-card";
+import { ExercisePicker } from "@/ui/primitives/exercise-picker";
 import { profileRepository } from "@/data/profile-repository";
 import { workoutRepository } from "@/data/workout-repository";
 import { triggerSyncAfterWrite } from "@/data/sync-trigger";
@@ -77,9 +78,7 @@ export default function AddWorkoutModal() {
   const {
     exercises,
     setExercises,
-    blankRow,
     addExercise,
-    pickerUid,
     toggleBodyweight,
     removeExercise,
     updateExerciseField,
@@ -91,6 +90,8 @@ export default function AddWorkoutModal() {
     reorder,
     selectExercise,
   } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName });
+  // "Add Exercise" opens the picker; the row is only appended once an exercise is picked
+  const [pickingExercise, setPickingExercise] = useState(false);
   const { options: catalogOptions } = useExerciseCatalog();
   const aiAvailable = useAIGenerationAvailable();
   const [saving, setSaving] = useState(false);
@@ -301,11 +302,7 @@ export default function AddWorkoutModal() {
           workout.name === selectedWorkoutName,
       );
       const lastExercises = lastMatchingWorkout?.performedExercises ?? [];
-      setExercises(
-        lastExercises.length > 0
-          ? lastExercises.map(collapseSetsToDraft)
-          : [blankRow()],
-      );
+      setExercises(lastExercises.map(collapseSetsToDraft));
       setPrefillLoading(false);
       typePrefillTimer.current = null;
     }, 500);
@@ -663,19 +660,30 @@ export default function AddWorkoutModal() {
               onDecrementSet={decrementSet}
               onAddSet={addSet}
               onRemoveSet={removeSet}
-              canRemove={exercises.length > 1}
-              autoOpenPicker={ex.uid === pickerUid}
             />
           )}
           ListFooterComponent={
             <>
               <TouchableOpacity
                 style={styles.addExButton}
-                onPress={addExercise}
+                onPress={() => setPickingExercise(true)}
               >
                 <Ionicons name="add-circle-outline" size={18} color="#e54242" />
                 <Text style={styles.addExText}>Add Exercise</Text>
               </TouchableOpacity>
+              <ExercisePicker
+                options={catalogOptions}
+                value={null}
+                recentExercises={recentExercises}
+                onSelect={addExercise}
+                onCreateNew={
+                  user
+                    ? (name) => createPendingExercise(name, user.uid)
+                    : undefined
+                }
+                open={pickingExercise}
+                onClose={() => setPickingExercise(false)}
+              />
 
               <TextInput
                 style={[styles.input, styles.notesInput]}

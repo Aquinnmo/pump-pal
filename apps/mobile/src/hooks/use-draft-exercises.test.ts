@@ -39,10 +39,16 @@ function withDraft(
   }
 }
 
-// The plan/log editor does not track completion: even its blank set has no
-// completed property at all.
+// A draft starts with no rows: a row only exists once an exercise is picked, so a
+// row with a null exercise can never render. The plan/log editor does not track
+// completion: even the new row's blank set has no completed property at all.
 withDraft({ trackCompletion: false }, (result) => {
-  assert.equal('completed' in result.current.exercises[0]!.sets[0]!, false);
+  assert.equal(result.current.exercises.length, 0);
+  act(() => result.current.addExercise(selection()));
+  const row = result.current.exercises[0]!;
+  assert.equal(row.exerciseId, 'bench-press');
+  assert.equal(row.label, 'Bench Press');
+  assert.equal('completed' in row.sets[0]!, false);
 });
 
 withDraft({
@@ -50,7 +56,7 @@ withDraft({
   workoutName: 'Push Day',
   workoutHistory: [historyWorkout('Push Day', [{ setNumber: 1, reps: 8, weight: 40, completed: true }])],
 }, (result) => {
-  act(() => result.current.selectExercise(0, selection()));
+  act(() => result.current.addExercise(selection()));
   // BUG: collapseSetsToDraft carries the history's completed field through
   // this trackCompletion=false path; planned/logged drafts should omit it.
   assert.equal(
@@ -71,7 +77,7 @@ withDraft({
     historyWorkout('Push Day', [{ setNumber: 1, reps: 9, weight: 60, completed: true }]),
   ],
 }, (result) => {
-  act(() => result.current.selectExercise(0, selection()));
+  act(() => result.current.addExercise(selection()));
   const row = result.current.exercises[0]!;
   assert.equal(row.exerciseId, 'bench-press');
   assert.equal(row.variationId, null);
@@ -91,7 +97,7 @@ withDraft({
     historyWorkout('Push Day', [{ setNumber: 1, reps: 8, weight: 40, completed: true }]),
   ],
 }, (result) => {
-  act(() => result.current.selectExercise(0, selection()));
+  act(() => result.current.addExercise(selection()));
   assert.equal(result.current.exercises[0]!.sets[0]!.reps, 12);
 });
 
@@ -118,17 +124,17 @@ withDraft({ workoutHistory: [historyWorkout('Other', [{ setNumber: 1, reps: 5, w
 // Mutators are index-based: the second row changes while the first remains
 // untouched, and adding/removing rows uses the requested indices.
 withDraft({}, (result) => {
-  assert.equal(result.current.pickerUid, null);
-  act(() => result.current.addExercise());
+  act(() => result.current.addExercise(selection()));
+  act(() => result.current.addExercise(selection({ exerciseId: 'squat', label: 'Squat' })));
   assert.equal(result.current.exercises.length, 2);
-  // the appended row is the one whose picker opens immediately
-  assert.equal(result.current.pickerUid, result.current.exercises[1]!.uid);
   act(() => result.current.updateExerciseField(1, 'exerciseType', 'Sets of Duration'));
   assert.equal(result.current.exercises[0]!.exerciseType, 'Sets of Reps');
   assert.equal(result.current.exercises[1]!.exerciseType, 'Sets of Duration');
   act(() => result.current.removeExercise(0));
   assert.equal(result.current.exercises.length, 1);
   assert.equal(result.current.exercises[0]!.exerciseType, 'Sets of Duration');
+  act(() => result.current.removeExercise(0));
+  assert.equal(result.current.exercises.length, 0, 'the last exercise can be removed');
 });
 
 // Bodyweight clears every set's weight, not only the set at the active index.

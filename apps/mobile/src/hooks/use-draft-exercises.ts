@@ -73,45 +73,30 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
     [blankSet]
   );
 
-  const [exercises, setExercises] = useState<DraftExerciseRow[]>(() => [blankRow()]);
+  // No row exists until an exercise is picked, so a row with a null exercise never renders.
+  const [exercises, setExercises] = useState<DraftExerciseRow[]>([]);
 
-  // uid of the row "Add Exercise" just appended; its card opens the picker straight away
-  const [pickerUid, setPickerUid] = useState<string | null>(null);
-
-  const addExercise = () => {
-    const row = blankRow();
-    setPickerUid(row.uid);
-    setExercises((prev) => [...prev, row]);
-  };
-
-  const selectExercise = (i: number, selection: ExercisePickerSelection) => {
+  // Fill `row` with the picked exercise; sets come from the latest matching history when
+  // there is one, otherwise the row keeps its own.
+  const applySelection = (row: DraftExerciseRow, selection: ExercisePickerSelection): DraftExerciseRow => {
     const lastPerformed = findLastPerformed(workoutHistory, workoutName, selection);
-    setExercises((prev) =>
-      prev.map((exercise, idx) => {
-        if (idx !== i) return exercise;
+    const identity = {
+      exerciseId: selection.exerciseId,
+      variationId: selection.variationId,
+      label: selection.label,
+    };
+    if (!lastPerformed) return { ...row, ...identity };
 
-        const selected = lastPerformed
-          ? {
-              ...collapseSetsToDraft(lastPerformed),
-              exerciseId: selection.exerciseId,
-              variationId: selection.variationId,
-              label: selection.label,
-            }
-          : {
-              ...exercise,
-              exerciseId: selection.exerciseId,
-              variationId: selection.variationId,
-              label: selection.label,
-            };
-
-        if (!trackCompletion || !lastPerformed) return selected;
-        return {
-          ...selected,
-          sets: selected.sets.map((set) => ({ ...set, completed: false })),
-        };
-      })
-    );
+    const selected = { ...collapseSetsToDraft(lastPerformed), ...identity };
+    if (!trackCompletion) return selected;
+    return { ...selected, sets: selected.sets.map((set) => ({ ...set, completed: false })) };
   };
+
+  const addExercise = (selection: ExercisePickerSelection) =>
+    setExercises((prev) => [...prev, applySelection(blankRow(), selection)]);
+
+  const selectExercise = (i: number, selection: ExercisePickerSelection) =>
+    setExercises((prev) => prev.map((exercise, idx) => (idx === i ? applySelection(exercise, selection) : exercise)));
 
   const toggleBodyweight = (i: number) =>
     setExercises((prev) =>
@@ -177,9 +162,7 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
   return {
     exercises,
     setExercises,
-    blankRow,
     addExercise,
-    pickerUid,
     selectExercise,
     toggleBodyweight,
     removeExercise,

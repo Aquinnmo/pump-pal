@@ -109,14 +109,13 @@ afterEach(() => {
 });
 
 describe('ExerciseCard', () => {
-  it('renders the empty exercise baseline with selection and add-set affordances', async () => {
+  it('renders the no-sets baseline with selection, add-set and remove affordances', async () => {
     const { ExerciseCard } = await import('../../src/ui/workout/exercise-card');
     render(
       <ExerciseCard
-        exercise={makeDraftExerciseRow({ label: '', sets: [] })}
+        exercise={makeDraftExerciseRow({ label: 'Bench Press', sets: [] })}
         index={0}
         catalogOptions={catalogOptions}
-        canRemove={false}
         onSelectExercise={() => undefined}
         onChangeType={() => undefined}
         onToggleBodyweight={() => undefined}
@@ -129,12 +128,12 @@ describe('ExerciseCard', () => {
       />,
     );
 
-    assert.ok(screen.getByRole('button', { name: 'Select exercise' }));
+    assert.ok(screen.getByRole('button', { name: 'Bench Press' }));
     assert.ok(screen.getByRole('button', { name: 'Type of exercise' }));
     assert.ok(screen.getByText('Add Set', { exact: true }));
     assert.ok(screen.getByText('Bodyweight exercise', { exact: true }));
     assert.equal(screen.queryByText('Reps', { exact: true }), null);
-    assert.equal(screen.queryByLabelText('trash-outline icon'), null);
+    assert.ok(screen.getByLabelText('trash-outline icon'), 'the only exercise can be removed too');
   });
 
   it('renders a populated reps exercise and forwards visible edit/remove actions once', async () => {
@@ -162,7 +161,6 @@ describe('ExerciseCard', () => {
         exercise={exercise}
         index={2}
         catalogOptions={catalogOptions}
-        canRemove
         onSelectExercise={(index, selection) => selected.push([index, selection])}
         onChangeType={(index, field, value) => changedTypes.push([index, field, value])}
         onToggleBodyweight={(index) => bodyweightToggles.push(index)}
@@ -217,7 +215,6 @@ describe('ExerciseCard', () => {
         exercise={exercise}
         index={1}
         catalogOptions={catalogOptions}
-        canRemove
         onSelectExercise={() => undefined}
         onChangeType={() => undefined}
         onToggleBodyweight={() => undefined}
