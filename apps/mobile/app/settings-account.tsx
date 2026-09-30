@@ -160,7 +160,15 @@ export default function SettingsAccountScreen() {
         setDeleteModalError("Confirm with Apple to finish deleting your account.");
         return;
       }
-      await deleteAccountData();
+      // partial means some server data survived. Keep Auth and local state so the
+      // user can retry; the server purge is idempotent.
+      const { partial } = await deleteAccountData();
+      if (partial) {
+        setDeleteModalError(
+          "Some of your data couldn't be deleted yet. Nothing was removed from this device — please try again.",
+        );
+        return;
+      }
       await purgeLocalAccountData(user.uid);
       await deleteUser(auth.currentUser!);
       setShowDeleteModal(false);

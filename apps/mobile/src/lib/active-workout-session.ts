@@ -96,6 +96,14 @@ export function endSession(): void {
   persist();
 }
 
+// Account wipe: drop the live session and its disk snapshot, including one that
+// was never loaded into memory (endSession alone is a no-op then).
+export async function clearSession(): Promise<void> {
+  endSession();
+  await flushSessionPersistence();
+  await AsyncStorage.removeItem(STORAGE_KEY);
+}
+
 export function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);

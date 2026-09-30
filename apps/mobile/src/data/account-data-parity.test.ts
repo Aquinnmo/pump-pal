@@ -75,6 +75,9 @@ await AsyncStorage.setItem('cache_native-user-a', 'remove');
 await AsyncStorage.setItem('cache_native-user-b', 'keep');
 await AsyncStorage.setItem('pumppal_widget_up_next', 'remove shared projection');
 await AsyncStorage.setItem('unrelated-cache', 'keep');
+await AsyncStorage.setItem('pumppal_active_session_v1', 'remove active snapshot');
+await AsyncStorage.setItem('pumppal_ai_quota_v1', 'remove quota');
+await AsyncStorage.setItem('pumppal_daily_name_v1_2026-09-30', 'remove daily name');
 await purgeNative('native-user-a');
 assert.equal(await countPendingSync('native-user-a'), 0, 'native: purge removes the uid outbox');
 assert.equal(await native.db.getFirstAsync('SELECT uid FROM profile WHERE uid = ?', ['native-user-a']), null, 'native: purge removes the uid profile');
@@ -83,6 +86,9 @@ assert.ok(await native.db.getFirstAsync('SELECT uid FROM profile WHERE uid = ?',
 const remainingKeys = await AsyncStorage.getAllKeys();
 assert.ok(!remainingKeys.includes('cache_native-user-a'), 'native: purge removes uid cache keys');
 assert.ok(!remainingKeys.includes('pumppal_widget_up_next'), 'native: purge removes shared projection keys');
+for (const key of ['pumppal_active_session_v1', 'pumppal_ai_quota_v1', 'pumppal_daily_name_v1_2026-09-30']) {
+  assert.ok(!remainingKeys.includes(key), `native: purge removes ${key}`);
+}
 assert.ok(remainingKeys.includes('cache_native-user-b'), 'native: purge preserves another uid cache keys');
 assert.ok(remainingKeys.includes('unrelated-cache'), 'native: purge preserves unrelated cache keys');
 
@@ -94,7 +100,9 @@ assert.equal(await countWeb('web-user-a'), 0, 'web: pending count is zero');
 assert.equal(await countWeb('web-user-b'), 0, 'web: pending count is uid-independent');
 await syncWeb('web-user-a');
 assert.equal(syncCalls.length, 2, 'web: sign-out sync does not call native sync');
+await AsyncStorage.setItem('pumppal_active_session_v1', 'remove active snapshot');
 await purgeWeb('web-user-a');
+assert.equal(await AsyncStorage.getItem('pumppal_active_session_v1'), null, 'web: purge removes the active-session snapshot');
 await purgeWeb('web-user-b');
 assert.equal(invalidateCalls, 2, 'web: purge invalidates the global read cache for each sign-out');
 
