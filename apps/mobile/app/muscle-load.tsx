@@ -1,5 +1,6 @@
 import { MuscleLoadMap } from "@/ui/muscle-load-map";
 import { FadingScrollView } from "@/ui/primitives/fading-scroll-view";
+import { StatHelp, StatHelpFormula, StatHelpText } from "@/ui/primitives/stat-help";
 import { workoutRepository } from "@/data/workout-repository";
 import { useAuth } from "@/context/auth-context";
 import type { CatalogExercise, Workout } from "@/types/workout";
@@ -122,6 +123,27 @@ export default function MuscleLoadScreen() {
       <Stack.Screen
         options={{
           title: "Muscle Fatigue",
+          headerTitle: () => (
+            <View style={styles.headerTitle}>
+              <Text style={styles.headerTitleText}>Muscle Fatigue</Text>
+              <StatHelp title="Muscle Fatigue">
+                <StatHelpText>
+                  How hard each muscle has worked over the last 7 days.
+                </StatHelpText>
+                <StatHelpText>
+                  A set counts more the closer it is to your best on that
+                  exercise. Main muscles get a full set, helper muscles get
+                  half. Older workouts count less.
+                </StatHelpText>
+                <StatHelpFormula>
+                  A workout counts half as much every 2 days
+                </StatHelpFormula>
+                <StatHelpText>
+                  100% is about 8 all-out sets on a muscle today.
+                </StatHelpText>
+              </StatHelp>
+            </View>
+          ),
           headerStyle: { backgroundColor: "#0f0f0f" },
           headerTintColor: "#fff",
           headerShadowVisible: false,
@@ -173,6 +195,8 @@ function StatePanel({
 }
 
 const styles = StyleSheet.create({
+  headerTitle: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headerTitleText: { color: "#fff", fontSize: 17, fontWeight: "600" },
   content: {
     width: "100%",
     maxWidth: 760,

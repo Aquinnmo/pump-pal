@@ -1,5 +1,6 @@
 import { DevelopmentProgress } from '@/ui/development-progress';
 import { FadingScrollView } from '@/ui/primitives/fading-scroll-view';
+import { StatHelp, StatHelpFormula, StatHelpText } from '@/ui/primitives/stat-help';
 import { workoutRepository } from '@/data/workout-repository';
 import { useAuth } from '@/context/auth-context';
 import type { Workout } from '@/types/workout';
@@ -80,6 +81,26 @@ export default function DevelopmentProgressScreen() {
       <Stack.Screen
         options={{
           title: 'Development Progress',
+          headerTitle: () => (
+            <View style={styles.headerTitle}>
+              <Text style={styles.headerTitleText}>Development Progress</Text>
+              <StatHelp title='Development Progress'>
+                <StatHelpText>
+                  How much stronger each muscle has gotten.
+                </StatHelpText>
+                <StatHelpText>
+                  We compare your best sets from the last 90 days with the 90
+                  days before, on the same exercises.
+                </StatHelpText>
+                <StatHelpFormula>
+                  Change = (new best − old best) ÷ old best
+                </StatHelpFormula>
+                <StatHelpText>
+                  Your most improved muscle gets an A+. No change is a C.
+                </StatHelpText>
+              </StatHelp>
+            </View>
+          ),
           headerStyle: { backgroundColor: '#0f0f0f' },
           headerTintColor: '#fff',
           headerShadowVisible: false,
@@ -131,6 +152,8 @@ function StatePanel({
 }
 
 const styles = StyleSheet.create({
+  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerTitleText: { color: '#fff', fontSize: 17, fontWeight: '600' },
   content: {
     width: '100%',
     maxWidth: 760,
