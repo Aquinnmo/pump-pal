@@ -133,6 +133,7 @@ export default function ActiveWorkoutScreen() {
     setExercises,
     blankRow,
     addExercise,
+    pickerUid,
     selectExercise,
     toggleBodyweight,
     removeExercise,
@@ -704,6 +705,7 @@ export default function ActiveWorkoutScreen() {
             onToggleSetComplete={toggleSetComplete}
             showCompletion
             canRemove={exercises.length > 1}
+            autoOpenPicker={ex.uid === pickerUid}
           />
         )}
         ListFooterComponent={

@@ -105,6 +105,12 @@ describe('ExercisePicker', () => {
     assert.ok(screen.getByPlaceholderText('Search exercises'));
   });
 
+  it('opens straight to the search dialog without a tap when autoOpen is set', () => {
+    render(<ExercisePicker options={[option()]} onSelect={() => undefined} value={null} autoOpen />);
+
+    assert.ok(screen.getByPlaceholderText('Search exercises'));
+  });
+
   it('selects a recent exercise exactly once with its full reference', () => {
     const selections: ExerciseRef[] = [];
     const selected = recent({ exerciseId: 'push-up', variationId: 'diamond', label: 'Push-Up' });

@@ -196,6 +196,8 @@ interface ExercisePickerProps {
   onCreateNew?: (name: string) => Promise<ExercisePickerSelection | null>;
   placeholder?: string;
   style?: StyleProp<ViewStyle>;
+  // Opens the picker without a tap on the trigger row (e.g. right after "Add Exercise").
+  autoOpen?: boolean;
 }
 
 export function ExercisePicker({
@@ -206,6 +208,7 @@ export function ExercisePicker({
   onCreateNew,
   placeholder = 'Select exercise',
   style,
+  autoOpen = false,
 }: ExercisePickerProps) {
   const [recentsVisible, setRecentsVisible] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
@@ -223,6 +226,11 @@ export function ExercisePicker({
       setSearchVisible(true);
     }
   }, [recentExercises.length]);
+
+  useEffect(() => {
+    if (autoOpen) handleOpen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fire only when autoOpen flips on
+  }, [autoOpen]);
 
   const openSearch = useCallback(() => {
     setQuery('');

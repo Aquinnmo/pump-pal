@@ -118,8 +118,11 @@ withDraft({ workoutHistory: [historyWorkout('Other', [{ setNumber: 1, reps: 5, w
 // Mutators are index-based: the second row changes while the first remains
 // untouched, and adding/removing rows uses the requested indices.
 withDraft({}, (result) => {
+  assert.equal(result.current.pickerUid, null);
   act(() => result.current.addExercise());
   assert.equal(result.current.exercises.length, 2);
+  // the appended row is the one whose picker opens immediately
+  assert.equal(result.current.pickerUid, result.current.exercises[1]!.uid);
   act(() => result.current.updateExerciseField(1, 'exerciseType', 'Sets of Duration'));
   assert.equal(result.current.exercises[0]!.exerciseType, 'Sets of Reps');
   assert.equal(result.current.exercises[1]!.exerciseType, 'Sets of Duration');

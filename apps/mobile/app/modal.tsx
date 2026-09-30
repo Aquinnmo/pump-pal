@@ -79,6 +79,7 @@ export default function AddWorkoutModal() {
     setExercises,
     blankRow,
     addExercise,
+    pickerUid,
     toggleBodyweight,
     removeExercise,
     updateExerciseField,
@@ -663,6 +664,7 @@ export default function AddWorkoutModal() {
               onAddSet={addSet}
               onRemoveSet={removeSet}
               canRemove={exercises.length > 1}
+              autoOpenPicker={ex.uid === pickerUid}
             />
           )}
           ListFooterComponent={

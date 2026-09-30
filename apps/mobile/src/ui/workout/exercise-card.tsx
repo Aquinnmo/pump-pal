@@ -28,6 +28,8 @@ type ExerciseCardProps = {
   showCompletion?: boolean;
   // whether the trash button shows (screen passes exercises.length > 1)
   canRemove: boolean;
+  // open the exercise picker on mount — set for the row "Add Exercise" just appended
+  autoOpenPicker?: boolean;
 };
 
 // One editable exercise card — the shared renderItem body for both the plan/log editor
@@ -52,6 +54,7 @@ export function ExerciseCard({
   onToggleSetComplete,
   showCompletion = false,
   canRemove,
+  autoOpenPicker = false,
 }: ExerciseCardProps) {
   const allSetsComplete = showCompletion && ex.sets.length > 0 && ex.sets.every((s) => s.completed);
   const showFooter = ex.exerciseType === 'Sets of Reps' || canRemove;
@@ -67,6 +70,7 @@ export function ExerciseCard({
           onCreateNew={onCreateNew}
           placeholder="Select exercise"
           style={styles.exerciseNameDropdownFlex}
+          autoOpen={autoOpenPicker}
         />
         <DragHandle />
       </View>

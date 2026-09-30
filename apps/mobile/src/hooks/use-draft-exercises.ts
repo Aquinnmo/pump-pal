@@ -75,7 +75,14 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
 
   const [exercises, setExercises] = useState<DraftExerciseRow[]>(() => [blankRow()]);
 
-  const addExercise = () => setExercises((prev) => [...prev, blankRow()]);
+  // uid of the row "Add Exercise" just appended; its card opens the picker straight away
+  const [pickerUid, setPickerUid] = useState<string | null>(null);
+
+  const addExercise = () => {
+    const row = blankRow();
+    setPickerUid(row.uid);
+    setExercises((prev) => [...prev, row]);
+  };
 
   const selectExercise = (i: number, selection: ExercisePickerSelection) => {
     const lastPerformed = findLastPerformed(workoutHistory, workoutName, selection);
@@ -172,6 +179,7 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
     setExercises,
     blankRow,
     addExercise,
+    pickerUid,
     selectExercise,
     toggleBodyweight,
     removeExercise,
