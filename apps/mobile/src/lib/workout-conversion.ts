@@ -30,6 +30,25 @@ export function cascadeSetField<K extends keyof DraftSet>(
   return next;
 }
 
+// Superset membership is positional: rows i and i+1 are linked only when both carry
+// the same supersetId. A stale id left behind by a reorder, removal, or the finish
+// filter simply stops linking anything, so none of those paths need cleanup.
+export function linkedToNext(rows: { supersetId?: string }[], i: number): boolean {
+  const id = rows[i]?.supersetId;
+  return id !== undefined && id === rows[i + 1]?.supersetId;
+}
+
+export function inSuperset(rows: { supersetId?: string }[], i: number): boolean {
+  return linkedToNext(rows, i - 1) || linkedToNext(rows, i);
+}
+
+// Consecutive rows split into supersets and singles, in order: [[A, B], [C], [D, E]].
+export function groupSupersets<T extends { supersetId?: string }>(rows: T[]): T[][] {
+  const groups: T[][] = [];
+  rows.forEach((row, i) => (linkedToNext(rows, i - 1) ? groups[groups.length - 1].push(row) : groups.push([row])));
+  return groups;
+}
+
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
   return row.sets.map((draftSet, index) => {
     if (row.exerciseType === 'Sets of Duration') {
@@ -39,6 +58,9 @@ export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
       };
       if (row.holdSeconds !== undefined) {
         set.holdSeconds = row.holdSeconds;
+      }
+      if (draftSet.type !== undefined) {
+        set.type = draftSet.type;
       }
       if (draftSet.completed !== undefined) {
         set.completed = draftSet.completed;
@@ -53,6 +75,9 @@ export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
     };
     if (row.holdSeconds !== undefined) {
       set.holdSeconds = row.holdSeconds;
+    }
+    if (draftSet.type !== undefined) {
+      set.type = draftSet.type;
     }
     if (draftSet.completed !== undefined) {
       set.completed = draftSet.completed;
@@ -100,6 +125,7 @@ export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): D
       weight: duration || s?.bodyweight ? '' : String(s?.weight ?? ''),
       durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
       durationSeconds: duration ? totalSeconds % 60 : 0,
+      ...(s?.type !== undefined ? { type: s.type } : {}),
       completed: s?.completed,
     };
   });
@@ -114,6 +140,7 @@ export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): D
     sets: normalize ? normalizeDraftSets(sets) : sets,
     holdSeconds: first?.holdSeconds,
     peNotes: pe.notes,
+    supersetId: pe.supersetId,
     legacy: pe.legacy,
   };
 }
@@ -128,6 +155,7 @@ export function buildPerformedExercise(row: DraftExerciseRow, order: number): Pe
     variationNameSnapshot: row.variationId ? row.label : null,
     sets: expandDraftToSets(row),
     ...(row.peNotes !== undefined ? { notes: row.peNotes } : {}),
+    ...(row.supersetId !== undefined ? { supersetId: row.supersetId } : {}),
     ...(row.legacy !== undefined ? { legacy: row.legacy } : {}),
   };
 }

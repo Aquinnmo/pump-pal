@@ -114,10 +114,21 @@ mock.module('@/ui/primitives/dropdown', () => ({
   Dropdown: ({ placeholder }: { placeholder: string }) => <button>{placeholder}</button>,
 }));
 mock.module('@/ui/workout/exercise-card', () => ({
-  ExerciseCard: ({ index, onSelectExercise }: { index: number; onSelectExercise: (index: number, selection: unknown) => void }) => (
-    <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
-      Choose Bench Press
-    </button>
+  ExerciseCard: ({ index, onSelectExercise, canLinkNext, linkedToNext, onToggleSuperset }: {
+    index: number;
+    onSelectExercise: (index: number, selection: unknown) => void;
+    canLinkNext?: boolean;
+    linkedToNext?: boolean;
+    onToggleSuperset?: (index: number) => void;
+  }) => (
+    <>
+      <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
+        Choose Bench Press
+      </button>
+      {canLinkNext && (
+        <button onClick={() => onToggleSuperset?.(index)}>{linkedToNext ? 'Unlink' : 'Superset with next'}</button>
+      )}
+    </>
   ),
 }));
 // Headless picker behind "Add Exercise": shows its choice only while open, then closes.
@@ -239,6 +250,29 @@ describe('AddWorkoutModal', () => {
     assert.equal(data.performedExercises.length, 1);
     assert.equal('completed' in data.performedExercises[0]!.sets[0]!, false);
     assert.equal(data.durationSeconds, null, 'manual history starts without an elapsed session');
+  });
+
+  it('persists a superset as a shared supersetId on adjacent exercises', async () => {
+    render(<AddWorkoutModal />);
+    await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
+
+    fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
+    for (let i = 0; i < 3; i++) {
+      fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+      fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
+      await settle();
+    }
+    // Link 1→2 and 2→3, then split 2|3 again: only the first two stay grouped.
+    fireEvent.click(screen.getAllByText('Superset with next', { exact: true })[0]!);
+    fireEvent.click(screen.getAllByText('Superset with next', { exact: true })[0]!);
+    fireEvent.click(screen.getAllByText('Unlink', { exact: true })[1]!);
+    fireEvent.click(screen.getByText('Save Workout', { exact: true }));
+
+    await waitFor(() => assert.equal(created.length, 1));
+    const [a, b, c] = (created[0]!.data as { performedExercises: Workout['performedExercises'] }).performedExercises;
+    assert.ok(a!.supersetId);
+    assert.equal(b!.supersetId, a!.supersetId);
+    assert.notEqual(c!.supersetId, b!.supersetId);
   });
 
   it('reads and writes the web date using the documented UTC-date/local-noon contract', async () => {

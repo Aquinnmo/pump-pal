@@ -26,6 +26,12 @@ type ExerciseCardProps = {
   onToggleSetComplete?: (index: number, setIdx: number) => void;
   // active-workout only: per-set completion checkbox + completed styling
   showCompletion?: boolean;
+  // Superset state is positional (see linkedToNext in src/lib/workout-conversion.ts), so
+  // the parent list computes it from the neighbouring rows and passes it down.
+  inSuperset?: boolean;
+  linkedToNext?: boolean;
+  canLinkNext?: boolean;
+  onToggleSuperset?: (index: number) => void;
 };
 
 // One editable exercise card — the shared renderItem body for both the plan/log editor
@@ -49,90 +55,113 @@ export function ExerciseCard({
   onRemoveSet,
   onToggleSetComplete,
   showCompletion = false,
+  inSuperset = false,
+  linkedToNext = false,
+  canLinkNext = false,
+  onToggleSuperset,
 }: ExerciseCardProps) {
   const allSetsComplete = showCompletion && ex.sets.length > 0 && ex.sets.every((s) => s.completed);
 
   return (
-    <View style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
-      <View style={styles.exerciseNameRow}>
-        <ExercisePicker
-          options={catalogOptions}
-          value={ex.label || null}
-          recentExercises={recentExercises}
-          onSelect={(selection) => onSelectExercise(i, selection)}
-          onCreateNew={onCreateNew}
-          placeholder="Select exercise"
-          style={styles.exerciseNameDropdownFlex}
+    <View>
+      <View
+        style={[
+          styles.exerciseCard,
+          allSetsComplete && styles.exerciseCardComplete,
+          inSuperset && styles.exerciseCardSuperset,
+        ]}>
+        {inSuperset && <Text style={styles.supersetEyebrow}>Superset</Text>}
+        <View style={styles.exerciseNameRow}>
+          <ExercisePicker
+            options={catalogOptions}
+            value={ex.label || null}
+            recentExercises={recentExercises}
+            onSelect={(selection) => onSelectExercise(i, selection)}
+            onCreateNew={onCreateNew}
+            placeholder="Select exercise"
+            style={styles.exerciseNameDropdownFlex}
+          />
+          <DragHandle />
+        </View>
+
+        <Dropdown
+          options={EXERCISE_TYPES}
+          value={ex.exerciseType}
+          onSelect={(v) => onChangeType(i, 'exerciseType', v as ExerciseType)}
+          placeholder="Type of exercise"
+          style={styles.exerciseTypeDropdown}
         />
-        <DragHandle />
-      </View>
 
-      <Dropdown
-        options={EXERCISE_TYPES}
-        value={ex.exerciseType}
-        onSelect={(v) => onChangeType(i, 'exerciseType', v as ExerciseType)}
-        placeholder="Type of exercise"
-        style={styles.exerciseTypeDropdown}
-      />
-
-      {ex.sets.map((set, si) => (
-        <View key={si} style={[styles.setRow, showCompletion && set.completed && !allSetsComplete && styles.setRowComplete]}>
-          {showCompletion && (
-            <View style={styles.setCheckboxWrap}>
-              <Text style={styles.deleteSetSpacer}> </Text>
-              <View style={styles.setCheckboxIconWrap}>
-                <TouchableOpacity
-                  onPress={() => onToggleSetComplete?.(i, si)}
-                  hitSlop={8}
-                  style={[styles.setCheckbox, set.completed && styles.setCheckboxChecked]}>
-                  {set.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          <View style={styles.row}>
-            <SetFields
-              set={set}
-              exerciseType={ex.exerciseType}
-              bodyweight={ex.bodyweight}
-              onUpdate={(field, v) => onUpdateSet(i, si, field, v)}
-              onIncrement={() => onIncrementSet(i, si)}
-              onDecrement={() => onDecrementSet(i, si)}
-            />
-            {ex.sets.length > 1 && (
-              <View style={styles.deleteSetButton}>
+        {ex.sets.map((set, si) => (
+          <View key={si} style={[styles.setRow, showCompletion && set.completed && !allSetsComplete && styles.setRowComplete]}>
+            {showCompletion && (
+              <View style={styles.setCheckboxWrap}>
                 <Text style={styles.deleteSetSpacer}> </Text>
-                <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => onRemoveSet(i, si)} hitSlop={12}>
-                  <Ionicons name="close-circle" size={26} color="#888" />
-                </TouchableOpacity>
+                <View style={styles.setCheckboxIconWrap}>
+                  <TouchableOpacity
+                    onPress={() => onToggleSetComplete?.(i, si)}
+                    hitSlop={8}
+                    style={[styles.setCheckbox, set.completed && styles.setCheckboxChecked]}>
+                    {set.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
-          </View>
-        </View>
-      ))}
 
-      <TouchableOpacity style={styles.addSetButton} onPress={() => onAddSet(i)}>
-        <Ionicons name="add-circle-outline" size={20} color="#e54242" />
-        <Text style={styles.addSetText}>Add Set</Text>
-      </TouchableOpacity>
-
-      <View style={styles.exerciseFooter}>
-        {ex.exerciseType === 'Sets of Reps' ? (
-          <TouchableOpacity style={styles.bodyweightRow} onPress={() => onToggleBodyweight(i)} activeOpacity={0.7}>
-            <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-              {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+            <View style={styles.row}>
+              <SetFields
+                set={set}
+                exerciseType={ex.exerciseType}
+                bodyweight={ex.bodyweight}
+                onUpdate={(field, v) => onUpdateSet(i, si, field, v)}
+                onIncrement={() => onIncrementSet(i, si)}
+                onDecrement={() => onDecrementSet(i, si)}
+              />
+              {ex.sets.length > 1 && (
+                <View style={styles.deleteSetButton}>
+                  <Text style={styles.deleteSetSpacer}> </Text>
+                  <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => onRemoveSet(i, si)} hitSlop={12}>
+                    <Ionicons name="close-circle" size={26} color="#888" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
-            <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.exerciseFooterSpacer} />
-        )}
+          </View>
+        ))}
 
-        <TouchableOpacity style={styles.removeExerciseButton} onPress={() => onRemoveExercise(i)} hitSlop={8}>
-          <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+        <TouchableOpacity style={styles.addSetButton} onPress={() => onAddSet(i)}>
+          <Ionicons name="add-circle-outline" size={20} color="#e54242" />
+          <Text style={styles.addSetText}>Add Set</Text>
         </TouchableOpacity>
+
+        <View style={styles.exerciseFooter}>
+          {ex.exerciseType === 'Sets of Reps' ? (
+            <TouchableOpacity style={styles.bodyweightRow} onPress={() => onToggleBodyweight(i)} activeOpacity={0.7}>
+              <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
+                {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.exerciseFooterSpacer} />
+          )}
+
+          <TouchableOpacity style={styles.removeExerciseButton} onPress={() => onRemoveExercise(i)} hitSlop={8}>
+            <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
+          </TouchableOpacity>
+        </View>
       </View>
+      {canLinkNext && onToggleSuperset && (
+        <TouchableOpacity
+          style={styles.supersetLink}
+          onPress={() => onToggleSuperset(i)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={linkedToNext ? 'Unlink superset from next exercise' : 'Superset with next exercise'}>
+          <Ionicons name={linkedToNext ? 'unlink-outline' : 'link-outline'} size={16} color="#888" />
+          <Text style={styles.supersetLinkText}>{linkedToNext ? 'Unlink' : 'Superset these exercises'}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -149,6 +178,33 @@ const styles = StyleSheet.create({
   exerciseCardComplete: {
     borderColor: 'rgba(229, 66, 66, 0.35)',
     backgroundColor: 'rgba(229, 66, 66, 0.08)',
+  },
+  // Flat accent edge, not a tint: grouping is structure, not status.
+  exerciseCardSuperset: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#e54242',
+  },
+  supersetEyebrow: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  supersetLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 44,
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  supersetLinkText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
   },
   exerciseNameRow: {
     flexDirection: 'row',

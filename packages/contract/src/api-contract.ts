@@ -214,6 +214,12 @@ export const performedSet = z.object({
   calories: z.number().min(0).optional(),
   rpe: z.number().min(0).max(10).optional(),
   notes: z.string().max(500).optional(),
+  /**
+   * Set type id ('drop', …); absent means a normal set. A lenient string, not an enum,
+   * on purpose: an enum would make an older client throw on a type added later. The
+   * client maps unknown ids to normal (apps/mobile/src/constants/set-types.ts).
+   */
+  type: z.string().max(32).optional(),
   /** Mid-workout completion checkbox. Server strips this on the transition to 'completed' — a finished workout's sets never carry it. */
   completed: z.boolean().optional(),
 });
@@ -228,6 +234,8 @@ export const performedExercise = z.object({
   variationNameSnapshot: z.string().nullable(),
   sets: z.array(performedSet),
   notes: z.string().max(2_000).optional(),
+  /** Adjacent exercises sharing an id form a superset; a lone id means nothing. */
+  supersetId: z.string().max(100).optional(),
 });
 export type PerformedExerciseDTO = z.infer<typeof performedExercise>;
 

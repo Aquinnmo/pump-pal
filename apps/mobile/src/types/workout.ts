@@ -14,6 +14,8 @@ export type PerformedSet = {
   calories?: number;
   rpe?: number;
   notes?: string;
+  // Set type id ('drop', …); absent = normal. Plain string so unknown future ids survive.
+  type?: string;
   completed?: boolean;
 };
 
@@ -26,6 +28,8 @@ export type PerformedExercise = {
   variationNameSnapshot: string | null;
   sets: PerformedSet[];
   notes?: string;
+  // Adjacent exercises sharing an id form a superset; a lone id means nothing.
+  supersetId?: string;
   legacy?: Record<string, unknown>;
 };
 
@@ -126,6 +130,7 @@ export type DraftSet = {
   weight: string;
   durationMinutes: number;
   durationSeconds: number;
+  type?: string;
   completed?: boolean;
 };
 
@@ -145,5 +150,6 @@ export type DraftExerciseRow = {
   sets: DraftSet[];
   holdSeconds?: number;
   peNotes?: string;
+  supersetId?: string;
   legacy?: Record<string, unknown>;
 };

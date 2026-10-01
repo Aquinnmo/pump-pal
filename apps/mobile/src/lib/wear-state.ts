@@ -1,5 +1,5 @@
 import { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { cascadeSetField } from '@/lib/workout-conversion';
+import { cascadeSetField, linkedToNext } from '@/lib/workout-conversion';
 
 // What the Wear OS watch shows, and what it can ask the phone to do. The phone is
 // the only Firestore writer; the watch renders this payload and posts actions back.
@@ -55,13 +55,25 @@ export function buildWearIdleState(copy: WearIdle, ts = Date.now()): WearState {
 export type FlatSet = { rowIndex: number; setIndex: number; set: DraftSet };
 
 // Only rows the user has actually picked an exercise for count — a blank trailing
-// row is an editing affordance on the phone, not a set to do.
+// row is an editing affordance on the phone, not a set to do. A superset (a run of
+// linked rows) is walked round-robin — A1, B1, A2, B2 — with uneven rows simply
+// dropping out once exhausted; an unlinked row is a run of one, so plain order holds.
 export function flattenSets(rows: DraftExerciseRow[]): FlatSet[] {
   const flat: FlatSet[] = [];
-  rows.forEach((row, rowIndex) => {
-    if (row.label.trim() === '') return;
-    row.sets.forEach((set, setIndex) => flat.push({ rowIndex, setIndex, set }));
-  });
+  for (let start = 0; start < rows.length; ) {
+    let end = start + 1;
+    while (end < rows.length && linkedToNext(rows, end - 1)) end++;
+    const run: number[] = [];
+    for (let r = start; r < end; r++) if (rows[r].label.trim() !== '') run.push(r);
+    const rounds = Math.max(0, ...run.map((r) => rows[r].sets.length));
+    for (let setIndex = 0; setIndex < rounds; setIndex++) {
+      for (const rowIndex of run) {
+        const set = rows[rowIndex].sets[setIndex];
+        if (set) flat.push({ rowIndex, setIndex, set });
+      }
+    }
+    start = end;
+  }
   return flat;
 }
 

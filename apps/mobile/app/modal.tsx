@@ -28,6 +28,8 @@ import { predictNextWorkoutName } from "@/lib/predict-next-workout";
 import {
   buildPerformedExercise,
   collapseSetsToDraft,
+  inSuperset,
+  linkedToNext,
   recentExercisesForDay,
   toDateObj,
 } from "@/lib/workout-conversion";
@@ -89,6 +91,7 @@ export default function AddWorkoutModal() {
     decrementSet,
     addSet,
     removeSet,
+    toggleSuperset,
     reorder,
     selectExercise,
   } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName, normalize: normalizeAutoFill });
@@ -665,6 +668,10 @@ export default function AddWorkoutModal() {
               onDecrementSet={decrementSet}
               onAddSet={addSet}
               onRemoveSet={removeSet}
+              inSuperset={inSuperset(exercises, i)}
+              linkedToNext={linkedToNext(exercises, i)}
+              canLinkNext={i < exercises.length - 1}
+              onToggleSuperset={toggleSuperset}
             />
           )}
           ListFooterComponent={

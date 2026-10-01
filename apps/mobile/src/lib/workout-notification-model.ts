@@ -1,5 +1,6 @@
 import type { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { nextSetIndex } from '@/lib/wear-state';
+import { flattenSets as flattenCursor, nextSetIndex } from '@/lib/wear-state';
+import { groupSupersets } from '@/lib/workout-conversion';
 
 // This is deliberately a domain-only model. Both notification transports use it
 // so the AOD, compact chip, and fallback never disagree about the current set.
@@ -40,10 +41,10 @@ function nonblankRows(rows: DraftExerciseRow[]): DraftExerciseRow[] {
   return rows.filter((row) => row.label.trim() !== '');
 }
 
+// Same order as the phone/watch cursor (supersets interleaved) — iOS applies a tap
+// natively by flat index, so any divergence here would complete the wrong set.
 function flattenSets(rows: DraftExerciseRow[]): FlatSet[] {
-  return rows.flatMap((row) =>
-    row.sets.map((set) => ({ row, set })),
-  );
+  return flattenCursor(rows).map(({ rowIndex, set }) => ({ row: rows[rowIndex], set }));
 }
 
 function notificationTitle(workoutName: string): string {
@@ -118,11 +119,17 @@ export function buildWorkoutNotificationPresentation({
     detail: currentSetDetail(nextIndex === -1 ? undefined : flat[nextIndex]),
     completedSets,
     totalSets,
-    segments: activeRows.map((row) => ({
-      sets: row.sets.length,
-      started: row.sets.some((set) => set.completed),
-      completed: row.sets.length > 0 && row.sets.every((set) => set.completed),
-    })),
+    // One segment per superset, not per exercise: a superset's interleaved sets are
+    // contiguous in `flat` only as a group, and iOS rebuilds segments by slicing the
+    // flat list with these counts (LiveUpdateSharedStore.swift rowSetCounts).
+    segments: groupSupersets(activeRows).map((group) => {
+      const sets = group.flatMap((row) => row.sets);
+      return {
+        sets: sets.length,
+        started: sets.some((set) => set.completed),
+        completed: sets.length > 0 && sets.every((set) => set.completed),
+      };
+    }),
     actions,
     setDetails: flat.map((set) => currentSetDetail(set) ?? ''),
     setCompleted: flat.map(({ set }) => set.completed === true),

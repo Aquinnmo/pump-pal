@@ -1,5 +1,6 @@
 import { SetField, SetFields } from "@/ui/workout/set-fields";
-import { DraftExerciseRow } from "@/types/workout";
+import { DraftExerciseRow, DraftSet } from "@/types/workout";
+import { groupSupersets } from "@/lib/workout-conversion";
 import { flattenSets, nextSetIndex } from "@/lib/wear-state";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
@@ -55,16 +56,16 @@ const ACCENT = "#e54242";
 const IN_PROGRESS = "#fbbf24";
 const NOT_STARTED = "#444";
 
-// The card you are on takes a solid border in its own state colour, so "where am I"
-// and "how done is it" stay readable as two separate signals.
-const CURRENT_BORDER: Record<CardState, { borderColor: string }> = {
+// Every card takes a solid border in its own state colour, so how done each exercise
+// is reads across the whole strip at a glance.
+const STATE_BORDER: Record<CardState, { borderColor: string }> = {
   complete: { borderColor: ACCENT },
   "in-progress": { borderColor: IN_PROGRESS },
   "not-started": { borderColor: "#888" },
 };
 
 // Segment-bar fill colour, one per exercise state — same three-state palette as
-// CURRENT_BORDER above, just solid fills instead of borders.
+// STATE_BORDER above, just solid fills instead of borders.
 const SEGMENT_COLOR: Record<CardState, { backgroundColor: string }> = {
   complete: { backgroundColor: ACCENT },
   "in-progress": { backgroundColor: IN_PROGRESS },
@@ -171,12 +172,12 @@ export function FocusView({
 
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
-  const cardState = (row: DraftExerciseRow): CardState => {
-    if (row.sets.length > 0 && row.sets.every((s) => s.completed))
-      return "complete";
-    if (row.sets.some((s) => s.completed)) return "in-progress";
+  const setsState = (sets: DraftSet[]): CardState => {
+    if (sets.length > 0 && sets.every((s) => s.completed)) return "complete";
+    if (sets.some((s) => s.completed)) return "in-progress";
     return "not-started";
   };
+  const cardState = (row: DraftExerciseRow): CardState => setsState(row.sets);
 
   const handleCompleteSet = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -193,14 +194,16 @@ export function FocusView({
   return (
     <View style={styles.container}>
       <View style={styles.segmentBar}>
-        {rows.map((item) => {
-          const state = done ? "complete" : cardState(item);
+        {/* A superset is one segment: its sets run interleaved, so it fills as a unit. */}
+        {groupSupersets(rows).map((group) => {
+          const sets = group.flatMap((row) => row.sets);
+          const state = done ? "complete" : setsState(sets);
           return (
             <View
-              key={item.uid}
+              key={group[0].uid}
               style={[
                 styles.segment,
-                { flex: item.sets.length || 1 },
+                { flex: sets.length || 1 },
                 SEGMENT_COLOR[state],
               ]}
             />
@@ -234,13 +237,15 @@ export function FocusView({
                   styles.exCard,
                   state === "in-progress" && styles.exCardInProgress,
                   state === "complete" && styles.exCardComplete,
-                  isCurrent && CURRENT_BORDER[state],
+                  STATE_BORDER[state],
                 ]}
               >
                 <Text
                   style={[
                     styles.exCardText,
-                    !isCurrent && styles.exCardTextMuted,
+                    // Only finished exercises recede; the current set can't be in one,
+                    // since the cursor always sits on an incomplete set.
+                    state === "complete" && styles.exCardTextMuted,
                   ]}
                   numberOfLines={1}
                 >
@@ -408,18 +413,14 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderCurve: "continuous",
     backgroundColor: "#1c1c1c",
-    // 2px on every card, not just the current one, so promoting a card to the
-    // current state doesn't reflow the strip by a pixel.
+    // Colour comes from STATE_BORDER; 2px on every card so no state change reflows the strip.
     borderWidth: 2,
-    borderColor: "#2a2a2a",
   },
   exCardInProgress: {
     backgroundColor: "rgba(251, 191, 36, 0.08)",
-    borderColor: "rgba(251, 191, 36, 0.24)",
   },
   exCardComplete: {
     backgroundColor: "rgba(229, 66, 66, 0.08)",
-    borderColor: "rgba(229, 66, 66, 0.35)",
   },
   exCardText: {
     fontSize: 14,

@@ -103,3 +103,19 @@ assert.deepEqual(empty.actions, []);
 assert.deepEqual(empty.segments, []);
 
 console.log('workout-notification-model: ok');
+
+// Superset order must match the phone/watch cursor: iOS completes sets by flat index.
+const supersetNotification = present([
+  row('Bench', [set({ completed: true }), set()], { supersetId: 's' }),
+  row('Row', [set({ weight: '95' }), set({ weight: '95' })], { supersetId: 's' }),
+]);
+assert.deepEqual(supersetNotification.setDetails, [
+  'Bench · 10 reps · 135 lbs',
+  'Row · 10 reps · 95 lbs',
+  'Bench · 10 reps · 135 lbs',
+  'Row · 10 reps · 95 lbs',
+]);
+assert.deepEqual(supersetNotification.setCompleted, [true, false, false, false]);
+assert.equal(supersetNotification.detail, 'Row · 10 reps · 95 lbs');
+// One segment for the whole superset — iOS slices the flat sets by these counts.
+assert.deepEqual(supersetNotification.segments, [{ sets: 4, started: true, completed: false }]);

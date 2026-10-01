@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import type { DraftSet, Workout } from '@/types/workout';
-import { collapseSetsToDraft, normalizeDraftSets, recentExercisesForDay, toDateObj } from '@/lib/workout-conversion';
+import {
+  buildPerformedExercise,
+  collapseSetsToDraft,
+  groupSupersets,
+  inSuperset,
+  linkedToNext,
+  normalizeDraftSets,
+  recentExercisesForDay,
+  toDateObj,
+} from '@/lib/workout-conversion';
 
 const ISO = '2026-08-05T12:30:00.000Z';
 const MILLIS = new Date(ISO).getTime();
@@ -90,5 +99,21 @@ const uneven = {
 };
 assert.deepEqual(pairs(collapseSetsToDraft(uneven).sets), ['10x100', '10x100', '6x100']);
 assert.deepEqual(pairs(collapseSetsToDraft(uneven, true).sets), ['10x100', '10x100', '10x100']);
+
+// Supersets are positional: only adjacent rows sharing an id link.
+const ids = [{ supersetId: 'a' }, { supersetId: 'a' }, {}, { supersetId: 'a' }, { supersetId: 'b' }];
+assert.deepEqual(ids.map((_, i) => linkedToNext(ids, i)), [true, false, false, false, false]);
+assert.deepEqual(ids.map((_, i) => inSuperset(ids, i)), [true, true, false, false, false]);
+assert.deepEqual(groupSupersets(ids).map((g) => g.length), [2, 1, 1, 1]);
+
+// supersetId survives the draft round trip, and stays absent when unset.
+assert.equal(buildPerformedExercise(collapseSetsToDraft({ ...uneven, supersetId: 'a' }), 0).supersetId, 'a');
+assert.equal('supersetId' in buildPerformedExercise(collapseSetsToDraft(uneven), 0), false);
+
+// Set types round-trip untouched, unknown ids included, so a build that predates a
+// type never strips it on re-save.
+const typed = { ...uneven, sets: [{ setNumber: 1, reps: 8, weight: 185 }, { setNumber: 2, reps: 6, weight: 135, type: 'future-type' }] };
+assert.deepEqual(buildPerformedExercise(collapseSetsToDraft(typed), 0).sets.map((s) => s.type), [undefined, 'future-type']);
+assert.equal('type' in buildPerformedExercise(collapseSetsToDraft(typed), 0).sets[0]!, false);
 
 console.log('workout-conversion tests passed');

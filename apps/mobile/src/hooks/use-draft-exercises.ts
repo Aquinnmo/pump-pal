@@ -1,6 +1,6 @@
 import { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
 import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
-import { cascadeSetField, collapseSetsToDraft, makeUid } from '@/lib/workout-conversion';
+import { cascadeSetField, collapseSetsToDraft, linkedToNext, makeUid } from '@/lib/workout-conversion';
 import { useMemo, useState } from 'react';
 import { reorderItems } from 'react-native-reorderable-list';
 
@@ -88,6 +88,8 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
       exerciseId: selection.exerciseId,
       variationId: selection.variationId,
       label: selection.label,
+      // Superset membership belongs to this workout's layout, not the history row.
+      supersetId: row.supersetId,
     };
     if (!lastPerformed) return { ...row, ...identity };
 
@@ -161,6 +163,29 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
       })
     );
 
+  // Links row i to row i+1, merging both rows' supersets; if they are already linked,
+  // splits the superset between them by giving everything after i a fresh id. Always a
+  // fresh id: reusing an existing one could silently link a stale neighbour carrying it.
+  const toggleSuperset = (i: number) =>
+    setExercises((prev) => {
+      if (i < 0 || i >= prev.length - 1) return prev;
+      const runEnd = (from: number) => {
+        let end = from;
+        while (linkedToNext(prev, end)) end++;
+        return end;
+      };
+      if (linkedToNext(prev, i)) {
+        const id = makeUid();
+        const end = runEnd(i);
+        return prev.map((ex, idx) => (idx > i && idx <= end ? { ...ex, supersetId: id } : ex));
+      }
+      let start = i;
+      while (start > 0 && linkedToNext(prev, start - 1)) start--;
+      const end = runEnd(i + 1);
+      const id = makeUid();
+      return prev.map((ex, idx) => (idx >= start && idx <= end ? { ...ex, supersetId: id } : ex));
+    });
+
   const reorder = (from: number, to: number) => setExercises((prev) => reorderItems(prev, from, to));
 
   return {
@@ -177,6 +202,7 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
     addSet,
     removeSet,
     toggleSetComplete,
+    toggleSuperset,
     reorder,
   };
 }

@@ -40,6 +40,8 @@ import {
 import { subscribeWearActions } from "@/lib/wear-sync";
 import {
   collapseSetsToDraft,
+  inSuperset,
+  linkedToNext,
   recentExercisesForDay,
 } from "@/lib/workout-conversion";
 import {
@@ -145,6 +147,7 @@ export default function ActiveWorkoutScreen() {
     addSet,
     removeSet,
     toggleSetComplete,
+    toggleSuperset,
     reorder,
   } = useDraftExercises({
     trackCompletion: true,
@@ -704,6 +707,10 @@ export default function ActiveWorkoutScreen() {
             onDecrementSet={decrementSet}
             onAddSet={addSet}
             onRemoveSet={removeSet}
+            inSuperset={inSuperset(exercises, i)}
+            linkedToNext={linkedToNext(exercises, i)}
+            canLinkNext={i < exercises.length - 1}
+            onToggleSuperset={toggleSuperset}
             onToggleSetComplete={toggleSetComplete}
             showCompletion
           />

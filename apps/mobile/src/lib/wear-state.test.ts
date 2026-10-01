@@ -1,5 +1,5 @@
 import { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { applyWearAction, buildWearActiveState, nextSetIndex } from '@/lib/wear-state';
+import { applyWearAction, buildWearActiveState, flattenSets, nextSetIndex } from '@/lib/wear-state';
 import assert from 'node:assert/strict';
 
 const set = (over: Partial<DraftSet> = {}): DraftSet => ({
@@ -147,3 +147,37 @@ assert.deepEqual(applyWearAction(start, { action: 'startWorkout' }), start);
 assert.deepEqual(applyWearAction(start, { action: 'finishWorkout', workoutId: 'w1' }), start);
 
 console.log('wear-state: ok');
+
+// --- supersets: linked rows interleave, uneven rows drop out, stale ids link nothing ---
+const order = (rows: DraftExerciseRow[]) => flattenSets(rows).map((f) => `${rows[f.rowIndex].label}${f.setIndex + 1}`);
+assert.deepEqual(
+  order([row('A', [set(), set(), set()], { supersetId: 's' }), row('B', [set(), set()], { supersetId: 's' }), row('C', [set()])]),
+  ['A1', 'B1', 'A2', 'B2', 'A3', 'C1']
+);
+assert.deepEqual(
+  order([
+    row('A', [set(), set()], { supersetId: 's1' }),
+    row('B', [set(), set()], { supersetId: 's1' }),
+    row('C', [set(), set()], { supersetId: 's2' }),
+    row('D', [set()], { supersetId: 's2' }),
+  ]),
+  ['A1', 'B1', 'A2', 'B2', 'C1', 'D1', 'C2']
+);
+// Same id on non-adjacent rows is stale: plain sequential order.
+assert.deepEqual(
+  order([row('A', [set(), set()], { supersetId: 's' }), row('B', [set()]), row('C', [set()], { supersetId: 's' })]),
+  ['A1', 'A2', 'B1', 'C1']
+);
+// A blank row inside a run is skipped without breaking the run's rounds.
+assert.deepEqual(
+  order([row('A', [set(), set()], { supersetId: 's' }), row('B', [set(), set()], { supersetId: 's' }), row('', [set()])]),
+  ['A1', 'B1', 'A2', 'B2']
+);
+// completeSet on A1 moves the cursor to B1, and the watch sees B next.
+const superset = applyWearAction(
+  [row('A', [set(), set()], { supersetId: 's' }), row('B', [set({ reps: 12 }), set()], { supersetId: 's' })],
+  { action: 'completeSet', workoutId: 'w1' }
+);
+assert.equal(superset[0].sets[0].completed, true);
+const supersetNext = buildWearActiveState('w1', 'Push', superset).active!;
+assert.deepEqual([supersetNext.exercise, supersetNext.setNumber, supersetNext.reps], ['B', 1, 12]);
