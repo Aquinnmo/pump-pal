@@ -360,10 +360,7 @@ export default function SettingsAppScreen() {
             {/* The consent sits on the control, not on a screen the user has to
                 go find — turning this on is what sends the data. */}
             <Text style={styles.toggleSubtitle}>
-              {AI_DATA_DISCLOSURE}
-            </Text>
-            <Text style={styles.toggleSubtitle}>
-              AI is off by default. You can turn it off at any time.
+              AI is off by default. You can turn it off at any time. Please note that third parties do the AI processing and will receive your data.
             </Text>
           </View>
           {savingPreference === "aiEnabled" ? (
