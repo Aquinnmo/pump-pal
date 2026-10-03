@@ -11,6 +11,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -74,7 +75,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   }));
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0,0,0,${0.7 * overlayOpacity.value})`,
+    backgroundColor: interpolateColor(overlayOpacity.value, [0, 1], ['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']),
   }));
 
   const handleOpen = useCallback(() => {

@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -132,7 +133,7 @@ export const Sheet = forwardRef<SheetHandle, SheetProps>(function Sheet(
   });
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0,0,0,${0.6 * overlayOpacity.value})`,
+    backgroundColor: interpolateColor(overlayOpacity.value, [0, 1], ['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']),
   }));
 
   const header = (
