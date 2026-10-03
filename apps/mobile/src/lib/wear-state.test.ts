@@ -1,5 +1,5 @@
 import { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { applyWearAction, buildWearActiveState, flattenSets, nextSetIndex } from '@/lib/wear-state';
+import { applyWearAction, buildWearActiveState, flattenSets, nextSetIndex, setProgress } from '@/lib/wear-state';
 import assert from 'node:assert/strict';
 
 const set = (over: Partial<DraftSet> = {}): DraftSet => ({
@@ -58,6 +58,7 @@ assert.deepEqual(
     weight: 100,
     bodyweight: false,
     durationSeconds: null,
+    setLabel: null,
     completedSets: 1,
     totalSets: 4,
   }
@@ -181,3 +182,41 @@ const superset = applyWearAction(
 assert.equal(superset[0].sets[0].completed, true);
 const supersetNext = buildWearActiveState('w1', 'Push', superset).active!;
 assert.deepEqual([supersetNext.exercise, supersetNext.setNumber, supersetNext.reps], ['B', 1, 12]);
+
+// --- drop sets: one set whose drops are each ticked off, kept together in the cursor ---
+const dropSet = (drops: Partial<DraftSet>[], over: Partial<DraftSet> = {}) =>
+  set({ type: 'drop', subSets: drops.map((d) => ({ reps: 6, weight: '60', durationMinutes: 0, durationSeconds: 0, completed: false, ...d })), ...over });
+const parts = (rows: DraftExerciseRow[]) => flattenSets(rows).map((f) => `${rows[f.rowIndex].label}${f.setIndex}.${f.stage}`);
+// A drop set as the first set; each drop is its own step.
+assert.deepEqual(parts([row('A', [dropSet([{}, {}]), set()])]), ['A0.0', 'A0.1', 'A0.2', 'A1.0']);
+// In a superset the whole drop set runs before switching exercise.
+assert.deepEqual(
+  parts([row('A', [dropSet([{}]), set()], { supersetId: 's' }), row('B', [set(), set()], { supersetId: 's' })]),
+  ['A0.0', 'A0.1', 'B0.0', 'A1.0', 'B1.0']
+);
+// Completing walks drop by drop; the watch sees which drop it's on and its numbers.
+let dropRows = [row('A', [dropSet([{ weight: '80' }, { weight: '60' }])])];
+dropRows = applyWearAction(dropRows, { action: 'completeSet', workoutId: 'w1' });
+const onDrop = buildWearActiveState('w1', 'Push', dropRows).active!;
+// The drop set counts as one set, still open while drops remain.
+assert.deepEqual([onDrop.setLabel, onDrop.weight, onDrop.setNumber, onDrop.completedSets, onDrop.totalSets], ['Drop 2 of 3', 80, 1, 0, 1]);
+// A watch dial override lands on the drop, not the top set.
+dropRows = applyWearAction(dropRows, { action: 'completeSet', workoutId: 'w1', weight: 75 });
+assert.deepEqual([dropRows[0].sets[0].weight, dropRows[0].sets[0].subSets![0].weight, dropRows[0].sets[0].subSets![0].completed], ['100', '75', true]);
+// Undo reopens the last ticked drop only.
+dropRows = applyWearAction(dropRows, { action: 'uncompleteSet', workoutId: 'w1' });
+assert.deepEqual([dropRows[0].sets[0].completed, dropRows[0].sets[0].subSets![0].completed], [true, false]);
+// Simple sets carry no label.
+assert.equal(buildWearActiveState('w1', 'Push', [row('A', [set()])]).active!.setLabel, null);
+
+// setProgress: a drop set is one set, done only when every part is.
+const progressRows = [row('A', [dropSet([{ completed: true }], { completed: true }), dropSet([{}], { completed: true }), set({ completed: true })])];
+assert.deepEqual(setProgress(flattenSets(progressRows)), { completedSets: 2, totalSets: 3 });
+
+// The watch dial uses the same cascade: a drop's new weight flows down to the drops
+// after it that held the same weight.
+const dialRows = applyWearAction(
+  [row('A', [dropSet([{ weight: '80' }, { weight: '80' }], { completed: true })])],
+  { action: 'completeSet', workoutId: 'w1', weight: 70 }
+);
+assert.deepEqual(dialRows[0].sets[0].subSets!.map((d) => [d.weight, d.completed]), [['70', true], ['70', false]]);

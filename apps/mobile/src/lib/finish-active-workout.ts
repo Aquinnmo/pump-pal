@@ -1,4 +1,4 @@
-import type { Workout } from '@/types/workout';
+import type { DraftSet, Workout } from '@/types/workout';
 import { workoutRepository } from '@/data/workout-repository';
 import { triggerSyncAfterWrite } from '@/data/sync-trigger';
 import { createKeyedMutex } from '@/data/keyed-mutex';
@@ -8,6 +8,13 @@ import { buildPerformedExercise } from '@/lib/workout-conversion';
 import { buildWearIdleState } from '@/lib/wear-state';
 import { pushWearState } from '@/lib/wear-sync';
 import { describeUpNext } from '@/lib/up-next';
+
+// A set counts once its first part is done; of a drop set's drops, only the done ones.
+function completedParts(sets: DraftSet[]): DraftSet[] {
+  return sets
+    .filter(set => set.completed)
+    .map(set => (set.subSets ? { ...set, subSets: set.subSets.filter(part => part.completed) } : set));
+}
 
 const finishing = createKeyedMutex<boolean>();
 const finishedListeners = new Set<(sessionId: string) => void>();
@@ -40,7 +47,7 @@ export function finishActiveWorkout(
       if (snapshot.planId && !stored) throw new Error('Workout no longer exists.');
       const performedExercises = snapshot.rows
         .filter(row => row.label.trim() !== '')
-        .map((row, order) => buildPerformedExercise({ ...row, sets: row.sets.filter(set => set.completed) }, order))
+        .map((row, order) => buildPerformedExercise({ ...row, sets: completedParts(row.sets) }, order))
         .filter(exercise => exercise.sets.length > 0)
         .map(exercise => ({ ...exercise, sets: exercise.sets.map(({ completed, ...set }) => set) }));
       const injuries = await getOngoingInjuryIds(uid);

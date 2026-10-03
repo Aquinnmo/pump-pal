@@ -1,8 +1,7 @@
 import { Workout } from '@/types/workout';
 import { ExerciseSummaryList } from '@/ui/workout/exercise-summary-list';
 import {
-  exerciseLabel,
-  summarizePerformedExercise,
+  shareExerciseLines,
   toDateObj,
   workoutTotalReps,
   workoutVolume,
@@ -92,9 +91,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
       ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
       : `${totalVolume}`;
 
-    const exerciseLines = performedExercises.map((pe) => {
-      return `  • ${exerciseLabel(pe)} — ${summarizePerformedExercise(pe)}`;
-    }).join('\n');
+    const exerciseLines = shareExerciseLines(performedExercises);
 
     const metricParts: string[] = [];
     if (totalVolume > 0) metricParts.push(`Volume: ${fmtVolume} lbs`);

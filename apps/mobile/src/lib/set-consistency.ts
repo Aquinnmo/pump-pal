@@ -137,9 +137,11 @@ export function analyzeSetConsistency(
 
   recentWorkouts.forEach(({ workout }) => {
     (workout.performedExercises ?? []).forEach((exercise) => {
-      const orderedSets = [...(exercise.sets ?? [])].sort(
-        (left, right) => left.setNumber - right.setNumber,
-      );
+      // A drop set's drops share its setNumber and are a planned weight cut, not a
+      // lapse in consistency — compare only the first part of each set.
+      const orderedSets = [...(exercise.sets ?? [])]
+        .sort((left, right) => left.setNumber - right.setNumber)
+        .filter((set, index, all) => index === 0 || all[index - 1].setNumber !== set.setNumber);
       for (let index = 1; index < orderedSets.length; index += 1) {
         const bucket = classifyDelta(orderedSets[index - 1], orderedSets[index]);
         if (bucket) distribution[bucket] += 1;

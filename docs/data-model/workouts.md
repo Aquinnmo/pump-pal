@@ -87,6 +87,15 @@ Field notes:
   client must not reject a workout carrying a type added later. Unknown ids
   are treated as normal and round-trip through the editor untouched. Type
   behavior lives in one registry (`apps/mobile/src/constants/set-types.ts`).
+- **A drop set is one set made of several parts** (the top set, then each
+  drop). Each part is its own `PerformedSet`, and all parts of one drop set
+  **share its `setNumber`** and carry `type: 'drop'` — so set 1 as a drop set
+  with two drops is three rows numbered 1. Volume, PRs, muscle load and CSV
+  export count every part as-is, because the work is real. Grouping back into
+  one set (`setClusters` in `apps/mobile/src/lib/workout-conversion.ts`)
+  requires both the shared number and a type that has parts, so legacy data
+  with a repeated `setNumber` never nests. The editor holds the drops nested
+  (`DraftSet.subSets`); the live workout ticks each part off separately.
 - `PerformedSet` fields are a superset covering every tracking mode
   (`reps_weight`, `reps_bodyweight`, `duration`, `distance` — see the
   `TrackingMode` caveat in [exercises.md](./exercises.md)). Which fields are

@@ -144,15 +144,15 @@ private struct WorkoutControls: View {
       HStack(spacing: 8) {
         if state.actions.contains("completeSet") {
           ActionControl(title: "Complete set", doneTitle: "Set \(state.completedSets + 1) done", primary: true,
-            intent: CompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
+            intent: CompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedParts ?? state.completedSets))
         }
         if state.actions.contains("finishWorkout") {
           ActionControl(title: "Finish workout", doneTitle: "Workout logged", primary: true,
-            intent: FinishWorkoutIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
+            intent: FinishWorkoutIntent(workoutId: workoutId, expectedCompletedSets: state.completedParts ?? state.completedSets))
         }
         if state.actions.contains("uncompleteSet") {
           ActionControl(title: "Undo set", doneTitle: "Set \(state.completedSets) undone", primary: false,
-            intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedSets))
+            intent: UncompleteSetIntent(workoutId: workoutId, expectedCompletedSets: state.completedParts ?? state.completedSets))
         }
       }
     }

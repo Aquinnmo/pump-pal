@@ -1,7 +1,8 @@
 import { SetField, SetFields } from "@/ui/workout/set-fields";
-import { DraftExerciseRow, DraftSet } from "@/types/workout";
-import { groupSupersets } from "@/lib/workout-conversion";
-import { flattenSets, nextSetIndex } from "@/lib/wear-state";
+import { DraftExerciseRow, DraftSubSet } from "@/types/workout";
+import { groupSupersets, setParts } from "@/lib/workout-conversion";
+import { setTypeOf } from "@/constants/set-types";
+import { flattenSets, nextSetIndex, setProgress } from "@/lib/wear-state";
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useEffect, useMemo, useRef } from "react";
@@ -38,14 +39,18 @@ type FocusViewProps = {
   onFinish: () => void;
   onEdit: () => void;
   onOpenPlateCalc: () => void;
+  // `stage` is the part of a drop set being edited (0 = the set itself).
   onUpdateSet: (
     index: number,
     setIdx: number,
     field: SetField,
     value: string,
+    stage: number,
   ) => void;
-  onIncrementSet: (index: number, setIdx: number) => void;
-  onDecrementSet: (index: number, setIdx: number) => void;
+  onIncrementSet: (index: number, setIdx: number, stage: number) => void;
+  onDecrementSet: (index: number, setIdx: number, stage: number) => void;
+  // Adds one more part to the current drop set (another drop).
+  onAddSubSet: (index: number, setIdx: number) => void;
 };
 
 type CardState = "complete" | "in-progress" | "not-started";
@@ -83,6 +88,7 @@ export function FocusView({
   onUpdateSet,
   onIncrementSet,
   onDecrementSet,
+  onAddSubSet,
 }: FocusViewProps) {
   const insets = useSafeAreaInsets();
   const listRef = useRef<ScrollView>(null);
@@ -95,8 +101,10 @@ export function FocusView({
   const nextIdx = useMemo(() => nextSetIndex(flat.map((f) => f.set)), [flat]);
   const done = nextIdx === -1;
   const current = !done ? flat[nextIdx] : null;
+  // Parts ticked off: moves on every tap, drop by drop, so it drives the ring, the
+  // re-centring and Undo. What's shown as "x/y" counts sets (a drop set is one).
   const completedCount = flat.filter((f) => f.set.completed).length;
-  const totalCount = flat.length;
+  const shownProgress = useMemo(() => setProgress(flat), [flat]);
 
   // Rows that actually carry sets — mirrors flattenSets' own filter, so the bar's
   // indices line up with rowIndex values coming out of flat/current.
@@ -172,12 +180,13 @@ export function FocusView({
 
   // Strictly about how much of the exercise is logged — being the exercise you are
   // currently on is a separate axis, drawn as the border emphasis below.
-  const setsState = (sets: DraftSet[]): CardState => {
+  // Takes every part, so a drop set is in progress until its last drop is done.
+  const setsState = (sets: DraftSubSet[]): CardState => {
     if (sets.length > 0 && sets.every((s) => s.completed)) return "complete";
     if (sets.some((s) => s.completed)) return "in-progress";
     return "not-started";
   };
-  const cardState = (row: DraftExerciseRow): CardState => setsState(row.sets);
+  const cardState = (row: DraftExerciseRow): CardState => setsState(row.sets.flatMap(setParts));
 
   const handleCompleteSet = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -190,20 +199,25 @@ export function FocusView({
 
   const currentRow = current ? exercises[current.rowIndex] : null;
   const currentSet = current?.set ?? null;
+  // The whole set the current part belongs to — a drop set's type and part count.
+  const currentDraftSet = current ? currentRow!.sets[current.setIndex] : null;
+  const currentNoun = currentDraftSet ? setTypeOf(currentDraftSet).subSet?.noun : undefined;
 
   return (
     <View style={styles.container}>
       <View style={styles.segmentBar}>
         {/* A superset is one segment: its sets run interleaved, so it fills as a unit. */}
         {groupSupersets(rows).map((group) => {
-          const sets = group.flatMap((row) => row.sets);
+          // Sized in sets (a drop set is one); coloured by every part.
+          const sets = group.flatMap((row) => row.sets.flatMap(setParts));
+          const setCount = group.reduce((n, row) => n + row.sets.length, 0);
           const state = done ? "complete" : setsState(sets);
           return (
             <View
               key={group[0].uid}
               style={[
                 styles.segment,
-                { flex: sets.length || 1 },
+                { flex: setCount || 1 },
                 SEGMENT_COLOR[state],
               ]}
             />
@@ -264,7 +278,7 @@ export function FocusView({
             <View style={styles.doneZone}>
               <Text style={styles.eyebrow}>ALL SETS COMPLETE</Text>
               <Text style={[styles.metric, styles.tabularNums]}>
-                {completedCount}/{totalCount}
+                {shownProgress.completedSets}/{shownProgress.totalSets}
               </Text>
             </View>
           ) : (
@@ -273,6 +287,9 @@ export function FocusView({
                 <Text style={styles.exerciseLabel} numberOfLines={1}>
                   {currentRow!.label}
                 </Text>
+                {setTypeOf(currentDraftSet!).id !== "normal" && (
+                  <Text style={styles.eyebrow}>{setTypeOf(currentDraftSet!).label}</Text>
+                )}
               </View>
               <View style={styles.setFieldsRow}>
                 <SetFields
@@ -280,13 +297,13 @@ export function FocusView({
                   exerciseType={currentRow!.exerciseType}
                   bodyweight={currentRow!.bodyweight}
                   onUpdate={(field, v) =>
-                    onUpdateSet(current!.rowIndex, current!.setIndex, field, v)
+                    onUpdateSet(current!.rowIndex, current!.setIndex, field, v, current!.stage)
                   }
                   onIncrement={() =>
-                    onIncrementSet(current!.rowIndex, current!.setIndex)
+                    onIncrementSet(current!.rowIndex, current!.setIndex, current!.stage)
                   }
                   onDecrement={() =>
-                    onDecrementSet(current!.rowIndex, current!.setIndex)
+                    onDecrementSet(current!.rowIndex, current!.setIndex, current!.stage)
                   }
                 />
               </View>
@@ -316,7 +333,10 @@ export function FocusView({
               <Text style={styles.completeButtonText}>
                 {done
                   ? "Finish Workout"
-                  : `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
+                  : currentNoun && current!.stage < setParts(currentDraftSet!).length - 1
+                    ? `Complete ${currentNoun} ${current!.stage + 1}/${setParts(currentDraftSet!).length}`
+                    : // The last drop finishes the whole set, so it says so.
+                      `Complete set ${current!.setIndex + 1}/${currentRow!.sets.length}`}
               </Text>
               <Ionicons
                 name={done ? "checkmark-sharp" : "arrow-forward"}
@@ -327,6 +347,19 @@ export function FocusView({
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Only while the current set is a drop set: one more drop, in the accent
+          because it adds work — the same shape as Undo, which steps back. */}
+      {currentNoun && (
+        <TouchableOpacity
+          style={styles.addSubSetButton}
+          onPress={() => onAddSubSet(current!.rowIndex, current!.setIndex)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+        >
+          <Text style={styles.addSubSetButtonText}>Add {currentNoun}</Text>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity
         style={[
@@ -515,6 +548,21 @@ const styles = StyleSheet.create({
     borderColor: "rgba(96, 165, 250, 0.24)",
     borderRadius: 14,
     marginTop: 12,
+  },
+  addSubSetButton: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(229, 66, 66, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(229, 66, 66, 0.24)",
+    borderRadius: 14,
+    marginTop: 12,
+  },
+  addSubSetButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#e54242",
   },
   undoButtonDisabled: {
     opacity: 0.5,

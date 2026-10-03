@@ -9,6 +9,7 @@ const uid = 'user-1';
 const user = { uid };
 let routeParams: { id?: string; suggestion?: string } = {};
 let plannedRecord: { id: string; data: Workout } | null = null;
+let historyRecords: { id: string; data: Workout }[] = [];
 let createCalls: { uid: string; workout: Omit<Workout, 'id' | 'userId'> }[] = [];
 let updateCalls: { uid: string; id: string; workout: Workout }[] = [];
 let createBehavior: () => Promise<string> = async () => 'created-workout';
@@ -48,6 +49,23 @@ plugin({
     }));
     build.module('expo-router', () => ({
       exports: { router, useLocalSearchParams: () => routeParams },
+      loader: 'object',
+    }));
+    // Render the list's header/footer so empty-state buttons are reachable.
+    const List = ({ data, renderItem, ListHeaderComponent, ListFooterComponent }: {
+      data: unknown[];
+      renderItem: (info: { item: unknown; index: number }) => unknown;
+      ListHeaderComponent?: unknown;
+      ListFooterComponent?: unknown;
+    }) => (
+      <div>
+        {ListHeaderComponent as never}
+        {data.map((item, index) => <div key={index}>{renderItem({ item, index }) as never}</div>)}
+        {ListFooterComponent as never}
+      </div>
+    );
+    build.module('react-native-reorderable-list', () => ({
+      exports: { default: List, ReorderableList: List, useReorderableDrag: () => () => undefined, reorderItems: (items: unknown[]) => items },
       loader: 'object',
     }));
     build.module('react-native-safe-area-context', () => ({
@@ -115,7 +133,7 @@ mock.module('@/context/auth-context', () => ({
 mock.module(new URL('../../src/data/workout-repository.web.ts', import.meta.url).pathname, () => ({
   workoutRepository: {
     getById: async () => plannedRecord,
-    getHistory: async () => [],
+    getHistory: async () => historyRecords,
     create: async (createdUid: string, workout: Omit<Workout, 'id' | 'userId'>) => {
       createCalls.push({ uid: createdUid, workout });
       return createBehavior();
@@ -203,6 +221,7 @@ async function renderScreen(params: { id?: string; suggestion?: string } = {}) {
 beforeEach(() => {
   routeParams = {};
   plannedRecord = null;
+  historyRecords = [];
   createCalls = [];
   updateCalls = [];
   createBehavior = async () => 'created-workout';
@@ -222,6 +241,53 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   endSession();
+});
+
+describe('ActiveWorkoutScreen autofill from last workout', () => {
+  const label = 'Import from last Push Day workout';
+
+  it('copies the last workout into an empty ad-hoc session with sets uncompleted', async () => {
+    historyRecords = [record(makeWorkout({ id: 'last', name: 'Push Day' }))];
+    await renderScreen({ suggestion: 'Push Day' });
+
+    fireEvent.click(await screen.findByText(label));
+    await waitFor(() => assert.equal(screen.queryByText(label), null));
+    assert.deepEqual(
+      getSession()?.rows.map((r) => [r.label, r.sets.map((s) => s.completed)]),
+      [['Bench Press', [false]]],
+    );
+  });
+
+  it('swaps Discard for Focus once an exercise exists', async () => {
+    historyRecords = [record(makeWorkout({ id: 'last', name: 'Push Day' }))];
+    await renderScreen({ suggestion: 'Push Day' });
+    assert.ok(screen.getByText('Discard', { exact: true }));
+    assert.equal(screen.queryByText('‹ Focus', { exact: true }), null);
+
+    fireEvent.click(await screen.findByText(label));
+    fireEvent.click(await screen.findByText('‹ Focus', { exact: true }));
+    await waitFor(() => assert.ok(screen.getByText('Edit workout', { exact: true })));
+    assert.ok(screen.getByText('Discard', { exact: true }));
+  });
+
+  it('drops the type when no workout shares the name', async () => {
+    historyRecords = [record(makeWorkout({ id: 'last', name: 'Pull Day' }))];
+    await renderScreen({ suggestion: 'Push Day' });
+    assert.ok(await screen.findByText('Import from last workout'));
+  });
+
+  it('is hidden without history and for planned sessions', async () => {
+    await renderScreen({ suggestion: 'Push Day' });
+    assert.equal(screen.queryByText(label), null);
+    cleanup();
+    endSession();
+
+    historyRecords = [record(makeWorkout({ id: 'last' }))];
+    plannedRecord = record(makeWorkout({ id: 'p', status: 'planned', queueOrder: 0, performedExercises: [] }));
+    await renderScreen({ id: 'p' });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    assert.equal(screen.queryByText(label), null);
+  });
 });
 
 describe('ActiveWorkoutScreen finish boundary', () => {

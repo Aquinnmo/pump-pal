@@ -1,5 +1,6 @@
+import { SetTypeDef, setTypeOf } from '@/constants/set-types';
 import { randomId } from '@/data/id';
-import { DraftExerciseRow, DraftSet, PerformedExercise, PerformedSet, RecentExercise, Workout } from '@/types/workout';
+import { DraftExerciseRow, DraftSet, DraftSubSet, PerformedExercise, PerformedSet, RecentExercise, Workout } from '@/types/workout';
 
 // Client-only unique id for a draft row (React key + drag identity). Only needs
 // to be unique within one screen's editing session.
@@ -7,25 +8,92 @@ export function makeUid(): string {
   return randomId('ex');
 }
 
-// An edit to a set cascades forward: the new value overwrites each following set that
-// still held the old value, stopping at the first set the user deliberately made
-// different so pyramids / drop sets survive. Completed sets are a record of what was
-// actually lifted — they are skipped, not overwritten, and do not stop the run.
+// A set's parts in order: the set itself, then its sub-sets (a drop set's drops).
+export function setParts(set: DraftSet): DraftSubSet[] {
+  return [set, ...(set.subSets ?? [])];
+}
+
+// Stage 0 is the set itself; stage k is subSets[k - 1]. These two are the only code
+// that knows that layout.
+export function stageOf(set: DraftSet, stage: number): DraftSubSet {
+  return stage === 0 ? set : set.subSets![stage - 1];
+}
+
+export function withStage(set: DraftSet, stage: number, patch: Partial<DraftSubSet>): DraftSet {
+  if (stage === 0) return { ...set, ...patch };
+  return { ...set, subSets: set.subSets!.map((part, k) => (k === stage - 1 ? { ...part, ...patch } : part)) };
+}
+
+// The next part of a sub-set type: the previous part's numbers with the weight cut by
+// the type's weightFactor and rounded to 5 lbs. An empty weight (bodyweight) stays empty.
+export function nextSubSet(def: SetTypeDef, from: DraftSubSet): DraftSubSet {
+  const factor = def.subSet?.weightFactor ?? 1;
+  const weight = from.weight.trim() === '' ? '' : String(Math.max(0, Math.round((Number(from.weight) * factor) / 5) * 5));
+  return { reps: from.reps, weight, durationMinutes: from.durationMinutes, durationSeconds: from.durationSeconds };
+}
+
+// "Drop 2 of 3" for a part of a sub-set type, null for anything else.
+export function stageLabel(set: DraftSet, stage: number): string | null {
+  const noun = setTypeOf(set).subSet?.noun;
+  if (!noun) return null;
+  return `${noun[0].toUpperCase()}${noun.slice(1)} ${stage + 1} of ${setParts(set).length}`;
+}
+
+// An edit cascades forward to parts that still held the old value, so changing one set
+// updates the identical ones after it. Each part sits on two lanes:
+// - across: the same stage in later sets. The top of a set (stage 0) crosses every set,
+//   simple or drop; drop k crosses only later sets of the same type that have a drop k
+//   (others are skipped, not stoppers).
+// - down: the later drops inside its own set.
+// A walk along a lane stops at the first part the user deliberately made different, so
+// pyramids and custom drops survive. Completed parts are a record of what was actually
+// lifted — skipped, not overwritten, and they do not stop the walk. Every part the
+// cascade changes ripples as if edited there, walking its own lanes with the same
+// old → new values; parts already changed by this edit are passed over. Nothing before
+// or above the edited part changes.
 // Lives here rather than in use-draft-exercises so the watch bridge (src/lib/wear-state.ts)
 // can apply the same semantics without pulling React Native in.
-export function cascadeSetField<K extends keyof DraftSet>(
+export function cascadeSetField<K extends keyof DraftSubSet>(
   sets: DraftSet[],
   from: number,
   field: K,
-  value: DraftSet[K]
+  value: DraftSubSet[K],
+  stage = 0
 ): DraftSet[] {
-  const previous = sets[from][field];
+  const old = stageOf(sets[from], stage)[field];
   const next = sets.slice();
-  next[from] = { ...next[from], [field]: value };
-  for (let si = from + 1; si < next.length; si++) {
-    if (next[si].completed) continue;
-    if (next[si][field] !== previous) break;
-    next[si] = { ...next[si], [field]: value };
+  const changed = new Set<string>();
+  const queue: [number, number][] = [];
+
+  const change = (si: number, k: number) => {
+    next[si] = withStage(next[si], k, { [field]: value });
+    changed.add(`${si}:${k}`);
+    queue.push([si, k]);
+  };
+  // Changes candidates in order until one holds a value the user made different.
+  const walk = (candidates: [number, number][]) => {
+    for (const [si, k] of candidates) {
+      if (changed.has(`${si}:${k}`)) continue;
+      const part = stageOf(next[si], k);
+      if (part.completed) continue;
+      if (part[field] !== old) break;
+      change(si, k);
+    }
+  };
+
+  change(from, stage);
+  while (queue.length > 0) {
+    const [si, k] = queue.shift()!;
+    const down: [number, number][] = [];
+    for (let j = k + 1; j < setParts(next[si]).length; j++) down.push([si, j]);
+    walk(down);
+
+    const type = setTypeOf(next[si]).id;
+    const across: [number, number][] = [];
+    for (let t = si + 1; t < next.length; t++) {
+      if (k === 0 || (setTypeOf(next[t]).id === type && setParts(next[t]).length > k)) across.push([t, k]);
+    }
+    walk(across);
   }
   return next;
 }
@@ -49,41 +117,52 @@ export function groupSupersets<T extends { supersetId?: string }>(rows: T[]): T[
   return groups;
 }
 
+// Groups stored sets into the sets the user sees: parts of one sub-set type that share
+// a setNumber form one cluster. Legacy data has unique set numbers, so it never groups.
+export function setClusters(sets: { setNumber: number; type?: string }[]): number[][] {
+  const clusters: number[][] = [];
+  sets.forEach((set, i) => {
+    const prev = sets[i - 1];
+    const sameSet = prev && setTypeOf(set).subSet && prev.setNumber === set.setNumber && prev.type === set.type;
+    if (sameSet) clusters[clusters.length - 1].push(i);
+    else clusters.push([i]);
+  });
+  return clusters;
+}
+
+// Badge text per set: the type's glyph, or the set's number.
+export function setLabels(sets: { type?: string }[]): string[] {
+  return sets.map((set, i) => setTypeOf(set).glyph ?? String(i + 1));
+}
+
+// One PerformedSet per part; a drop set's parts share its setNumber.
 export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
-  return row.sets.map((draftSet, index) => {
-    if (row.exerciseType === 'Sets of Duration') {
-      const set: PerformedSet = {
-        setNumber: index + 1,
-        durationSeconds: (Number(draftSet.durationMinutes) || 0) * 60 + (Number(draftSet.durationSeconds) || 0),
-      };
+  return row.sets.flatMap((draftSet, index) =>
+    setParts(draftSet).map((part) => {
+      const set: PerformedSet =
+        row.exerciseType === 'Sets of Duration'
+          ? {
+              setNumber: index + 1,
+              durationSeconds: (Number(part.durationMinutes) || 0) * 60 + (Number(part.durationSeconds) || 0),
+            }
+          : {
+              setNumber: index + 1,
+              reps: Number(part.reps) || 0,
+              weight: row.bodyweight ? 0 : Number(part.weight) || 0,
+              bodyweight: Boolean(row.bodyweight),
+            };
       if (row.holdSeconds !== undefined) {
         set.holdSeconds = row.holdSeconds;
       }
       if (draftSet.type !== undefined) {
         set.type = draftSet.type;
       }
-      if (draftSet.completed !== undefined) {
-        set.completed = draftSet.completed;
+      if (part.completed !== undefined) {
+        set.completed = part.completed;
       }
       return set;
-    }
-    const set: PerformedSet = {
-      setNumber: index + 1,
-      reps: Number(draftSet.reps) || 0,
-      weight: row.bodyweight ? 0 : Number(draftSet.weight) || 0,
-      bodyweight: Boolean(row.bodyweight),
-    };
-    if (row.holdSeconds !== undefined) {
-      set.holdSeconds = row.holdSeconds;
-    }
-    if (draftSet.type !== undefined) {
-      set.type = draftSet.type;
-    }
-    if (draftSet.completed !== undefined) {
-      set.completed = draftSet.completed;
-    }
-    return set;
-  });
+    })
+  );
 }
 
 // Auto-fill normalization: repeat one representative set across every slot. The
@@ -92,7 +171,9 @@ export function expandDraftToSets(row: DraftExerciseRow): PerformedSet[] {
 // sets ordered by weight, then reps, then duration. An even count takes the upper
 // (heavier) middle, so the pick is always a set that was actually performed.
 export function normalizeDraftSets(sets: DraftSet[]): DraftSet[] {
-  if (sets.length < 2) return sets;
+  // ponytail: typed sets opt out entirely — repeating one representative would erase
+  // the drop structure. Normalize just the normal sets if that ever matters.
+  if (sets.length < 2 || sets.some((s) => setTypeOf(s).id !== 'normal')) return sets;
   const weightOf = (s: DraftSet) => Number(s.weight) || 0;
   const secondsOf = (s: DraftSet) => s.durationMinutes * 60 + s.durationSeconds;
   const keyOf = (s: DraftSet) => `${s.reps}|${weightOf(s)}|${secondsOf(s)}`;
@@ -116,19 +197,25 @@ export function normalizeDraftSets(sets: DraftSet[]): DraftSet[] {
 export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): DraftExerciseRow {
   const first = pe.sets[0];
   const duration = first?.durationSeconds !== undefined && first?.reps === undefined;
-  const sourceSets = pe.sets.length > 0 ? pe.sets : [first];
 
-  const sets: DraftSet[] = sourceSets.map((s): DraftSet => {
+  const toPart = (s: PerformedSet | undefined): DraftSubSet => {
     const totalSeconds = duration ? (s?.durationSeconds ?? 0) : 0;
     return {
       reps: duration ? 0 : s?.reps ?? 0,
       weight: duration || s?.bodyweight ? '' : String(s?.weight ?? ''),
       durationMinutes: duration ? Math.floor(totalSeconds / 60) : 0,
       durationSeconds: duration ? totalSeconds % 60 : 0,
-      ...(s?.type !== undefined ? { type: s.type } : {}),
       completed: s?.completed,
     };
-  });
+  };
+  const sets: DraftSet[] =
+    pe.sets.length === 0
+      ? [toPart(undefined)]
+      : setClusters(pe.sets).map(([head, ...rest]) => ({
+          ...toPart(pe.sets[head]),
+          ...(pe.sets[head].type !== undefined ? { type: pe.sets[head].type } : {}),
+          ...(rest.length > 0 ? { subSets: rest.map((i) => toPart(pe.sets[i])) } : {}),
+        }));
 
   return {
     uid: makeUid(),
@@ -183,40 +270,27 @@ function weightSuffix(s?: PerformedSet): string {
   return s?.bodyweight ? '' : ` @ ${s?.weight ?? 0} lbs`;
 }
 
-function sameDisplayedSet(a: PerformedSet, b: PerformedSet): boolean {
-  return (
-    (a.reps ?? 0) === (b.reps ?? 0) &&
-    (a.weight ?? 0) === (b.weight ?? 0) &&
-    Boolean(a.bodyweight) === Boolean(b.bodyweight) &&
-    (a.durationSeconds ?? 0) === (b.durationSeconds ?? 0) &&
-    a.holdSeconds === b.holdSeconds
-  );
+function describeSet(pe: PerformedExercise, set: PerformedSet): string {
+  if (isDurationExercise(pe)) return `${fmtDuration(set.durationSeconds ?? 0)}${holdSuffix(set)}`;
+  const reps = set.reps ?? 0;
+  return `${reps} rep${reps !== 1 ? 's' : ''}${weightSuffix(set)}${holdSuffix(set)}`;
 }
 
+// One line per run of identical clusters; a drop set chains onto its set with an arrow:
+// "3 x 8 reps @ 185 lbs → 6 reps @ 135 lbs".
 export function summarizePerformedExerciseSetGroups(pe: PerformedExercise): string[] {
-  const groups: { set: PerformedSet; count: number }[] = [];
-
-  pe.sets.forEach((set) => {
+  const groups: { line: string; count: number }[] = [];
+  for (const cluster of setClusters(pe.sets)) {
+    const line = cluster.map((i) => describeSet(pe, pe.sets[i])).join(' → ');
     const lastGroup = groups[groups.length - 1];
-    if (lastGroup && sameDisplayedSet(lastGroup.set, set)) {
-      lastGroup.count += 1;
-      return;
-    }
-    groups.push({ set, count: 1 });
-  });
-
-  return groups.map(({ set, count }) => {
-    const countPrefix = count > 1 ? `${count} x ` : '';
-    if (isDurationExercise(pe)) {
-      return `${countPrefix}${fmtDuration(set.durationSeconds ?? 0)}${holdSuffix(set)}`;
-    }
-
-    const reps = set.reps ?? 0;
-    return `${countPrefix}${reps} rep${reps !== 1 ? 's' : ''}${weightSuffix(set)}${holdSuffix(set)}`;
-  });
+    if (lastGroup?.line === line) lastGroup.count += 1;
+    else groups.push({ line, count: 1 });
+  }
+  return groups.map(({ line, count }) => `${count > 1 ? `${count} x ` : ''}${line}`);
 }
 
 export function summarizePerformedExercise(pe: PerformedExercise): string {
+  if (pe.sets.some((set) => setTypeOf(set).subSet)) return summarizePerformedExerciseSetGroups(pe).join(', ');
   const sets = pe.sets;
   const setCount = sets.length;
   const first = sets[0];
@@ -246,6 +320,17 @@ export function summarizePerformedExercise(pe: PerformedExercise): string {
   }
 
   return base;
+}
+
+// Plain-text exercise list for sharing. A superset becomes one bullet with its
+// exercises nested under it, so the grouping survives without any UI.
+export function shareExerciseLines(exercises: PerformedExercise[]): string {
+  const line = (pe: PerformedExercise) => `${exerciseLabel(pe)} — ${summarizePerformedExercise(pe)}`;
+  return groupSupersets(exercises)
+    .map((group) =>
+      group.length > 1 ? ['  • Superset', ...group.map((pe) => `      – ${line(pe)}`)].join('\n') : `  • ${line(group[0])}`
+    )
+    .join('\n');
 }
 
 export function workoutVolume(w: Workout): number {
@@ -291,6 +376,13 @@ export function toDateObj(date: unknown): Date | null {
   }
 
   return Number.isFinite(parsed.getTime()) ? parsed : null;
+}
+
+// Exercises to copy from the last completed workout: the latest one with this name if
+// there is one, else simply the latest. `history` is completed-only, date DESC (getHistory).
+export function lastWorkoutExercises(history: Workout[], workoutName: string): PerformedExercise[] {
+  const source = history.find((w) => workoutName && w.name === workoutName) ?? history[0];
+  return source?.performedExercises ?? [];
 }
 
 export function recentExercisesForDay(

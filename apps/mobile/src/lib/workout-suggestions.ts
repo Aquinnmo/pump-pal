@@ -3,7 +3,7 @@ import { Injury } from '@/types/user';
 import { DraftExerciseRow, ExerciseSearchOption, Workout } from '@/types/workout';
 import { callAI } from '@/lib/ai-client';
 import { rankSearchOptions, slugify } from '@/lib/exercise-catalog';
-import { exerciseLabel, isDurationExercise, makeUid, toDateObj } from '@/lib/workout-conversion';
+import { exerciseLabel, isDurationExercise, makeUid, setClusters, toDateObj } from '@/lib/workout-conversion';
 
 /**
  * Asks the configured AI model to generate a list of workout day/type names for a custom
@@ -140,7 +140,7 @@ export async function suggestWorkoutCompletion(
       }
       const s = statsMap[name];
       if (!seen.has(name)) { s.sessions += 1; seen.add(name); }
-      s.totalSets += pe.sets.length;
+      s.totalSets += setClusters(pe.sets).length; // a drop set is one set
       if (isDuration) {
         const totalSecs = pe.sets.reduce((sum, set) => sum + (set.durationSeconds ?? 0), 0);
         s.maxDurationSecs = Math.max(s.maxDurationSecs, totalSecs);

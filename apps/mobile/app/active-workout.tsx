@@ -41,7 +41,9 @@ import { subscribeWearActions } from "@/lib/wear-sync";
 import {
   collapseSetsToDraft,
   inSuperset,
+  lastWorkoutExercises,
   linkedToNext,
+  setParts,
   recentExercisesForDay,
 } from "@/lib/workout-conversion";
 import {
@@ -148,6 +150,9 @@ export default function ActiveWorkoutScreen() {
     removeSet,
     toggleSetComplete,
     toggleSuperset,
+    setSetType,
+    addSubSet,
+    removeSubSet,
     reorder,
   } = useDraftExercises({
     trackCompletion: true,
@@ -344,6 +349,33 @@ export default function ActiveWorkoutScreen() {
     return [...merged, "Other"];
   }, [workoutNameOptions, workoutName, isCustomWorkoutName]);
 
+  // Empty ad-hoc workout: offer to copy the last completed one (same as planning does).
+  const lastExercises = useMemo(
+    () => lastWorkoutExercises(workoutHistory, effectiveWorkoutName),
+    [workoutHistory, effectiveWorkoutName],
+  );
+  const hasExercises = exercises.some((ex) => ex.label.trim() !== "");
+  // Name the type only when the copy really comes from that type (no fallback to another day).
+  const autofillLabel = workoutHistory.some((w) => effectiveWorkoutName && w.name === effectiveWorkoutName)
+    ? `Import from last ${effectiveWorkoutName} workout`
+    : "Import from last workout";
+  const canAutofill = !cameFromPlan && lastExercises.length > 0 && !hasExercises;
+
+  const autofillFromLastWorkout = () =>
+    setExercises(
+      lastExercises.map((pe) => {
+        const row = collapseSetsToDraft(pe, normalizeAutoFill);
+        return {
+          ...row,
+          sets: row.sets.map((set) => ({
+            ...set,
+            completed: false,
+            ...(set.subSets ? { subSets: set.subSets.map((part) => ({ ...part, completed: false })) } : {}),
+          })),
+        };
+      }),
+    );
+
   const selectWorkoutName = (selected: string) => {
     if (selected === "Other") {
       setIsCustomWorkoutName(true);
@@ -433,7 +465,7 @@ export default function ActiveWorkoutScreen() {
   const incompleteSetCount = () =>
     exercises
       .filter((ex) => ex.label.trim() !== "")
-      .reduce((sum, ex) => sum + ex.sets.filter((s) => !s.completed).length, 0);
+      .reduce((sum, ex) => sum + ex.sets.flatMap(setParts).filter((s) => !s.completed).length, 0);
 
   const finishWorkout = async () => {
     if (!sessionId || terminalRef.current) return;
@@ -479,7 +511,7 @@ export default function ActiveWorkoutScreen() {
   // focus is the default reading view once a workout has exercises; an emptied-out
   // workout (every row removed in the editor) falls back to the editor automatically
   // rather than showing an empty focus screen.
-  const focusUsable = mode === "focus" && exercises.some((ex) => ex.label.trim() !== "");
+  const focusUsable = mode === "focus" && hasExercises;
 
   const enterFocus = () => {
     setHasEnteredFocus(true);
@@ -590,7 +622,7 @@ export default function ActiveWorkoutScreen() {
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-        {mode === "editor" && hasEnteredFocus ? (
+        {mode === "editor" && hasExercises ? (
           <TouchableOpacity onPress={enterFocus} hitSlop={8}>
             <Text style={styles.discardText}>‹ Focus</Text>
           </TouchableOpacity>
@@ -629,6 +661,7 @@ export default function ActiveWorkoutScreen() {
           onUpdateSet={updateSet}
           onIncrementSet={incrementSet}
           onDecrementSet={decrementSet}
+          onAddSubSet={addSubSet}
         />
       ) : (
       <ReorderableList
@@ -675,6 +708,15 @@ export default function ActiveWorkoutScreen() {
                 }}
               />
             )}
+            {canAutofill && (
+              <TouchableOpacity
+                style={styles.addExButton}
+                onPress={autofillFromLastWorkout}
+              >
+                <Ionicons name="copy-outline" size={18} color="#e54242" />
+                <Text style={styles.addExText}>{autofillLabel}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.logFinishedButton}
               onPress={() => setShowLogConfirm(true)}
@@ -711,6 +753,9 @@ export default function ActiveWorkoutScreen() {
             linkedToNext={linkedToNext(exercises, i)}
             canLinkNext={i < exercises.length - 1}
             onToggleSuperset={toggleSuperset}
+            onChangeSetType={setSetType}
+            onAddSubSet={addSubSet}
+            onRemoveSubSet={removeSubSet}
             onToggleSetComplete={toggleSetComplete}
             showCompletion
           />

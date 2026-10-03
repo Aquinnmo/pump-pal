@@ -125,13 +125,21 @@ export type RecentExercise = ExerciseRef;
 
 export type ExerciseType = 'Sets of Reps' | 'Sets of Duration';
 
-export type DraftSet = {
+// One part of a set: a simple set has one; a drop set has its top set plus each drop.
+export type DraftSubSet = {
   reps: number;
   weight: string;
   durationMinutes: number;
   durationSeconds: number;
-  type?: string;
   completed?: boolean;
+};
+
+// The set's own fields are its first part. A set type with sub-sets (see SET_TYPES)
+// keeps the parts after the first in subSets. Address parts by stage — 0 is the set
+// itself, k is subSets[k - 1] — through stageOf/withStage in src/lib/workout-conversion.ts.
+export type DraftSet = DraftSubSet & {
+  type?: string;
+  subSets?: DraftSubSet[];
 };
 
 // Modal's per-set editing shape — one row per exercise, expanded to

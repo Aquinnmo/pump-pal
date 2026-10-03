@@ -64,7 +64,8 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
 
   const payload = {
     workoutId: data.workoutId,
-    expectedCompletedSets: data.completedSets,
+    // The tap guard counts parts so every drop tap is distinct; the display counts sets.
+    expectedCompletedSets: data.completedParts,
     title: data.title,
     text: data.detail ?? '',
     startedAtMillis: data.startedAt.getTime(),
@@ -74,6 +75,7 @@ export async function showWorkoutNotification(data: WorkoutNotificationData): Pr
     actions: data.actions,
     setDetails: data.setDetails,
     setCompleted: data.setCompleted,
+    setStarts: data.setStarts,
     ...(data.latencyTrace && __DEV__
       ? { latencyTraceId: data.latencyTrace.id, latencyStartedAtMs: data.latencyTrace.startedAtMs }
       : {}),

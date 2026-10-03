@@ -114,20 +114,26 @@ mock.module('@/ui/primitives/dropdown', () => ({
   Dropdown: ({ placeholder }: { placeholder: string }) => <button>{placeholder}</button>,
 }));
 mock.module('@/ui/workout/exercise-card', () => ({
-  ExerciseCard: ({ index, onSelectExercise, canLinkNext, linkedToNext, onToggleSuperset }: {
+  ExerciseCard: ({ index, onSelectExercise, canLinkNext, linkedToNext, onToggleSuperset, onChangeSetType, onAddSubSet, onRemoveSubSet }: {
     index: number;
     onSelectExercise: (index: number, selection: unknown) => void;
     canLinkNext?: boolean;
     linkedToNext?: boolean;
     onToggleSuperset?: (index: number) => void;
+    onChangeSetType?: (index: number, setIdx: number, type: string) => void;
+    onAddSubSet?: (index: number, setIdx: number) => void;
+    onRemoveSubSet?: (index: number, setIdx: number, stage: number) => void;
   }) => (
     <>
       <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
         Choose Bench Press
       </button>
       {canLinkNext && (
-        <button onClick={() => onToggleSuperset?.(index)}>{linkedToNext ? 'Unlink' : 'Superset with next'}</button>
+        <button onClick={() => onToggleSuperset?.(index)}>{linkedToNext ? 'Unlink superset' : 'Make a superset'}</button>
       )}
+      <button onClick={() => onChangeSetType?.(index, 0, 'drop')}>Make first set a drop</button>
+      <button onClick={() => onAddSubSet?.(index, 0)}>Add drop</button>
+      <button onClick={() => onRemoveSubSet?.(index, 0, 1)}>Remove first drop</button>
     </>
   ),
 }));
@@ -263,9 +269,9 @@ describe('AddWorkoutModal', () => {
       await settle();
     }
     // Link 1→2 and 2→3, then split 2|3 again: only the first two stay grouped.
-    fireEvent.click(screen.getAllByText('Superset with next', { exact: true })[0]!);
-    fireEvent.click(screen.getAllByText('Superset with next', { exact: true })[0]!);
-    fireEvent.click(screen.getAllByText('Unlink', { exact: true })[1]!);
+    fireEvent.click(screen.getAllByText('Make a superset', { exact: true })[0]!);
+    fireEvent.click(screen.getAllByText('Make a superset', { exact: true })[0]!);
+    fireEvent.click(screen.getAllByText('Unlink superset', { exact: true })[1]!);
     fireEvent.click(screen.getByText('Save Workout', { exact: true }));
 
     await waitFor(() => assert.equal(created.length, 1));
@@ -273,6 +279,49 @@ describe('AddWorkoutModal', () => {
     assert.ok(a!.supersetId);
     assert.equal(b!.supersetId, a!.supersetId);
     assert.notEqual(c!.supersetId, b!.supersetId);
+  });
+
+  it('persists a drop set as parts sharing a set number, and simple sets stay untyped', async () => {
+    render(<AddWorkoutModal />);
+    await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
+
+    fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+      fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
+      await settle();
+    }
+    fireEvent.click(screen.getAllByText('Make first set a drop', { exact: true })[0]!);
+    fireEvent.click(screen.getByText('Save Workout', { exact: true }));
+
+    await waitFor(() => assert.equal(created.length, 1));
+    const [typed, plain] = (created[0]!.data as { performedExercises: Workout['performedExercises'] }).performedExercises;
+    // Choosing Drop set adds its first drop; both parts are stored as set 1.
+    assert.deepEqual(typed!.sets.map((set) => [set.setNumber, set.type]), [[1, 'drop'], [1, 'drop']]);
+    assert.equal('type' in plain!.sets[0]!, false);
+  });
+
+  it('adds and removes drops, and removing the last drop makes it a simple set again', async () => {
+    render(<AddWorkoutModal />);
+    await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
+
+    fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+      fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
+      await settle();
+    }
+    const [first, second] = [0, 1];
+    fireEvent.click(screen.getAllByText('Make first set a drop', { exact: true })[first]!);
+    fireEvent.click(screen.getAllByText('Add drop', { exact: true })[first]!);
+    fireEvent.click(screen.getAllByText('Make first set a drop', { exact: true })[second]!);
+    fireEvent.click(screen.getAllByText('Remove first drop', { exact: true })[second]!);
+    fireEvent.click(screen.getByText('Save Workout', { exact: true }));
+
+    await waitFor(() => assert.equal(created.length, 1));
+    const [dropped, reverted] = (created[0]!.data as { performedExercises: Workout['performedExercises'] }).performedExercises;
+    assert.deepEqual(dropped!.sets.map((set) => [set.setNumber, set.type]), [[1, 'drop'], [1, 'drop'], [1, 'drop']]);
+    assert.deepEqual(reverted!.sets.map((set) => [set.setNumber, set.type]), [[1, undefined]]);
   });
 
   it('reads and writes the web date using the documented UTC-date/local-noon contract', async () => {

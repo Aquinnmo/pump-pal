@@ -119,3 +119,18 @@ assert.deepEqual(supersetNotification.setCompleted, [true, false, false, false])
 assert.equal(supersetNotification.detail, 'Row · 10 reps · 95 lbs');
 // One segment for the whole superset — iOS slices the flat sets by these counts.
 assert.deepEqual(supersetNotification.segments, [{ sets: 4, started: true, completed: false }]);
+
+// A drop set: each drop is its own step with its own detail, and every part counts
+// toward the exercise's one segment.
+const onDropSet = present([
+  row('Bench', [set({ type: 'drop', completed: true, subSets: [{ reps: 6, weight: '95', durationMinutes: 0, durationSeconds: 0 }] })]),
+]);
+assert.equal(onDropSet.detail, 'Bench · Drop 2 of 2 · 6 reps · 95 lbs');
+assert.deepEqual(onDropSet.setCompleted, [true, false]);
+assert.deepEqual(onDropSet.setStarts, [true, false]);
+// Shown as one set, not done until its last drop is; the segment is one set wide.
+assert.deepEqual([onDropSet.completedSets, onDropSet.totalSets], [0, 1]);
+assert.deepEqual(onDropSet.segments, [{ sets: 1, started: true, completed: false }]);
+// The tap guard still counts the ticked drop, so the next tap has a fresh expectation.
+assert.equal(onDropSet.completedParts, 1);
+assert.deepEqual(onDropSet.actions, ['completeSet', 'uncompleteSet']);

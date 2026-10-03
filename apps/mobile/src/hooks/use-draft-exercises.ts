@@ -1,6 +1,16 @@
 import { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
-import { DraftExerciseRow, DraftSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
-import { cascadeSetField, collapseSetsToDraft, linkedToNext, makeUid } from '@/lib/workout-conversion';
+import { SET_TYPES, setTypeOf } from '@/constants/set-types';
+import { DraftExerciseRow, DraftSet, DraftSubSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
+import {
+  cascadeSetField,
+  collapseSetsToDraft,
+  linkedToNext,
+  makeUid,
+  nextSubSet,
+  setParts,
+  stageOf,
+  withStage,
+} from '@/lib/workout-conversion';
 import { useMemo, useState } from 'react';
 import { reorderItems } from 'react-native-reorderable-list';
 
@@ -116,52 +126,69 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
   const updateExerciseField = (i: number, field: 'exerciseType', value: ExerciseType) =>
     setExercises((prev) => prev.map((ex, idx) => (idx === i ? { ...ex, [field]: value } : ex)));
 
-  const updateSet = (i: number, setIdx: number, field: 'weight' | 'durationMinutes' | 'durationSeconds', value: string) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        if (field === 'weight') return { ...ex, sets: cascadeSetField(ex.sets, setIdx, 'weight', value) };
-        const n = Number(value) || 0;
-        return { ...ex, sets: cascadeSetField(ex.sets, setIdx, field, field === 'durationSeconds' ? Math.min(59, n) : n) };
-      })
+  // Applies fn to row i's sets; every set/part mutator below goes through it.
+  const mapSets = (i: number, fn: (sets: DraftSet[]) => DraftSet[]) =>
+    setExercises((prev) => prev.map((ex, idx) => (idx === i ? { ...ex, sets: fn(ex.sets) } : ex)));
+
+  const mapSet = (i: number, setIdx: number, fn: (set: DraftSet) => DraftSet) =>
+    mapSets(i, (sets) => sets.map((s, si) => (si === setIdx ? fn(s) : s)));
+
+  // `stage` picks the part of a drop set (0 = the set itself); see stageOf.
+  const updateSet = (i: number, setIdx: number, field: 'weight' | 'durationMinutes' | 'durationSeconds', value: string, stage = 0) =>
+    mapSets(i, (sets) => {
+      if (field === 'weight') return cascadeSetField(sets, setIdx, 'weight', value, stage);
+      const n = Number(value) || 0;
+      return cascadeSetField(sets, setIdx, field, field === 'durationSeconds' ? Math.min(59, n) : n, stage);
+    });
+
+  const bumpReps = (i: number, setIdx: number, delta: number, stage: number) =>
+    mapSets(i, (sets) =>
+      cascadeSetField(sets, setIdx, 'reps', Math.max(0, stageOf(sets[setIdx], stage).reps + delta), stage)
     );
 
-  const bumpReps = (i: number, setIdx: number, delta: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: cascadeSetField(ex.sets, setIdx, 'reps', Math.max(0, ex.sets[setIdx].reps + delta)) };
-      })
-    );
+  const incrementSet = (i: number, setIdx: number, stage = 0) => bumpReps(i, setIdx, 1, stage);
 
-  const incrementSet = (i: number, setIdx: number) => bumpReps(i, setIdx, 1);
+  const decrementSet = (i: number, setIdx: number, stage = 0) => bumpReps(i, setIdx, -1, stage);
 
-  const decrementSet = (i: number, setIdx: number) => bumpReps(i, setIdx, -1);
+  // A part as it starts life in this editor: not done, when completion is tracked.
+  const fresh = <T extends DraftSubSet>(part: T): T => ({ ...part, ...(trackCompletion ? { completed: false } : {}) });
 
+  // Copies the whole last set, drops included, so drop set after drop set is one tap.
   const addSet = (i: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        const last = ex.sets[ex.sets.length - 1] ?? blankSet();
-        return { ...ex, sets: [...ex.sets, { ...last, ...(trackCompletion ? { completed: false } : {}) }] };
-      })
-    );
+    mapSets(i, (sets) => {
+      const last = sets[sets.length - 1] ?? blankSet();
+      return [...sets, { ...fresh(last), ...(last.subSets ? { subSets: last.subSets.map(fresh) } : {}) }];
+    });
 
   const removeSet = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i || ex.sets.length <= 1) return ex;
-        return { ...ex, sets: ex.sets.filter((_, si) => si !== setIdx) };
-      })
-    );
+    mapSets(i, (sets) => (sets.length <= 1 ? sets : sets.filter((_, si) => si !== setIdx)));
 
-  const toggleSetComplete = (i: number, setIdx: number) =>
-    setExercises((prev) =>
-      prev.map((ex, idx) => {
-        if (idx !== i) return ex;
-        return { ...ex, sets: ex.sets.map((s, si) => (si === setIdx ? { ...s, completed: !s.completed } : s)) };
-      })
-    );
+  const toggleSetComplete = (i: number, setIdx: number, stage = 0) =>
+    mapSet(i, setIdx, (s) => withStage(s, stage, { completed: !stageOf(s, stage).completed }));
+
+  // Simple is stored as no type at all, so untyped sets stay byte-identical to before.
+  // A type with parts gets its first extra part straight away, so picking "Drop set"
+  // visibly makes one — on any set, the first included.
+  const setSetType = (i: number, setIdx: number, type: string) =>
+    mapSet(i, setIdx, (s) => {
+      const def = SET_TYPES.find((t) => t.id === type) ?? setTypeOf(undefined);
+      const base = { ...s, type: def.id === 'normal' ? undefined : def.id, subSets: undefined };
+      if (!def.subSet) return base;
+      return { ...base, subSets: s.subSets?.length ? s.subSets : [fresh(nextSubSet(def, s))] };
+    });
+
+  const addSubSet = (i: number, setIdx: number) =>
+    mapSet(i, setIdx, (s) => {
+      const parts = setParts(s);
+      return { ...s, subSets: [...(s.subSets ?? []), fresh(nextSubSet(setTypeOf(s), parts[parts.length - 1]))] };
+    });
+
+  // Removing the last extra part leaves nothing to drop to, so the set goes back to simple.
+  const removeSubSet = (i: number, setIdx: number, stage: number) =>
+    mapSet(i, setIdx, (s) => {
+      const subSets = (s.subSets ?? []).filter((_, k) => k !== stage - 1);
+      return subSets.length > 0 ? { ...s, subSets } : { ...s, type: undefined, subSets: undefined };
+    });
 
   // Links row i to row i+1, merging both rows' supersets; if they are already linked,
   // splits the superset between them by giving everything after i a fresh id. Always a
@@ -203,6 +230,9 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
     removeSet,
     toggleSetComplete,
     toggleSuperset,
+    setSetType,
+    addSubSet,
+    removeSubSet,
     reorder,
   };
 }

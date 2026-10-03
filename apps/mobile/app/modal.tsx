@@ -92,6 +92,9 @@ export default function AddWorkoutModal() {
     addSet,
     removeSet,
     toggleSuperset,
+    setSetType,
+    addSubSet,
+    removeSubSet,
     reorder,
     selectExercise,
   } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName, normalize: normalizeAutoFill });
@@ -672,6 +675,9 @@ export default function AddWorkoutModal() {
               linkedToNext={linkedToNext(exercises, i)}
               canLinkNext={i < exercises.length - 1}
               onToggleSuperset={toggleSuperset}
+              onChangeSetType={setSetType}
+              onAddSubSet={addSubSet}
+              onRemoveSubSet={removeSubSet}
             />
           )}
           ListFooterComponent={

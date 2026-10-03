@@ -21,6 +21,7 @@ struct LiveUpdateNotificationPayloadRecord: Record {
   @Field var actions: [String] = []
   @Field var setDetails: [String] = []
   @Field var setCompleted: [Bool] = []
+  @Field var setStarts: [Bool] = []
   @Field var latencyTraceId: String? = nil
   @Field var latencyStartedAtMs: Double? = nil
 }
@@ -116,9 +117,14 @@ private final class WorkoutActivityLifecycle {
           let state = LiveUpdateSharedStore.StoredState(
             workoutId: payload.workoutId,
             title: payload.title, startedAt: startedAt, rowSetCounts: payload.segments.map(\.sets),
-            sets: zip(payload.setCompleted, payload.setDetails).map { .init(completed: $0, detail: $1) }),
+            sets: zip(payload.setCompleted, payload.setDetails).enumerated().map { i, pair in
+              // A payload without setStarts (older JS) means every part is its own set.
+              .init(completed: pair.0, detail: pair.1,
+                startsSet: payload.setStarts.count == payload.setCompleted.count ? payload.setStarts[i] : true)
+            }),
           // JS and native derive the same presentation; a mismatch is a parity bug.
-          state.content.completedSets == payload.progress, payload.expectedCompletedSets == payload.progress,
+          state.content.completedSets == payload.progress,
+          payload.expectedCompletedSets == state.content.completedParts,
           state.content.actions == payload.actions else { return false }
     let attributes = WorkoutActivityAttributes(workoutId: payload.workoutId, title: payload.title, startedAt: startedAt)
     generation += 1
