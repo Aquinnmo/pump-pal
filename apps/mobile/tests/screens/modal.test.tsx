@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import React, { type ReactNode } from 'react';
-import type { Workout } from '../../src/types/workout';
+import type { DraftExerciseRow, DraftPartTarget, Workout } from '../../src/types/workout';
 
 const user = { uid: 'modal-test-user' };
 const router = { back: () => undefined };
@@ -114,10 +114,28 @@ mock.module('@/ui/primitives/dropdown', () => ({
   Dropdown: ({ placeholder }: { placeholder: string }) => <button>{placeholder}</button>,
 }));
 mock.module('@/ui/workout/exercise-card', () => ({
-  ExerciseCard: ({ index, onSelectExercise }: { index: number; onSelectExercise: (index: number, selection: unknown) => void }) => (
-    <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
-      Choose Bench Press
-    </button>
+  ExerciseCard: ({ exercise, index, onSelectExercise, canLinkNext, linkedToNext, onToggleSuperset, onChangeSetType, onAddSubSet, onRemovePart }: {
+    exercise: DraftExerciseRow;
+    index: number;
+    onSelectExercise: (index: number, selection: unknown) => void;
+    canLinkNext?: boolean;
+    linkedToNext?: boolean;
+    onToggleSuperset?: (index: number) => void;
+    onChangeSetType?: (index: number, setIdx: number, type: string) => void;
+    onAddSubSet?: (index: number, setIdx: number) => void;
+    onRemovePart: (target: DraftPartTarget) => void;
+  }) => (
+    <>
+      <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
+        Choose Bench Press
+      </button>
+      {canLinkNext && (
+        <button onClick={() => onToggleSuperset?.(index)}>{linkedToNext ? 'Unlink superset' : 'Make a superset'}</button>
+      )}
+      <button onClick={() => onChangeSetType?.(index, 0, 'drop')}>Make first set a drop</button>
+      <button onClick={() => onAddSubSet?.(index, 0)}>Add drop</button>
+      <button onClick={() => onRemovePart({ exerciseUid: exercise.uid, setUid: exercise.sets[0].uid!, partUid: exercise.sets[0].subSets![0].uid! })}>Remove first drop</button>
+    </>
   ),
 }));
 // Headless picker behind "Add Exercise": shows its choice only while open, then closes.
@@ -239,6 +257,72 @@ describe('AddWorkoutModal', () => {
     assert.equal(data.performedExercises.length, 1);
     assert.equal('completed' in data.performedExercises[0]!.sets[0]!, false);
     assert.equal(data.durationSeconds, null, 'manual history starts without an elapsed session');
+  });
+
+  it('persists a superset as a shared supersetId on adjacent exercises', async () => {
+    render(<AddWorkoutModal />);
+    await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
+
+    fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
+    for (let i = 0; i < 3; i++) {
+      fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+      fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
+      await settle();
+    }
+    // Link 1→2 and 2→3, then split 2|3 again: only the first two stay grouped.
+    fireEvent.click(screen.getAllByText('Make a superset', { exact: true })[0]!);
+    fireEvent.click(screen.getAllByText('Make a superset', { exact: true })[0]!);
+    fireEvent.click(screen.getAllByText('Unlink superset', { exact: true })[1]!);
+    fireEvent.click(screen.getByText('Save Workout', { exact: true }));
+
+    await waitFor(() => assert.equal(created.length, 1));
+    const [a, b, c] = (created[0]!.data as { performedExercises: Workout['performedExercises'] }).performedExercises;
+    assert.ok(a!.supersetId);
+    assert.equal(b!.supersetId, a!.supersetId);
+    assert.notEqual(c!.supersetId, b!.supersetId);
+  });
+
+  it('persists a drop set as parts sharing a set number, and simple sets stay untyped', async () => {
+    render(<AddWorkoutModal />);
+    await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
+
+    fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+      fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
+      await settle();
+    }
+    fireEvent.click(screen.getAllByText('Make first set a drop', { exact: true })[0]!);
+    fireEvent.click(screen.getByText('Save Workout', { exact: true }));
+
+    await waitFor(() => assert.equal(created.length, 1));
+    const [typed, plain] = (created[0]!.data as { performedExercises: Workout['performedExercises'] }).performedExercises;
+    // Choosing Drop set adds its first drop; both parts are stored as set 1.
+    assert.deepEqual(typed!.sets.map((set) => [set.setNumber, set.type]), [[1, 'drop'], [1, 'drop']]);
+    assert.equal('type' in plain!.sets[0]!, false);
+  });
+
+  it('adds and removes drops, and removing the last drop makes it a simple set again', async () => {
+    render(<AddWorkoutModal />);
+    await waitFor(() => assert.ok(screen.getByText('Save Workout', { exact: true })));
+
+    fireEvent.change(screen.getByPlaceholderText('Workout name (e.g. Push Day)'), { target: { value: 'Push Day' } });
+    for (let i = 0; i < 2; i++) {
+      fireEvent.click(screen.getByText('Add Exercise', { exact: true }));
+      fireEvent.click(screen.getByText('Pick Bench Press', { exact: true }));
+      await settle();
+    }
+    const [first, second] = [0, 1];
+    fireEvent.click(screen.getAllByText('Make first set a drop', { exact: true })[first]!);
+    fireEvent.click(screen.getAllByText('Add drop', { exact: true })[first]!);
+    fireEvent.click(screen.getAllByText('Make first set a drop', { exact: true })[second]!);
+    fireEvent.click(screen.getAllByText('Remove first drop', { exact: true })[second]!);
+    fireEvent.click(screen.getByText('Save Workout', { exact: true }));
+
+    await waitFor(() => assert.equal(created.length, 1));
+    const [dropped, reverted] = (created[0]!.data as { performedExercises: Workout['performedExercises'] }).performedExercises;
+    assert.deepEqual(dropped!.sets.map((set) => [set.setNumber, set.type]), [[1, 'drop'], [1, 'drop'], [1, 'drop']]);
+    assert.deepEqual(reverted!.sets.map((set) => [set.setNumber, set.type]), [[1, undefined]]);
   });
 
   it('reads and writes the web date using the documented UTC-date/local-noon contract', async () => {

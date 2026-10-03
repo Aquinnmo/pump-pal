@@ -142,6 +142,27 @@ describe('PlannedWorkoutsScreen', () => {
     assert.deepEqual(pushed, [{ pathname: '/modal', params: { mode: 'plan', suggestion: 'Push' } }]);
   });
 
+  it('renders a superset as one box holding its exercises', async () => {
+    const exercise = (label: string, supersetId?: string) => ({
+      order: 0,
+      exerciseId: label,
+      exerciseRefPath: `exercises/${label}`,
+      exerciseNameSnapshot: label,
+      variationId: null,
+      variationNameSnapshot: null,
+      sets: [{ setNumber: 1, reps: 10, weight: 100 }],
+      ...(supersetId ? { supersetId } : {}),
+    });
+    plans = [{ ...workout('p1', 'Pull', 0), performedExercises: [exercise('Bench', 's'), exercise('Row', 's'), exercise('Curl')] }];
+    render(<PlannedWorkoutsScreen />);
+    await waitFor(() => assert.ok(screen.getByText('Bench', { exact: true })));
+
+    const superset = screen.getByText('Superset', { exact: true }).parentElement!;
+    assert.ok(superset.contains(screen.getByText('Bench', { exact: true })));
+    assert.ok(superset.contains(screen.getByText('Row', { exact: true })));
+    assert.equal(superset.contains(screen.getByText('Curl', { exact: true })), false);
+  });
+
   it('renders the loading baseline until planned records resolve', async () => {
     holdLoad = true;
     render(<PlannedWorkoutsScreen />);

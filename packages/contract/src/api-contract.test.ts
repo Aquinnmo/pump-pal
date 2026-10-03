@@ -109,6 +109,8 @@ assert.equal(updateWorkoutInput.safeParse({ name: 'Renamed', baseVersion: 'v2' }
 // performedSet: superset of fields, all optional except setNumber
 assert.equal(performedSet.safeParse({ setNumber: 1, reps: 8, weight: 135 }).success, true);
 assert.equal(performedSet.safeParse({ reps: 8 }).success, false); // missing setNumber
+// type is a lenient string: an id this build has never heard of must survive parsing.
+assert.equal(performedSet.parse({ setNumber: 1, reps: 8, type: 'future-type' }).type, 'future-type');
 
 // ---- profile: allowlist rejects unknown/server-owned fields ----
 assert.equal(
@@ -340,6 +342,8 @@ assert.equal(performedSet.safeParse({ ...validSet, setNumber: 0 }).success, fals
 assert.equal(performedSet.safeParse({ ...validSet, rpe: 11 }).success, false);
 assert.equal(performedSet.safeParse({ ...validSet, reps: -1 }).success, false);
 assert.equal(performedExercise.safeParse(validExercise).success, true);
+// supersetId must survive parsing — zod strips unknown keys, which would silently un-group supersets.
+assert.equal(performedExercise.parse({ ...validExercise, supersetId: 's1' }).supersetId, 's1');
 for (const key of ['variationId', 'variationNameSnapshot']) {
   const missing = { ...validExercise } as Record<string, unknown>;
   delete missing[key];

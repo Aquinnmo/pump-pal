@@ -12,6 +12,7 @@ import { DevelopmentProgressSummary } from "@/ui/development-progress-summary";
 import { MuscleInsightCards } from "@/ui/muscle-insight-cards";
 import { MuscleLoadSummary } from "@/ui/muscle-load-summary";
 import { Dropdown } from "@/ui/primitives/dropdown";
+import { StatHelp, StatHelpFormula, StatHelpText } from "@/ui/primitives/stat-help";
 import { SetConsistencySummary } from "@/ui/set-consistency-summary";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -499,8 +500,22 @@ export default function AnalyticsScreen() {
           )}
 
           <View style={styles.section}>
-            <View style={styles.sectionHeading}>
+            <View style={[styles.sectionHeading, styles.sectionHeadingRow]}>
               <Text style={styles.sectionTitle}>Estimated 1RM</Text>
+              <StatHelp title="Estimated 1RM">
+                <StatHelpText>
+                  An estimate for the most weight you could lift for one rep on this
+                  exercise.
+                </StatHelpText>
+                <StatHelpText>
+                  We take your best set each day and work it out from the
+                  weight and reps.
+                </StatHelpText>
+                <StatHelpFormula>Weight × (1 + reps ÷ 30)</StatHelpFormula>
+                <StatHelpText>
+                  Example: 100 lbs for 10 reps ≈ 133 lbs
+                </StatHelpText>
+              </StatHelp>
             </View>
             <View style={styles.featurePanel}>
               {strengthSummary && strengthChartData ? (
@@ -652,17 +667,34 @@ export default function AnalyticsScreen() {
               <HighlightRow
                 label="Favorite Workout Type"
                 value={favoriteWorkoutType || "Not available"}
+                help={
+                  <StatHelpText>
+                    The workout type you have logged most often.
+                  </StatHelpText>
+                }
               />
               <View style={styles.divider} />
               <HighlightRow
                 label="Average Workout Time"
                 value={averageWorkoutDuration === null ? "—" : formatDuration(averageWorkoutDuration)}
                 numeric
+                help={
+                  <>
+                    <StatHelpText>
+                      An average of how long your workouts typically last. Only timed workouts are counted.
+                    </StatHelpText>
+                  </>
+                }
               />
               <View style={styles.divider} />
               <HighlightRow
                 label="Favorite Exercise"
                 value={favoriteExercise || "Not available"}
+                help={
+                  <StatHelpText>
+                    The exercise that shows up the most in your workouts.
+                  </StatHelpText>
+                }
               />
               {heaviestLift && (
                 <>
@@ -672,6 +704,12 @@ export default function AnalyticsScreen() {
                     detail={heaviestLift.exercise}
                     value={`${heaviestLift.weight} lbs`}
                     numeric
+                    help={
+                      <StatHelpText>
+                        The most weight you have ever logged for a single set,
+                        on any exercise. Bodyweight sets are not counted.
+                      </StatHelpText>
+                    }
                   />
                 </>
               )}
@@ -702,6 +740,12 @@ export default function AnalyticsScreen() {
                     : null
                 }
                 emptyMessage="No weighted exercises logged yet."
+                help={
+                  <StatHelpText>
+                    The heaviest weight you have logged in one set of this
+                    exercise.
+                  </StatHelpText>
+                }
               />
 
               {bodyweightExerciseList.length > 0 && (
@@ -719,6 +763,12 @@ export default function AnalyticsScreen() {
                         : null
                     }
                     emptyMessage="No bodyweight records yet."
+                    help={
+                      <StatHelpText>
+                        The most reps you have done in one set of this
+                        bodyweight exercise.
+                      </StatHelpText>
+                    }
                   />
                 </>
               )}
@@ -740,6 +790,12 @@ export default function AnalyticsScreen() {
                         : null
                     }
                     emptyMessage="No duration records yet."
+                    help={
+                      <StatHelpText>
+                        The longest you have held or done one set of this
+                        exercise.
+                      </StatHelpText>
+                    }
                   />
                 </>
               )}
@@ -748,6 +804,12 @@ export default function AnalyticsScreen() {
                 label="Longest Workout"
                 value={longestWorkoutDuration === null ? "—" : formatDuration(longestWorkoutDuration)}
                 numeric
+                help={
+                  <StatHelpText>
+                    Your longest workout from start to finish. Only timed
+                    workouts are counted.
+                  </StatHelpText>
+                }
               />
             </View>
           </View>
@@ -867,32 +929,37 @@ function HighlightRow({
   detail,
   value,
   numeric = false,
+  help,
 }: {
   label: string;
   detail?: string;
   value: string;
   numeric?: boolean;
+  help?: ReactNode;
 }) {
   return (
-    <View
-      style={styles.highlightRow}
-      accessible
-      accessibilityLabel={`${label}. ${detail ? `${detail}. ` : ""}${value}`}
-    >
-      <View style={styles.highlightCopy}>
-        <Text style={styles.metricLabel}>{label}</Text>
-        {detail && (
-          <Text style={styles.metricDetail} selectable>
-            {detail}
-          </Text>
-        )}
-      </View>
-      <Text
-        style={[styles.highlightValue, numeric && styles.numeric]}
-        selectable
+    <View style={styles.highlightRow}>
+      <View
+        style={styles.highlightMain}
+        accessible
+        accessibilityLabel={`${label}. ${detail ? `${detail}. ` : ""}${value}`}
       >
-        {value}
-      </Text>
+        <View style={styles.highlightCopy}>
+          <Text style={styles.metricLabel}>{label}</Text>
+          {detail && (
+            <Text style={styles.metricDetail} selectable>
+              {detail}
+            </Text>
+          )}
+        </View>
+        <Text
+          style={[styles.highlightValue, numeric && styles.numeric]}
+          selectable
+        >
+          {value}
+        </Text>
+      </View>
+      {help && <StatHelp title={label}>{help}</StatHelp>}
     </View>
   );
 }
@@ -904,6 +971,7 @@ function PersonalBestRow({
   onSelect,
   value,
   emptyMessage,
+  help,
 }: {
   label: string;
   options: string[];
@@ -911,6 +979,7 @@ function PersonalBestRow({
   onSelect: (value: string) => void;
   value: string | null;
   emptyMessage: string;
+  help?: ReactNode;
 }) {
   return (
     <View style={styles.personalBestRow}>
@@ -918,11 +987,14 @@ function PersonalBestRow({
         <View style={styles.personalBestCopy}>
           <Text style={styles.metricLabel}>{label}</Text>
         </View>
-        {value && (
-          <Text style={[styles.personalBestValue, styles.numeric]} selectable>
-            {value}
-          </Text>
-        )}
+        <View style={styles.personalBestTrailing}>
+          {value && (
+            <Text style={[styles.personalBestValue, styles.numeric]} selectable>
+              {value}
+            </Text>
+          )}
+          {help && <StatHelp title={label}>{help}</StatHelp>}
+        </View>
       </View>
       {options.length > 0 ? (
         <Dropdown
@@ -1017,6 +1089,11 @@ const styles = StyleSheet.create({
   },
   sectionHeading: {
     gap: 2,
+  },
+  sectionHeadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   sectionTitle: {
     color: "#f5f5f5",
@@ -1166,6 +1243,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+  },
+  highlightMain: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
     flexWrap: "wrap",
     gap: 18,
@@ -1210,6 +1293,11 @@ const styles = StyleSheet.create({
   personalBestCopy: {
     flex: 1,
     gap: 3,
+  },
+  personalBestTrailing: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   personalBestValue: {
     flexShrink: 0,

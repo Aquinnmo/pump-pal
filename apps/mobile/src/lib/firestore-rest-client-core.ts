@@ -22,7 +22,8 @@ export class FirestorePermissionError extends Error {
 }
 
 export class FirestoreValidationError extends Error {
-  constructor(message: string, public readonly status = 400) {
+  /** `reason` is Firestore's canonical status string (e.g. FAILED_PRECONDITION), when the body names one. */
+  constructor(message: string, public readonly status = 400, public readonly reason?: string) {
     super(message);
     this.name = 'FirestoreValidationError';
   }
@@ -180,9 +181,10 @@ async function request(
       if (!response.ok) {
         // Firestore's body names the real cause — a missing composite index arrives here with
         // the console URL that creates it. Only read on the failure path.
-        const failure = (await response.json().catch(() => undefined)) as { error?: { message?: unknown } } | undefined;
+        const failure = (await response.json().catch(() => undefined)) as { error?: { message?: unknown; status?: unknown } } | undefined;
         const detail = typeof failure?.error?.message === 'string' ? ` ${failure.error.message}` : '';
-        throw new FirestoreValidationError(`Firestore rejected this request (${response.status}).${detail}`, response.status);
+        const reason = typeof failure?.error?.status === 'string' ? failure.error.status : undefined;
+        throw new FirestoreValidationError(`Firestore rejected this request (${response.status}).${detail}`, response.status, reason);
       }
       deps.log?.({ method, url, status, retried: retried || undefined });
       return response.json().catch(() => undefined);
@@ -233,7 +235,15 @@ export function createFirestoreRestClient(deps: FirestoreClientDeps) {
           })),
         },
         signal
-      )) as { writeResults?: { updateTime?: string }[] };
+      ).catch((error) => {
+        // A stale `updateTime` precondition comes back as 400 FAILED_PRECONDITION, not 409
+        // (only `exists: false` uses ALREADY_EXISTS/409). Scoped to commit: a query's
+        // missing-index error shares the same status and must stay a validation error.
+        if (error instanceof FirestoreValidationError && error.reason === 'FAILED_PRECONDITION') {
+          throw new FirestoreConflictError();
+        }
+        throw error;
+      })) as { writeResults?: { updateTime?: string }[] };
       return writes.map((_, index) => ({ version: body.writeResults?.[index]?.updateTime }));
     },
 

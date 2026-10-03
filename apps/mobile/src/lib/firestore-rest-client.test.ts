@@ -79,6 +79,13 @@ async function main() {
     await assert.rejects(() => rest.runQuery({ collectionId: 'workouts', limit: 1 }), (error: Error) => error instanceof FirestoreValidationError && error.message.includes(indexUrl));
   }
 
+  // A stale updateTime precondition is a conflict on commit, not a permanent rejection.
+  {
+    const rest = client(async () => response({ status: 400, body: { error: { status: 'FAILED_PRECONDITION', message: 'the stored version (2) does not match the required base version (1)' } } }));
+    await assert.rejects(() => rest.commit([{ path: 'workouts/w1', fields: {}, updateMask: ['name'], currentDocument: { updateTime: '1' } }]), FirestoreConflictError);
+    await assert.rejects(() => rest.runQuery({ collectionId: 'workouts', limit: 1 }), FirestoreValidationError);
+  }
+
   const missing = client(async () => response({ status: 404 }));
   assert.equal(await missing.getDocument('workouts/missing'), undefined);
   await assert.rejects(() => missing.runQuery({ collectionId: 'workouts', limit: 1 }), FirestoreNotFoundError);

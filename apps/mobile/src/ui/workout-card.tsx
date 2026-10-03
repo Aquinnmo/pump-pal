@@ -1,8 +1,7 @@
 import { Workout } from '@/types/workout';
+import { ExerciseSummaryList } from '@/ui/workout/exercise-summary-list';
 import {
-  exerciseLabel,
-  summarizePerformedExercise,
-  summarizePerformedExerciseSetGroups,
+  shareExerciseLines,
   toDateObj,
   workoutTotalReps,
   workoutVolume,
@@ -12,6 +11,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Dimensions, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -75,7 +75,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
   }));
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0,0,0,${0.7 * overlayOpacity.value})`,
+    backgroundColor: interpolateColor(overlayOpacity.value, [0, 1], ['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']),
   }));
 
   const handleOpen = useCallback(() => {
@@ -92,9 +92,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
       ? `${(totalVolume / 1000).toFixed(1).replace(/\.0$/, '')}k`
       : `${totalVolume}`;
 
-    const exerciseLines = performedExercises.map((pe) => {
-      return `  • ${exerciseLabel(pe)} — ${summarizePerformedExercise(pe)}`;
-    }).join('\n');
+    const exerciseLines = shareExerciseLines(performedExercises);
 
     const metricParts: string[] = [];
     if (totalVolume > 0) metricParts.push(`Volume: ${fmtVolume} lbs`);
@@ -144,18 +142,7 @@ export function WorkoutCard({ workout, onDelete, onEdit }: WorkoutCardProps) {
 
               <ScrollView showsVerticalScrollIndicator={false} style={styles.modalScroll}>
                 {performedExercises.length > 0 ? (
-                  performedExercises.map((pe, i) => (
-                    <View key={i} style={styles.modalExercise}>
-                      <Text style={styles.modalExerciseName}>{exerciseLabel(pe)}</Text>
-                      <View style={styles.modalExerciseDetails}>
-                        {summarizePerformedExerciseSetGroups(pe).map((setSummary, setIndex) => (
-                          <Text key={setIndex} style={styles.modalExerciseDetail}>
-                            {setSummary}
-                          </Text>
-                        ))}
-                      </View>
-                    </View>
-                  ))
+                  <ExerciseSummaryList exercises={performedExercises} style={styles.modalExerciseList} />
                 ) : (
                   <Text style={styles.modalEmpty}>No exercises logged.</Text>
                 )}
@@ -392,40 +379,8 @@ const styles = StyleSheet.create({
   modalScroll: {
     flexGrow: 0,
   },
-  modalExercise: {
-    backgroundColor: '#151515',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+  modalExerciseList: {
     marginBottom: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  modalExerciseName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
-    flex: 1,
-    minWidth: 0,
-    paddingRight: 8,
-  },
-  modalExerciseDetails: {
-    alignItems: 'flex-end',
-    flexShrink: 0,
-    gap: 4,
-    minWidth: 120,
-  },
-  modalExerciseDetail: {
-    fontSize: 13,
-    color: '#e54242',
-    fontWeight: '500',
-    lineHeight: 18,
-    textAlign: 'right',
   },
   modalEmpty: {
     fontSize: 14,

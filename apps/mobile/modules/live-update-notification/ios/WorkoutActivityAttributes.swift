@@ -30,9 +30,15 @@ public struct WorkoutActivityAttributes: ActivityAttributes {
     public var detail: String?
     public var segments: [SegmentState]
     public var actions: [String] // 'completeSet' | 'uncompleteSet' | 'finishWorkout'
+    // completedSets/totalSets are what's shown and count sets — a drop set is one.
+    // completedParts counts every ticked part, drops included; it is the stale-tap
+    // guard intents carry, since it moves on every tap. Optional so a state encoded
+    // by an older build still decodes; nil means parts == sets.
+    public var completedParts: Int?
 
-    public init(completedSets: Int, totalSets: Int, detail: String?, segments: [SegmentState], actions: [String], title: String? = nil) {
+    public init(completedSets: Int, totalSets: Int, detail: String?, segments: [SegmentState], actions: [String], title: String? = nil, completedParts: Int? = nil) {
       self.title = title
+      self.completedParts = completedParts
       self.completedSets = completedSets
       self.totalSets = totalSets
       self.detail = detail

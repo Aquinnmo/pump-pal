@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { randomId } from '@/data/id';
+import { ensureDraftRowIds } from '@/lib/workout-conversion';
 import type { DraftExerciseRow } from '@/types/workout';
 
 // The live workout's only home while it is being edited. A module-level singleton
@@ -71,6 +72,7 @@ export function startSession(init: {
     id: randomId('session'),
     startedAt: new Date().toISOString(),
     ...init,
+    rows: ensureDraftRowIds(init.rows),
   };
   notify();
   persist();
@@ -83,7 +85,7 @@ export function startSession(init: {
 export function updateSession(rows: DraftExerciseRow[], name?: string): void {
   if (!session) return;
   sessionGeneration++;
-  session = { ...session, rows, ...(name !== undefined ? { name } : {}) };
+  session = { ...session, rows: ensureDraftRowIds(rows), ...(name !== undefined ? { name } : {}) };
   notify();
   persist();
 }
@@ -131,7 +133,8 @@ export async function loadSession(): Promise<ActiveSession | null> {
     return null;
   }
   sessionGeneration++;
-  session = stored;
+  session = { ...stored, rows: ensureDraftRowIds(stored.rows) };
   notify();
+  if (session.rows !== stored.rows) persist();
   return session;
 }

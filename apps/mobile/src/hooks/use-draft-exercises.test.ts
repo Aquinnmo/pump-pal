@@ -66,6 +66,22 @@ withDraft({
   );
 });
 
+// normalize repeats the most frequent history set across every slot; without it
+// the history is copied verbatim.
+const unevenHistory = [historyWorkout('Push Day', [
+  { setNumber: 1, reps: 10, weight: 100 },
+  { setNumber: 2, reps: 10, weight: 100 },
+  { setNumber: 3, reps: 6, weight: 100 },
+])];
+withDraft({ workoutName: 'Push Day', workoutHistory: unevenHistory, normalize: true }, (result) => {
+  act(() => result.current.addExercise(selection()));
+  assert.deepEqual(result.current.exercises[0]!.sets.map((s) => [s.reps, s.weight]), [[10, '100'], [10, '100'], [10, '100']]);
+});
+withDraft({ workoutName: 'Push Day', workoutHistory: unevenHistory }, (result) => {
+  act(() => result.current.addExercise(selection()));
+  assert.deepEqual(result.current.exercises[0]!.sets.map((s) => [s.reps, s.weight]), [[10, '100'], [10, '100'], [6, '100']]);
+});
+
 // Same-name history wins over a different-name match, even when it appears
 // later in the supplied history. Matching also includes null variation ids.
 withDraft({
@@ -112,9 +128,10 @@ withDraft({ workoutHistory: [historyWorkout('Other', [{ setNumber: 1, reps: 5, w
     sets: [draftSet({ reps: 4, weight: '' })],
   });
   act(() => result.current.setExercises([existing]));
+  const existingSets = result.current.exercises[0]!.sets;
   act(() => result.current.selectExercise(0, selection({ variationId: 'new-variation', label: 'New Exercise' })));
   const row = result.current.exercises[0]!;
-  assert.deepEqual(row.sets, existing.sets);
+  assert.equal(row.sets, existingSets);
   assert.equal(row.exerciseId, 'bench-press');
   assert.equal(row.variationId, 'new-variation');
   assert.equal(row.label, 'New Exercise');

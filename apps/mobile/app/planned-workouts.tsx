@@ -8,7 +8,7 @@ import { Workout } from '@/types/workout';
 import { showAlert } from '@/lib/alert';
 import { generateSplitWorkoutNames } from '@/lib/workout-suggestions';
 import { predictWorkoutAfterName } from '@/lib/predict-next-workout';
-import { exerciseLabel, summarizePerformedExerciseSetGroups } from '@/lib/workout-conversion';
+import { ExerciseSummaryList } from '@/ui/workout/exercise-summary-list';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
@@ -194,18 +194,7 @@ export default function PlannedWorkoutsScreen() {
               </View>
 
               {(plan.performedExercises ?? []).length > 0 ? (
-                <View style={styles.exerciseList}>
-                  {(plan.performedExercises ?? []).map((pe, i) => (
-                    <View key={i} style={styles.exerciseRow}>
-                      <Text style={styles.exerciseName}>{exerciseLabel(pe)}</Text>
-                      <View style={styles.exerciseDetails}>
-                        {summarizePerformedExerciseSetGroups(pe).map((setSummary, setIndex) => (
-                          <Text key={setIndex} style={styles.exerciseSummary}>{setSummary}</Text>
-                        ))}
-                      </View>
-                    </View>
-                  ))}
-                </View>
+                <ExerciseSummaryList exercises={plan.performedExercises ?? []} style={styles.exerciseList} />
               ) : (
                 <Text style={styles.exerciseLineEmpty}>No exercises added yet</Text>
               )}
@@ -369,42 +358,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   exerciseList: {
-    gap: 8,
     marginBottom: 12,
-  },
-  exerciseRow: {
-    backgroundColor: '#151515',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  exerciseName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#fff',
-    flex: 1,
-    minWidth: 0,
-    paddingRight: 8,
-  },
-  exerciseDetails: {
-    alignItems: 'flex-end',
-    flexShrink: 0,
-    gap: 4,
-    minWidth: 120,
-  },
-  exerciseSummary: {
-    fontSize: 13,
-    color: '#e54242',
-    fontWeight: '500',
-    lineHeight: 18,
-    textAlign: 'right',
   },
   exerciseLineEmpty: {
     fontSize: 13,

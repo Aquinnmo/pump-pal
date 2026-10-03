@@ -12,12 +12,17 @@ public enum LiveUpdateSharedStore {
   private static let stateFile = "workout-state-v2.json"
   private static let journalFile = "workout-journal.json"
 
+  /// One tappable part: a simple set, or one part of a drop set.
   public struct StoredSet: Codable, Equatable {
     public var completed: Bool
     public var detail: String
-    public init(completed: Bool, detail: String) {
+    /// false for a drop continuing the set before it. nil (state written by an older
+    /// build) means true: every part was its own set then.
+    public var startsSet: Bool?
+    public init(completed: Bool, detail: String, startsSet: Bool = true) {
       self.completed = completed
       self.detail = detail
+      self.startsSet = startsSet
     }
   }
 
@@ -33,7 +38,8 @@ public enum LiveUpdateSharedStore {
     public var workoutId: String
     public var title: String
     public var startedAt: Date
-    // Nonblank editor rows in order; sets is their flattened sets.
+    // Per segment (exercise or superset), how many sets it holds — a drop set is one.
+    // `sets` is every tappable part, flattened; setRanges groups parts into sets.
     public var rowSetCounts: [Int]
     public var sets: [StoredSet]
     public var finished = false
@@ -41,7 +47,7 @@ public enum LiveUpdateSharedStore {
 
     public init?(workoutId: String, title: String, startedAt: Date, rowSetCounts: [Int], sets: [StoredSet]) {
       guard !workoutId.isEmpty, rowSetCounts.allSatisfy({ $0 >= 0 }),
-            rowSetCounts.reduce(0, +) == sets.count else { return nil }
+            rowSetCounts.reduce(0, +) == Self.setRanges(sets).count else { return nil }
       self.workoutId = workoutId
       self.title = title
       self.startedAt = startedAt
@@ -51,26 +57,36 @@ public enum LiveUpdateSharedStore {
 
     private var lastCompleted: Int? { sets.lastIndex { $0.completed } }
 
+    /// The part indices of each set, in order: a set runs from its start to the next.
+    static func setRanges(_ sets: [StoredSet]) -> [Range<Int>] {
+      let starts = sets.indices.filter { $0 == 0 || sets[$0].startsSet ?? true }
+      return starts.enumerated().map { k, start in start..<(k + 1 < starts.count ? starts[k + 1] : sets.count) }
+    }
+
     /// Mirrors buildWorkoutNotificationPresentation (src/lib/workout-notification-model.ts).
     public var content: WorkoutActivityAttributes.ContentState {
-      let completed = sets.filter(\.completed).count
+      let completedParts = sets.filter(\.completed).count
+      let ranges = Self.setRanges(sets)
+      let completedSets = ranges.filter { sets[$0].allSatisfy(\.completed) }.count
       let next = (lastCompleted ?? -1) + 1
       var actions: [String] = []
       if !finished && !sets.isEmpty {
         if next >= sets.count { actions = ["finishWorkout", "uncompleteSet"] }
-        else if completed == 0 { actions = ["completeSet"] }
+        else if completedParts == 0 { actions = ["completeSet"] }
         else { actions = ["completeSet", "uncompleteSet"] }
       }
+      // Each segment takes the next `count` sets; its parts are their combined range.
       var offset = 0
       let segments = rowSetCounts.map { count -> WorkoutActivityAttributes.SegmentState in
-        let row = sets[min(offset, sets.count)..<min(offset + count, sets.count)]
+        let owned = ranges[min(offset, ranges.count)..<min(offset + count, ranges.count)]
         offset += count
+        let row = owned.isEmpty ? sets[0..<0] : sets[owned.first!.lowerBound..<owned.last!.upperBound]
         return .init(sets: count, started: row.contains { $0.completed },
           completed: count > 0 && row.allSatisfy { $0.completed })
       }
       let detail = next < sets.count ? sets[next].detail : ""
-      return .init(completedSets: completed, totalSets: sets.count, detail: detail.isEmpty ? nil : detail,
-        segments: segments, actions: actions, title: title)
+      return .init(completedSets: completedSets, totalSets: ranges.count, detail: detail.isEmpty ? nil : detail,
+        segments: segments, actions: actions, title: title, completedParts: completedParts)
     }
 
     /// The same cursor as applyWearAction (src/lib/wear-state.ts).
@@ -155,7 +171,8 @@ public enum LiveUpdateSharedStore {
     access { directory -> JournalEntry? in
       guard var state: StoredState = read(stateFile, at: directory), state.workoutId == workoutId, !state.finished else { return nil }
       let content = state.content
-      guard content.completedSets == expectedCompletedSets, content.actions.contains(action),
+      // The guard counts parts, so a stale or repeated tap is caught even mid drop set.
+      guard (content.completedParts ?? content.completedSets) == expectedCompletedSets, content.actions.contains(action),
             state.apply(action) else { return nil }
       state.revision += 1
       let journal: [JournalEntry] = read(journalFile, at: directory) ?? []

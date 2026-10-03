@@ -132,6 +132,7 @@ function props(overrides: { exercises?: DraftExerciseRow[]; saving?: boolean } =
     onUpdateSet: createMock((_index: number, _setIdx: number, _field: SetField, _value: string) => undefined),
     onIncrementSet: createMock((_index: number, _setIdx: number) => undefined),
     onDecrementSet: createMock((_index: number, _setIdx: number) => undefined),
+    onAddSubSet: createMock((_index: number, _setIdx: number) => undefined),
     ...overrides,
   };
 }
@@ -169,6 +170,7 @@ describe('FocusView', () => {
     assert.ok(screen.getByText('Undo last set', { exact: true }));
     assert.equal(screen.getByText('Undo last set').parentElement?.getAttribute('aria-disabled'), 'true');
 
+    assert.equal(screen.queryByText('Add drop', { exact: true }), null, 'simple sets offer no drop');
     fireEvent.click(screen.getByText('Complete set 1/2', { exact: true }));
     fireEvent.click(screen.getByText('Edit workout', { exact: true }));
     fireEvent.click(screen.getByText('Plate calculator', { exact: true }));
@@ -181,10 +183,10 @@ describe('FocusView', () => {
     assert.equal(viewProps.onEdit.mock.calls.length, 1);
     assert.equal(viewProps.onOpenPlateCalc.mock.calls.length, 1);
     assert.equal(viewProps.onIncrementSet.mock.calls.length, 1);
-    assert.deepEqual(viewProps.onIncrementSet.mock.calls[0], [0, 0]);
+    assert.deepEqual(viewProps.onIncrementSet.mock.calls[0], [0, 0, 0]);
     assert.equal(viewProps.onDecrementSet.mock.calls.length, 1);
-    assert.deepEqual(viewProps.onDecrementSet.mock.calls[0], [0, 0]);
-    assert.deepEqual(viewProps.onUpdateSet.mock.calls, [[0, 0, 'weight', '140']]);
+    assert.deepEqual(viewProps.onDecrementSet.mock.calls[0], [0, 0, 0]);
+    assert.deepEqual(viewProps.onUpdateSet.mock.calls, [[0, 0, 'weight', '140', 0]]);
     assert.equal(viewProps.onUndo.mock.calls.length, 0);
   });
 
@@ -201,6 +203,39 @@ describe('FocusView', () => {
     assert.ok(progress);
     assert.equal(screen.queryByText('Finish Workout', { exact: true }), null);
     assert.equal(screen.queryByText('Complete set 1/2', { exact: true }), null);
+  });
+
+  it('walks a drop set drop by drop with a Complete drop button', async () => {
+    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const dropSet = row({
+      sets: [{
+        reps: 8, weight: '185', durationMinutes: 0, durationSeconds: 0, completed: true, type: 'drop',
+        subSets: [{ reps: 6, weight: '150', durationMinutes: 0, durationSeconds: 0 }],
+      }],
+    });
+    const viewProps = props({ exercises: [dropSet] });
+    render(<FocusView {...viewProps} />);
+
+    assert.ok(screen.getByText('Drop set', { exact: true }));
+    assert.ok(screen.getByDisplayValue('150'));
+    // On the last drop the button finishes the set, so it names the set.
+    fireEvent.click(screen.getByText('Complete set 1/1', { exact: true }));
+    fireEvent.change(screen.getByDisplayValue('150'), { target: { value: '145' } });
+    assert.equal(viewProps.onCompleteSet.mock.calls.length, 1);
+    // Edits land on the drop (stage 1), not the top set.
+    assert.deepEqual(viewProps.onUpdateSet.mock.calls, [[0, 0, 'weight', '145', 1]]);
+    // A drop set offers one more drop for the set you're on.
+    fireEvent.click(screen.getByText('Add drop', { exact: true }));
+    assert.deepEqual(viewProps.onAddSubSet.mock.calls, [[0, 0]]);
+  });
+
+  it('says Complete drop until the last drop', async () => {
+    const { FocusView } = await import('../../src/ui/workout/focus-view');
+    const drop = { reps: 6, weight: '150', durationMinutes: 0, durationSeconds: 0 };
+    render(<FocusView {...props({ exercises: [row({
+      sets: [{ reps: 8, weight: '185', durationMinutes: 0, durationSeconds: 0, completed: true, type: 'drop', subSets: [drop, drop] }],
+    })] })} />);
+    assert.ok(screen.getByText('Complete drop 2/3', { exact: true }));
   });
 
   it('renders duration fields for the current duration set without reps or weight', async () => {

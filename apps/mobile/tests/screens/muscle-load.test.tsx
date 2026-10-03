@@ -5,6 +5,14 @@ import type { ReactNode } from 'react';
 import { makeCatalogExercise, makePerformedExercise, makeWorkout } from '@/tests/factories';
 import type { CatalogExercise, Workout } from '@/types/workout';
 
+// stat-help pulls in the native sheet stack (gesture-handler, reanimated); these
+// tests only care about the stat content around it.
+mock.module('@/ui/primitives/stat-help', () => ({
+  StatHelp: () => null,
+  StatHelpText: ({ children }: { children?: unknown }) => <>{children}</>,
+  StatHelpFormula: ({ children }: { children?: unknown }) => <>{children}</>,
+}));
+
 const user = { uid: 'muscle-load-screen-test-user' };
 let currentUser: typeof user | null = user;
 let history: Workout[] = [];

@@ -60,6 +60,19 @@ These rules override the generated Beads session-completion protocol below unles
 - Issues follow an epic/child structure. Never create an epic. Only ever create a **child** issue, under an existing epic.
 - If it's unclear which epic or which child issue the changes belong to, stop and ask the user before creating anything or opening the PR.
 
+## Versioning
+
+The app version is `expo.version` in `apps/mobile/app.json` (semantic versioning, currently `0.x.y`). The `version` fields in the `package.json` files are unused placeholders — leave them alone.
+
+- Bump the version in every change set, as part of the same branch/PR as the change.
+- **Never increment the major version.** That is the user's call alone, even if a change looks breaking.
+- Major feature → increment minor, reset patch to 0 (`0.7.3` → `0.8.0`).
+- Small feature or bug fix → increment patch (`0.7.3` → `0.7.4`).
+- One bump per branch/PR, sized to the largest change in it. Don't bump again for follow-up commits on the same branch.
+- Docs-only, test-only, and tooling-only changes don't bump.
+- If it's unclear whether a change is a major feature or a small one, ask the user.
+- `runtimeVersion.policy` is `appVersion`, so every bump starts a new OTA runtime: updates published on the old version won't reach builds on the new one. Mention that when bumping.
+
 ## Architecture
 
 ### Workspace layout

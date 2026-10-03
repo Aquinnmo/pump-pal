@@ -188,6 +188,20 @@ function testSetsAreOrderedBySetNumber(): void {
   );
 }
 
+function testDropSetsAreSkipped(): void {
+  // Two drop sets of 185 → 135: one held set-to-set change, not two big drops.
+  assert.deepEqual(
+    deltasOf([
+      { setNumber: 1, weight: 185, reps: 8, type: "drop" },
+      { setNumber: 1, weight: 135, reps: 6, type: "drop" },
+      { setNumber: 2, weight: 185, reps: 8, type: "drop" },
+      { setNumber: 2, weight: 135, reps: 6, type: "drop" },
+    ]),
+    counts({ held: 1 }),
+    "drop sets should not count as set-to-set drops",
+  );
+}
+
 function testMinimumEvidence(): void {
   // Five deltas from one long exercise: still short of the six needed.
   const thin = analyzeSetConsistency([
@@ -280,6 +294,7 @@ function testLatestThirtyByWorkoutDate(): void {
 testSetSchemes();
 testIneligibleExercises();
 testSetsAreOrderedBySetNumber();
+testDropSetsAreSkipped();
 testMinimumEvidence();
 testVerdict();
 testDistributionTally();

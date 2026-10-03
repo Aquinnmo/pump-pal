@@ -80,7 +80,7 @@ export function MuscleLoadMap({ result }: MuscleLoadMapProps) {
 
       <MuscleMapLegend
         accessibilityLabel="Muscle load legend. Blue is light recent load at 0 percent. Gray is moderate recent load at 50 percent. Amber is heavy recent load at 100 percent."
-        labels={["Light", "Moderate", "Heavy"]}
+        labels={["Rested", "Moderate", "Fatigued"]}
       />
 
       {noMappedLoad && (

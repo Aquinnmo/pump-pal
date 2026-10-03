@@ -1,5 +1,5 @@
 import { TimberLogoEndFace } from '@/ui/timber-logo';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
@@ -23,6 +23,27 @@ const LOG_TARGETS = [
   { x: 83, y: -38 },
   { x: 117, y: -72 },
   { x: 151, y: -106 },
+] as const;
+
+export const FINISH_MESSAGES = [
+  'Logs stacked',
+  'Timber felled',
+  'Chopped and stacked',
+  'Reps in the books',
+  'Last set down',
+  'Workout in the bank',
+  'Workout complete',
+  'Work logged',
+  'Session saved',
+  "That's a wrap",
+  'Showed up, did the work',
+  'Strength is stacking up',
+  'Earned, not given',
+  'Future you says thanks',
+  'Well done',
+  'Good effort',
+  "That's how it's done",
+  'Crushed it',
 ] as const;
 
 const ARRIVAL_DELAYS = [0, 35, 70, 105, 140, 175, 210, 245, 280] as const;
@@ -106,6 +127,9 @@ export function FinishWorkoutCelebration() {
   const { height: measuredHeight } = useWindowDimensions();
   const screenHeight = measuredHeight || (typeof window !== 'undefined' ? window.innerHeight : 0);
   const motion = useMemo(() => createLogMotion(screenHeight), [screenHeight]);
+  const [message] = useState(
+    () => FINISH_MESSAGES[Math.floor(Math.random() * FINISH_MESSAGES.length)],
+  );
   const labelOpacity = useSharedValue(reducedMotion ? 1 : 0);
   const labelStyle = useAnimatedStyle(() => ({
     opacity: reducedMotion ? 1 : labelOpacity.value,
@@ -139,7 +163,7 @@ export function FinishWorkoutCelebration() {
       </View>
       <Animated.View testID="finish-workout-label" style={[styles.label, labelStyle]}>
         <Text accessibilityLiveRegion="polite" style={styles.labelText}>
-          Workout complete
+          {message}
         </Text>
       </Animated.View>
     </View>

@@ -15,6 +15,7 @@ import { useDraftExercises } from "@/hooks/use-draft-exercises";
 import { useExerciseCatalog } from "@/hooks/use-exercise-catalog";
 import { useAIQuota } from "@/lib/use-ai-quota";
 import { useAIEnabled } from "@/lib/use-ai-enabled";
+import { useNormalizeAutoFill } from "@/lib/use-normalize-autofill";
 import { DraftExerciseRow, Workout } from "@/types/workout";
 import { formatAIError } from "@/lib/ai-client";
 import { useAIGenerationAvailable } from "@/lib/use-ai-connectivity";
@@ -39,6 +40,10 @@ import {
 import { subscribeWearActions } from "@/lib/wear-sync";
 import {
   collapseSetsToDraft,
+  inSuperset,
+  lastWorkoutExercises,
+  linkedToNext,
+  setParts,
   recentExercisesForDay,
 } from "@/lib/workout-conversion";
 import {
@@ -129,6 +134,7 @@ export default function ActiveWorkoutScreen() {
   const effectiveWorkoutName = isCustomWorkoutName
     ? customWorkoutName.trim()
     : workoutName.trim();
+  const normalizeAutoFill = useNormalizeAutoFill();
   const {
     exercises,
     setExercises,
@@ -141,13 +147,17 @@ export default function ActiveWorkoutScreen() {
     incrementSet,
     decrementSet,
     addSet,
-    removeSet,
-    toggleSetComplete,
+    removePart,
+    togglePartComplete,
+    toggleSuperset,
+    setSetType,
+    addSubSet,
     reorder,
   } = useDraftExercises({
     trackCompletion: true,
     workoutHistory,
     workoutName: effectiveWorkoutName,
+    normalize: normalizeAutoFill,
   });
   exercisesRef.current = exercises;
   // "Add Exercise" opens the picker; the row is only appended once an exercise is picked
@@ -205,7 +215,7 @@ export default function ActiveWorkoutScreen() {
             return;
           }
           const data = stored.data;
-          const rows = (data.performedExercises ?? []).map(collapseSetsToDraft);
+          const rows = (data.performedExercises ?? []).map((pe) => collapseSetsToDraft(pe));
           const hasExercises = rows.length > 0;
           const name = data.name || "";
           // queueOrder is only ever set on docs that passed through the planned queue.
@@ -338,6 +348,33 @@ export default function ActiveWorkoutScreen() {
     return [...merged, "Other"];
   }, [workoutNameOptions, workoutName, isCustomWorkoutName]);
 
+  // Empty ad-hoc workout: offer to copy the last completed one (same as planning does).
+  const lastExercises = useMemo(
+    () => lastWorkoutExercises(workoutHistory, effectiveWorkoutName),
+    [workoutHistory, effectiveWorkoutName],
+  );
+  const hasExercises = exercises.some((ex) => ex.label.trim() !== "");
+  // Name the type only when the copy really comes from that type (no fallback to another day).
+  const autofillLabel = workoutHistory.some((w) => effectiveWorkoutName && w.name === effectiveWorkoutName)
+    ? `Import from last ${effectiveWorkoutName} workout`
+    : "Import from last workout";
+  const canAutofill = !cameFromPlan && lastExercises.length > 0 && !hasExercises;
+
+  const autofillFromLastWorkout = () =>
+    setExercises(
+      lastExercises.map((pe) => {
+        const row = collapseSetsToDraft(pe, normalizeAutoFill);
+        return {
+          ...row,
+          sets: row.sets.map((set) => ({
+            ...set,
+            completed: false,
+            ...(set.subSets ? { subSets: set.subSets.map((part) => ({ ...part, completed: false })) } : {}),
+          })),
+        };
+      }),
+    );
+
   const selectWorkoutName = (selected: string) => {
     if (selected === "Other") {
       setIsCustomWorkoutName(true);
@@ -427,7 +464,7 @@ export default function ActiveWorkoutScreen() {
   const incompleteSetCount = () =>
     exercises
       .filter((ex) => ex.label.trim() !== "")
-      .reduce((sum, ex) => sum + ex.sets.filter((s) => !s.completed).length, 0);
+      .reduce((sum, ex) => sum + ex.sets.flatMap(setParts).filter((s) => !s.completed).length, 0);
 
   const finishWorkout = async () => {
     if (!sessionId || terminalRef.current) return;
@@ -458,7 +495,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     if (!finishSucceeded) return;
-    const timeoutId = setTimeout(() => router.replace("/(tabs)"), 1200);
+    const timeoutId = setTimeout(() => router.replace("/(tabs)"), 2500);
     return () => clearTimeout(timeoutId);
   }, [finishSucceeded]);
 
@@ -473,7 +510,7 @@ export default function ActiveWorkoutScreen() {
   // focus is the default reading view once a workout has exercises; an emptied-out
   // workout (every row removed in the editor) falls back to the editor automatically
   // rather than showing an empty focus screen.
-  const focusUsable = mode === "focus" && exercises.some((ex) => ex.label.trim() !== "");
+  const focusUsable = mode === "focus" && hasExercises;
 
   const enterFocus = () => {
     setHasEnteredFocus(true);
@@ -584,7 +621,7 @@ export default function ActiveWorkoutScreen() {
         onHide={() => setToast((prev) => ({ ...prev, visible: false }))}
       />
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
-        {mode === "editor" && hasEnteredFocus ? (
+        {mode === "editor" && hasExercises ? (
           <TouchableOpacity onPress={enterFocus} hitSlop={8}>
             <Text style={styles.discardText}>‹ Focus</Text>
           </TouchableOpacity>
@@ -623,6 +660,7 @@ export default function ActiveWorkoutScreen() {
           onUpdateSet={updateSet}
           onIncrementSet={incrementSet}
           onDecrementSet={decrementSet}
+          onAddSubSet={addSubSet}
         />
       ) : (
       <ReorderableList
@@ -669,6 +707,15 @@ export default function ActiveWorkoutScreen() {
                 }}
               />
             )}
+            {canAutofill && (
+              <TouchableOpacity
+                style={styles.addExButton}
+                onPress={autofillFromLastWorkout}
+              >
+                <Ionicons name="copy-outline" size={18} color="#e54242" />
+                <Text style={styles.addExText}>{autofillLabel}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.logFinishedButton}
               onPress={() => setShowLogConfirm(true)}
@@ -700,8 +747,14 @@ export default function ActiveWorkoutScreen() {
             onIncrementSet={incrementSet}
             onDecrementSet={decrementSet}
             onAddSet={addSet}
-            onRemoveSet={removeSet}
-            onToggleSetComplete={toggleSetComplete}
+            onRemovePart={removePart}
+            inSuperset={inSuperset(exercises, i)}
+            linkedToNext={linkedToNext(exercises, i)}
+            canLinkNext={i < exercises.length - 1}
+            onToggleSuperset={toggleSuperset}
+            onChangeSetType={setSetType}
+            onAddSubSet={addSubSet}
+            onTogglePartComplete={togglePartComplete}
             showCompletion
           />
         )}

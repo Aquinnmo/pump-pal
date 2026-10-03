@@ -1,5 +1,5 @@
-import { DraftExerciseRow, DraftSet } from '@/types/workout';
-import { cascadeSetField } from '@/lib/workout-conversion';
+import { DraftExerciseRow, DraftSet, DraftSubSet } from '@/types/workout';
+import { cascadeSetField, linkedToNext, setParts, stageLabel, withStage } from '@/lib/workout-conversion';
 
 // What the Wear OS watch shows, and what it can ask the phone to do. The phone is
 // the only Firestore writer; the watch renders this payload and posts actions back.
@@ -24,6 +24,9 @@ export type WearActive = {
   bodyweight: boolean;
   // Non-null marks a duration set: the watch hides reps/weight and disables the dial.
   durationSeconds: number | null;
+  // Set-type label ("Drop set") for a non-normal set, else null. Older watch builds
+  // read the payload with org.json opt*, so they simply ignore it.
+  setLabel: string | null;
   completedSets: number;
   totalSets: number;
 };
@@ -52,17 +55,44 @@ export function buildWearIdleState(copy: WearIdle, ts = Date.now()): WearState {
   return { ts, mode: 'idle', idle: { label: copy.label, name: copy.name, action: copy.action } };
 }
 
-export type FlatSet = { rowIndex: number; setIndex: number; set: DraftSet };
+// One entry per part the user ticks off: a simple set is one entry, a drop set is
+// one per drop (stage 0 = the set itself). `set` holds that part's numbers.
+export type FlatSet = { rowIndex: number; setIndex: number; stage: number; set: DraftSubSet };
 
 // Only rows the user has actually picked an exercise for count — a blank trailing
-// row is an editing affordance on the phone, not a set to do.
+// row is an editing affordance on the phone, not a set to do. A superset (a run of
+// linked rows) is walked round-robin by set — A1, B1, A2, B2 — with uneven rows simply
+// dropping out once exhausted; an unlinked row is a run of one, so plain order holds.
+// A drop set's parts are emitted together, so its drops stay with it: A1, A1 drop, B1.
 export function flattenSets(rows: DraftExerciseRow[]): FlatSet[] {
   const flat: FlatSet[] = [];
-  rows.forEach((row, rowIndex) => {
-    if (row.label.trim() === '') return;
-    row.sets.forEach((set, setIndex) => flat.push({ rowIndex, setIndex, set }));
-  });
+  for (let start = 0; start < rows.length; ) {
+    let end = start + 1;
+    while (end < rows.length && linkedToNext(rows, end - 1)) end++;
+    const run: number[] = [];
+    for (let r = start; r < end; r++) if (rows[r].label.trim() !== '') run.push(r);
+    const rounds = Math.max(0, ...run.map((r) => rows[r].sets.length));
+    for (let setIndex = 0; setIndex < rounds; setIndex++) {
+      for (const rowIndex of run) {
+        const draftSet = rows[rowIndex].sets[setIndex];
+        if (!draftSet) continue;
+        setParts(draftSet).forEach((set, stage) => flat.push({ rowIndex, setIndex, stage, set }));
+      }
+    }
+    start = end;
+  }
   return flat;
+}
+
+// Sets, not parts: a drop set's drops are ticked one by one, but it is one set and
+// counts as done only once every part is. What every surface shows as "x/y sets".
+export function setProgress(flat: FlatSet[]): { completedSets: number; totalSets: number } {
+  const done: boolean[] = [];
+  for (const f of flat) {
+    if (f.stage === 0) done.push(true);
+    if (!f.set.completed) done[done.length - 1] = false;
+  }
+  return { completedSets: done.filter(Boolean).length, totalSets: done.length };
 }
 
 // The set after the last completed one, in workout order — NOT the first incomplete
@@ -87,8 +117,7 @@ export function buildWearActiveState(
   const flat = flattenSets(rows);
   if (flat.length === 0) return { ts, mode: 'empty' };
 
-  const completedSets = flat.filter((f) => f.set.completed).length;
-  const identity = { workoutId, workoutName, completedSets, totalSets: flat.length };
+  const identity = { workoutId, workoutName, ...setProgress(flat) };
   const nextIdx = nextSetIndex(flat.map((f) => f.set));
 
   // Nothing left to do. The payload still carries the workout id, because the watch's
@@ -106,11 +135,12 @@ export function buildWearActiveState(
         weight: 0,
         bodyweight: false,
         durationSeconds: null,
+        setLabel: null,
       },
     };
   }
 
-  const { rowIndex, setIndex, set } = flat[nextIdx];
+  const { rowIndex, setIndex, stage, set } = flat[nextIdx];
   const row = rows[rowIndex];
   const duration = row.exerciseType === 'Sets of Duration';
 
@@ -126,8 +156,13 @@ export function buildWearActiveState(
       weight: duration || row.bodyweight ? 0 : Number(set.weight) || 0,
       bodyweight: row.bodyweight,
       durationSeconds: duration ? (Number(set.durationMinutes) || 0) * 60 + (Number(set.durationSeconds) || 0) : null,
+      setLabel: stageLabel(row.sets[setIndex], stage),
     },
   };
+}
+
+function markStage(sets: DraftSet[], setIndex: number, stage: number, completed: boolean): DraftSet[] {
+  return sets.map((s, si) => (si === setIndex ? withStage(s, stage, { completed }) : s));
 }
 
 function mapRow(rows: DraftExerciseRow[], rowIndex: number, fn: (sets: DraftSet[]) => DraftSet[]): DraftExerciseRow[] {
@@ -144,18 +179,18 @@ export function applyWearAction(rows: DraftExerciseRow[], action: WearAction): D
   if (action.action === 'completeSet') {
     const nextIdx = nextSetIndex(flat.map((f) => f.set));
     if (nextIdx === -1) return rows;
-    const { rowIndex, setIndex } = flat[nextIdx];
+    const { rowIndex, setIndex, stage } = flat[nextIdx];
     const row = rows[rowIndex];
     const duration = row.exerciseType === 'Sets of Duration';
 
     let next = rows;
     if (!duration && action.reps !== undefined) {
-      next = mapRow(next, rowIndex, (sets) => cascadeSetField(sets, setIndex, 'reps', Math.max(0, Math.round(action.reps!))));
+      next = mapRow(next, rowIndex, (sets) => cascadeSetField(sets, setIndex, 'reps', Math.max(0, Math.round(action.reps!)), stage));
     }
     if (!duration && !row.bodyweight && action.weight !== undefined) {
-      next = mapRow(next, rowIndex, (sets) => cascadeSetField(sets, setIndex, 'weight', String(action.weight)));
+      next = mapRow(next, rowIndex, (sets) => cascadeSetField(sets, setIndex, 'weight', String(action.weight), stage));
     }
-    return mapRow(next, rowIndex, (sets) => sets.map((s, si) => (si === setIndex ? { ...s, completed: true } : s)));
+    return mapRow(next, rowIndex, (sets) => markStage(sets, setIndex, stage, true));
   }
 
   if (action.action === 'uncompleteSet') {
@@ -164,8 +199,8 @@ export function applyWearAction(rows: DraftExerciseRow[], action: WearAction): D
       if (f.set.completed) lastCompleted = i;
     });
     if (lastCompleted === -1) return rows;
-    const { rowIndex, setIndex } = flat[lastCompleted];
-    return mapRow(rows, rowIndex, (sets) => sets.map((s, si) => (si === setIndex ? { ...s, completed: false } : s)));
+    const { rowIndex, setIndex, stage } = flat[lastCompleted];
+    return mapRow(rows, rowIndex, (sets) => markStage(sets, setIndex, stage, false));
   }
 
   return rows;

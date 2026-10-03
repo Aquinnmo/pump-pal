@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -30,6 +31,8 @@ interface DropdownProps {
   placeholder?: string;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
+  // Replaces the default row trigger, e.g. the set badge that opens the set-type sheet.
+  renderTrigger?: (open: () => void) => React.ReactNode;
 }
 
 export function Dropdown({
@@ -39,6 +42,7 @@ export function Dropdown({
   placeholder = 'Select an option',
   accessibilityLabel,
   style,
+  renderTrigger,
 }: DropdownProps) {
   const { height: screenHeight } = useWindowDimensions();
   const [visible, setVisible] = useState(false);
@@ -87,23 +91,27 @@ export function Dropdown({
   }));
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0,0,0,${0.6 * overlayOpacity.value})`,
+    backgroundColor: interpolateColor(overlayOpacity.value, [0, 1], ['rgba(0,0,0,0)', 'rgba(0,0,0,0.6)']),
   }));
 
   return (
     <>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? placeholder}
-        accessibilityHint="Opens a list of options"
-        accessibilityState={{ expanded: visible }}
-        style={[styles.dropdownRow, style]}
-        onPress={handleOpen}>
-        <Text style={value ? styles.dropdownText : styles.placeholderText}>
-          {value || placeholder}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#888" />
-      </TouchableOpacity>
+      {renderTrigger ? (
+        renderTrigger(handleOpen)
+      ) : (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={accessibilityLabel ?? placeholder}
+          accessibilityHint="Opens a list of options"
+          accessibilityState={{ expanded: visible }}
+          style={[styles.dropdownRow, style]}
+          onPress={handleOpen}>
+          <Text style={value ? styles.dropdownText : styles.placeholderText}>
+            {value || placeholder}
+          </Text>
+          <Ionicons name="chevron-down" size={18} color="#888" />
+        </TouchableOpacity>
+      )}
 
       <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
         <GestureHandlerRootView style={{ flex: 1 }}>

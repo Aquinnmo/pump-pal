@@ -14,6 +14,8 @@ export type PerformedSet = {
   calories?: number;
   rpe?: number;
   notes?: string;
+  // Set type id ('drop', …); absent = normal. Plain string so unknown future ids survive.
+  type?: string;
   completed?: boolean;
 };
 
@@ -26,6 +28,8 @@ export type PerformedExercise = {
   variationNameSnapshot: string | null;
   sets: PerformedSet[];
   notes?: string;
+  // Adjacent exercises sharing an id form a superset; a lone id means nothing.
+  supersetId?: string;
   legacy?: Record<string, unknown>;
 };
 
@@ -121,12 +125,30 @@ export type RecentExercise = ExerciseRef;
 
 export type ExerciseType = 'Sets of Reps' | 'Sets of Duration';
 
-export type DraftSet = {
+// One part of a set: a simple set has one; a drop set has its top set plus each drop.
+export type DraftSubSet = {
+  // Client-only swipe/render identity. Optional for older session snapshots;
+  // draft entry points assign missing IDs before these parts reach the editor.
+  uid?: string;
   reps: number;
   weight: string;
   durationMinutes: number;
   durationSeconds: number;
   completed?: boolean;
+};
+
+// The set's own fields are its first part. A set type with sub-sets (see SET_TYPES)
+// keeps the parts after the first in subSets. Address parts by stage — 0 is the set
+// itself, k is subSets[k - 1] — through stageOf/withStage in src/lib/workout-conversion.ts.
+export type DraftSet = DraftSubSet & {
+  type?: string;
+  subSets?: DraftSubSet[];
+};
+
+export type DraftPartTarget = {
+  exerciseUid: string;
+  setUid: string;
+  partUid: string;
 };
 
 // Modal's per-set editing shape — one row per exercise, expanded to
@@ -145,5 +167,6 @@ export type DraftExerciseRow = {
   sets: DraftSet[];
   holdSeconds?: number;
   peNotes?: string;
+  supersetId?: string;
   legacy?: Record<string, unknown>;
 };

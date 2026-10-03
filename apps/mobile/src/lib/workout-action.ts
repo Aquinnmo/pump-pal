@@ -1,4 +1,5 @@
 import type { DraftExerciseRow } from '@/types/workout';
+import { setParts } from '@/lib/workout-conversion';
 import type { WearAction } from '@/lib/wear-state';
 
 export type WorkoutMutationAction = Extract<
@@ -59,7 +60,8 @@ export function parseLiveUpdateNotificationAction(json: string): LiveUpdateNotif
 export function completedSetCount(rows: DraftExerciseRow[]): number {
   return rows
     .filter((row) => row.label.trim() !== '')
-    .reduce((count, row) => count + row.sets.filter((set) => set.completed).length, 0);
+    // Counts parts, matching the notification's completedParts guard: each drop counts.
+    .reduce((count, row) => count + row.sets.flatMap(setParts).filter((set) => set.completed).length, 0);
 }
 
 export function matchesExpectedCompletedSets(

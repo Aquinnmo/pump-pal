@@ -141,6 +141,11 @@ pattern to extend.
   animate them, and do not add a fourth.
 - **Scroll-edge fade gradients** — functional affordance signalling more content,
   not ornament.
+- **Finish-celebration praise** (`apps/mobile/src/ui/workout/finish-workout-celebration.tsx`)
+  — the post-workout label rotates through a fixed set that includes praise
+  ("Well done", "Crushed it"). The workout is over, so it sits outside the tool
+  zone, and it was chosen deliberately. Still no exclamation marks. Do not extend
+  praise to other screens.
 
 ## Two zones
 

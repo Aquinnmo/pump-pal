@@ -28,6 +28,8 @@ import { predictNextWorkoutName } from "@/lib/predict-next-workout";
 import {
   buildPerformedExercise,
   collapseSetsToDraft,
+  inSuperset,
+  linkedToNext,
   recentExercisesForDay,
   toDateObj,
 } from "@/lib/workout-conversion";
@@ -38,6 +40,7 @@ import {
 } from "@/lib/workout-suggestions";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getNormalizeAutoFill, useNormalizeAutoFill } from "@/lib/use-normalize-autofill";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -74,6 +77,7 @@ export default function AddWorkoutModal() {
   const effectiveWorkoutName = isCustomWorkoutName
     ? customWorkoutName.trim()
     : workoutName;
+  const normalizeAutoFill = useNormalizeAutoFill();
 
   const {
     exercises,
@@ -86,10 +90,13 @@ export default function AddWorkoutModal() {
     incrementSet,
     decrementSet,
     addSet,
-    removeSet,
+    removePart,
+    toggleSuperset,
+    setSetType,
+    addSubSet,
     reorder,
     selectExercise,
-  } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName });
+  } = useDraftExercises({ workoutHistory, workoutName: effectiveWorkoutName, normalize: normalizeAutoFill });
   // "Add Exercise" opens the picker; the row is only appended once an exercise is picked
   const [pickingExercise, setPickingExercise] = useState(false);
   const { options: catalogOptions } = useExerciseCatalog();
@@ -226,7 +233,10 @@ export default function AddWorkoutModal() {
               const lastExercises =
                 lastMatchingWorkout?.performedExercises ?? [];
               if (lastExercises.length > 0) {
-                setExercises(lastExercises.map(collapseSetsToDraft));
+                // Read the pref directly: this runs once on mount, before the
+                // hook's own async read is guaranteed to have landed.
+                const normalize = await getNormalizeAutoFill();
+                setExercises(lastExercises.map((pe) => collapseSetsToDraft(pe, normalize)));
               }
             }
           }
@@ -270,7 +280,7 @@ export default function AddWorkoutModal() {
             }
           }
           if (data.performedExercises && data.performedExercises.length > 0) {
-            setExercises(data.performedExercises.map(collapseSetsToDraft));
+            setExercises(data.performedExercises.map((pe) => collapseSetsToDraft(pe)));
           }
         }
       } catch (err) {
@@ -302,7 +312,7 @@ export default function AddWorkoutModal() {
           workout.name === selectedWorkoutName,
       );
       const lastExercises = lastMatchingWorkout?.performedExercises ?? [];
-      setExercises(lastExercises.map(collapseSetsToDraft));
+      setExercises(lastExercises.map((pe) => collapseSetsToDraft(pe, normalizeAutoFill)));
       setPrefillLoading(false);
       typePrefillTimer.current = null;
     }, 500);
@@ -659,7 +669,13 @@ export default function AddWorkoutModal() {
               onIncrementSet={incrementSet}
               onDecrementSet={decrementSet}
               onAddSet={addSet}
-              onRemoveSet={removeSet}
+              onRemovePart={removePart}
+              inSuperset={inSuperset(exercises, i)}
+              linkedToNext={linkedToNext(exercises, i)}
+              canLinkNext={i < exercises.length - 1}
+              onToggleSuperset={toggleSuperset}
+              onChangeSetType={setSetType}
+              onAddSubSet={addSubSet}
             />
           )}
           ListFooterComponent={

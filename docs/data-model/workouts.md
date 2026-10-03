@@ -35,6 +35,7 @@ type PerformedExercise = {
   variationNameSnapshot: string | null;
   sets: PerformedSet[];
   notes?: string;
+  supersetId?: string;
   legacy?: Record<string, unknown>;
 };
 
@@ -49,6 +50,7 @@ type PerformedSet = {
   calories?: number;
   rpe?: number;
   notes?: string;
+  type?: string;
 };
 ```
 
@@ -70,6 +72,30 @@ Field notes:
 - `legacy?: Record<string, unknown>` on `PerformedExercise` retains whatever
   the original legacy row had that didn't map cleanly to the canonical shape
   (see [legacy.md](./legacy.md)). Present only on migrated data.
+- `supersetId` groups exercises into a superset. Membership is **positional**:
+  exercise `i` is linked to `i + 1` only when both carry the same id
+  (`linkedToNext` in `apps/mobile/src/lib/workout-conversion.ts`). A lone or
+  non-adjacent id links nothing, so reordering, removing an exercise, or Finish
+  dropping an exercise with no completed sets never needs a cleanup pass.
+  During a live workout the set cursor (`flattenSets` in
+  `apps/mobile/src/lib/wear-state.ts`) walks a superset round-robin — A1, B1,
+  A2, B2 — and every surface (focus view, Wear OS, lock-screen notification)
+  shares that order. Absent on non-superset exercises. `firestore.rules` does
+  not inspect `performedExercises` items, so no rules change was needed.
+- `PerformedSet.type` is a set-type id (`'drop'`, …); absent means a normal set.
+  It is deliberately a free string in the contract, not an enum: an older
+  client must not reject a workout carrying a type added later. Unknown ids
+  are treated as normal and round-trip through the editor untouched. Type
+  behavior lives in one registry (`apps/mobile/src/constants/set-types.ts`).
+- **A drop set is one set made of several parts** (the top set, then each
+  drop). Each part is its own `PerformedSet`, and all parts of one drop set
+  **share its `setNumber`** and carry `type: 'drop'` — so set 1 as a drop set
+  with two drops is three rows numbered 1. Volume, PRs, muscle load and CSV
+  export count every part as-is, because the work is real. Grouping back into
+  one set (`setClusters` in `apps/mobile/src/lib/workout-conversion.ts`)
+  requires both the shared number and a type that has parts, so legacy data
+  with a repeated `setNumber` never nests. The editor holds the drops nested
+  (`DraftSet.subSets`); the live workout ticks each part off separately.
 - `PerformedSet` fields are a superset covering every tracking mode
   (`reps_weight`, `reps_bodyweight`, `duration`, `distance` — see the
   `TrackingMode` caveat in [exercises.md](./exercises.md)). Which fields are

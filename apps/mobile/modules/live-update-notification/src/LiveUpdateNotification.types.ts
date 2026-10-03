@@ -6,6 +6,7 @@ export type LiveUpdateSegment = {
 
 export type LiveUpdateNotificationPayload = {
   workoutId: string;
+  // Parts completed (a drop set's drops each count) — the stale-tap guard.
   expectedCompletedSets: number;
   title: string;
   text: string;
@@ -17,6 +18,8 @@ export type LiveUpdateNotificationPayload = {
   // iOS only: lets a Live Activity tap be applied natively (see the store).
   setDetails?: string[];
   setCompleted?: boolean[];
+  // Parallel to setCompleted: false marks a drop continuing the set before it.
+  setStarts?: boolean[];
   latencyTraceId?: string;
   latencyStartedAtMs?: number;
 };

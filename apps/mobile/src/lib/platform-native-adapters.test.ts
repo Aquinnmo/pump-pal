@@ -156,12 +156,14 @@ const workoutData = {
   startedAt: new Date(1_000),
   completedSets: 1,
   totalSets: 2,
+  completedParts: 1,
   segments: [],
   title: 'Push Day',
   detail: 'Bench press',
   actions: [],
   setDetails: ['Bench press · 10 reps', 'Bench press · 8 reps'],
   setCompleted: [true, false],
+  setStarts: [true, true],
 };
 
 describe('native adapter helpers at their module seams', () => {
@@ -351,6 +353,7 @@ describe('native adapter helpers at their module seams', () => {
       actions: [],
       setDetails: ['Bench press · 10 reps', 'Bench press · 8 reps'],
       setCompleted: [true, false],
+      setStarts: [true, true],
     }]);
     await dismissIosWorkoutNotification();
     assert.equal(liveNotificationCalls.dismiss, 1);

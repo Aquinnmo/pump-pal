@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
+  interpolateColor,
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
@@ -91,7 +92,7 @@ export function PlateCalculator({ visible, onClose, initialTarget, onApplyWeight
   }));
 
   const overlayAnimatedStyle = useAnimatedStyle(() => ({
-    backgroundColor: `rgba(0,0,0,${0.7 * overlayOpacity.value})`,
+    backgroundColor: interpolateColor(overlayOpacity.value, [0, 1], ['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']),
   }));
 
   useEffect(() => {

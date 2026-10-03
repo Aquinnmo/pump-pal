@@ -40,7 +40,8 @@ export async function showWorkoutNotification(
   if (useLiveUpdate) {
     const posted = LiveUpdateNotification.show({
       workoutId: data.workoutId,
-      expectedCompletedSets: completedSets,
+      // The tap guard counts parts so every drop tap is distinct; the bar counts sets.
+      expectedCompletedSets: data.completedParts,
       title,
       text: detail ?? '',
       startedAtMillis: startedAt.getTime(),

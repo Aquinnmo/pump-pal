@@ -1,10 +1,15 @@
 import { DragHandle } from '@/ui/primitives/drag-handle';
 import { Dropdown } from '@/ui/primitives/dropdown';
 import { ExercisePicker, ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
-import { SetField, SetFields } from '@/ui/workout/set-fields';
-import { DraftExerciseRow, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
+import { SetField, SetFields, StackPosition } from '@/ui/workout/set-fields';
+import { SET_TYPES, setTypeOf } from '@/constants/set-types';
+import { setLabels, setParts } from '@/lib/workout-conversion';
+import { DraftExerciseRow, DraftPartTarget, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { ReactNode, useRef, useState } from 'react';
+import { Modal, Pressable, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import ReanimatedSwipeable, { SwipeDirection, SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
 
@@ -18,14 +23,24 @@ type ExerciseCardProps = {
   onChangeType: (index: number, field: 'exerciseType', value: ExerciseType) => void;
   onToggleBodyweight: (index: number) => void;
   onRemoveExercise: (index: number) => void;
-  onUpdateSet: (index: number, setIdx: number, field: SetField, value: string) => void;
-  onIncrementSet: (index: number, setIdx: number) => void;
-  onDecrementSet: (index: number, setIdx: number) => void;
+  // `stage` is the part of a drop set (0 = the set itself); see stageOf.
+  onUpdateSet: (index: number, setIdx: number, field: SetField, value: string, stage?: number) => void;
+  onIncrementSet: (index: number, setIdx: number, stage?: number) => void;
+  onDecrementSet: (index: number, setIdx: number, stage?: number) => void;
   onAddSet: (index: number) => void;
-  onRemoveSet: (index: number, setIdx: number) => void;
-  onToggleSetComplete?: (index: number, setIdx: number) => void;
-  // active-workout only: per-set completion checkbox + completed styling
+  onRemovePart: (target: DraftPartTarget) => void;
+  onTogglePartComplete?: (target: DraftPartTarget) => void;
+  // The single entry point for set types: a set's options menu lists the SET_TYPES rows.
+  onChangeSetType?: (index: number, setIdx: number, type: string) => void;
+  onAddSubSet?: (index: number, setIdx: number) => void;
+  // active-workout only: completion actions in the set menu + completed row styling
   showCompletion?: boolean;
+  // Superset state is positional (see linkedToNext in src/lib/workout-conversion.ts), so
+  // the parent list computes it from the neighbouring rows and passes it down.
+  inSuperset?: boolean;
+  linkedToNext?: boolean;
+  canLinkNext?: boolean;
+  onToggleSuperset?: (index: number) => void;
 };
 
 // One editable exercise card — the shared renderItem body for both the plan/log editor
@@ -46,98 +61,423 @@ export function ExerciseCard({
   onIncrementSet,
   onDecrementSet,
   onAddSet,
-  onRemoveSet,
-  onToggleSetComplete,
+  onRemovePart,
+  onTogglePartComplete,
+  onChangeSetType,
+  onAddSubSet,
   showCompletion = false,
+  inSuperset = false,
+  linkedToNext = false,
+  canLinkNext = false,
+  onToggleSuperset,
 }: ExerciseCardProps) {
-  const allSetsComplete = showCompletion && ex.sets.length > 0 && ex.sets.every((s) => s.completed);
+  const allParts = ex.sets.flatMap(setParts);
+  const allSetsComplete = showCompletion && allParts.length > 0 && allParts.every((s) => s.completed);
+  const labels = setLabels(ex.sets);
 
   return (
-    <View style={[styles.exerciseCard, allSetsComplete && styles.exerciseCardComplete]}>
-      <View style={styles.exerciseNameRow}>
-        <ExercisePicker
-          options={catalogOptions}
-          value={ex.label || null}
-          recentExercises={recentExercises}
-          onSelect={(selection) => onSelectExercise(i, selection)}
-          onCreateNew={onCreateNew}
-          placeholder="Select exercise"
-          style={styles.exerciseNameDropdownFlex}
+    <View>
+      <View
+        style={[
+          styles.exerciseCard,
+          allSetsComplete && styles.exerciseCardComplete,
+          inSuperset && styles.exerciseCardSuperset,
+        ]}>
+        {inSuperset && <Text style={styles.supersetEyebrow}>Superset</Text>}
+        <View style={styles.exerciseNameRow}>
+          <ExercisePicker
+            options={catalogOptions}
+            value={ex.label || null}
+            recentExercises={recentExercises}
+            onSelect={(selection) => onSelectExercise(i, selection)}
+            onCreateNew={onCreateNew}
+            placeholder="Select exercise"
+            style={styles.exerciseNameDropdownFlex}
+          />
+          <DragHandle />
+        </View>
+
+        <Dropdown
+          options={EXERCISE_TYPES}
+          value={ex.exerciseType}
+          onSelect={(v) => onChangeType(i, 'exerciseType', v as ExerciseType)}
+          placeholder="Type of exercise"
+          style={styles.exerciseTypeDropdown}
         />
-        <DragHandle />
-      </View>
 
-      <Dropdown
-        options={EXERCISE_TYPES}
-        value={ex.exerciseType}
-        onSelect={(v) => onChangeType(i, 'exerciseType', v as ExerciseType)}
-        placeholder="Type of exercise"
-        style={styles.exerciseTypeDropdown}
-      />
+        {ex.sets.map((set, si) => {
+          const def = setTypeOf(set);
+          const parts = setParts(set);
+          const allPartsComplete = parts.every((p) => p.completed);
+          const targetPart = (part: (typeof parts)[number]): DraftPartTarget => ({
+            exerciseUid: ex.uid, setUid: set.uid!, partUid: part.uid!,
+          });
+          const removeSet = ex.sets.length > 1
+            ? () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onRemovePart(targetPart(set));
+              }
+            : undefined;
+          // A drop set completes (or reopens) all its parts together.
+          const toggleSetComplete = showCompletion
+            ? () => {
+                if (!allPartsComplete) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                parts.forEach((part) => {
+                  if (!!part.completed !== !allPartsComplete) onTogglePartComplete?.(targetPart(part));
+                });
+              }
+            : undefined;
+          const changeType = onChangeSetType
+            ? (label: string) => onChangeSetType(i, si, SET_TYPES.find((t) => t.label === label)!.id)
+            : undefined;
+          // One row per part. Only the first carries the set number, the options menu and
+          // the field labels; a drop set's drops stack under it with their inputs touching
+          // top to bottom.
+          const rows = parts.map((part, stage) => {
+            const stack: StackPosition | undefined = !def.subSet
+              ? undefined
+              : stage === 0
+                ? 'first'
+                : stage === parts.length - 1
+                  ? 'last'
+                  : 'middle';
+            // Spacers line the side columns up with the inputs under the labels; rows
+            // without labels need none.
+            const spacer = stage === 0 && <Text style={styles.setLabelSpacer}> </Text>;
+            const removable = stage > 0 || ex.sets.length > 1;
+            const completeRow = () => {
+              if (!part.completed) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onTogglePartComplete?.(targetPart(part));
+            };
+            const removeRow = () => onRemovePart(targetPart(part));
+            const rowComplete = showCompletion && part.completed && !allSetsComplete;
+            return (
+              <SwipeRow
+                key={part.uid}
+                completed={!!part.completed}
+                onComplete={showCompletion ? completeRow : undefined}
+                onRemove={removable ? removeRow : undefined}
+                style={rowComplete && styles.swipeRowComplete}
+                containerStyle={[styles.swipeRow, def.subSet && styles.swipeRowStacked, rowComplete && styles.swipeRowCompleteRadius]}>
+                <View
+                  style={[
+                    styles.setRow,
+                    def.subSet && styles.setRowStacked,
+                    rowComplete && styles.setRowComplete,
+                    showCompletion && allSetsComplete && styles.setRowCardComplete,
+                  ]}>
+                  <View style={styles.setNumberColumn}>
+                    {spacer}
+                    <View style={styles.setSideCell}>
+                      {stage === 0 && <Text style={styles.setNumber}>{labels[si]}</Text>}
+                    </View>
+                  </View>
 
-      {ex.sets.map((set, si) => (
-        <View key={si} style={[styles.setRow, showCompletion && set.completed && !allSetsComplete && styles.setRowComplete]}>
-          {showCompletion && (
-            <View style={styles.setCheckboxWrap}>
-              <Text style={styles.deleteSetSpacer}> </Text>
-              <View style={styles.setCheckboxIconWrap}>
-                <TouchableOpacity
-                  onPress={() => onToggleSetComplete?.(i, si)}
-                  hitSlop={8}
-                  style={[styles.setCheckbox, set.completed && styles.setCheckboxChecked]}>
-                  {set.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
-                </TouchableOpacity>
-              </View>
+                  <View style={styles.row}>
+                    <SetFields
+                      set={part}
+                      stack={stack}
+                      exerciseType={ex.exerciseType}
+                      bodyweight={ex.bodyweight}
+                      onUpdate={(field, v) => onUpdateSet(i, si, field, v, stage)}
+                      onIncrement={() => onIncrementSet(i, si, stage)}
+                      onDecrement={() => onDecrementSet(i, si, stage)}
+                    />
+                    <View style={styles.setMenuColumn}>
+                      {spacer}
+                      <View style={styles.setSideCell}>
+                        {stage === 0 && (removeSet || toggleSetComplete || changeType) && (
+                          <SetMenu
+                            label={labels[si]}
+                            typeLabel={def.label}
+                            completed={allPartsComplete}
+                            onChangeType={changeType}
+                            onRemove={removeSet}
+                            onToggleComplete={toggleSetComplete}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </SwipeRow>
+            );
+          });
+
+          if (!def.subSet) return <View key={set.uid}>{rows}</View>;
+          return (
+            <View key={set.uid} style={styles.dropStack}>
+              {rows}
+              {onAddSubSet && (
+                // Mirrors a set row's columns so the outline sits exactly under the inputs,
+                // hanging off the bottom of the stack like one more (empty) part.
+                <View style={[styles.setRow, styles.setRowStacked]}>
+                  <View style={styles.setNumberColumn} />
+                  <View style={styles.row}>
+                    <TouchableOpacity
+                      style={styles.addSubSetButton}
+                      onPress={() => onAddSubSet(i, si)}
+                      activeOpacity={0.8}
+                      hitSlop={{ top: 4, bottom: 4 }}
+                      accessibilityRole="button">
+                      <View style={styles.addSubSetOutline}>
+                        <Ionicons name="add" size={16} color="#888" />
+                        <Text style={styles.addSubSetText}>Add {def.subSet.noun}</Text>
+                      </View>
+                    </TouchableOpacity>
+                    <View style={styles.setMenuColumn} />
+                  </View>
+                </View>
+              )}
             </View>
+          );
+        })}
+
+        <TouchableOpacity style={styles.addSetButton} onPress={() => onAddSet(i)}>
+          <Ionicons name="add-circle-outline" size={20} color="#e54242" />
+          <Text style={styles.addSetText}>Add Set</Text>
+        </TouchableOpacity>
+
+        <View style={styles.exerciseFooter}>
+          {ex.exerciseType === 'Sets of Reps' ? (
+            <TouchableOpacity style={styles.bodyweightRow} onPress={() => onToggleBodyweight(i)} activeOpacity={0.7}>
+              <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
+                {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
+              </View>
+              <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.exerciseFooterSpacer} />
           )}
 
-          <View style={styles.row}>
-            <SetFields
-              set={set}
-              exerciseType={ex.exerciseType}
-              bodyweight={ex.bodyweight}
-              onUpdate={(field, v) => onUpdateSet(i, si, field, v)}
-              onIncrement={() => onIncrementSet(i, si)}
-              onDecrement={() => onDecrementSet(i, si)}
-            />
-            {ex.sets.length > 1 && (
-              <View style={styles.deleteSetButton}>
-                <Text style={styles.deleteSetSpacer}> </Text>
-                <TouchableOpacity style={styles.deleteSetIconWrap} onPress={() => onRemoveSet(i, si)} hitSlop={12}>
-                  <Ionicons name="close-circle" size={26} color="#888" />
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      ))}
-
-      <TouchableOpacity style={styles.addSetButton} onPress={() => onAddSet(i)}>
-        <Ionicons name="add-circle-outline" size={20} color="#e54242" />
-        <Text style={styles.addSetText}>Add Set</Text>
-      </TouchableOpacity>
-
-      <View style={styles.exerciseFooter}>
-        {ex.exerciseType === 'Sets of Reps' ? (
-          <TouchableOpacity style={styles.bodyweightRow} onPress={() => onToggleBodyweight(i)} activeOpacity={0.7}>
-            <View style={[styles.checkbox, ex.bodyweight && styles.checkboxChecked]}>
-              {ex.bodyweight && <Ionicons name="checkmark" size={14} color="#fff" />}
-            </View>
-            <Text style={styles.bodyweightLabel}>Bodyweight exercise</Text>
+          <TouchableOpacity style={styles.removeExerciseButton} onPress={() => onRemoveExercise(i)} hitSlop={8}>
+            <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
           </TouchableOpacity>
-        ) : (
-          <View style={styles.exerciseFooterSpacer} />
-        )}
-
-        <TouchableOpacity style={styles.removeExerciseButton} onPress={() => onRemoveExercise(i)} hitSlop={8}>
-          <Ionicons name="trash-outline" size={18} color="#ff6b6b" />
-        </TouchableOpacity>
+        </View>
       </View>
+      {canLinkNext && onToggleSuperset && (
+        <TouchableOpacity
+          style={styles.supersetLink}
+          onPress={() => onToggleSuperset(i)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={linkedToNext ? 'Unlink superset from next exercise' : 'Make a superset with the next exercise'}>
+          <Ionicons name={linkedToNext ? 'unlink-outline' : 'link-outline'} size={16} color="#888" />
+          <Text style={styles.supersetLinkText}>{linkedToNext ? 'Unlink superset' : 'Make a superset'}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
 
+// Keep the snap-back quick, using the same spring as the existing swipe affordance.
+const SWIPE_SPRING = { mass: 1, damping: 20, stiffness: 300 };
+// How far a row must be dragged left before release commits the delete.
+const REMOVE_THRESHOLD = 80;
+
+type SwipeRowProps = {
+  completed: boolean;
+  // Omitted when the action isn't offered; that side then doesn't swipe.
+  onComplete?: () => void;
+  onRemove?: () => void;
+  style?: StyleProp<ViewStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
+  children: ReactNode;
+};
+
+// Commit once on release. Stable keys ensure a surviving row never inherits the
+// removed row's gesture state; settled animation events never mutate workout data.
+function SwipeRow({ completed, onComplete, onRemove, style, containerStyle, children }: SwipeRowProps) {
+  const swipeRef = useRef<SwipeableMethods>(null);
+  const actionPending = useRef(false);
+
+  return (
+    <View style={[style, styles.swipeClip]}>
+      <ReanimatedSwipeable
+        ref={swipeRef}
+        enabled={!!(onComplete || onRemove)}
+        animationOptions={SWIPE_SPRING}
+        rightThreshold={REMOVE_THRESHOLD}
+        containerStyle={containerStyle}
+        renderLeftActions={
+          onComplete
+            ? () => (
+                <View style={[styles.swipeAction, styles.swipeActionComplete]}>
+                  <Ionicons name="checkmark" size={20} color="#fff" />
+                  <Text style={styles.swipeActionText}>{completed ? 'Undo' : 'Complete'}</Text>
+                </View>
+              )
+            : undefined
+        }
+        renderRightActions={
+          onRemove
+            ? () => (
+                <View style={styles.swipeActionDelete}>
+                  <View style={styles.swipeActionLabel}>
+                    <Ionicons name="trash-outline" size={20} color="#fff" />
+                    <Text style={styles.swipeActionText}>Delete</Text>
+                  </View>
+                </View>
+              )
+            : undefined
+        }
+        // The direction is the swipe's, not the panel's: RIGHT means the row moved right
+        // and revealed the left (complete) panel. WillOpen fires on release.
+        onSwipeableWillOpen={(direction) => {
+          if (actionPending.current) {
+            swipeRef.current?.close();
+            return;
+          }
+          actionPending.current = true;
+          if (direction === SwipeDirection.RIGHT) {
+            onComplete?.();
+          } else {
+            if (onRemove) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              onRemove();
+            }
+          }
+          // Also closes a deletion the state guard refused (e.g. two rapid
+          // swipes reached the last set), so that row remains usable.
+          swipeRef.current?.close();
+        }}
+        onSwipeableClose={() => { actionPending.current = false; }}>
+        {children}
+      </ReanimatedSwipeable>
+    </View>
+  );
+}
+
+type SetMenuProps = {
+  label: string;
+  typeLabel: string;
+  completed: boolean;
+  // Each omitted when the action isn't offered here; its control then isn't shown.
+  onChangeType?: (typeLabel: string) => void;
+  onRemove?: () => void;
+  onToggleComplete?: () => void;
+};
+
+// The set row's ellipsis: a centered dialog with the set type up top and the set's
+// actions under it. Changing the type keeps it open so the change is visible.
+function SetMenu({ label, typeLabel, completed, onChangeType, onRemove, onToggleComplete }: SetMenuProps) {
+  const [visible, setVisible] = useState(false);
+  const close = () => setVisible(false);
+  const act = (action: () => void) => () => {
+    close();
+    action();
+  };
+
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setVisible(true)}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={`Set ${label} options`}>
+        <Ionicons name="ellipsis-vertical" size={22} color="#888" />
+      </TouchableOpacity>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
+        <View style={styles.menuOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close set options" />
+          <View style={styles.menuCard} accessibilityViewIsModal>
+            <Text style={styles.menuTitle}>Set {label}</Text>
+            {onChangeType && (
+              <Dropdown options={SET_TYPES.map((t) => t.label)} value={typeLabel} onSelect={onChangeType} placeholder="Set type" />
+            )}
+            {(onRemove || onToggleComplete) && (
+              <View style={styles.menuActions}>
+                {onRemove && (
+                  <TouchableOpacity
+                    style={[styles.menuButton, styles.menuButtonSecondary]}
+                    onPress={act(onRemove)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button">
+                    <Text style={styles.menuButtonText}>Delete set</Text>
+                  </TouchableOpacity>
+                )}
+                {onToggleComplete && (
+                  <TouchableOpacity
+                    style={[styles.menuButton, styles.menuButtonPrimary]}
+                    onPress={act(onToggleComplete)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button">
+                    <Text style={styles.menuButtonText}>{completed ? 'Mark incomplete' : 'Complete set'}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+            <TouchableOpacity style={styles.menuDone} onPress={close} activeOpacity={0.8} accessibilityRole="button">
+              <Text style={styles.menuDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
+  // Confirm-dialog recipe (design-language component canon).
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  menuCard: {
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    padding: 24,
+    width: '100%',
+    maxWidth: 420,
+    gap: 12,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  menuActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  menuButton: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  menuButtonSecondary: {
+    backgroundColor: '#151515',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  menuButtonPrimary: {
+    backgroundColor: '#e54242',
+  },
+  menuButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  menuDone: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuDoneText: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   exerciseCard: {
     backgroundColor: '#141414',
     borderRadius: 12,
@@ -149,6 +489,33 @@ const styles = StyleSheet.create({
   exerciseCardComplete: {
     borderColor: 'rgba(229, 66, 66, 0.35)',
     backgroundColor: 'rgba(229, 66, 66, 0.08)',
+  },
+  // Flat accent edge, not a tint: grouping is structure, not status.
+  exerciseCardSuperset: {
+    borderLeftWidth: 2,
+    borderLeftColor: '#e54242',
+  },
+  supersetEyebrow: {
+    color: '#888',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  supersetLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 44,
+    marginTop: -4,
+    marginBottom: 4,
+  },
+  supersetLinkText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
   },
   exerciseNameRow: {
     flexDirection: 'row',
@@ -162,57 +529,130 @@ const styles = StyleSheet.create({
   exerciseTypeDropdown: {
     marginBottom: 12,
   },
+  // Opaque, so the swipe action panels behind a sliding row never show through.
   setRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 10,
     borderRadius: 10,
     padding: 4,
+    backgroundColor: '#141414',
   },
+  swipeRow: {
+    marginBottom: 10,
+    borderRadius: 10,
+  },
+  // A drop set: its rows sit flush so the inputs stack into one column per field.
+  dropStack: {
+    marginBottom: 10,
+  },
+  setRowStacked: {
+    paddingVertical: 0,
+  },
+  swipeRowStacked: {
+    marginBottom: 0,
+  },
+  // A U-shaped dashed outline: iOS only draws dashed borders when all four sides match,
+  // so this is a full dashed box pushed up past the clip by its radius, which hides
+  // the top edge and its rounded corners.
+  addSubSetButton: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  addSubSetOutline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: -8,
+    paddingTop: 8 + 8,
+    paddingBottom: 8,
+    // Same dashed border as Add Set, so the two add actions read as one family.
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#2a2a2a',
+    borderRadius: 8,
+  },
+  addSubSetText: {
+    color: '#888',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  // The accent at 8% composited over the card (#141414), then over a completed card, as
+  // opaque fills.
   setRowComplete: {
-    marginHorizontal: -6,
     paddingHorizontal: 10,
     borderRadius: 14,
-    backgroundColor: 'rgba(229, 66, 66, 0.08)',
+    backgroundColor: '#251818',
   },
-  setCheckboxWrap: {
+  setRowCardComplete: {
+    backgroundColor: '#201313',
+  },
+  swipeClip: {
+    overflow: 'hidden',
+  },
+  // On the outer wrapper, so the overhang isn't clipped by the swipeable's overflow.
+  swipeRowComplete: {
+    marginHorizontal: -6,
+  },
+  swipeRowCompleteRadius: {
+    borderRadius: 14,
+  },
+  swipeAction: {
+    width: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  // Destructive is not red here (design-language): the accent marks the affirmative.
+  swipeActionComplete: {
+    backgroundColor: '#e54242',
+  },
+  // Spans the whole row, so a committed delete fills the bar; the label sits at the
+  // trailing edge where the drag reveals it.
+  swipeActionDelete: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 32,
+    backgroundColor: '#2a2a2a',
+  },
+  swipeActionLabel: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  swipeActionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  setNumberColumn: {
+    width: 20,
     alignItems: 'center',
   },
-  setCheckboxIconWrap: {
+  setMenuColumn: {
+    width: 22,
+    alignItems: 'center',
+  },
+  setSideCell: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  setCheckbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: '#555',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  setCheckboxChecked: {
-    backgroundColor: '#e54242',
-    borderColor: '#e54242',
+  setNumber: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
   },
   row: {
     flex: 1,
     flexDirection: 'row',
     gap: 8,
   },
-  deleteSetButton: {
-    alignItems: 'center',
-  },
-  deleteSetSpacer: {
+  setLabelSpacer: {
     fontSize: 11,
     marginBottom: 4,
     color: 'transparent',
-  },
-  deleteSetIconWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   addSetButton: {
     flexDirection: 'row',
