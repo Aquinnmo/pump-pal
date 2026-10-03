@@ -72,6 +72,14 @@ mock.module('react-native-gesture-handler/ReanimatedSwipeable', () => ({
   SwipeDirection: { LEFT: 'left', RIGHT: 'right' },
 }));
 
+mock.module('react-native-reanimated', () => ({
+  default: { View: ({ children }: { children?: ReactNode }) => <>{children}</> },
+  runOnJS: (callback: () => void) => callback,
+  useAnimatedStyle: (factory: () => unknown) => factory(),
+  useSharedValue: (value: number) => ({ value }),
+  withTiming: (value: number) => value,
+}));
+
 mock.module(new URL('../../src/ui/primitives/drag-handle.tsx', import.meta.url).pathname, () => ({
   DragHandle: () => <span aria-label="Reorder exercise" />,
 }));

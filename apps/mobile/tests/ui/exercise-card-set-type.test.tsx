@@ -8,19 +8,27 @@ const passthrough = ({ children }: { children?: ReactNode }) => <>{children}</>;
 const haptics: string[] = [];
 type SwipeableProps = {
   children?: ReactNode;
+  onSwipeableWillOpen?: (direction: 'left' | 'right') => void;
   onSwipeableOpen?: (direction: 'left' | 'right') => void;
   renderLeftActions?: () => ReactNode;
   renderRightActions?: () => ReactNode;
 };
 // Renders the row plus one button per swipe direction that has actions, standing in for
 // the gesture. RNGH's direction is the swipe's: 'right' reveals the left (complete) panel.
-const Swipeable = ({ children, onSwipeableOpen, renderLeftActions, renderRightActions }: SwipeableProps) => (
-  <div>
-    {children}
-    {renderLeftActions && <button aria-label="swipe right" onClick={() => onSwipeableOpen?.('right')} />}
-    {renderRightActions && <button aria-label="swipe left" onClick={() => onSwipeableOpen?.('left')} />}
-  </div>
-);
+// A committed swipe fires WillOpen on release, then Open once the row has settled.
+const Swipeable = ({ children, onSwipeableWillOpen, onSwipeableOpen, renderLeftActions, renderRightActions }: SwipeableProps) => {
+  const swipe = (direction: 'left' | 'right') => {
+    onSwipeableWillOpen?.(direction);
+    onSwipeableOpen?.(direction);
+  };
+  return (
+    <div>
+      {children}
+      {renderLeftActions && <button aria-label="swipe right" onClick={() => swipe('right')} />}
+      {renderRightActions && <button aria-label="swipe left" onClick={() => swipe('left')} />}
+    </div>
+  );
+};
 
 type Build = {
   module(path: string, callback: () => { exports: Record<string, unknown>; loader: 'object' }): void;
@@ -69,8 +77,8 @@ plugin({
         useAnimatedStyle: (factory: () => unknown) => factory(),
         useSharedValue: (value: number) => ({ value }),
         withSpring: (value: number) => value,
-        withTiming: (value: number, _config: unknown, callback?: () => void) => {
-          callback?.();
+        withTiming: (value: number, _config: unknown, callback?: (finished: boolean) => void) => {
+          callback?.(true);
           return value;
         },
       },

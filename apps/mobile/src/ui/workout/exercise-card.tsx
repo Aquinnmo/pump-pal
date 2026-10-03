@@ -7,9 +7,10 @@ import { setLabels, setParts } from '@/lib/workout-conversion';
 import { DraftExerciseRow, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ReactNode, useRef } from 'react';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import ReanimatedSwipeable, { SwipeDirection, SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
 // Set options menu rows that aren't set types; matched by label in onMenuSelect.
@@ -80,8 +81,6 @@ export function ExerciseCard({
   const allParts = ex.sets.flatMap(setParts);
   const allSetsComplete = showCompletion && allParts.length > 0 && allParts.every((s) => s.completed);
   const labels = setLabels(ex.sets);
-  // Open rows by `${setIdx}-${stage}`, so a swipe can snap its row shut after firing.
-  const swipeRefs = useRef<Record<string, SwipeableMethods | null>>({});
 
   return (
     <View>
@@ -152,54 +151,20 @@ export function ExerciseCard({
             // without labels need none.
             const spacer = stage === 0 && <Text style={styles.setLabelSpacer}> </Text>;
             const removable = stage > 0 || ex.sets.length > 1;
-            const rowKey = `${si}-${stage}`;
             const completeRow = () => {
               if (!part.completed) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onToggleSetComplete?.(i, si, stage);
             };
-            const removeRow = () => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              if (stage === 0) onRemoveSet(i, si);
-              else onRemoveSubSet?.(i, si, stage);
-            };
+            const removeRow = () => (stage === 0 ? onRemoveSet(i, si) : onRemoveSubSet?.(i, si, stage));
             const rowComplete = showCompletion && part.completed && !allSetsComplete;
             return (
-              <ReanimatedSwipeable
+              <SwipeRow
                 key={stage}
-                ref={(r) => {
-                  swipeRefs.current[rowKey] = r;
-                }}
-                enabled={showCompletion || removable}
-                containerStyle={[styles.swipeRow, def.subSet && styles.swipeRowStacked, rowComplete && styles.swipeRowComplete]}
-                renderLeftActions={
-                  showCompletion
-                    ? () => (
-                        <View style={[styles.swipeAction, styles.swipeActionComplete]}>
-                          <Ionicons name="checkmark" size={20} color="#fff" />
-                          <Text style={styles.swipeActionText}>{part.completed ? 'Undo' : 'Complete'}</Text>
-                        </View>
-                      )
-                    : undefined
-                }
-                renderRightActions={
-                  removable
-                    ? () => (
-                        <View style={[styles.swipeAction, styles.swipeActionDelete]}>
-                          <Ionicons name="trash-outline" size={20} color="#fff" />
-                          <Text style={styles.swipeActionText}>Delete</Text>
-                        </View>
-                      )
-                    : undefined
-                }
-                // onSwipeableOpen's direction is the swipe's, not the panel's: RIGHT means the
-                // row moved right and revealed the left (complete) panel. A full swipe fires
-                // at once, then the row snaps shut so the row that slides into its slot after
-                // a delete doesn't inherit the open state.
-                onSwipeableOpen={(direction) => {
-                  if (direction === SwipeDirection.RIGHT) completeRow();
-                  else removeRow();
-                  swipeRefs.current[rowKey]?.close();
-                }}>
+                completed={!!part.completed}
+                onComplete={showCompletion ? completeRow : undefined}
+                onRemove={removable ? removeRow : undefined}
+                style={rowComplete && styles.swipeRowComplete}
+                containerStyle={[styles.swipeRow, def.subSet && styles.swipeRowStacked, rowComplete && styles.swipeRowCompleteRadius]}>
                 <View
                   style={[
                     styles.setRow,
@@ -248,7 +213,7 @@ export function ExerciseCard({
                     </View>
                   </View>
                 </View>
-              </ReanimatedSwipeable>
+              </SwipeRow>
             );
           });
 
@@ -315,6 +280,105 @@ export function ExerciseCard({
         </TouchableOpacity>
       )}
     </View>
+  );
+}
+
+// The library default is a heavily overdamped spring whose long tail delays
+// onSwipeableOpen; this one reaches the edge fast and clamps there.
+const SWIPE_SPRING = { mass: 1, damping: 20, stiffness: 300 };
+// How far a row must be dragged left before release commits the delete.
+const REMOVE_THRESHOLD = 80;
+const COLLAPSE_MS = 180;
+
+type SwipeRowProps = {
+  completed: boolean;
+  // Omitted when the action isn't offered; that side then doesn't swipe.
+  onComplete?: () => void;
+  onRemove?: () => void;
+  style?: StyleProp<ViewStyle>;
+  containerStyle?: StyleProp<ViewStyle>;
+  children: ReactNode;
+};
+
+// One set (or drop) row: swipe right completes, swipe left deletes. Complete fires on
+// release and the row springs straight back. Delete slides the row fully off so the
+// panel fills the bar, then collapses its height before the row leaves state, so the
+// rows below glide up instead of jumping.
+function SwipeRow({ completed, onComplete, onRemove, style, containerStyle, children }: SwipeRowProps) {
+  const swipeRef = useRef<SwipeableMethods>(null);
+  // The content's natural height, measured on an inner view the wrapper never constrains.
+  const rowHeight = useSharedValue(0);
+  // 1 = full height; animates to 0 on delete.
+  const collapse = useSharedValue(1);
+  const removing = useRef(false);
+  // Always an explicit height once measured. Reanimated leaves a style key on the native
+  // view after the animated style stops returning it, so a "{} when idle" style would
+  // strand the next row that reuses this instance at height 0.
+  const heightStyle = useAnimatedStyle(() =>
+    rowHeight.value === 0 ? {} : { height: rowHeight.value * collapse.value }
+  );
+
+  // Rows are keyed by position, so the row that slides into this slot reuses this
+  // instance: put it back to rest in the same pass as the removal.
+  const finishRemove = () => {
+    onRemove?.();
+    swipeRef.current?.reset();
+    collapse.value = 1;
+    removing.current = false;
+  };
+
+  return (
+    <Animated.View style={[style, styles.swipeClip, heightStyle]}>
+      <View onLayout={(e) => (rowHeight.value = e.nativeEvent.layout.height)}>
+        <ReanimatedSwipeable
+          ref={swipeRef}
+          enabled={!!(onComplete || onRemove)}
+          animationOptions={SWIPE_SPRING}
+          rightThreshold={REMOVE_THRESHOLD}
+          containerStyle={containerStyle}
+          renderLeftActions={
+            onComplete
+              ? () => (
+                  <View style={[styles.swipeAction, styles.swipeActionComplete]}>
+                    <Ionicons name="checkmark" size={20} color="#fff" />
+                    <Text style={styles.swipeActionText}>{completed ? 'Undo' : 'Complete'}</Text>
+                  </View>
+                )
+              : undefined
+          }
+          renderRightActions={
+            onRemove
+              ? () => (
+                  <View style={styles.swipeActionDelete}>
+                    <View style={styles.swipeActionLabel}>
+                      <Ionicons name="trash-outline" size={20} color="#fff" />
+                      <Text style={styles.swipeActionText}>Delete</Text>
+                    </View>
+                  </View>
+                )
+              : undefined
+          }
+          // The direction is the swipe's, not the panel's: RIGHT means the row moved right
+          // and revealed the left (complete) panel. WillOpen fires on release.
+          onSwipeableWillOpen={(direction) => {
+            if (direction === SwipeDirection.RIGHT) {
+              onComplete?.();
+              swipeRef.current?.close();
+            } else {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            }
+          }}
+          onSwipeableOpen={(direction) => {
+            if (direction !== SwipeDirection.LEFT || removing.current) return;
+            removing.current = true;
+            collapse.value = withTiming(0, { duration: COLLAPSE_MS }, (finished) => {
+              if (finished) runOnJS(finishRemove)();
+            });
+          }}>
+          {children}
+        </ReanimatedSwipeable>
+      </View>
+    </Animated.View>
   );
 }
 
@@ -428,8 +492,14 @@ const styles = StyleSheet.create({
   setRowCardComplete: {
     backgroundColor: '#201313',
   },
+  swipeClip: {
+    overflow: 'hidden',
+  },
+  // On the outer wrapper, so the overhang isn't clipped by the swipeable's overflow.
   swipeRowComplete: {
     marginHorizontal: -6,
+  },
+  swipeRowCompleteRadius: {
     borderRadius: 14,
   },
   swipeAction: {
@@ -442,8 +512,18 @@ const styles = StyleSheet.create({
   swipeActionComplete: {
     backgroundColor: '#e54242',
   },
+  // Spans the whole row, so a committed delete fills the bar; the label sits at the
+  // trailing edge where the drag reveals it.
   swipeActionDelete: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingRight: 32,
     backgroundColor: '#2a2a2a',
+  },
+  swipeActionLabel: {
+    alignItems: 'center',
+    gap: 2,
   },
   swipeActionText: {
     color: '#fff',
