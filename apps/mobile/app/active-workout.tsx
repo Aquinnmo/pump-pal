@@ -495,7 +495,7 @@ export default function ActiveWorkoutScreen() {
 
   useEffect(() => {
     if (!finishSucceeded) return;
-    const timeoutId = setTimeout(() => router.replace("/(tabs)"), 1200);
+    const timeoutId = setTimeout(() => router.replace("/(tabs)"), 2500);
     return () => clearTimeout(timeoutId);
   }, [finishSucceeded]);
 

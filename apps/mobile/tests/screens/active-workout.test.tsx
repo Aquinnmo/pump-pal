@@ -98,6 +98,7 @@ plugin({
         FadeIn: { duration: (duration: number) => ({ duration }) },
         FadeOut: { duration: (duration: number) => ({ duration }) },
         interpolate: () => 1,
+        interpolateColor: (_value: number, _input: number[], output: string[]) => output.at(-1),
         runOnJS: (fn: (...args: unknown[]) => unknown) => fn,
         useAnimatedStyle: (factory: () => unknown) => factory(),
         useSharedValue: (value: unknown) => ({ value }),
@@ -312,7 +313,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(createCalls[0]!.workout.name, 'Push Day');
     await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
     assert.equal(routerReplacements.length, 0);
-    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 3_500 });
   });
 
   it('shows confirmation before finishing with incomplete sets', async () => {
@@ -418,7 +419,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     resolveUpdate();
     await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
     assert.equal(routerReplacements.length, 0);
-    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 3_500 });
   });
 
   it('resets the terminal guard after a failed Finish so retry can write', async () => {
@@ -550,7 +551,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     assert.equal(routerReplacements.length, 0);
     assert.deepEqual(hapticCalls, [['notification', 'success']]);
 
-    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 3_500 });
   });
 
   it('routes a mounted remote finish through the same persisted celebration hold', async () => {
@@ -565,7 +566,7 @@ describe('ActiveWorkoutScreen finish boundary', () => {
     await waitFor(() => assert.equal(createCalls.length, 1));
     await waitFor(() => assert.ok(screen.getByTestId('finish-workout-celebration')));
     assert.equal(routerReplacements.length, 0);
-    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 2_000 });
+    await waitFor(() => assert.equal(routerReplacements.length, 1), { timeout: 3_500 });
   });
 
   it('does not show Focus View success or navigate after a failed persistence write', async () => {

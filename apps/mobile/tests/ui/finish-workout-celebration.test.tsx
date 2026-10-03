@@ -82,7 +82,7 @@ mock.module('react-native-svg', () => ({
   Rect: (props: Record<string, unknown>) => <rect {...props} />,
 }));
 
-const { FinishWorkoutCelebration } = await import(
+const { FINISH_MESSAGES, FinishWorkoutCelebration } = await import(
   '../../src/ui/workout/finish-workout-celebration'
 );
 
@@ -120,12 +120,17 @@ describe('FinishWorkoutCelebration', () => {
       assert.equal(face.querySelector('[stroke="#4ade80"]'), null);
     }
 
-    const label = screen.getByText('Workout complete', { exact: true });
-    assert.equal(label.getAttribute('aria-live'), 'polite');
     const labelContainer = screen.getByTestId('finish-workout-label');
+    const label = labelContainer.firstElementChild!;
+    assert.ok((FINISH_MESSAGES as readonly string[]).includes(label.textContent ?? ''));
+    assert.equal(label.getAttribute('aria-live'), 'polite');
     assert.equal(labelContainer.getAttribute('data-bottom'), '112');
     assert.equal(labelContainer.getAttribute('data-position'), 'absolute');
     assert.equal(screen.queryByText('✓', { exact: true }), null);
+  });
+
+  it('keeps every finish message free of exclamation marks', () => {
+    for (const message of FINISH_MESSAGES) assert.ok(!message.includes('!'), message);
   });
 
   it('uses varied bounded timing and only straight vertical motion', () => {
