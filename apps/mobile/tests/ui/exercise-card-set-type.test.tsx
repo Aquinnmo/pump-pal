@@ -136,10 +136,11 @@ describe('ExerciseCard set types', () => {
   it('offers Drop set on the first set', () => {
     const calls = renderCard([set]);
     fireEvent.click(screen.getByLabelText('Set 1 options'));
+    fireEvent.click(screen.getByLabelText('Set type'));
     fireEvent.click(screen.getByText('Drop set', { exact: true }));
     assert.deepEqual(calls.type, [[0, 0, 'drop']]);
-    // A lone set can't be removed or completed from the planner menu.
-    assert.equal(screen.queryByText('Remove set', { exact: true }), null);
+    // A lone set can't be deleted or completed from the planner menu.
+    assert.equal(screen.queryByText('Delete set', { exact: true }), null);
     assert.equal(screen.queryByText('Complete set', { exact: true }), null);
   });
 
@@ -168,7 +169,7 @@ describe('ExerciseCard set types', () => {
   it('removes a set from its menu and by swiping left', () => {
     const calls = renderCard([set, set]);
     fireEvent.click(screen.getAllByLabelText('Set 2 options')[0]);
-    fireEvent.click(screen.getByText('Remove set', { exact: true }));
+    fireEvent.click(screen.getByText('Delete set', { exact: true }));
     fireEvent.click(screen.getAllByLabelText('swipe left')[0]);
     assert.deepEqual(calls.removePart, [[{ exerciseUid: 'a', setUid: 'set-1', partUid: 'set-1' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0' }]]);
     assert.deepEqual(haptics, ['medium', 'medium']);
@@ -199,7 +200,7 @@ describe('ExerciseCard set types', () => {
     const calls = renderCard([{ ...set, type: 'drop', completed: true, subSets: [drop, drop] }], {}, true);
     fireEvent.click(screen.getByLabelText('Set 1 options'));
     assert.equal(screen.queryByText('Complete set', { exact: true }), null);
-    fireEvent.click(screen.getByText('Mark set incomplete', { exact: true }));
+    fireEvent.click(screen.getByText('Mark incomplete', { exact: true }));
     assert.deepEqual(calls.toggleComplete, [[{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0-drop-0' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0-drop-1' }]]);
     assert.deepEqual(haptics, []);
   });

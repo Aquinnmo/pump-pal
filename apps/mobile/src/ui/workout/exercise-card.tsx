@@ -7,15 +7,11 @@ import { setLabels, setParts } from '@/lib/workout-conversion';
 import { DraftExerciseRow, DraftPartTarget, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { ReactNode, useRef } from 'react';
-import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { ReactNode, useRef, useState } from 'react';
+import { Modal, Pressable, StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import ReanimatedSwipeable, { SwipeDirection, SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
-// Set options menu rows that aren't set types; matched by label in onMenuSelect.
-const SET_COMPLETE = 'Complete set';
-const SET_INCOMPLETE = 'Mark set incomplete';
-const SET_REMOVE = 'Remove set';
 
 type ExerciseCardProps = {
   exercise: DraftExerciseRow;
@@ -116,26 +112,24 @@ export function ExerciseCard({
           const targetPart = (part: (typeof parts)[number]): DraftPartTarget => ({
             exerciseUid: ex.uid, setUid: set.uid!, partUid: part.uid!,
           });
-          const menuOptions = [
-            ...(showCompletion ? [allPartsComplete ? SET_INCOMPLETE : SET_COMPLETE] : []),
-            ...(onChangeSetType ? SET_TYPES.map((t) => t.label) : []),
-            ...(ex.sets.length > 1 ? [SET_REMOVE] : []),
-          ];
-          const onMenuSelect = (option: string) => {
-            if (option === SET_REMOVE) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              return onRemovePart(targetPart(set));
-            }
-            if (option === SET_COMPLETE || option === SET_INCOMPLETE) {
-              if (!allPartsComplete) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              // A drop set completes (or reopens) all its parts together.
-              parts.forEach((part) => {
-                if (!!part.completed !== !allPartsComplete) onTogglePartComplete?.(targetPart(part));
-              });
-              return;
-            }
-            onChangeSetType?.(i, si, SET_TYPES.find((t) => t.label === option)!.id);
-          };
+          const removeSet = ex.sets.length > 1
+            ? () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                onRemovePart(targetPart(set));
+              }
+            : undefined;
+          // A drop set completes (or reopens) all its parts together.
+          const toggleSetComplete = showCompletion
+            ? () => {
+                if (!allPartsComplete) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                parts.forEach((part) => {
+                  if (!!part.completed !== !allPartsComplete) onTogglePartComplete?.(targetPart(part));
+                });
+              }
+            : undefined;
+          const changeType = onChangeSetType
+            ? (label: string) => onChangeSetType(i, si, SET_TYPES.find((t) => t.label === label)!.id)
+            : undefined;
           // One row per part. Only the first carries the set number, the options menu and
           // the field labels; a drop set's drops stack under it with their inputs touching
           // top to bottom.
@@ -192,21 +186,14 @@ export function ExerciseCard({
                     <View style={styles.setMenuColumn}>
                       {spacer}
                       <View style={styles.setSideCell}>
-                        {stage === 0 && menuOptions.length > 0 && (
-                          <Dropdown
-                            options={menuOptions}
-                            value={def.label}
-                            onSelect={onMenuSelect}
-                            placeholder={`Set ${labels[si]}`}
-                            renderTrigger={(open) => (
-                              <TouchableOpacity
-                                onPress={open}
-                                hitSlop={12}
-                                accessibilityRole="button"
-                                accessibilityLabel={`Set ${labels[si]} options`}>
-                                <Ionicons name="ellipsis-vertical" size={22} color="#888" />
-                              </TouchableOpacity>
-                            )}
+                        {stage === 0 && (removeSet || toggleSetComplete || changeType) && (
+                          <SetMenu
+                            label={labels[si]}
+                            typeLabel={def.label}
+                            completed={allPartsComplete}
+                            onChangeType={changeType}
+                            onRemove={removeSet}
+                            onToggleComplete={toggleSetComplete}
                           />
                         )}
                       </View>
@@ -361,7 +348,136 @@ function SwipeRow({ completed, onComplete, onRemove, style, containerStyle, chil
   );
 }
 
+type SetMenuProps = {
+  label: string;
+  typeLabel: string;
+  completed: boolean;
+  // Each omitted when the action isn't offered here; its control then isn't shown.
+  onChangeType?: (typeLabel: string) => void;
+  onRemove?: () => void;
+  onToggleComplete?: () => void;
+};
+
+// The set row's ellipsis: a centered dialog with the set type up top and the set's
+// actions under it. Changing the type keeps it open so the change is visible.
+function SetMenu({ label, typeLabel, completed, onChangeType, onRemove, onToggleComplete }: SetMenuProps) {
+  const [visible, setVisible] = useState(false);
+  const close = () => setVisible(false);
+  const act = (action: () => void) => () => {
+    close();
+    action();
+  };
+
+  return (
+    <>
+      <TouchableOpacity
+        onPress={() => setVisible(true)}
+        hitSlop={12}
+        accessibilityRole="button"
+        accessibilityLabel={`Set ${label} options`}>
+        <Ionicons name="ellipsis-vertical" size={22} color="#888" />
+      </TouchableOpacity>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
+        <View style={styles.menuOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={close} accessibilityLabel="Close set options" />
+          <View style={styles.menuCard} accessibilityViewIsModal>
+            <Text style={styles.menuTitle}>Set {label}</Text>
+            {onChangeType && (
+              <Dropdown options={SET_TYPES.map((t) => t.label)} value={typeLabel} onSelect={onChangeType} placeholder="Set type" />
+            )}
+            {(onRemove || onToggleComplete) && (
+              <View style={styles.menuActions}>
+                {onRemove && (
+                  <TouchableOpacity
+                    style={[styles.menuButton, styles.menuButtonSecondary]}
+                    onPress={act(onRemove)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button">
+                    <Text style={styles.menuButtonText}>Delete set</Text>
+                  </TouchableOpacity>
+                )}
+                {onToggleComplete && (
+                  <TouchableOpacity
+                    style={[styles.menuButton, styles.menuButtonPrimary]}
+                    onPress={act(onToggleComplete)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button">
+                    <Text style={styles.menuButtonText}>{completed ? 'Mark incomplete' : 'Complete set'}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+            <TouchableOpacity style={styles.menuDone} onPress={close} activeOpacity={0.8} accessibilityRole="button">
+              <Text style={styles.menuDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
+  // Confirm-dialog recipe (design-language component canon).
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  menuCard: {
+    backgroundColor: '#1c1c1c',
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    padding: 24,
+    width: '100%',
+    maxWidth: 420,
+    gap: 12,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  menuActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  menuButton: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 14,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+  },
+  menuButtonSecondary: {
+    backgroundColor: '#151515',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  menuButtonPrimary: {
+    backgroundColor: '#e54242',
+  },
+  menuButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  menuDone: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuDoneText: {
+    color: '#888',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   exerciseCard: {
     backgroundColor: '#141414',
     borderRadius: 12,

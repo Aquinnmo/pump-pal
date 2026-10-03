@@ -37,28 +37,15 @@ mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pat
   Dropdown: ({
     value,
     onSelect,
-    options,
-    renderTrigger,
   }: {
     value: string | null;
     onSelect: (value: string) => void;
-    options: readonly string[];
     placeholder: string;
-    renderTrigger?: (open: () => void) => ReactNode;
-  }) =>
-    renderTrigger ? (
-      // The set options menu: its trigger plus every option, always listed.
-      <>
-        {renderTrigger(() => undefined)}
-        {options.map((option) => (
-          <button key={option} aria-label={`menu: ${option}`} onClick={() => onSelect(option)} />
-        ))}
-      </>
-    ) : (
-      <button aria-label="Type of exercise" onClick={() => onSelect('Sets of Duration')}>
-        {value || 'Type of exercise'}
-      </button>
-    ),
+  }) => (
+    <button aria-label="Type of exercise" onClick={() => onSelect('Sets of Duration')}>
+      {value || 'Type of exercise'}
+    </button>
+  ),
 }));
 
 mock.module('expo-haptics', () => ({
@@ -211,7 +198,6 @@ describe('ExerciseCard', () => {
     assert.ok(screen.getByText('Bodyweight exercise', { exact: true }));
     assert.ok(screen.getByLabelText('trash-outline icon'));
     assert.equal(screen.getAllByLabelText('ellipsis-vertical icon').length, 2);
-    assert.equal(screen.getAllByLabelText('menu: Remove set').length, 2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Bench Press' }));
     fireEvent.click(screen.getByRole('button', { name: 'Type of exercise' }));
@@ -221,7 +207,8 @@ describe('ExerciseCard', () => {
     fireEvent.click(screen.getAllByLabelText('Increase reps')[0]);
     fireEvent.click(screen.getAllByLabelText('Decrease reps')[0]);
     fireEvent.change(screen.getAllByLabelText('Weight (lbs)')[0], { target: { value: '150' } });
-    fireEvent.click(screen.getAllByLabelText('menu: Remove set')[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Set .+ options$/ })[1]);
+    fireEvent.click(screen.getByText('Delete set', { exact: true }));
 
     assert.deepEqual(selected, [[2, { exerciseId: 'cable-row', variationId: 'wide', label: 'Cable Row' }]]);
     assert.deepEqual(changedTypes, [[2, 'exerciseType', 'Sets of Duration']]);
