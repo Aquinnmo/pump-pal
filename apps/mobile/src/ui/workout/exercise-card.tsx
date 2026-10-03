@@ -6,9 +6,16 @@ import { SET_TYPES, setTypeOf } from '@/constants/set-types';
 import { setLabels, setParts } from '@/lib/workout-conversion';
 import { DraftExerciseRow, ExerciseRef, ExerciseSearchOption, ExerciseType, RecentExercise } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import ReanimatedSwipeable, { SwipeDirection, SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 const EXERCISE_TYPES = ['Sets of Reps', 'Sets of Duration'] as const;
+// Set options menu rows that aren't set types; matched by label in onMenuSelect.
+const SET_COMPLETE = 'Complete set';
+const SET_INCOMPLETE = 'Mark set incomplete';
+const SET_REMOVE = 'Remove set';
 
 type ExerciseCardProps = {
   exercise: DraftExerciseRow;
@@ -27,11 +34,11 @@ type ExerciseCardProps = {
   onAddSet: (index: number) => void;
   onRemoveSet: (index: number, setIdx: number) => void;
   onToggleSetComplete?: (index: number, setIdx: number, stage?: number) => void;
-  // The single entry point for set types: a set's badge opens a sheet of SET_TYPES rows.
+  // The single entry point for set types: a set's options menu lists the SET_TYPES rows.
   onChangeSetType?: (index: number, setIdx: number, type: string) => void;
   onAddSubSet?: (index: number, setIdx: number) => void;
   onRemoveSubSet?: (index: number, setIdx: number, stage: number) => void;
-  // active-workout only: per-set completion checkbox + completed styling
+  // active-workout only: completion actions in the set menu + completed row styling
   showCompletion?: boolean;
   // Superset state is positional (see linkedToNext in src/lib/workout-conversion.ts), so
   // the parent list computes it from the neighbouring rows and passes it down.
@@ -73,6 +80,8 @@ export function ExerciseCard({
   const allParts = ex.sets.flatMap(setParts);
   const allSetsComplete = showCompletion && allParts.length > 0 && allParts.every((s) => s.completed);
   const labels = setLabels(ex.sets);
+  // Open rows by `${setIdx}-${stage}`, so a swipe can snap its row shut after firing.
+  const swipeRefs = useRef<Record<string, SwipeableMethods | null>>({});
 
   return (
     <View>
@@ -107,8 +116,30 @@ export function ExerciseCard({
         {ex.sets.map((set, si) => {
           const def = setTypeOf(set);
           const parts = setParts(set);
-          // One row per part. Only the first carries the badge and the field labels; a
-          // drop set's drops stack under it with their inputs touching top to bottom.
+          const allPartsComplete = parts.every((p) => p.completed);
+          const menuOptions = [
+            ...(showCompletion ? [allPartsComplete ? SET_INCOMPLETE : SET_COMPLETE] : []),
+            ...(onChangeSetType ? SET_TYPES.map((t) => t.label) : []),
+            ...(ex.sets.length > 1 ? [SET_REMOVE] : []),
+          ];
+          const onMenuSelect = (option: string) => {
+            if (option === SET_REMOVE) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              return onRemoveSet(i, si);
+            }
+            if (option === SET_COMPLETE || option === SET_INCOMPLETE) {
+              if (!allPartsComplete) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              // A drop set completes (or reopens) all its parts together.
+              parts.forEach((part, stage) => {
+                if (!!part.completed !== !allPartsComplete) onToggleSetComplete?.(i, si, stage);
+              });
+              return;
+            }
+            onChangeSetType?.(i, si, SET_TYPES.find((t) => t.label === option)!.id);
+          };
+          // One row per part. Only the first carries the set number, the options menu and
+          // the field labels; a drop set's drops stack under it with their inputs touching
+          // top to bottom.
           const rows = parts.map((part, stage) => {
             const stack: StackPosition | undefined = !def.subSet
               ? undefined
@@ -119,81 +150,105 @@ export function ExerciseCard({
                   : 'middle';
             // Spacers line the side columns up with the inputs under the labels; rows
             // without labels need none.
-            const spacer = stage === 0 && <Text style={styles.deleteSetSpacer}> </Text>;
+            const spacer = stage === 0 && <Text style={styles.setLabelSpacer}> </Text>;
+            const removable = stage > 0 || ex.sets.length > 1;
+            const rowKey = `${si}-${stage}`;
+            const completeRow = () => {
+              if (!part.completed) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onToggleSetComplete?.(i, si, stage);
+            };
+            const removeRow = () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              if (stage === 0) onRemoveSet(i, si);
+              else onRemoveSubSet?.(i, si, stage);
+            };
+            const rowComplete = showCompletion && part.completed && !allSetsComplete;
             return (
-              <View
+              <ReanimatedSwipeable
                 key={stage}
-                style={[
-                  styles.setRow,
-                  def.subSet && styles.setRowStacked,
-                  showCompletion && part.completed && !allSetsComplete && styles.setRowComplete,
-                ]}>
-                {onChangeSetType && (
-                  <View style={styles.setCheckboxWrap}>
+                ref={(r) => {
+                  swipeRefs.current[rowKey] = r;
+                }}
+                enabled={showCompletion || removable}
+                containerStyle={[styles.swipeRow, def.subSet && styles.swipeRowStacked, rowComplete && styles.swipeRowComplete]}
+                renderLeftActions={
+                  showCompletion
+                    ? () => (
+                        <View style={[styles.swipeAction, styles.swipeActionComplete]}>
+                          <Ionicons name="checkmark" size={20} color="#fff" />
+                          <Text style={styles.swipeActionText}>{part.completed ? 'Undo' : 'Complete'}</Text>
+                        </View>
+                      )
+                    : undefined
+                }
+                renderRightActions={
+                  removable
+                    ? () => (
+                        <View style={[styles.swipeAction, styles.swipeActionDelete]}>
+                          <Ionicons name="trash-outline" size={20} color="#fff" />
+                          <Text style={styles.swipeActionText}>Delete</Text>
+                        </View>
+                      )
+                    : undefined
+                }
+                // onSwipeableOpen's direction is the swipe's, not the panel's: RIGHT means the
+                // row moved right and revealed the left (complete) panel. A full swipe fires
+                // at once, then the row snaps shut so the row that slides into its slot after
+                // a delete doesn't inherit the open state.
+                onSwipeableOpen={(direction) => {
+                  if (direction === SwipeDirection.RIGHT) completeRow();
+                  else removeRow();
+                  swipeRefs.current[rowKey]?.close();
+                }}>
+                <View
+                  style={[
+                    styles.setRow,
+                    def.subSet && styles.setRowStacked,
+                    rowComplete && styles.setRowComplete,
+                    showCompletion && allSetsComplete && styles.setRowCardComplete,
+                  ]}>
+                  <View style={styles.setNumberColumn}>
                     {spacer}
-                    <View style={styles.setCheckboxIconWrap}>
-                      {stage === 0 ? (
-                        <Dropdown
-                          options={SET_TYPES.map((t) => t.label)}
-                          value={def.label}
-                          onSelect={(label) => onChangeSetType(i, si, SET_TYPES.find((t) => t.label === label)!.id)}
-                          placeholder="Set type"
-                          renderTrigger={(open) => (
-                            <TouchableOpacity
-                              onPress={open}
-                              hitSlop={8}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Set ${labels[si]}, ${def.label}. Change set type`}
-                              style={[styles.setBadge, def.id !== 'normal' && styles.setBadgeTyped]}>
-                              <Text style={styles.setBadgeText}>{labels[si]}</Text>
-                            </TouchableOpacity>
-                          )}
-                        />
-                      ) : (
-                        <View style={styles.setBadgeSpacer} />
-                      )}
+                    <View style={styles.setSideCell}>
+                      {stage === 0 && <Text style={styles.setNumber}>{labels[si]}</Text>}
                     </View>
                   </View>
-                )}
-                {showCompletion && (
-                  <View style={styles.setCheckboxWrap}>
-                    {spacer}
-                    <View style={styles.setCheckboxIconWrap}>
-                      <TouchableOpacity
-                        onPress={() => onToggleSetComplete?.(i, si, stage)}
-                        hitSlop={8}
-                        style={[styles.setCheckbox, part.completed && styles.setCheckboxChecked]}>
-                        {part.completed && <Ionicons name="checkmark" size={16} color="#fff" />}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
 
-                <View style={styles.row}>
-                  <SetFields
-                    set={part}
-                    stack={stack}
-                    exerciseType={ex.exerciseType}
-                    bodyweight={ex.bodyweight}
-                    onUpdate={(field, v) => onUpdateSet(i, si, field, v, stage)}
-                    onIncrement={() => onIncrementSet(i, si, stage)}
-                    onDecrement={() => onDecrementSet(i, si, stage)}
-                  />
-                  {(stage > 0 || ex.sets.length > 1) && (
-                    <View style={styles.deleteSetButton}>
+                  <View style={styles.row}>
+                    <SetFields
+                      set={part}
+                      stack={stack}
+                      exerciseType={ex.exerciseType}
+                      bodyweight={ex.bodyweight}
+                      onUpdate={(field, v) => onUpdateSet(i, si, field, v, stage)}
+                      onIncrement={() => onIncrementSet(i, si, stage)}
+                      onDecrement={() => onDecrementSet(i, si, stage)}
+                    />
+                    <View style={styles.setMenuColumn}>
                       {spacer}
-                      <TouchableOpacity
-                        style={styles.deleteSetIconWrap}
-                        onPress={() => (stage === 0 ? onRemoveSet(i, si) : onRemoveSubSet?.(i, si, stage))}
-                        hitSlop={12}
-                        accessibilityRole="button"
-                        accessibilityLabel={stage === 0 ? `Remove set ${labels[si]}` : `Remove ${def.subSet?.noun} ${stage + 1}`}>
-                        <Ionicons name="close-circle" size={26} color="#888" />
-                      </TouchableOpacity>
+                      <View style={styles.setSideCell}>
+                        {stage === 0 && menuOptions.length > 0 && (
+                          <Dropdown
+                            options={menuOptions}
+                            value={def.label}
+                            onSelect={onMenuSelect}
+                            placeholder={`Set ${labels[si]}`}
+                            renderTrigger={(open) => (
+                              <TouchableOpacity
+                                onPress={open}
+                                hitSlop={12}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Set ${labels[si]} options`}>
+                                <Ionicons name="ellipsis-vertical" size={22} color="#888" />
+                              </TouchableOpacity>
+                            )}
+                          />
+                        )}
+                      </View>
                     </View>
-                  )}
+                  </View>
                 </View>
-              </View>
+              </ReanimatedSwipeable>
             );
           });
 
@@ -205,8 +260,7 @@ export function ExerciseCard({
                 // Mirrors a set row's columns so the outline sits exactly under the inputs,
                 // hanging off the bottom of the stack like one more (empty) part.
                 <View style={[styles.setRow, styles.setRowStacked]}>
-                  {onChangeSetType && <View style={styles.setBadgeSpacer} />}
-                  {showCompletion && <View style={styles.setCheckboxSpacer} />}
+                  <View style={styles.setNumberColumn} />
                   <View style={styles.row}>
                     <TouchableOpacity
                       style={styles.addSubSetButton}
@@ -219,7 +273,7 @@ export function ExerciseCard({
                         <Text style={styles.addSubSetText}>Add {def.subSet.noun}</Text>
                       </View>
                     </TouchableOpacity>
-                    <View style={styles.deleteSetColumnSpacer} />
+                    <View style={styles.setMenuColumn} />
                   </View>
                 </View>
               )}
@@ -316,20 +370,27 @@ const styles = StyleSheet.create({
   exerciseTypeDropdown: {
     marginBottom: 12,
   },
+  // Opaque, so the swipe action panels behind a sliding row never show through.
   setRow: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 10,
     borderRadius: 10,
     padding: 4,
+    backgroundColor: '#141414',
+  },
+  swipeRow: {
+    marginBottom: 10,
+    borderRadius: 10,
   },
   // A drop set: its rows sit flush so the inputs stack into one column per field.
   dropStack: {
     marginBottom: 10,
   },
   setRowStacked: {
-    marginBottom: 0,
     paddingVertical: 0,
+  },
+  swipeRowStacked: {
+    marginBottom: 0,
   },
   // A U-shaped dashed outline: iOS only draws dashed borders when all four sides match,
   // so this is a full dashed box pushed up past the clip by its radius, which hides
@@ -352,84 +413,71 @@ const styles = StyleSheet.create({
     borderColor: '#2a2a2a',
     borderRadius: 8,
   },
-  setCheckboxSpacer: {
-    width: 26,
-  },
-  deleteSetColumnSpacer: {
-    width: 26,
-  },
   addSubSetText: {
     color: '#888',
     fontSize: 14,
     fontWeight: '500',
   },
+  // The accent at 8% composited over the card (#141414), then over a completed card, as
+  // opaque fills.
   setRowComplete: {
-    marginHorizontal: -6,
     paddingHorizontal: 10,
     borderRadius: 14,
-    backgroundColor: 'rgba(229, 66, 66, 0.08)',
+    backgroundColor: '#251818',
   },
-  setCheckboxWrap: {
+  setRowCardComplete: {
+    backgroundColor: '#201313',
+  },
+  swipeRowComplete: {
+    marginHorizontal: -6,
+    borderRadius: 14,
+  },
+  swipeAction: {
+    width: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  // Destructive is not red here (design-language): the accent marks the affirmative.
+  swipeActionComplete: {
+    backgroundColor: '#e54242',
+  },
+  swipeActionDelete: {
+    backgroundColor: '#2a2a2a',
+  },
+  swipeActionText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  setNumberColumn: {
+    width: 20,
     alignItems: 'center',
   },
-  setCheckboxIconWrap: {
+  setMenuColumn: {
+    width: 22,
+    alignItems: 'center',
+  },
+  setSideCell: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  setCheckbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    borderWidth: 2,
-    borderColor: '#555',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  setBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    backgroundColor: '#151515',
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  setBadgeSpacer: {
-    width: 28,
-  },
-  // A typed set's badge reads brighter, echoing the block around its parts.
-  setBadgeTyped: {
-    borderColor: '#888',
-  },
-  setBadgeText: {
-    color: '#888',
+  setNumber: {
+    color: '#666',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     fontVariant: ['tabular-nums'],
-  },
-  setCheckboxChecked: {
-    backgroundColor: '#e54242',
-    borderColor: '#e54242',
   },
   row: {
     flex: 1,
     flexDirection: 'row',
     gap: 8,
   },
-  deleteSetButton: {
-    alignItems: 'center',
-  },
-  deleteSetSpacer: {
+  setLabelSpacer: {
     fontSize: 11,
     marginBottom: 4,
     color: 'transparent',
-  },
-  deleteSetIconWrap: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   addSetButton: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, it, mock } from 'bun:test';
+import type { ReactNode } from 'react';
 import type { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
 import type { SetField } from '@/ui/workout/set-fields';
 import type { DraftExerciseRow, ExerciseSearchOption, RecentExercise } from '@/types/workout';
@@ -36,16 +37,39 @@ mock.module(new URL('../../src/ui/primitives/dropdown.tsx', import.meta.url).pat
   Dropdown: ({
     value,
     onSelect,
+    options,
+    renderTrigger,
   }: {
     value: string | null;
     onSelect: (value: string) => void;
     options: readonly string[];
     placeholder: string;
-  }) => (
-    <button aria-label="Type of exercise" onClick={() => onSelect('Sets of Duration')}>
-      {value || 'Type of exercise'}
-    </button>
-  ),
+    renderTrigger?: (open: () => void) => ReactNode;
+  }) =>
+    renderTrigger ? (
+      // The set options menu: its trigger plus every option, always listed.
+      <>
+        {renderTrigger(() => undefined)}
+        {options.map((option) => (
+          <button key={option} aria-label={`menu: ${option}`} onClick={() => onSelect(option)} />
+        ))}
+      </>
+    ) : (
+      <button aria-label="Type of exercise" onClick={() => onSelect('Sets of Duration')}>
+        {value || 'Type of exercise'}
+      </button>
+    ),
+}));
+
+mock.module('expo-haptics', () => ({
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium' },
+  impactAsync: () => undefined,
+}));
+
+// Passthrough: the swipe gesture itself is covered in exercise-card-set-type.test.tsx.
+mock.module('react-native-gesture-handler/ReanimatedSwipeable', () => ({
+  default: ({ children }: { children?: ReactNode }) => <>{children}</>,
+  SwipeDirection: { LEFT: 'left', RIGHT: 'right' },
 }));
 
 mock.module(new URL('../../src/ui/primitives/drag-handle.tsx', import.meta.url).pathname, () => ({
@@ -178,7 +202,8 @@ describe('ExerciseCard', () => {
     assert.equal(screen.getAllByLabelText('Weight (lbs)').length, 2);
     assert.ok(screen.getByText('Bodyweight exercise', { exact: true }));
     assert.ok(screen.getByLabelText('trash-outline icon'));
-    assert.equal(screen.getAllByLabelText('close-circle icon').length, 2);
+    assert.equal(screen.getAllByLabelText('ellipsis-vertical icon').length, 2);
+    assert.equal(screen.getAllByLabelText('menu: Remove set').length, 2);
 
     fireEvent.click(screen.getByRole('button', { name: 'Bench Press' }));
     fireEvent.click(screen.getByRole('button', { name: 'Type of exercise' }));
@@ -188,7 +213,7 @@ describe('ExerciseCard', () => {
     fireEvent.click(screen.getAllByLabelText('Increase reps')[0]);
     fireEvent.click(screen.getAllByLabelText('Decrease reps')[0]);
     fireEvent.change(screen.getAllByLabelText('Weight (lbs)')[0], { target: { value: '150' } });
-    fireEvent.click(screen.getAllByLabelText('close-circle icon')[1]);
+    fireEvent.click(screen.getAllByLabelText('menu: Remove set')[1]);
 
     assert.deepEqual(selected, [[2, { exerciseId: 'cable-row', variationId: 'wide', label: 'Cable Row' }]]);
     assert.deepEqual(changedTypes, [[2, 'exerciseType', 'Sets of Duration']]);

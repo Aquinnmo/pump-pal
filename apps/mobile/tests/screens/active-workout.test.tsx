@@ -83,6 +83,13 @@ plugin({
       },
       loader: 'object',
     }));
+    build.module('react-native-gesture-handler/ReanimatedSwipeable', () => ({
+      exports: {
+        default: ({ children }: { children?: unknown }) => children ?? null,
+        SwipeDirection: { LEFT: 'left', RIGHT: 'right' },
+      },
+      loader: 'object',
+    }));
     build.module('react-native-reanimated', () => ({
       exports: {
         default: {
