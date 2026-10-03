@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import type { ReactNode } from 'react';
-import { AI_DATA_DISCLOSURE } from '../../src/constants/policies';
 import type { UserDoc } from '../../src/types/user';
 import type { Workout } from '../../src/types/workout';
 
@@ -186,8 +185,10 @@ describe('SettingsAppScreen', () => {
 
     assert.ok(screen.getByText('App'));
     assert.ok(screen.getByText('AI Features'));
-    assert.ok(screen.getByText(AI_DATA_DISCLOSURE, { exact: true }));
-    assert.ok(screen.getByText('AI is off by default. You can turn it off at any time.', { exact: true }));
+    assert.ok(screen.getByText(
+      'AI is off by default. You can turn it off at any time. Please note that third parties do the AI processing and will receive your data.',
+      { exact: true },
+    ));
     assert.ok(screen.getByText('Social Features'));
     assert.ok(screen.getByText('SEND FEEDBACK'));
     assert.ok(screen.getByText('Update App'));

@@ -84,6 +84,7 @@ plugin({
     build.module('react-native-reanimated', () => ({
       exports: {
         default: { View: passthrough },
+        interpolateColor: (_value: number, _input: number[], output: string[]) => output.at(-1),
         runOnJS: (callback: () => void) => callback,
         useAnimatedStyle: (factory: () => unknown) => factory(),
         useSharedValue: (value: number) => ({ value }),
