@@ -283,8 +283,7 @@ export function ExerciseCard({
   );
 }
 
-// The library default is a heavily overdamped spring whose long tail delays
-// onSwipeableOpen; this one reaches the edge fast and clamps there.
+// Keep the snap-back quick, using the same spring as the existing swipe affordance.
 const SWIPE_SPRING = { mass: 1, damping: 20, stiffness: 300 };
 // How far a row must be dragged left before release commits the delete.
 const REMOVE_THRESHOLD = 80;
@@ -338,7 +337,10 @@ function SwipeRow({ completed, onComplete, onRemove, style, containerStyle, chil
         // The direction is the swipe's, not the panel's: RIGHT means the row moved right
         // and revealed the left (complete) panel. WillOpen fires on release.
         onSwipeableWillOpen={(direction) => {
-          if (actionPending.current) return;
+          if (actionPending.current) {
+            swipeRef.current?.close();
+            return;
+          }
           actionPending.current = true;
           if (direction === SwipeDirection.RIGHT) {
             onComplete?.();
