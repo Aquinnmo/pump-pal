@@ -128,9 +128,10 @@ withDraft({ workoutHistory: [historyWorkout('Other', [{ setNumber: 1, reps: 5, w
     sets: [draftSet({ reps: 4, weight: '' })],
   });
   act(() => result.current.setExercises([existing]));
+  const existingSets = result.current.exercises[0]!.sets;
   act(() => result.current.selectExercise(0, selection({ variationId: 'new-variation', label: 'New Exercise' })));
   const row = result.current.exercises[0]!;
-  assert.deepEqual(row.sets, existing.sets);
+  assert.equal(row.sets, existingSets);
   assert.equal(row.exerciseId, 'bench-press');
   assert.equal(row.variationId, 'new-variation');
   assert.equal(row.label, 'New Exercise');

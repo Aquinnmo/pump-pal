@@ -127,6 +127,9 @@ export type ExerciseType = 'Sets of Reps' | 'Sets of Duration';
 
 // One part of a set: a simple set has one; a drop set has its top set plus each drop.
 export type DraftSubSet = {
+  // Client-only swipe/render identity. Optional for older session snapshots;
+  // draft entry points assign missing IDs before these parts reach the editor.
+  uid?: string;
   reps: number;
   weight: string;
   durationMinutes: number;
@@ -140,6 +143,12 @@ export type DraftSubSet = {
 export type DraftSet = DraftSubSet & {
   type?: string;
   subSets?: DraftSubSet[];
+};
+
+export type DraftPartTarget = {
+  exerciseUid: string;
+  setUid: string;
+  partUid: string;
 };
 
 // Modal's per-set editing shape — one row per exercise, expanded to

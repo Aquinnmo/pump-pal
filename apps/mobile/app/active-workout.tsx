@@ -147,12 +147,11 @@ export default function ActiveWorkoutScreen() {
     incrementSet,
     decrementSet,
     addSet,
-    removeSet,
-    toggleSetComplete,
+    removePart,
+    togglePartComplete,
     toggleSuperset,
     setSetType,
     addSubSet,
-    removeSubSet,
     reorder,
   } = useDraftExercises({
     trackCompletion: true,
@@ -748,15 +747,14 @@ export default function ActiveWorkoutScreen() {
             onIncrementSet={incrementSet}
             onDecrementSet={decrementSet}
             onAddSet={addSet}
-            onRemoveSet={removeSet}
+            onRemovePart={removePart}
             inSuperset={inSuperset(exercises, i)}
             linkedToNext={linkedToNext(exercises, i)}
             canLinkNext={i < exercises.length - 1}
             onToggleSuperset={toggleSuperset}
             onChangeSetType={setSetType}
             onAddSubSet={addSubSet}
-            onRemoveSubSet={removeSubSet}
-            onToggleSetComplete={toggleSetComplete}
+            onTogglePartComplete={togglePartComplete}
             showCompletion
           />
         )}

@@ -102,6 +102,7 @@ const noop = () => undefined;
 type Calls = Record<string, unknown[][]>;
 
 function renderCard(sets: DraftSet[], calls: Calls = {}, showCompletion = false) {
+  sets = sets.map((s, si) => ({ ...s, uid: `set-${si}`, subSets: s.subSets?.map((part, pi) => ({ ...part, uid: `set-${si}-drop-${pi}` })) }));
   const record = (name: string) => (...args: unknown[]) => void (calls[name] ??= []).push(args);
   render(
     <ExerciseCard
@@ -116,11 +117,10 @@ function renderCard(sets: DraftSet[], calls: Calls = {}, showCompletion = false)
       onIncrementSet={noop}
       onDecrementSet={noop}
       onAddSet={noop}
-      onRemoveSet={record('removeSet')}
+      onRemovePart={record('removePart')}
       onChangeSetType={record('type')}
       onAddSubSet={record('addSubSet')}
-      onRemoveSubSet={record('removeSubSet')}
-      onToggleSetComplete={record('toggleComplete')}
+      onTogglePartComplete={record('toggleComplete')}
       showCompletion={showCompletion}
     />
   );
@@ -159,7 +159,7 @@ describe('ExerciseCard set types', () => {
     fireEvent.click(screen.getAllByLabelText('swipe left')[1]);
     assert.deepEqual(calls.update, [[0, 0, 'weight', '145', 1]]);
     assert.deepEqual(calls.addSubSet, [[0, 0]]);
-    assert.deepEqual(calls.removeSubSet, [[0, 0, 2]]);
+    assert.deepEqual(calls.removePart, [[{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0-drop-1' }]]);
     // A lone set can't be deleted, but its drops can.
     assert.equal(screen.getAllByLabelText('swipe left').length, 2);
     assert.deepEqual(haptics, ['medium']);
@@ -170,7 +170,7 @@ describe('ExerciseCard set types', () => {
     fireEvent.click(screen.getAllByLabelText('Set 2 options')[0]);
     fireEvent.click(screen.getByText('Remove set', { exact: true }));
     fireEvent.click(screen.getAllByLabelText('swipe left')[0]);
-    assert.deepEqual(calls.removeSet, [[0, 1], [0, 0]]);
+    assert.deepEqual(calls.removePart, [[{ exerciseUid: 'a', setUid: 'set-1', partUid: 'set-1' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0' }]]);
     assert.deepEqual(haptics, ['medium', 'medium']);
     // No completion in the planner, so no swipe right.
     assert.equal(screen.queryByLabelText('swipe right'), null);
@@ -180,7 +180,7 @@ describe('ExerciseCard set types', () => {
     const calls = renderCard([set, { ...set, completed: true }], {}, true);
     fireEvent.click(screen.getAllByLabelText('swipe right')[0]);
     fireEvent.click(screen.getAllByLabelText('swipe right')[1]);
-    assert.deepEqual(calls.toggleComplete, [[0, 0, 0], [0, 1, 0]]);
+    assert.deepEqual(calls.toggleComplete, [[{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0' }], [{ exerciseUid: 'a', setUid: 'set-1', partUid: 'set-1' }]]);
     // Light feedback only when a set becomes complete, not when it is reopened.
     assert.deepEqual(haptics, ['light']);
   });
@@ -190,7 +190,7 @@ describe('ExerciseCard set types', () => {
     const calls = renderCard([{ ...set, type: 'drop', subSets: [{ ...drop, completed: true }, drop] }], {}, true);
     fireEvent.click(screen.getByLabelText('Set 1 options'));
     fireEvent.click(screen.getByText('Complete set', { exact: true }));
-    assert.deepEqual(calls.toggleComplete, [[0, 0, 0], [0, 0, 2]]);
+    assert.deepEqual(calls.toggleComplete, [[{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0-drop-1' }]]);
     assert.deepEqual(haptics, ['light']);
   });
 
@@ -200,7 +200,7 @@ describe('ExerciseCard set types', () => {
     fireEvent.click(screen.getByLabelText('Set 1 options'));
     assert.equal(screen.queryByText('Complete set', { exact: true }), null);
     fireEvent.click(screen.getByText('Mark set incomplete', { exact: true }));
-    assert.deepEqual(calls.toggleComplete, [[0, 0, 0], [0, 0, 1], [0, 0, 2]]);
+    assert.deepEqual(calls.toggleComplete, [[{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0-drop-0' }], [{ exerciseUid: 'a', setUid: 'set-0', partUid: 'set-0-drop-1' }]]);
     assert.deepEqual(haptics, []);
   });
 });

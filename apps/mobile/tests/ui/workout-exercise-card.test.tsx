@@ -4,7 +4,7 @@ import { afterEach, describe, it, mock } from 'bun:test';
 import type { ReactNode } from 'react';
 import type { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
 import type { SetField } from '@/ui/workout/set-fields';
-import type { DraftExerciseRow, ExerciseSearchOption, RecentExercise } from '@/types/workout';
+import type { DraftExerciseRow, DraftPartTarget, ExerciseSearchOption, RecentExercise } from '@/types/workout';
 import { makeDraftExerciseRow } from '@/tests/factories';
 
 mock.module('@expo/vector-icons', () => ({
@@ -156,7 +156,7 @@ describe('ExerciseCard', () => {
         onIncrementSet={() => undefined}
         onDecrementSet={() => undefined}
         onAddSet={() => undefined}
-        onRemoveSet={() => undefined}
+        onRemovePart={() => undefined}
       />,
     );
 
@@ -173,8 +173,8 @@ describe('ExerciseCard', () => {
       label: 'Bench Press',
       bodyweight: false,
       sets: [
-        { reps: 8, weight: '135', durationMinutes: 0, durationSeconds: 0 },
-        { reps: 6, weight: '145', durationMinutes: 0, durationSeconds: 0 },
+        { uid: 'set-1', reps: 8, weight: '135', durationMinutes: 0, durationSeconds: 0 },
+        { uid: 'set-2', reps: 6, weight: '145', durationMinutes: 0, durationSeconds: 0 },
       ],
     });
     const selected: Array<[number, ExercisePickerSelection]> = [];
@@ -185,7 +185,7 @@ describe('ExerciseCard', () => {
     const increments: Array<[number, number]> = [];
     const decrements: Array<[number, number]> = [];
     const addedSets: number[] = [];
-    const removedSets: Array<[number, number]> = [];
+    const removedSets: DraftPartTarget[] = [];
     const { ExerciseCard } = await import('../../src/ui/workout/exercise-card');
 
     render(
@@ -201,7 +201,7 @@ describe('ExerciseCard', () => {
         onIncrementSet={(index, setIdx) => increments.push([index, setIdx])}
         onDecrementSet={(index, setIdx) => decrements.push([index, setIdx])}
         onAddSet={(index) => addedSets.push(index)}
-        onRemoveSet={(index, setIdx) => removedSets.push([index, setIdx])}
+        onRemovePart={(target) => removedSets.push(target)}
       />,
     );
 
@@ -231,14 +231,14 @@ describe('ExerciseCard', () => {
     assert.deepEqual(increments, [[2, 0]]);
     assert.deepEqual(decrements, [[2, 0]]);
     assert.deepEqual(addedSets, [2]);
-    assert.deepEqual(removedSets, [[2, 1]]);
+    assert.deepEqual(removedSets, [{ exerciseUid: exercise.uid, setUid: 'set-2', partUid: 'set-2' }]);
   });
 
   it('renders duration fields and keeps bodyweight hidden while retaining removal', async () => {
     const exercise = makeDraftExerciseRow({
       label: 'Plank',
       exerciseType: 'Sets of Duration',
-      sets: [{ reps: 0, weight: '', durationMinutes: 1, durationSeconds: 30 }],
+      sets: [{ uid: 'duration-1', reps: 0, weight: '', durationMinutes: 1, durationSeconds: 30 }],
     });
     const removed: number[] = [];
     const { ExerciseCard } = await import('../../src/ui/workout/exercise-card');
@@ -256,7 +256,7 @@ describe('ExerciseCard', () => {
         onIncrementSet={() => undefined}
         onDecrementSet={() => undefined}
         onAddSet={() => undefined}
-        onRemoveSet={() => undefined}
+        onRemovePart={() => undefined}
       />,
     );
 

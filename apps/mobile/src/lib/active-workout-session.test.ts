@@ -62,6 +62,7 @@ async function main() {
   const started = startSession({ uid: 'u1', planId: null, name: 'Push Day', rows: [row()], cameFromPlan: false });
   assert.equal(getSession(), started);
   assert.equal(getSession()?.rows[0].sets[0].completed, false);
+  assert.ok(started.rows[0].sets[0].uid, 'new sessions assign stable IDs to draft parts');
 
   // A live session always beats disk: loadSession() on the same module instance
   // is a no-op, not a resync from whatever was last written.
@@ -122,6 +123,18 @@ async function main() {
   const stale = await reimport('stale');
   assert.equal(await stale.loadSession(), null, 'a 25h-old stored session is dropped');
   assert.equal(store.has(STORAGE_KEY), false, 'the stale key is cleared');
+
+  store.set(STORAGE_KEY, JSON.stringify({ ...started, rows: [{ ...row(), sets: [
+    { ...row().sets[0], type: 'drop', subSets: [{ ...row().sets[0], weight: '100' }] },
+  ] }] }));
+  const legacy = await reimport('legacy-without-part-ids');
+  const upgraded = await legacy.loadSession();
+  const topId = upgraded?.rows[0].sets[0].uid;
+  const dropId = upgraded?.rows[0].sets[0].subSets?.[0].uid;
+  assert.ok(topId && dropId && topId !== dropId, 'legacy restored parts receive distinct IDs');
+  await legacy.flushSessionPersistence();
+  const upgradedRestart = await reimport('upgraded-part-ids');
+  assert.deepEqual((await upgradedRestart.loadSession())?.rows, upgraded?.rows, 'restored IDs survive a second restart');
 
   // The scene can connect during a cold intent: two readers may have captured
   // the same draft before one of them finishes and clears it.

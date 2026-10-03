@@ -8,6 +8,26 @@ export function makeUid(): string {
   return randomId('ex');
 }
 
+// Preserve both IDs and object references on already-normalized drafts. Session
+// subscribers rely on reference equality to avoid echoing each other's updates.
+export function ensureDraftRowIds(rows: DraftExerciseRow[]): DraftExerciseRow[] {
+  const seen = new Set<string>();
+  const identify = <T extends DraftSubSet>(part: T): T => {
+    const uid = part.uid && !seen.has(part.uid) ? part.uid : randomId('part');
+    seen.add(uid);
+    return uid === part.uid ? part : { ...part, uid };
+  };
+  const identified = rows.map((row) => {
+    const sets = row.sets.map((set) => {
+      const head = identify(set);
+      const subSets = set.subSets?.map(identify);
+      return subSets?.some((part, i) => part !== set.subSets![i]) ? { ...head, subSets } : head;
+    });
+    return sets.some((set, i) => set !== row.sets[i]) ? { ...row, sets } : row;
+  });
+  return identified.some((row, i) => row !== rows[i]) ? identified : rows;
+}
+
 // A set's parts in order: the set itself, then its sub-sets (a drop set's drops).
 export function setParts(set: DraftSet): DraftSubSet[] {
   return [set, ...(set.subSets ?? [])];
@@ -191,7 +211,7 @@ export function normalizeDraftSets(sets: DraftSet[]): DraftSet[] {
   });
   candidates.sort((a, b) => weightOf(a) - weightOf(b) || a.reps - b.reps || secondsOf(a) - secondsOf(b));
   const pick = candidates[Math.floor(candidates.length / 2)];
-  return sets.map((s) => ({ ...pick, completed: s.completed }));
+  return sets.map((s) => ({ ...pick, uid: s.uid, completed: s.completed }));
 }
 
 export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): DraftExerciseRow {
@@ -217,7 +237,7 @@ export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): D
           ...(rest.length > 0 ? { subSets: rest.map((i) => toPart(pe.sets[i])) } : {}),
         }));
 
-  return {
+  return ensureDraftRowIds([{
     uid: makeUid(),
     exerciseId: pe.exerciseId,
     variationId: pe.variationId,
@@ -229,7 +249,7 @@ export function collapseSetsToDraft(pe: PerformedExercise, normalize = false): D
     peNotes: pe.notes,
     supersetId: pe.supersetId,
     legacy: pe.legacy,
-  };
+  }])[0];
 }
 
 export function buildPerformedExercise(row: DraftExerciseRow, order: number): PerformedExercise {

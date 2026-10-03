@@ -1,9 +1,10 @@
 import { ExercisePickerSelection } from '@/ui/primitives/exercise-picker';
 import { SET_TYPES, setTypeOf } from '@/constants/set-types';
-import { DraftExerciseRow, DraftSet, DraftSubSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
+import { DraftExerciseRow, DraftPartTarget, DraftSet, DraftSubSet, ExerciseType, PerformedExercise, Workout } from '@/types/workout';
 import {
   cascadeSetField,
   collapseSetsToDraft,
+  ensureDraftRowIds,
   linkedToNext,
   makeUid,
   nextSubSet,
@@ -11,7 +12,7 @@ import {
   stageOf,
   withStage,
 } from '@/lib/workout-conversion';
-import { useMemo, useState } from 'react';
+import { SetStateAction, useCallback, useMemo, useState } from 'react';
 import { reorderItems } from 'react-native-reorderable-list';
 
 // Shared editing engine for both the plan/log editor (app/modal.tsx) and the live
@@ -88,7 +89,9 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
   );
 
   // No row exists until an exercise is picked, so a row with a null exercise never renders.
-  const [exercises, setExercises] = useState<DraftExerciseRow[]>([]);
+  const [exercises, setDraftExercises] = useState<DraftExerciseRow[]>([]);
+  const setExercises = useCallback((value: SetStateAction<DraftExerciseRow[]>) =>
+    setDraftExercises((prev) => ensureDraftRowIds(typeof value === 'function' ? value(prev) : value)), []);
 
   // Fill `row` with the picked exercise; sets come from the latest matching history when
   // there is one, otherwise the row keeps its own.
@@ -151,7 +154,7 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
   const decrementSet = (i: number, setIdx: number, stage = 0) => bumpReps(i, setIdx, -1, stage);
 
   // A part as it starts life in this editor: not done, when completion is tracked.
-  const fresh = <T extends DraftSubSet>(part: T): T => ({ ...part, ...(trackCompletion ? { completed: false } : {}) });
+  const fresh = <T extends DraftSubSet>(part: T): T => ({ ...part, uid: makeUid(), ...(trackCompletion ? { completed: false } : {}) });
 
   // Copies the whole last set, drops included, so drop set after drop set is one tap.
   const addSet = (i: number) =>
@@ -189,6 +192,32 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
       const subSets = (s.subSets ?? []).filter((_, k) => k !== stage - 1);
       return subSets.length > 0 ? { ...s, subSets } : { ...s, type: undefined, subSets: undefined };
     });
+
+  // Swipe/menu targets survive row reordering and earlier deletions. Resolve
+  // inside the updater, never from a render's captured indices.
+  const changePart = (target: DraftPartTarget, change: (sets: DraftSet[], si: number, stage: number) => DraftSet[]) =>
+    setExercises((prev) => {
+      const i = prev.findIndex((row) => row.uid === target.exerciseUid);
+      if (i < 0) return prev;
+      const sets = prev[i].sets;
+      const si = sets.findIndex((set) => set.uid === target.setUid);
+      if (si < 0) return prev;
+      const stage = setParts(sets[si]).findIndex((part) => part.uid === target.partUid);
+      if (stage < 0) return prev;
+      const next = change(sets, si, stage);
+      return next === sets ? prev : prev.map((row, idx) => idx === i ? { ...row, sets: next } : row);
+    });
+
+  const removePart = (target: DraftPartTarget) => changePart(target, (sets, si, stage) => {
+    if (stage === 0) return sets.length <= 1 ? sets : sets.filter((_, index) => index !== si);
+    const subSets = sets[si].subSets!.filter((_, index) => index !== stage - 1);
+    return sets.map((set, index) => index !== si ? set : subSets.length
+      ? { ...set, subSets }
+      : { ...set, type: undefined, subSets: undefined });
+  });
+
+  const togglePartComplete = (target: DraftPartTarget) => changePart(target, (sets, si, stage) =>
+    sets.map((set, index) => index !== si ? set : withStage(set, stage, { completed: !stageOf(set, stage).completed })));
 
   // Links row i to row i+1, merging both rows' supersets; if they are already linked,
   // splits the superset between them by giving everything after i a fresh id. Always a
@@ -233,6 +262,8 @@ export function useDraftExercises(opts?: DraftExerciseOptions) {
     setSetType,
     addSubSet,
     removeSubSet,
+    removePart,
+    togglePartComplete,
     reorder,
   };
 }

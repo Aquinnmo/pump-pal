@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, it, mock } from 'bun:test';
 import React, { type ReactNode } from 'react';
-import type { Workout } from '../../src/types/workout';
+import type { DraftExerciseRow, DraftPartTarget, Workout } from '../../src/types/workout';
 
 const user = { uid: 'modal-test-user' };
 const router = { back: () => undefined };
@@ -114,7 +114,8 @@ mock.module('@/ui/primitives/dropdown', () => ({
   Dropdown: ({ placeholder }: { placeholder: string }) => <button>{placeholder}</button>,
 }));
 mock.module('@/ui/workout/exercise-card', () => ({
-  ExerciseCard: ({ index, onSelectExercise, canLinkNext, linkedToNext, onToggleSuperset, onChangeSetType, onAddSubSet, onRemoveSubSet }: {
+  ExerciseCard: ({ exercise, index, onSelectExercise, canLinkNext, linkedToNext, onToggleSuperset, onChangeSetType, onAddSubSet, onRemovePart }: {
+    exercise: DraftExerciseRow;
     index: number;
     onSelectExercise: (index: number, selection: unknown) => void;
     canLinkNext?: boolean;
@@ -122,7 +123,7 @@ mock.module('@/ui/workout/exercise-card', () => ({
     onToggleSuperset?: (index: number) => void;
     onChangeSetType?: (index: number, setIdx: number, type: string) => void;
     onAddSubSet?: (index: number, setIdx: number) => void;
-    onRemoveSubSet?: (index: number, setIdx: number, stage: number) => void;
+    onRemovePart: (target: DraftPartTarget) => void;
   }) => (
     <>
       <button onClick={() => onSelectExercise(index, { exerciseId: 'bench-press', variationId: null, label: 'Bench Press' })}>
@@ -133,7 +134,7 @@ mock.module('@/ui/workout/exercise-card', () => ({
       )}
       <button onClick={() => onChangeSetType?.(index, 0, 'drop')}>Make first set a drop</button>
       <button onClick={() => onAddSubSet?.(index, 0)}>Add drop</button>
-      <button onClick={() => onRemoveSubSet?.(index, 0, 1)}>Remove first drop</button>
+      <button onClick={() => onRemovePart({ exerciseUid: exercise.uid, setUid: exercise.sets[0].uid!, partUid: exercise.sets[0].subSets![0].uid! })}>Remove first drop</button>
     </>
   ),
 }));
